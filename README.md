@@ -316,6 +316,9 @@ world exactly as it was built.
 
 ## Architecture
 
+See [architecture.md](docs/architecture.md) for the component, compile, startup,
+event and connector diagrams.
+
 ```text
 world definition -> deterministic artifact -> environment lock -> instance
                                                                -> reset
@@ -394,8 +397,10 @@ drifted rather than that the network did. These are interface descriptions, not
 Notion software; their source, retrieval date, digest, and redistribution basis
 are recorded in
 [`emulators/emulate/contracts/notion/THIRD_PARTY_NOTICES.md`](emulators/emulate/contracts/notion/THIRD_PARTY_NOTICES.md).
-Notion is a trademark of Notion Labs, Inc.; this project is not affiliated with
-or endorsed by Notion.
+The Stripe billing contract is recorded the same way in
+[`emulators/emulate/contracts/stripe/THIRD_PARTY_NOTICES.md`](emulators/emulate/contracts/stripe/THIRD_PARTY_NOTICES.md).
+Notion is a trademark of Notion Labs, Inc. and Stripe is a trademark of Stripe,
+Inc.; this project is not affiliated with or endorsed by either.
 
 **On MariaDB and the GPL.** MariaDB and PostgreSQL are unmodified distribution
 packages installed into the container image and run as separate server

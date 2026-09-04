@@ -2,7 +2,7 @@
 
 This is the `packs` object in a seed or plan request, described from the world
 it documents: `business.saas-company:v3`, artifact
-`c4b16ab16442…`.
+`5b24c396d60d…`.
 
 It is generated from the built artifact and checked by a test, so it cannot
 drift from what is actually sent. Run `worldfixture connector docs` to read the
@@ -677,7 +677,7 @@ Nested inside each `repositories` record, not a collection of its own.
   "project_id": "project-release-32",
   "reporter_id": "jon-bell",
   "status": "review",
-  "title": "Write the the lease heartbeat design note"
+  "title": "Write the lease heartbeat design note"
 }
 ```
 
@@ -697,7 +697,7 @@ Nested inside each `repositories` record, not a collection of its own.
   "date": "2027-08-07",
   "id": "time-0001",
   "minutes": 150,
-  "note": "Write the the lease heartbeat design note.",
+  "note": "Write the lease heartbeat design note.",
   "person_id": "ben-hartley",
   "task_id": "task-0001"
 }

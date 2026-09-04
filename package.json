@@ -28,6 +28,7 @@
     "CHANGELOG.md",
     "NOTICE",
     "dist/",
+    "docs/architecture.md",
     "docs/connectors/agent-guide.md",
     "docs/connectors/mapping-guide.md",
     "docs/connectors/overview.md",
