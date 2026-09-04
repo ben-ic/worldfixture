@@ -437,7 +437,7 @@ test("a state database from a different schema version is refused, not migrated"
 });
 
 test("the event log is append-only and hands out a monotonic cursor", async () => {
-  const { appendEvent, eventsAfter } = await import("./state.mjs");
+  const { appendEvent, eventsAfter, latestEvents } = await import("./state.mjs");
   const db = openState(":memory:");
 
   const first = appendEvent(db, {
@@ -451,6 +451,7 @@ test("the event log is append-only and hands out a monotonic cursor", async () =
 
   assert.ok(second > first);
   assert.deepEqual(eventsAfter(db, first).map((event) => event.id), ["evt_2"]);
+  assert.deepEqual(latestEvents(db, 1).map((event) => event.id), ["evt_2"]);
   // Provider evidence survives the round trip; it is what makes an event a fact
   // rather than a claim.
   assert.deepEqual(eventsAfter(db, 0)[0].provider_evidence, { channel_id: "C1" });

@@ -806,7 +806,7 @@ async function up(parsed) {
   if (parsed.flags["world-path"]) containerArgs.push("--world-path", stageWorldArtifact(builtPath, stateDir));
 
   const started = Date.now();
-  const progress = startupProgress();
+  const progress = startupProgress({ stateDir, startedAt: started });
   const result = await launchHostInstance({
     stateDir,
     image: parsed.flags.image ?? process.env.WORLDFIXTURE_IMAGE ?? defaultImage(),
@@ -1005,34 +1005,93 @@ export function invocation(argv1 = process.argv[1], root = PACKAGE_ROOT) {
 // mail, which is delivering 3,069 messages over LMTP -- was known inside the
 // container the whole time.
 //
-// It names the service still working rather than turning, because "mail" is the
-// answer to the question somebody is actually asking, and a spinner is not.
-//
-// ON A TERMINAL it rewrites one line. Piped or redirected -- CI, a log, an
-// agent capturing output -- there is no cursor to move, so it prints each
-// distinct state once and never repeats itself. A progress display that fills a
-// CI log with thousands of identical lines is worse than no progress display.
-export function startupProgress() {
+// IT SAYS IT IN THE READER'S WORDS. The first version printed the runtime's own
+// names and counts: "2 of 4 services ready, waiting on mail, s3". Nothing else
+// on the screen mentions four services -- the ready screen lists thirteen
+// provider addresses -- so the number invited the reader to work out which four,
+// and `s3` and `emulate` are names for parts of this program rather than parts
+// of a world. What somebody waiting wants is what is left, in words they have
+// already seen, and how long it has been.
+const SERVICE_NAMES = {
+  emulate: "the provider APIs",
+  "http-targets": "the public site",
+  mail: "mail",
+  s3: "file storage",
+  postgres: "PostgreSQL",
+  mysql: "MySQL",
+};
+
+function serviceName(name) {
+  return SERVICE_NAMES[name] ?? name;
+}
+
+// "a, b and c", because a comma-separated list of two reads as an error message.
+function list(names) {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
+export function startupProgress({ stateDir, startedAt = Date.now() } = {}) {
   const tty = process.stdout.isTTY === true;
   let printed = false;
   let last = "";
+  let lastLine = "";
+  let mailCount = null;
+
+  // Why mail is the slow one, in the world's own numbers. Read once, from the
+  // world this run rebased into its state directory, and skipped entirely if it
+  // is not there yet -- this is a reassurance, not a requirement.
+  const mailMessages = () => {
+    if (mailCount !== null || !stateDir) return mailCount;
+    try {
+      const world = JSON.parse(readFileSync(join(stateDir, "world/world.json"), "utf8"));
+      const mail = world.communication?.resolved_mail ?? world.communication?.mail ?? [];
+      mailCount = Array.isArray(mail) ? mail.length : 0;
+    } catch {
+      mailCount = 0;
+    }
+    return mailCount;
+  };
 
   return {
     update(progress) {
       const states = Object.entries(progress.services ?? {});
       if (states.length === 0) return;
-      const waiting = states.filter(([, state]) => state === "starting").map(([name]) => name);
-      const ready = states.filter(([, state]) => state === "running").length;
 
-      // No counter while the baseline is captured. Recording the accepted state
-      // stops the services and starts them again, so the count genuinely goes
-      // backwards -- 4 of 4, then 2 of 4 -- and a number running backwards reads
-      // as something breaking. The phase is the honest thing to show there.
-      const line = progress.phase === "capturing-baseline"
-        ? "Starting    recording the accepted state, so reset can restore it exactly"
-        : `Starting    ${ready} of ${states.length} services ready${waiting.length > 0 ? `, waiting on ${waiting.join(", ")}` : ""}`;
-      if (line === last) return;
-      last = line;
+      const elapsed = `${Math.round((Date.now() - startedAt) / 1000)}s`;
+      const waiting = states.filter(([, state]) => state === "starting").map(([name]) => name);
+      const ready = states.filter(([, state]) => state === "running").map(([name]) => serviceName(name));
+
+      // Recording the accepted state stops every service and starts it again, so
+      // a count would run backwards -- 4 of 4, then 2 of 4 -- and a number going
+      // backwards reads as something breaking.
+      let line;
+      if (progress.phase === "capturing-baseline") {
+        line = `Loading     ${elapsed}   recording the accepted state, so \`reset\` can restore it exactly`;
+      } else if (waiting.length === 0) {
+        line = `Loading     ${elapsed}   everything is up`;
+      } else {
+        const messages = waiting.includes("mail") && mailMessages() > 0
+          ? ` (${mailMessages().toLocaleString("en-US")} messages, most of the wait)`
+          : "";
+        const left = list(waiting.map(serviceName)).replace("mail", `mail${messages}`);
+        // "everything else", rather than naming what is ready. Naming it meant
+        // agreeing a verb with a list whose head could be singular or plural --
+        // "the provider APIs is ready" -- and the reader is waiting on what is
+        // LEFT. What is done only has to reassure, not enumerate.
+        line = `Loading     ${elapsed}   ${left}`
+          + (ready.length > 0 ? "; everything else is ready" : "");
+      }
+
+      // Deduplicated on the STATE, not the rendered line. The line carries an
+      // elapsed count, so comparing lines made every one unique and a piped run
+      // repeated the same phase three times as the seconds ticked. A terminal
+      // wants the clock to move; a log wants each distinct state once.
+      const key = `${progress.phase}:${waiting.join(",")}:${ready.length}`;
+      if (key === last && !tty) return;
+      if (line === lastLine) return;
+      last = key;
+      lastLine = line;
 
       if (!tty) return say(line);
       if (!printed) {

@@ -28,13 +28,50 @@ function render({ tty }) {
 // and then nothing for another ninety, because the host could only watch for
 // `bindings.json` to appear. The container knew the whole time that everything
 // was up except mail, which was delivering 3,069 messages over LMTP.
-test("progress names the service still working, not just that something is", () => {
+// It also has to say it in the reader's words. The first version printed the
+// runtime's own names and counts -- "2 of 4 services ready, waiting on mail, s3"
+// -- and nothing else on the screen mentions four services, while `s3` and
+// `emulate` name parts of this program rather than parts of a world.
+test("progress names what is left in the reader's words, and how long it has been", () => {
   const { progress, written, restore } = render({ tty: false });
   try {
     progress.update({ phase: "starting", services: { emulate: "running", "http-targets": "running", mail: "starting", s3: "starting" } });
     const line = written.join("");
-    assert.match(line, /2 of 4 services ready/);
-    assert.match(line, /waiting on mail, s3/);
+
+    assert.match(line, /mail and file storage/);
+    assert.match(line, /everything else is ready/);
+    assert.match(line, /Loading\s+\d+s/);
+    // No internal service names, and no count that matches nothing on screen.
+    assert.ok(!line.includes("emulate"), line);
+    assert.ok(!line.includes("http-targets"), line);
+    assert.ok(!/\d of \d services/.test(line), line);
+  } finally {
+    restore();
+  }
+});
+
+// Naming what is ready meant agreeing a verb with a list whose head could be
+// singular or plural -- "the provider APIs is ready". The reader is waiting on
+// what is LEFT; what is done only has to reassure.
+test("what is finished reassures without having to agree with a verb", () => {
+  const { progress, written, restore } = render({ tty: false });
+  try {
+    progress.update({ phase: "starting", services: { emulate: "running", mail: "starting" } });
+    const line = written.join("");
+    assert.match(line, /mail; everything else is ready/);
+    assert.ok(!/\bis ready\b.*\bAPIs\b|APIs is/.test(line), line);
+  } finally {
+    restore();
+  }
+});
+
+test("nothing ready yet means no reassurance clause at all", () => {
+  const { progress, written, restore } = render({ tty: false });
+  try {
+    progress.update({ phase: "starting", services: { emulate: "starting", mail: "starting" } });
+    const line = written.join("");
+    assert.match(line, /the provider APIs and mail/);
+    assert.ok(!line.includes("everything else"), line);
   } finally {
     restore();
   }

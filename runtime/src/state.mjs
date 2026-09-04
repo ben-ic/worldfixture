@@ -156,6 +156,17 @@ export function eventsAfter(db, cursor = 0, limit = 100) {
     }));
 }
 
+export function latestEvents(db, limit = 100) {
+  return db
+    .prepare("SELECT * FROM events ORDER BY seq DESC LIMIT ?")
+    .all(limit)
+    .reverse()
+    .map((row) => ({
+      ...row,
+      provider_evidence: row.provider_evidence ? JSON.parse(row.provider_evidence) : undefined,
+    }));
+}
+
 // Restore the runtime-owned part of a session. The instance row and schema stay:
 // reset returns this instance to its accepted start; it does not create another
 // instance with another lock.
