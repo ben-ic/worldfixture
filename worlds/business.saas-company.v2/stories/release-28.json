@@ -1,0 +1,112 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "model_facts": [
+      {
+        "id": "fact-release-state",
+        "kind": "release",
+        "text": "Release 2.8 has no final decision on the export timeout fix."
+      }
+    ],
+    "stories": [
+      {
+        "entity_refs": [
+          "issue-318",
+          "issue-319",
+          "issue-322",
+          "channel-release-28"
+        ],
+        "id": "story-release-28",
+        "state": "active",
+        "summary": "The audit page is ready. Engineering must decide whether the export timeout fix is safe enough for 2.8.",
+        "title": "Release 2.8 has one risky late decision"
+      }
+    ],
+    "timeline": [
+      {
+        "after_seconds": 20,
+        "id": "arrival-lucas-load-test",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "lucas-meyer",
+          "channel_id": "channel-lumen-renewal",
+          "entity_refs": {
+            "issue_id": "issue-318",
+            "repository_id": "repo-exports"
+          },
+          "text": "50k and 75k complete with the branch. Cancellation releases the worker, but the partial object remains. I am not merging until that cleanup is fixed."
+        }
+      },
+      {
+        "after_seconds": 40,
+        "id": "arrival-jon-cancellation-gate",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "jon-bell",
+          "channel_id": "channel-release-28",
+          "entity_refs": {
+            "issue_id": "issue-318",
+            "repository_id": "repo-exports"
+          },
+          "text": "The load numbers are useful, but the cancellation cleanup is still the release gate. Keep 2.8 blocked until retry is safe."
+        }
+      },
+      {
+        "after_seconds": 60,
+        "id": "arrival-elena-release-notes",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "elena-petrov",
+          "channel_id": "channel-release-28",
+          "entity_refs": {
+            "issue_id": "issue-318"
+          },
+          "text": "I will keep the release notes conditional. We need the cancellation result before we can state whether the fix is in 2.8."
+        }
+      },
+      {
+        "after_seconds": 80,
+        "id": "arrival-samira-workaround",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "samira-okafor",
+          "channel_id": "channel-lumen-renewal",
+          "entity_refs": {
+            "customer_id": "lumen",
+            "support_case_id": "case-lumen-export"
+          },
+          "text": "Priya can continue with the manual retry. I will send the safe workaround before 15:00 and keep the release date out of that reply."
+        }
+      },
+      {
+        "after_seconds": 100,
+        "id": "arrival-lucas-cleanup-scope",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "lucas-meyer",
+          "channel_id": "channel-lumen-renewal",
+          "entity_refs": {
+            "issue_id": "issue-318",
+            "repository_id": "repo-exports"
+          },
+          "text": "I found the cleanup boundary: the worker lease closes, but the partial object survives. I am adding that case to the retry test now."
+        }
+      },
+      {
+        "after_seconds": 120,
+        "id": "arrival-hana-audit-scope",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "hana-ito",
+          "channel_id": "channel-release-28",
+          "entity_refs": {
+            "issue_id": "issue-322",
+            "repository_id": "repo-console"
+          },
+          "text": "The audit-page label fix is still isolated from the export branch. I will keep it out of the release decision unless the export tests pass."
+        }
+      }
+    ]
+  },
+  "id": "story.release-28"
+}

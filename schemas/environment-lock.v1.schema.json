@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/environment-lock.v1.schema.json",
+  "title": "WorldFixture environment lock v1",
+  "description": "The immutable resolution of one environment specification. It is written before startup and never follows a newer world or service release. It carries no port numbers and no timestamps: ports are allocated per run, so the same specification, artifact and manifests must resolve to byte-identical bytes.",
+  "type": "object",
+  "required": ["api_version", "environment_sha256", "world", "services", "capabilities"],
+  "properties": {
+    "api_version": {"const": "worldfixture.environment-lock/v1"},
+    "environment_sha256": {
+      "description": "Digest of the canonical environment specification this lock resolves. A changed specification is a new lock, never an edit of this one.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "world": {
+      "type": "object",
+      "required": ["id", "version", "artifact_sha256", "projections"],
+      "properties": {
+        "id": {"type": "string"},
+        "version": {"type": "string"},
+        "profile": {"type": "string"},
+        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "projections": {
+          "description": "Every artifact file a selected service reads, with the digest it must have. A service that verifies its projection checks this; one that does not at least has the value recorded against it.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["sha256", "size"],
+            "properties": {
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "size": {"type": "integer"},
+              "read_by": {"type": "array", "items": {"type": "string"}},
+              "verified_by": {"type": "array", "items": {"type": "string"}}
+            }
+          }
+        }
+      }
+    },
+    "services": {
+      "description": "The exact implementation selected for each capability, in a stable order. A service appears once however many capabilities it provides.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "manifest_sha256", "profiles", "ports", "readiness"],
+        "properties": {
+          "name": {"type": "string"},
+          "version": {"type": "string"},
+          "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "image": {"type": "string"},
+          "command": {"type": "array", "items": {"type": "string"}},
+          "container": {"type": "object"},
+          "profiles": {"type": "array", "items": {"type": "string"}},
+          "ports": {
+            "description": "Only the ports this run opens. A port serving no selected capability and no readiness check stays closed, which is how a disclaimed surface is kept off the network.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "protocol", "env", "published"],
+              "properties": {
+                "name": {"type": "string"},
+                "protocol": {"type": "string"},
+                "env": {"type": "string"},
+                "env_format": {"type": "string"},
+                "bind_env": {"type": "string"},
+                "published": {"type": "boolean"}
+              }
+            }
+          },
+          "readiness": {"type": "array", "items": {"type": "object"}},
+          "environment": {"type": "array", "items": {"type": "object"}},
+          "projections": {"type": "array", "items": {"type": "object"}},
+          "lifecycle": {"type": "object"}
+        }
+      }
+    },
+    "capabilities": {
+      "description": "Which service implements each required capability, and where. This is the mapping the design calls 'the exact service implementation for each capability'.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["service", "port"],
+        "properties": {
+          "service": {"type": "string"},
+          "port": {"type": "string"}
+        }
+      }
+    },
+    "bindings": {
+      "description": "Resolved application bindings. A value is computed at start time from the allocated port; the lock pins where it comes from, not the number.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["service", "profile", "attribute", "from"],
+        "properties": {
+          "service": {"type": "string"},
+          "profile": {"type": "string"},
+          "attribute": {"type": "string"},
+          "from": {"type": "string"},
+          "port": {"type": "string"},
+          "pointer": {"type": "string"},
+          "value": {"type": "string"},
+          "person": {"type": "string"}
+        }
+      }
+    },
+    "closed_conflicts": {
+      "description": "Capability conflicts the resolver found and closed, and how. A conflict resolved by leaving a port shut is recorded here rather than forgotten, because the reason it is shut is not visible from the running system.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["profile", "owner", "disclaimed_by", "action"],
+        "properties": {
+          "profile": {"type": "string"},
+          "owner": {"type": "string"},
+          "disclaimed_by": {"type": "string"},
+          "port": {"type": "string"},
+          "action": {"enum": ["port_closed"]},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "rules": {
+      "description": "Every causal rule this run applies, from the world and from the environment, pinned together. A rule added later is a new lock.",
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "target": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {"type": "string"},
+        "command": {"type": "array", "items": {"type": "string"}},
+        "identity": {"type": "string"}
+      }
+    }
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "agentic": {
+      "actor_id": "ines-salgado",
+      "capabilities": [
+        "slack.read",
+        "slack.post",
+        "mail.read",
+        "mail.send"
+      ],
+      "causal_rules": []
+    },
+    "communication": {
+      "calendar_events": [],
+      "calendars": [],
+      "channels": [
+        {
+          "id": "channel-general",
+          "member_ids": [
+            "ines-salgado",
+            "tomas-vidal"
+          ],
+          "messages": [
+            {
+              "author_id": "ines-salgado",
+              "entity_refs": {},
+              "id": "chat-00001",
+              "text": "Short week. One thing shipped and nothing else started.",
+              "timestamp": "2027-02-26T09:12:00Z"
+            },
+            {
+              "author_id": "tomas-vidal",
+              "entity_refs": {},
+              "id": "chat-00002",
+              "text": "The export retry is in. I will watch it over the weekend.",
+              "timestamp": "2027-02-26T09:20:00Z"
+            }
+          ],
+          "name": "general",
+          "topic": "Everything, for now"
+        }
+      ],
+      "documents": [],
+      "mail": []
+    },
+    "finance": {
+      "anchor_invoices": [],
+      "billing_owner_id": "ines-salgado",
+      "currency": "GBP",
+      "customers": [],
+      "history_months": 1,
+      "suppliers": []
+    },
+    "organizations": [
+      {
+        "domain": "tiny-co.worldfixture.test",
+        "id": "tiny-co",
+        "name": "Tiny Co",
+        "primary": true,
+        "slug": "tiny-co",
+        "summary": "A tiny company."
+      }
+    ],
+    "people": [
+      {
+        "email": "ines@tiny-co.worldfixture.test",
+        "github_login": "inessalgado",
+        "id": "ines-salgado",
+        "location": "Lisbon",
+        "name": "Ines Salgado",
+        "organization_id": "tiny-co",
+        "primary": true,
+        "role": "Founder",
+        "slack_id": "U000000001",
+        "team": "leadership"
+      },
+      {
+        "email": "tomas@tiny-co.worldfixture.test",
+        "github_login": "tomasvidal",
+        "id": "tomas-vidal",
+        "location": "Porto",
+        "name": "Tomas Vidal",
+        "organization_id": "tiny-co",
+        "role": "Engineer",
+        "slack_id": "U000000002",
+        "team": "engineering"
+      }
+    ],
+    "site": {
+      "feed": {
+        "description": "Notes from Tiny Co.",
+        "items": [],
+        "path": "/notes",
+        "title": "Tiny Co notes"
+      },
+      "metrics": [],
+      "pages": [],
+      "probes": [],
+      "status": {
+        "incident": null,
+        "issue": null,
+        "status": "operational",
+        "workaround": null
+      }
+    },
+    "software": {
+      "repositories": []
+    },
+    "stories": [],
+    "support": {
+      "cases": []
+    },
+    "work": {
+      "projects": [
+        {
+          "id": "project-exports",
+          "member_ids": [
+            "ines-salgado",
+            "tomas-vidal"
+          ],
+          "name": "Export reliability",
+          "owner_id": "ines-salgado",
+          "start_on": "2027-02-01",
+          "status": "active",
+          "summary": "Make a retried export stop duplicating rows.",
+          "target_on": "2027-04-01"
+        }
+      ],
+      "tasks": [
+        {
+          "assignee_id": "tomas-vidal",
+          "description": "A retry replays the last chunk because progress is recorded after the write.",
+          "due_on": "2027-03-10",
+          "id": "task-00001",
+          "labels": [
+            "bug"
+          ],
+          "priority": "high",
+          "project_id": "project-exports",
+          "reporter_id": "ines-salgado",
+          "status": "in-progress",
+          "title": "Record chunk progress before the write, not after"
+        }
+      ],
+      "time_entries": []
+    }
+  },
+  "id": "tiny-core"
+}

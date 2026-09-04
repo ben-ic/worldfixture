@@ -1,0 +1,123 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "mysql",
+  "version": "10.11.18",
+  "runtime": {
+    "command": [
+      "/usr/local/bin/worldfixture-mysql"
+    ],
+    "readiness": [
+      {
+        "port": "mysql",
+        "protocol": "mysql",
+        "kind": "protocol",
+        "expect": "10"
+      }
+    ],
+    "ports": [
+      {
+        "name": "mysql",
+        "protocol": "mysql",
+        "container_port": 3306,
+        "env": "WORLDFIXTURE_MYSQL_PORT",
+        "env_format": "port",
+        "bind_env": "WORLDFIXTURE_MYSQL_BIND",
+        "published": true
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": false
+      },
+      {
+        "name": "MARIADB_DATABASE",
+        "from": "constant",
+        "value": "worldfixture",
+        "required": true
+      },
+      {
+        "name": "MARIADB_USER",
+        "from": "constant",
+        "value": "worldfixture",
+        "required": true
+      },
+      {
+        "name": "MARIADB_PASSWORD",
+        "from": "constant",
+        "value": "worldfixture-local",
+        "required": true
+      },
+      {
+        "name": "MARIADB_RANDOM_ROOT_PASSWORD",
+        "from": "constant",
+        "value": "yes",
+        "required": true
+      }
+    ],
+    "container": {
+      "name": "worldfixture-mysql",
+      "tag": "docker.io/library/mariadb:10.11.18@sha256:8020e05c4c498d06c87f0a1db010eb79bd6f8fb30e9b763d4690c34ce1e61008"
+    }
+  },
+  "provides": [
+    {
+      "profile": "mysql.wire.v1",
+      "port": "mysql",
+      "binds": [
+        {
+          "name": "host",
+          "from": "port.host"
+        },
+        {
+          "name": "port",
+          "from": "port.port"
+        },
+        {
+          "name": "username",
+          "from": "constant",
+          "value": "worldfixture"
+        },
+        {
+          "name": "password",
+          "from": "constant",
+          "value": "worldfixture-local"
+        },
+        {
+          "name": "database",
+          "from": "constant",
+          "value": "worldfixture"
+        },
+        {
+          "name": "url",
+          "from": "port.connection_url",
+          "scheme": "mysql",
+          "username": "worldfixture",
+          "password": "worldfixture-local",
+          "database": "worldfixture"
+        }
+      ]
+    }
+  ],
+  "world": {
+    "requires": []
+  },
+  "events": {
+    "consumes": [],
+    "produces": []
+  },
+  "lifecycle": {
+    "seed": false,
+    "reset": false,
+    "reset_mechanism": "restart",
+    "verify": false,
+    "recoverable_changes": false,
+    "state": {
+      "export": false,
+      "import": false,
+      "clear_paths": [],
+      "snapshot_paths": []
+    }
+  }
+}

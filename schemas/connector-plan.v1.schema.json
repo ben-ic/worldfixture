@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/connector-plan.v1.schema.json",
+  "title": "WorldFixture connector plan v1",
+  "type": "object",
+  "required": ["api_version", "summary", "mappings", "counts", "warnings"],
+  "properties": {
+    "api_version": {"const": "worldfixture.connector-plan/v1"},
+    "summary": {"type": "string", "minLength": 1},
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target", "status"],
+        "properties": {
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "status": {"enum": ["mapped", "partial", "skipped", "blocked"]},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

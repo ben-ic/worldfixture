@@ -1,0 +1,51 @@
+{
+  "name": "worldfixture",
+  "version": "0.2.2",
+  "description": "Run a local software world and seed a connected application.",
+  "keywords": [
+    "fixture",
+    "world",
+    "simulation",
+    "slack",
+    "imap",
+    "s3",
+    "mcp",
+    "testing",
+    "demo"
+  ],
+  "license": "Apache-2.0",
+  "author": "Benjamin Cates",
+  "type": "module",
+  "bin": {
+    "worldfixture": "runtime/bin/worldfixture.mjs"
+  },
+  "scripts": {
+    "build:worlds": "PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v2/world.json --output dist/business.saas-company.v2 && PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v3/world.json --output dist/business.saas-company.v3 && PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/consumer.retail-brand.v1/world.json --output dist/consumer.retail-brand.v1",
+    "build:workbench": "npm --prefix runtime/workbench-ui ci && npm --prefix runtime/workbench-ui run build",
+    "prepack": "npm run build:worlds && npm run build:workbench"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "NOTICE",
+    "dist/",
+    "docs/connectors/agent-guide.md",
+    "docs/connectors/mapping-guide.md",
+    "docs/connectors/overview.md",
+    "docs/connectors/packs.md",
+    "docs/connectors/project.md",
+    "docs/connectors/protocol-v1.md",
+    "docs/connectors/security.md",
+    "examples/minimal-world/",
+    "runtime/bin/",
+    "runtime/src/",
+    "runtime/workbench-ui/dist/",
+    "schemas/",
+    "skills/"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "worldfixture": {
+    "image": "ghcr.io/ben-ic/worldfixture:0.2.2"
+  }
+}

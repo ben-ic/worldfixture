@@ -1,0 +1,8 @@
+{
+  "name": "worldfixture-regular-app-example",
+  "version": "1.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "test": "node --test worldfixture-connector.test.mjs" }
+}

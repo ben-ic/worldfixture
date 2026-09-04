@@ -1,0 +1,123 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+
+import { startupProgress } from "./cli.mjs";
+import { publishProgress } from "./supervisor.mjs";
+
+const CLEAR = "\r\u001b[2K";
+
+// Capture what the renderer writes, with the terminal answer under our control.
+function render({ tty }) {
+  const written = [];
+  const realWrite = process.stdout.write;
+  const realTty = process.stdout.isTTY;
+  process.stdout.isTTY = tty;
+  process.stdout.write = (chunk) => { written.push(String(chunk)); return true; };
+  const progress = startupProgress();
+  const restore = () => {
+    process.stdout.write = realWrite;
+    process.stdout.isTTY = realTty;
+  };
+  return { progress, written, restore };
+}
+
+// The silence this closes: `up` printed the Workbench URL after about a second
+// and then nothing for another ninety, because the host could only watch for
+// `bindings.json` to appear. The container knew the whole time that everything
+// was up except mail, which was delivering 3,069 messages over LMTP.
+test("progress names the service still working, not just that something is", () => {
+  const { progress, written, restore } = render({ tty: false });
+  try {
+    progress.update({ phase: "starting", services: { emulate: "running", "http-targets": "running", mail: "starting", s3: "starting" } });
+    const line = written.join("");
+    assert.match(line, /2 of 4 services ready/);
+    assert.match(line, /waiting on mail, s3/);
+  } finally {
+    restore();
+  }
+});
+
+// Recording the accepted state stops every service and starts it again, so the
+// count genuinely runs backwards -- 4 of 4, then 2 of 4. A number going
+// backwards reads as something breaking, so the phase is shown instead.
+test("the baseline phase shows what it is doing rather than a count that goes backwards", () => {
+  const { progress, written, restore } = render({ tty: false });
+  try {
+    progress.update({ phase: "capturing-baseline", services: { emulate: "running", mail: "starting" } });
+    const line = written.join("");
+    assert.match(line, /recording the accepted state/);
+    assert.ok(!/\d of \d/.test(line), line);
+  } finally {
+    restore();
+  }
+});
+
+// A progress display that fills a CI log with thousands of identical lines is
+// worse than no progress display.
+test("piped output prints each distinct state once and never repeats itself", () => {
+  const { progress, written, restore } = render({ tty: false });
+  try {
+    const state = { phase: "starting", services: { emulate: "running", mail: "starting" } };
+    for (let i = 0; i < 20; i += 1) progress.update(state);
+    progress.update({ phase: "starting", services: { emulate: "running", mail: "running" } });
+    assert.equal(written.length, 2, written.join(""));
+    // Nothing to erase when there is no cursor to move.
+    progress.done();
+    assert.equal(written.length, 2);
+  } finally {
+    restore();
+  }
+});
+
+test("a terminal rewrites one line and clears it when the wait is over", () => {
+  const { progress, written, restore } = render({ tty: true });
+  try {
+    progress.update({ phase: "starting", services: { emulate: "running", mail: "starting" } });
+    progress.update({ phase: "starting", services: { emulate: "running", mail: "running" } });
+    progress.done();
+    const output = written.join("");
+    assert.ok(output.includes(CLEAR), "the line is rewritten in place");
+    assert.ok(output.endsWith(CLEAR), "the line is cleared when it is done");
+    // One line rewritten, not a scrolling log.
+    assert.equal(output.split("\n").length, 2);
+  } finally {
+    restore();
+  }
+});
+
+test("an instance with no services to report writes nothing to the screen", () => {
+  const { progress, written, restore } = render({ tty: false });
+  try {
+    progress.update({ phase: "starting", services: {} });
+    assert.equal(written.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+// The container publishes it; the host reads it. Best-effort, because a run must
+// not fail because a progress file could not be written.
+test("the runtime publishes its phase and every service state where the host can read it", () => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-progress-"));
+  try {
+    publishProgress({
+      stateDir,
+      phase: "starting",
+      serviceStates: new Map([["emulate", "running"], ["mail", "starting"]]),
+    });
+
+    const written = JSON.parse(readFileSync(join(stateDir, "progress.json"), "utf8"));
+    assert.equal(written.api_version, "worldfixture.progress/v1");
+    assert.equal(written.phase, "starting");
+    assert.deepEqual(written.services, { emulate: "running", mail: "starting" });
+    assert.ok(Number.isFinite(Date.parse(written.updated_at)));
+
+    assert.doesNotThrow(() => publishProgress({ stateDir: undefined, phase: "starting", serviceStates: new Map() }));
+    assert.doesNotThrow(() => publishProgress({ stateDir: "/nowhere/at/all", phase: "starting", serviceStates: new Map() }));
+  } finally {
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});

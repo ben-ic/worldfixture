@@ -1,0 +1,44 @@
+{
+  "api_version": "worldfixture.world-manifest/v1",
+  "world": {
+    "id": "consumer.retail-brand",
+    "version": "v1",
+    "profile": "business.operations/v1",
+    "title": "Marlow & Pine — the week before a drop",
+    "synthetic_notice": "This is a fictional brand and every person, organization, order, review, message, and financial record is synthetic.",
+    "categories": [
+      "consumer",
+      "commerce",
+      "business-finance",
+      "communication",
+      "social",
+      "support"
+    ],
+    "scenario": {
+      "id": "normal-operations",
+      "class": "normal",
+      "title": "A small consumer brand launching a collection, replacing a faulty one, and correcting its own billing"
+    },
+    "clock": {
+      "anchor": "2027-03-18T09:00:00Z",
+      "timezone": "America/New_York",
+      "locale": "en-US",
+      "rebase": {
+        "relative_paths": [
+          "clock",
+          "commerce",
+          "communication",
+          "finance.anchor_invoices",
+          "social",
+          "support",
+          "work"
+        ]
+      }
+    }
+  },
+  "fragments": [
+    "backbones/marlow-pine.json",
+    "packs/retail-operations.json",
+    "stories/spring-drop.json"
+  ]
+}

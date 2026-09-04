@@ -1,0 +1,4208 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "commerce": {
+      "orders": [
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 500,
+          "id": "order-10001",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            },
+            {
+              "product_id": "prod-fieldstone-plate",
+              "quantity": 1,
+              "unit_amount_cents": 3600
+            }
+          ],
+          "number": "MP-10001",
+          "placed_on": "2027-03-14",
+          "shipping_cents": 0,
+          "shipping_city": "Tucson",
+          "shopper_id": "alma-reyes",
+          "status": "placed",
+          "subtotal_cents": 8400,
+          "total_cents": 7900
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10002",
+          "items": [
+            {
+              "product_id": "prod-cast-skillet",
+              "quantity": 1,
+              "unit_amount_cents": 8900
+            }
+          ],
+          "number": "MP-10002",
+          "placed_on": "2027-03-13",
+          "shipping_cents": 0,
+          "shipping_city": "Providence",
+          "shopper_id": "hugo-marchetti",
+          "status": "placed",
+          "subtotal_cents": 8900,
+          "total_cents": 8900
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10003",
+          "items": [
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            }
+          ],
+          "number": "MP-10003",
+          "placed_on": "2027-03-11",
+          "shipping_cents": 795,
+          "shipping_city": "Buffalo",
+          "shopper_id": "orla-brennan",
+          "status": "packed",
+          "subtotal_cents": 4200,
+          "total_cents": 4995
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10004",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-jug",
+              "quantity": 1,
+              "unit_amount_cents": 5800
+            }
+          ],
+          "number": "MP-10004",
+          "placed_on": "2027-03-10",
+          "shipping_cents": 795,
+          "shipping_city": "Spokane",
+          "shopper_id": "vera-pahlsson",
+          "status": "packed",
+          "subtotal_cents": 5800,
+          "total_cents": 6595
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10005",
+          "items": [
+            {
+              "product_id": "prod-cast-skillet",
+              "quantity": 1,
+              "unit_amount_cents": 8900
+            }
+          ],
+          "number": "MP-10005",
+          "placed_on": "2027-03-08",
+          "shipping_cents": 0,
+          "shipping_city": "New Orleans",
+          "shopper_id": "esme-fontaine",
+          "status": "packed",
+          "subtotal_cents": 8900,
+          "total_cents": 8900
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10006",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 2,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10006",
+          "placed_on": "2027-03-07",
+          "shipping_cents": 795,
+          "shipping_city": "Philadelphia",
+          "shopper_id": "leo-santoro",
+          "status": "packed",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10007",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-plate",
+              "quantity": 1,
+              "unit_amount_cents": 3600
+            },
+            {
+              "product_id": "prod-linen-apron",
+              "quantity": 1,
+              "unit_amount_cents": 6400
+            }
+          ],
+          "number": "MP-10007",
+          "placed_on": "2027-03-05",
+          "shipped_on": "2027-03-07",
+          "shipping_cents": 0,
+          "shipping_city": "Tacoma",
+          "shopper_id": "soren-mikkelsen",
+          "status": "shipped",
+          "subtotal_cents": 10000,
+          "total_cents": 10000
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10008",
+          "items": [
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            },
+            {
+              "product_id": "prod-oak-board",
+              "quantity": 1,
+              "unit_amount_cents": 5200
+            }
+          ],
+          "number": "MP-10008",
+          "placed_on": "2027-03-04",
+          "shipped_on": "2027-03-06",
+          "shipping_cents": 0,
+          "shipping_city": "Sacramento",
+          "shopper_id": "bennett-cho",
+          "status": "shipped",
+          "subtotal_cents": 9400,
+          "total_cents": 9400
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10009",
+          "items": [
+            {
+              "product_id": "prod-cast-skillet",
+              "quantity": 1,
+              "unit_amount_cents": 8900
+            }
+          ],
+          "number": "MP-10009",
+          "placed_on": "2027-03-02",
+          "shipped_on": "2027-03-04",
+          "shipping_cents": 0,
+          "shipping_city": "Asheville",
+          "shopper_id": "imogen-bell",
+          "status": "shipped",
+          "subtotal_cents": 8900,
+          "total_cents": 8900
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10010",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-mug",
+              "quantity": 1,
+              "unit_amount_cents": 2800
+            },
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            }
+          ],
+          "number": "MP-10010",
+          "placed_on": "2027-03-01",
+          "shipped_on": "2027-03-03",
+          "shipping_cents": 795,
+          "shipping_city": "Fargo",
+          "shopper_id": "paavo-virtanen",
+          "status": "shipped",
+          "subtotal_cents": 7000,
+          "total_cents": 7795
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10011",
+          "items": [
+            {
+              "product_id": "prod-olive-oil",
+              "quantity": 1,
+              "unit_amount_cents": 3200
+            }
+          ],
+          "number": "MP-10011",
+          "placed_on": "2027-02-27",
+          "shipped_on": "2027-03-01",
+          "shipping_cents": 795,
+          "shipping_city": "Charlotte",
+          "shopper_id": "wes-agyeman",
+          "status": "shipped",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 500,
+          "id": "order-10012",
+          "items": [
+            {
+              "product_id": "prod-beeswax-wrap",
+              "quantity": 1,
+              "unit_amount_cents": 2400
+            }
+          ],
+          "number": "MP-10012",
+          "placed_on": "2027-02-26",
+          "shipped_on": "2027-02-28",
+          "shipping_cents": 795,
+          "shipping_city": "Atlanta",
+          "shopper_id": "franklin-obi",
+          "status": "shipped",
+          "subtotal_cents": 2400,
+          "total_cents": 2695
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10013",
+          "items": [
+            {
+              "product_id": "prod-oak-board",
+              "quantity": 1,
+              "unit_amount_cents": 5200
+            },
+            {
+              "product_id": "prod-fieldstone-mug",
+              "quantity": 1,
+              "unit_amount_cents": 2800
+            }
+          ],
+          "number": "MP-10013",
+          "placed_on": "2027-02-24",
+          "shipped_on": "2027-02-26",
+          "shipping_cents": 0,
+          "shipping_city": "Houston",
+          "shopper_id": "maren-oduya",
+          "status": "shipped",
+          "subtotal_cents": 8000,
+          "total_cents": 8000
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10014",
+          "items": [
+            {
+              "product_id": "prod-olive-oil",
+              "quantity": 1,
+              "unit_amount_cents": 3200
+            }
+          ],
+          "number": "MP-10014",
+          "placed_on": "2027-02-23",
+          "shipped_on": "2027-02-25",
+          "shipping_cents": 795,
+          "shipping_city": "Burlington",
+          "shopper_id": "tilda-nyberg",
+          "status": "shipped",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10015",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10015",
+          "placed_on": "2027-02-21",
+          "shipped_on": "2027-02-23",
+          "shipping_cents": 795,
+          "shipping_city": "Madison",
+          "shopper_id": "clara-voight",
+          "status": "shipped",
+          "subtotal_cents": 4800,
+          "total_cents": 5595
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10016",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 2,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10016",
+          "placed_on": "2027-02-20",
+          "shipped_on": "2027-02-22",
+          "shipping_cents": 795,
+          "shipping_city": "Milwaukee",
+          "shopper_id": "jonas-wirth",
+          "status": "delivered",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10017",
+          "items": [
+            {
+              "product_id": "prod-olive-oil",
+              "quantity": 1,
+              "unit_amount_cents": 3200
+            }
+          ],
+          "number": "MP-10017",
+          "placed_on": "2027-02-18",
+          "shipped_on": "2027-02-20",
+          "shipping_cents": 795,
+          "shipping_city": "Baltimore",
+          "shopper_id": "quinn-abara",
+          "status": "delivered",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10018",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10018",
+          "placed_on": "2027-02-17",
+          "shipped_on": "2027-02-19",
+          "shipping_cents": 795,
+          "shipping_city": "Glendale",
+          "shopper_id": "zoya-petrosyan",
+          "status": "returned",
+          "subtotal_cents": 4800,
+          "total_cents": 5595
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10019",
+          "items": [
+            {
+              "product_id": "prod-linen-apron",
+              "quantity": 1,
+              "unit_amount_cents": 6400
+            }
+          ],
+          "number": "MP-10019",
+          "placed_on": "2027-02-15",
+          "shipped_on": "2027-02-17",
+          "shipping_cents": 795,
+          "shipping_city": "Duluth",
+          "shopper_id": "greta-lindholm",
+          "status": "shipped",
+          "subtotal_cents": 6400,
+          "total_cents": 7195
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10020",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10020",
+          "placed_on": "2027-02-14",
+          "shipped_on": "2027-02-16",
+          "shipping_cents": 795,
+          "shipping_city": "Boise",
+          "shopper_id": "nils-bergstrom",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10021",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10021",
+          "placed_on": "2027-02-12",
+          "shipped_on": "2027-02-14",
+          "shipping_cents": 795,
+          "shipping_city": "Kansas City",
+          "shopper_id": "umberto-rossi",
+          "status": "delivered",
+          "subtotal_cents": 4800,
+          "total_cents": 5595
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10022",
+          "items": [
+            {
+              "product_id": "prod-oak-board",
+              "quantity": 1,
+              "unit_amount_cents": 5200
+            }
+          ],
+          "number": "MP-10022",
+          "placed_on": "2027-02-11",
+          "shipped_on": "2027-02-13",
+          "shipping_cents": 795,
+          "shipping_city": "Cleveland",
+          "shopper_id": "dmitri-sokolov",
+          "status": "delivered",
+          "subtotal_cents": 5200,
+          "total_cents": 5995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 500,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10023",
+          "items": [
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            }
+          ],
+          "number": "MP-10023",
+          "placed_on": "2027-02-09",
+          "shipped_on": "2027-02-11",
+          "shipping_cents": 795,
+          "shipping_city": "Honolulu",
+          "shopper_id": "kaia-nakamura",
+          "status": "shipped",
+          "subtotal_cents": 4200,
+          "total_cents": 4495
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10024",
+          "items": [
+            {
+              "product_id": "prod-linen-apron",
+              "quantity": 1,
+              "unit_amount_cents": 6400
+            }
+          ],
+          "number": "MP-10024",
+          "placed_on": "2027-02-08",
+          "shipped_on": "2027-02-10",
+          "shipping_cents": 795,
+          "shipping_city": "Dearborn",
+          "shopper_id": "rania-haddad",
+          "status": "delivered",
+          "subtotal_cents": 6400,
+          "total_cents": 7195
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10025",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10025",
+          "placed_on": "2027-02-06",
+          "shipped_on": "2027-02-08",
+          "shipping_cents": 795,
+          "shipping_city": "Tucson",
+          "shopper_id": "alma-reyes",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10026",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 2,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10026",
+          "placed_on": "2027-02-05",
+          "shipped_on": "2027-02-07",
+          "shipping_cents": 795,
+          "shipping_city": "Providence",
+          "shopper_id": "hugo-marchetti",
+          "status": "delivered",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10027",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10027",
+          "placed_on": "2027-02-03",
+          "shipped_on": "2027-02-05",
+          "shipping_cents": 795,
+          "shipping_city": "Buffalo",
+          "shopper_id": "orla-brennan",
+          "status": "shipped",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10028",
+          "items": [
+            {
+              "product_id": "prod-linen-apron",
+              "quantity": 1,
+              "unit_amount_cents": 6400
+            },
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10028",
+          "placed_on": "2027-02-02",
+          "shipped_on": "2027-02-04",
+          "shipping_cents": 0,
+          "shipping_city": "Spokane",
+          "shopper_id": "vera-pahlsson",
+          "status": "delivered",
+          "subtotal_cents": 8000,
+          "total_cents": 8000
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10029",
+          "items": [
+            {
+              "product_id": "prod-cast-skillet",
+              "quantity": 1,
+              "unit_amount_cents": 8900
+            }
+          ],
+          "number": "MP-10029",
+          "placed_on": "2027-01-31",
+          "shipped_on": "2027-02-02",
+          "shipping_cents": 0,
+          "shipping_city": "New Orleans",
+          "shopper_id": "esme-fontaine",
+          "status": "delivered",
+          "subtotal_cents": 8900,
+          "total_cents": 8900
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10030",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10030",
+          "placed_on": "2027-01-30",
+          "shipped_on": "2027-02-01",
+          "shipping_cents": 795,
+          "shipping_city": "Philadelphia",
+          "shopper_id": "leo-santoro",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10031",
+          "items": [
+            {
+              "product_id": "prod-linen-apron",
+              "quantity": 1,
+              "unit_amount_cents": 6400
+            },
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 2,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10031",
+          "placed_on": "2027-01-28",
+          "shipped_on": "2027-01-30",
+          "shipping_cents": 0,
+          "shipping_city": "Tacoma",
+          "shopper_id": "soren-mikkelsen",
+          "status": "shipped",
+          "subtotal_cents": 9600,
+          "total_cents": 9600
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10032",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10032",
+          "placed_on": "2027-01-27",
+          "shipped_on": "2027-01-29",
+          "shipping_cents": 795,
+          "shipping_city": "Sacramento",
+          "shopper_id": "bennett-cho",
+          "status": "delivered",
+          "subtotal_cents": 4800,
+          "total_cents": 5595
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10033",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10033",
+          "placed_on": "2027-01-25",
+          "shipped_on": "2027-01-27",
+          "shipping_cents": 795,
+          "shipping_city": "Asheville",
+          "shopper_id": "imogen-bell",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 500,
+          "id": "order-10034",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10034",
+          "placed_on": "2027-01-24",
+          "shipped_on": "2027-01-26",
+          "shipping_cents": 795,
+          "shipping_city": "Fargo",
+          "shopper_id": "paavo-virtanen",
+          "status": "delivered",
+          "subtotal_cents": 4800,
+          "total_cents": 5095
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10035",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10035",
+          "placed_on": "2027-01-22",
+          "shipped_on": "2027-01-24",
+          "shipping_cents": 795,
+          "shipping_city": "Charlotte",
+          "shopper_id": "wes-agyeman",
+          "status": "shipped",
+          "subtotal_cents": 4800,
+          "total_cents": 5595
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10036",
+          "items": [
+            {
+              "product_id": "prod-beeswax-wrap",
+              "quantity": 1,
+              "unit_amount_cents": 2400
+            }
+          ],
+          "number": "MP-10036",
+          "placed_on": "2027-01-21",
+          "shipped_on": "2027-01-23",
+          "shipping_cents": 795,
+          "shipping_city": "Atlanta",
+          "shopper_id": "franklin-obi",
+          "status": "delivered",
+          "subtotal_cents": 2400,
+          "total_cents": 3195
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10037",
+          "items": [
+            {
+              "product_id": "prod-beeswax-wrap",
+              "quantity": 1,
+              "unit_amount_cents": 2400
+            }
+          ],
+          "number": "MP-10037",
+          "placed_on": "2027-01-19",
+          "shipped_on": "2027-01-21",
+          "shipping_cents": 795,
+          "shipping_city": "Houston",
+          "shopper_id": "maren-oduya",
+          "status": "delivered",
+          "subtotal_cents": 2400,
+          "total_cents": 3195
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10038",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10038",
+          "placed_on": "2027-01-18",
+          "shipped_on": "2027-01-20",
+          "shipping_cents": 795,
+          "shipping_city": "Burlington",
+          "shopper_id": "tilda-nyberg",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10039",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10039",
+          "placed_on": "2027-01-16",
+          "shipped_on": "2027-01-18",
+          "shipping_cents": 795,
+          "shipping_city": "Madison",
+          "shopper_id": "clara-voight",
+          "status": "shipped",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10040",
+          "items": [
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            }
+          ],
+          "number": "MP-10040",
+          "placed_on": "2027-01-15",
+          "shipped_on": "2027-01-17",
+          "shipping_cents": 795,
+          "shipping_city": "Milwaukee",
+          "shopper_id": "jonas-wirth",
+          "status": "delivered",
+          "subtotal_cents": 4200,
+          "total_cents": 4995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10041",
+          "items": [
+            {
+              "product_id": "prod-beeswax-wrap",
+              "quantity": 1,
+              "unit_amount_cents": 2400
+            }
+          ],
+          "number": "MP-10041",
+          "placed_on": "2027-01-13",
+          "shipped_on": "2027-01-15",
+          "shipping_cents": 795,
+          "shipping_city": "Baltimore",
+          "shopper_id": "quinn-abara",
+          "status": "delivered",
+          "subtotal_cents": 2400,
+          "total_cents": 3195
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10042",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10042",
+          "placed_on": "2027-01-12",
+          "shipped_on": "2027-01-14",
+          "shipping_cents": 795,
+          "shipping_city": "Glendale",
+          "shopper_id": "zoya-petrosyan",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10043",
+          "items": [
+            {
+              "product_id": "prod-linen-apron",
+              "quantity": 1,
+              "unit_amount_cents": 6400
+            },
+            {
+              "product_id": "prod-oak-board",
+              "quantity": 1,
+              "unit_amount_cents": 5200
+            },
+            {
+              "product_id": "prod-beeswax-wrap",
+              "quantity": 1,
+              "unit_amount_cents": 2400
+            }
+          ],
+          "number": "MP-10043",
+          "placed_on": "2027-01-10",
+          "shipped_on": "2027-01-12",
+          "shipping_cents": 0,
+          "shipping_city": "Duluth",
+          "shopper_id": "greta-lindholm",
+          "status": "shipped",
+          "subtotal_cents": 14000,
+          "total_cents": 14000
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10044",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10044",
+          "placed_on": "2027-01-09",
+          "shipped_on": "2027-01-11",
+          "shipping_cents": 795,
+          "shipping_city": "Boise",
+          "shopper_id": "nils-bergstrom",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 500,
+          "id": "order-10045",
+          "items": [
+            {
+              "product_id": "prod-linen-runner",
+              "quantity": 1,
+              "unit_amount_cents": 4800
+            }
+          ],
+          "number": "MP-10045",
+          "placed_on": "2027-01-07",
+          "shipped_on": "2027-01-09",
+          "shipping_cents": 795,
+          "shipping_city": "Kansas City",
+          "shopper_id": "umberto-rossi",
+          "status": "delivered",
+          "subtotal_cents": 4800,
+          "total_cents": 5095
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10046",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 2,
+              "unit_amount_cents": 1600
+            },
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            }
+          ],
+          "number": "MP-10046",
+          "placed_on": "2027-01-06",
+          "shipped_on": "2027-01-08",
+          "shipping_cents": 795,
+          "shipping_city": "Cleveland",
+          "shopper_id": "dmitri-sokolov",
+          "status": "delivered",
+          "subtotal_cents": 7400,
+          "total_cents": 8195
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "fulfilment_note": "Scanned onto the 12 March pallet. No carrier movement since.",
+          "id": "order-10047",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10047",
+          "placed_on": "2027-01-04",
+          "shipped_on": "2027-01-06",
+          "shipping_cents": 795,
+          "shipping_city": "Honolulu",
+          "shopper_id": "kaia-nakamura",
+          "status": "shipped",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10048",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10048",
+          "placed_on": "2027-01-03",
+          "shipped_on": "2027-01-05",
+          "shipping_cents": 795,
+          "shipping_city": "Dearborn",
+          "shopper_id": "rania-haddad",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10049",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10049",
+          "placed_on": "2027-01-01",
+          "shipped_on": "2027-01-03",
+          "shipping_cents": 795,
+          "shipping_city": "Tucson",
+          "shopper_id": "alma-reyes",
+          "status": "delivered",
+          "subtotal_cents": 1600,
+          "total_cents": 2395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10050",
+          "items": [
+            {
+              "product_id": "prod-oak-board",
+              "quantity": 1,
+              "unit_amount_cents": 5200
+            },
+            {
+              "product_id": "prod-olive-oil",
+              "quantity": 1,
+              "unit_amount_cents": 3200
+            }
+          ],
+          "number": "MP-10050",
+          "placed_on": "2026-12-31",
+          "shipped_on": "2027-01-02",
+          "shipping_cents": 0,
+          "shipping_city": "Providence",
+          "shopper_id": "hugo-marchetti",
+          "status": "delivered",
+          "subtotal_cents": 8400,
+          "total_cents": 8400
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10051",
+          "items": [
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 2,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "number": "MP-10051",
+          "placed_on": "2026-12-29",
+          "shipped_on": "2026-12-31",
+          "shipping_cents": 795,
+          "shipping_city": "Buffalo",
+          "shopper_id": "orla-brennan",
+          "status": "delivered",
+          "subtotal_cents": 3200,
+          "total_cents": 3995
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10052",
+          "items": [
+            {
+              "product_id": "prod-beeswax-wrap",
+              "quantity": 1,
+              "unit_amount_cents": 2400
+            }
+          ],
+          "number": "MP-10052",
+          "placed_on": "2026-12-28",
+          "shipped_on": "2026-12-30",
+          "shipping_cents": 795,
+          "shipping_city": "Spokane",
+          "shopper_id": "vera-pahlsson",
+          "status": "returned",
+          "subtotal_cents": 2400,
+          "total_cents": 3195
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10101",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 2,
+              "unit_amount_cents": 2600
+            }
+          ],
+          "note": "One of the affected Harbour mug orders.",
+          "number": "MP-10101",
+          "placed_on": "2026-09-13",
+          "shipped_on": "2026-09-15",
+          "shipping_cents": 795,
+          "shipping_city": "Madison",
+          "shopper_id": "clara-voight",
+          "status": "delivered",
+          "subtotal_cents": 5200,
+          "total_cents": 5995
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10102",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 4,
+              "unit_amount_cents": 2600
+            },
+            {
+              "product_id": "prod-sea-salt",
+              "quantity": 1,
+              "unit_amount_cents": 1600
+            }
+          ],
+          "note": "One of the affected Harbour mug orders.",
+          "number": "MP-10102",
+          "placed_on": "2026-09-27",
+          "shipped_on": "2026-09-29",
+          "shipping_cents": 0,
+          "shipping_city": "Atlanta",
+          "shopper_id": "franklin-obi",
+          "status": "delivered",
+          "subtotal_cents": 12000,
+          "total_cents": 12000
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10103",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 2,
+              "unit_amount_cents": 2600
+            },
+            {
+              "product_id": "prod-oak-board",
+              "quantity": 1,
+              "unit_amount_cents": 5200
+            }
+          ],
+          "note": "One of the affected Harbour mug orders.",
+          "number": "MP-10103",
+          "placed_on": "2026-10-04",
+          "shipped_on": "2026-10-06",
+          "shipping_cents": 0,
+          "shipping_city": "Boise",
+          "shopper_id": "nils-bergstrom",
+          "status": "delivered",
+          "subtotal_cents": 10400,
+          "total_cents": 10400
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10104",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 1,
+              "unit_amount_cents": 2600
+            }
+          ],
+          "note": "Returned for crazing before the fault was understood.",
+          "number": "MP-10104",
+          "placed_on": "2026-10-11",
+          "shipped_on": "2026-10-13",
+          "shipping_cents": 795,
+          "shipping_city": "Dearborn",
+          "shopper_id": "rania-haddad",
+          "status": "returned",
+          "subtotal_cents": 2600,
+          "total_cents": 3395
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10105",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 2,
+              "unit_amount_cents": 2600
+            }
+          ],
+          "note": "Refunded for crazing before the fault was understood.",
+          "number": "MP-10105",
+          "placed_on": "2026-10-18",
+          "shipped_on": "2026-10-20",
+          "shipping_cents": 795,
+          "shipping_city": "Charlotte",
+          "shopper_id": "wes-agyeman",
+          "status": "refunded",
+          "subtotal_cents": 5200,
+          "total_cents": 5995
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10106",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 3,
+              "unit_amount_cents": 2600
+            }
+          ],
+          "note": "One of the affected Harbour mug orders.",
+          "number": "MP-10106",
+          "placed_on": "2026-10-25",
+          "shipped_on": "2026-10-27",
+          "shipping_cents": 0,
+          "shipping_city": "Asheville",
+          "shopper_id": "imogen-bell",
+          "status": "delivered",
+          "subtotal_cents": 7800,
+          "total_cents": 7800
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10201",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-bowl",
+              "quantity": 1,
+              "unit_amount_cents": 7400
+            },
+            {
+              "product_id": "prod-fieldstone-mug",
+              "quantity": 2,
+              "unit_amount_cents": 2800
+            }
+          ],
+          "note": "Preorder. Ships when the second kiln run passes inspection.",
+          "number": "MP-10201",
+          "placed_on": "2027-03-15",
+          "shipping_cents": 0,
+          "shipping_city": "Tucson",
+          "shopper_id": "alma-reyes",
+          "status": "placed",
+          "subtotal_cents": 13000,
+          "total_cents": 13000
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10202",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-bowl",
+              "quantity": 1,
+              "unit_amount_cents": 7400
+            }
+          ],
+          "note": "Preorder. Ships when the second kiln run passes inspection.",
+          "number": "MP-10202",
+          "placed_on": "2027-03-16",
+          "shipping_cents": 795,
+          "shipping_city": "Honolulu",
+          "shopper_id": "kaia-nakamura",
+          "status": "placed",
+          "subtotal_cents": 7400,
+          "total_cents": 8195
+        },
+        {
+          "channel": "storefront",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10203",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-bowl",
+              "quantity": 2,
+              "unit_amount_cents": 7400
+            },
+            {
+              "product_id": "prod-fieldstone-plate",
+              "quantity": 4,
+              "unit_amount_cents": 3600
+            }
+          ],
+          "note": "Preorder. Ships when the second kiln run passes inspection.",
+          "number": "MP-10203",
+          "placed_on": "2027-03-16",
+          "shipping_cents": 0,
+          "shipping_city": "Tacoma",
+          "shopper_id": "soren-mikkelsen",
+          "status": "placed",
+          "subtotal_cents": 29200,
+          "total_cents": 29200
+        },
+        {
+          "channel": "storefront-mobile",
+          "currency": "USD",
+          "discount_cents": 0,
+          "id": "order-10204",
+          "items": [
+            {
+              "product_id": "prod-fieldstone-bowl",
+              "quantity": 1,
+              "unit_amount_cents": 7400
+            },
+            {
+              "product_id": "prod-linen-napkins",
+              "quantity": 1,
+              "unit_amount_cents": 4200
+            }
+          ],
+          "note": "Preorder. Ships when the second kiln run passes inspection.",
+          "number": "MP-10204",
+          "placed_on": "2027-03-17",
+          "shipping_cents": 0,
+          "shipping_city": "Glendale",
+          "shopper_id": "zoya-petrosyan",
+          "status": "placed",
+          "subtotal_cents": 11600,
+          "total_cents": 11600
+        }
+      ],
+      "products": [
+        {
+          "category": "stoneware",
+          "collection": "Fieldstone",
+          "currency": "USD",
+          "id": "prod-fieldstone-mug",
+          "launched_on": "2027-02-22",
+          "name": "Fieldstone mug",
+          "price_cents": 2800,
+          "sku": "FS-MUG-01",
+          "status": "active",
+          "summary": "A twelve-ounce stoneware mug in the new Fieldstone glaze."
+        },
+        {
+          "category": "stoneware",
+          "collection": "Fieldstone",
+          "currency": "USD",
+          "id": "prod-fieldstone-bowl",
+          "launched_on": "2027-03-25",
+          "name": "Fieldstone serving bowl",
+          "price_cents": 7400,
+          "sku": "FS-BWL-01",
+          "status": "preorder",
+          "summary": "A wide serving bowl, thrown and glazed in small batches."
+        },
+        {
+          "category": "stoneware",
+          "collection": "Fieldstone",
+          "currency": "USD",
+          "id": "prod-fieldstone-plate",
+          "launched_on": "2027-02-22",
+          "name": "Fieldstone dinner plate",
+          "price_cents": 3600,
+          "sku": "FS-PLT-01",
+          "status": "active",
+          "summary": "A ten-inch dinner plate with an unglazed foot."
+        },
+        {
+          "category": "stoneware",
+          "collection": "Fieldstone",
+          "currency": "USD",
+          "id": "prod-fieldstone-jug",
+          "launched_on": "2027-02-22",
+          "name": "Fieldstone water jug",
+          "price_cents": 5800,
+          "sku": "FS-JUG-01",
+          "status": "active",
+          "summary": "A one-litre jug for water or milk, dishwasher safe."
+        },
+        {
+          "category": "linen",
+          "collection": "Kitchen linens",
+          "currency": "USD",
+          "id": "prod-linen-apron",
+          "launched_on": "2025-07-06",
+          "name": "Washed linen apron",
+          "price_cents": 6400,
+          "sku": "LN-APR-02",
+          "status": "active",
+          "summary": "A cross-back apron in washed European linen."
+        },
+        {
+          "category": "linen",
+          "collection": "Kitchen linens",
+          "currency": "USD",
+          "id": "prod-linen-napkins",
+          "launched_on": "2025-07-06",
+          "name": "Linen napkin set of four",
+          "price_cents": 4200,
+          "sku": "LN-NAP-04",
+          "status": "active",
+          "summary": "Four hemmed napkins that soften with every wash."
+        },
+        {
+          "category": "linen",
+          "collection": "Kitchen linens",
+          "currency": "USD",
+          "id": "prod-linen-runner",
+          "launched_on": "2026-02-01",
+          "name": "Linen table runner",
+          "price_cents": 4800,
+          "sku": "LN-RUN-01",
+          "status": "active",
+          "summary": "A two-metre runner for a long table."
+        },
+        {
+          "category": "cookware",
+          "collection": "Cookware",
+          "currency": "USD",
+          "id": "prod-cast-skillet",
+          "launched_on": "2025-01-07",
+          "name": "Cast iron skillet",
+          "price_cents": 8900,
+          "sku": "CK-SKL-10",
+          "status": "active",
+          "summary": "A pre-seasoned ten-inch skillet, made in Ohio."
+        },
+        {
+          "category": "wood",
+          "collection": "Table",
+          "currency": "USD",
+          "id": "prod-oak-board",
+          "launched_on": "2025-09-24",
+          "name": "Oak serving board",
+          "price_cents": 5200,
+          "sku": "WD-BRD-01",
+          "status": "active",
+          "summary": "A white oak board finished with food-safe oil."
+        },
+        {
+          "category": "pantry",
+          "collection": "Pantry",
+          "currency": "USD",
+          "id": "prod-beeswax-wrap",
+          "launched_on": "2026-05-22",
+          "name": "Beeswax wrap set",
+          "price_cents": 2400,
+          "sku": "PT-WRP-03",
+          "status": "active",
+          "summary": "Three cotton wraps in small, medium and large."
+        },
+        {
+          "category": "pantry",
+          "collection": "Pantry",
+          "currency": "USD",
+          "id": "prod-sea-salt",
+          "launched_on": "2026-05-22",
+          "name": "Flaked sea salt tin",
+          "price_cents": 1600,
+          "sku": "PT-SLT-01",
+          "status": "active",
+          "summary": "A refillable tin of flaked sea salt."
+        },
+        {
+          "category": "pantry",
+          "collection": "Pantry",
+          "currency": "USD",
+          "id": "prod-olive-oil",
+          "launched_on": "2026-05-22",
+          "name": "Cold-pressed olive oil",
+          "price_cents": 3200,
+          "sku": "PT-OIL-01",
+          "status": "active",
+          "summary": "A 500ml tin from a single grove, pressed each November."
+        },
+        {
+          "category": "stoneware",
+          "collection": "Harbour",
+          "currency": "USD",
+          "id": "prod-harbour-mug",
+          "launched_on": "2025-11-03",
+          "name": "Harbour mug (first run)",
+          "price_cents": 2600,
+          "sku": "HB-MUG-01",
+          "status": "retired",
+          "summary": "The first stoneware mug Marlow & Pine sold. Withdrawn after the glaze fault."
+        },
+        {
+          "category": "home",
+          "collection": "Home",
+          "currency": "USD",
+          "id": "prod-candle-pair",
+          "launched_on": "2026-10-29",
+          "name": "Bayberry candle pair",
+          "price_cents": 3400,
+          "sku": "HM-CND-02",
+          "status": "sold-out",
+          "summary": "Two hand-poured bayberry candles, made once a year."
+        }
+      ]
+    },
+    "communication": {
+      "bots": [
+        {
+          "name": "marlow-helper"
+        }
+      ],
+      "calendar_events": [
+        {
+          "attendees": [
+            "iris@marlowandpine.worldfixture.test",
+            "mira@marlowandpine.worldfixture.test",
+            "kit@marlowandpine.worldfixture.test",
+            "bea@marlowandpine.worldfixture.test"
+          ],
+          "calendar_id": "calendar-company",
+          "description": "Decide whether the serving bowl opens as a preorder or holds the collection.",
+          "end": "2027-03-19T11:45:00Z",
+          "id": "event-fieldstone-go-no-go",
+          "start": "2027-03-19T11:00:00Z",
+          "summary": "Fieldstone go or no-go"
+        },
+        {
+          "attendees": [
+            "rosa@marlowandpine.worldfixture.test",
+            "tomas@marlowandpine.worldfixture.test",
+            "felix@marlowandpine.worldfixture.test"
+          ],
+          "calendar_id": "calendar-company",
+          "description": "Credit notes, the retry fix, and what April's run needs before it opens.",
+          "end": "2027-03-20T15:30:00Z",
+          "id": "event-club-billing-review",
+          "start": "2027-03-20T15:00:00Z",
+          "summary": "Pantry Club billing review"
+        },
+        {
+          "attendees": [
+            "callum@marlowandpine.worldfixture.test",
+            "otto@marlowandpine.worldfixture.test",
+            "desmond@swiftline.worldfixture.test"
+          ],
+          "calendar_id": "calendar-company",
+          "description": "Pallet trace, the eleven orders, and the empty-scan guard.",
+          "end": "2027-03-23T14:30:00Z",
+          "id": "event-swiftline-weekly",
+          "start": "2027-03-23T14:00:00Z",
+          "summary": "Swiftline weekly"
+        },
+        {
+          "attendees": [
+            "lena@marlowandpine.worldfixture.test",
+            "bea@marlowandpine.worldfixture.test",
+            "iris@marlowandpine.worldfixture.test"
+          ],
+          "calendar_id": "calendar-primary",
+          "description": "Jug reshoot on the light ground and the bowl detail frames.",
+          "end": "2027-03-15T16:00:00Z",
+          "id": "event-studio-shoot",
+          "start": "2027-03-15T10:00:00Z",
+          "summary": "Fieldstone shoot, day two"
+        }
+      ],
+      "calendars": [
+        {
+          "id": "calendar-primary",
+          "name": "Iris Mendel",
+          "primary": true
+        },
+        {
+          "id": "calendar-company",
+          "name": "Marlow & Pine",
+          "primary": false
+        },
+        {
+          "id": "calendar-care",
+          "name": "Customer care",
+          "primary": false
+        }
+      ],
+      "channels": [
+        {
+          "id": "channel-general",
+          "member_ids": [
+            "iris-mendel",
+            "callum-reid",
+            "sana-devi",
+            "otto-lindqvist",
+            "bea-morrow",
+            "felix-arana",
+            "yuki-tanabe",
+            "mira-halvorsen",
+            "gus-ferreira",
+            "anya-kowalski",
+            "tomas-brekke",
+            "rosa-delgado",
+            "kit-nwosu",
+            "lena-fischer"
+          ],
+          "messages": [
+            {
+              "author_id": "iris-mendel",
+              "entity_refs": {
+                "document_id": "doc-crazing-response"
+              },
+              "id": "chat-general-01",
+              "text": "The Harbour note goes out tomorrow morning. It says the fault is ours and that nobody has to return anything. If you disagree with either half, say so today.",
+              "timestamp": "2027-03-15T09:15:00Z"
+            },
+            {
+              "author_id": "callum-reid",
+              "entity_refs": {},
+              "id": "chat-general-02",
+              "text": "Eleven orders are sitting on a Swiftline pallet with no carrier scan. I am not sending a holding message until I know where the parcels are.",
+              "timestamp": "2027-03-16T08:40:00Z"
+            },
+            {
+              "author_id": "rosa-delgado",
+              "entity_refs": {
+                "project_id": "project-club-billing-fix"
+              },
+              "id": "chat-general-03",
+              "text": "March reconciliation found two duplicate Pantry Club charges. Both members have been contacted, one credit is issued, the second follows this week.",
+              "timestamp": "2027-03-17T17:20:00Z"
+            },
+            {
+              "author_id": "mira-halvorsen",
+              "entity_refs": {},
+              "id": "chat-general-04",
+              "text": "Fieldstone go or no-go is at 11:00 tomorrow. The question is the bowl, not the collection.",
+              "timestamp": "2027-03-18T09:05:00Z"
+            }
+          ],
+          "name": "general",
+          "topic": "Company updates and questions for everyone"
+        },
+        {
+          "id": "channel-fieldstone",
+          "member_ids": [
+            "mira-halvorsen",
+            "bea-morrow",
+            "kit-nwosu",
+            "gus-ferreira",
+            "lena-fischer",
+            "iris-mendel",
+            "yuki-tanabe"
+          ],
+          "messages": [
+            {
+              "author_id": "kit-nwosu",
+              "entity_refs": {
+                "project_id": "project-fieldstone-drop"
+              },
+              "id": "chat-fieldstone-01",
+              "text": "Second kiln run: 112 bowls fired, 19 rejected for crawl marks. That is 93 sellable against 140 preorder units if we open it as stock.",
+              "timestamp": "2027-03-12T10:30:00Z"
+            },
+            {
+              "author_id": "mira-halvorsen",
+              "entity_refs": {},
+              "id": "chat-fieldstone-02",
+              "text": "Then it is a preorder. I would rather take the money late than take it for a bowl that does not exist.",
+              "timestamp": "2027-03-12T10:45:00Z"
+            },
+            {
+              "author_id": "gus-ferreira",
+              "entity_refs": {},
+              "id": "chat-fieldstone-03",
+              "text": "Preorder badge is wrong on the collection grid — issue 210. The product page is correct. Cache, not logic.",
+              "timestamp": "2027-03-13T14:12:00Z"
+            },
+            {
+              "author_id": "bea-morrow",
+              "entity_refs": {
+                "document_id": "doc-fieldstone-launch"
+              },
+              "id": "chat-fieldstone-04",
+              "text": "Draft one of the announcement is up. The preorder explanation is in the first paragraph, not the footer.",
+              "timestamp": "2027-03-14T11:00:00Z"
+            },
+            {
+              "author_id": "lena-fischer",
+              "entity_refs": {},
+              "id": "chat-fieldstone-05",
+              "text": "Jug reshot on the light ground. The old shot read grey; this one reads oatmeal, which is what it is.",
+              "timestamp": "2027-03-15T16:30:00Z"
+            },
+            {
+              "author_id": "kit-nwosu",
+              "entity_refs": {},
+              "id": "chat-fieldstone-06",
+              "text": "Harriet has the third run booked for 27 March. She will not promise a yield and I am not going to ask her to.",
+              "timestamp": "2027-03-17T09:50:00Z"
+            },
+            {
+              "author_id": "iris-mendel",
+              "entity_refs": {
+                "project_id": "project-fieldstone-drop"
+              },
+              "id": "chat-fieldstone-07",
+              "text": "Decision tomorrow: launch four pieces with the bowl on preorder. Nobody is proposing we hold the collection.",
+              "timestamp": "2027-03-18T08:55:00Z"
+            }
+          ],
+          "name": "fieldstone-drop",
+          "topic": "The 25 March collection launch"
+        },
+        {
+          "id": "channel-customer-care",
+          "member_ids": [
+            "sana-devi",
+            "otto-lindqvist",
+            "iris-mendel",
+            "yuki-tanabe",
+            "rosa-delgado",
+            "callum-reid"
+          ],
+          "messages": [
+            {
+              "author_id": "sana-devi",
+              "entity_refs": {
+                "project_id": "project-harbour-response"
+              },
+              "id": "chat-care-01",
+              "text": "Three two-star Harbour reviews now, all describing the same crazing. I am replying on the reviews rather than by mail so the answer is public.",
+              "timestamp": "2027-03-06T09:20:00Z"
+            },
+            {
+              "author_id": "otto-lindqvist",
+              "entity_refs": {},
+              "id": "chat-care-02",
+              "text": "Replacement list is at 34 of 40. Six orders have addresses older than a year and I am mailing those to confirm before sending.",
+              "timestamp": "2027-03-07T15:40:00Z"
+            },
+            {
+              "author_id": "yuki-tanabe",
+              "entity_refs": {},
+              "id": "chat-care-03",
+              "text": "Jonas asked why his review is unbadged. He bought as a guest. That is issue 211, not a mistake on his part.",
+              "timestamp": "2027-03-08T12:05:00Z"
+            },
+            {
+              "author_id": "otto-lindqvist",
+              "entity_refs": {},
+              "id": "chat-care-04",
+              "text": "Quinn asked about the pallet on the shipping post. I said eleven orders and that we are tracing each one. No date, because we do not have one.",
+              "timestamp": "2027-03-14T10:10:00Z"
+            },
+            {
+              "author_id": "sana-devi",
+              "entity_refs": {},
+              "id": "chat-care-05",
+              "text": "Alma wants a ship date for the bowl preorder. Answer after the 27th, not before.",
+              "timestamp": "2027-03-16T13:45:00Z"
+            },
+            {
+              "author_id": "rosa-delgado",
+              "entity_refs": {},
+              "id": "chat-care-06",
+              "text": "Maren says her statement still shows two charges. The credit is a separate line, issued today. I have replied on the public thread as well.",
+              "timestamp": "2027-03-18T08:30:00Z"
+            }
+          ],
+          "name": "customer-care",
+          "topic": "Support threads that need more than one person"
+        },
+        {
+          "id": "channel-fulfilment",
+          "member_ids": [
+            "callum-reid",
+            "kit-nwosu",
+            "otto-lindqvist",
+            "gus-ferreira",
+            "iris-mendel"
+          ],
+          "messages": [
+            {
+              "author_id": "callum-reid",
+              "entity_refs": {
+                "project_id": "project-fulfilment-recovery"
+              },
+              "id": "chat-fulfilment-01",
+              "text": "Swiftline sent eleven shipment scans on the 12th with an empty tracking field. The order service took them and told eleven people their parcel had shipped.",
+              "timestamp": "2027-03-13T11:20:00Z"
+            },
+            {
+              "author_id": "gus-ferreira",
+              "entity_refs": {},
+              "id": "chat-fulfilment-02",
+              "text": "A scan with no tracking number should be rejected outright. Issue 213. I can ship the guard this week; it does not find the parcels.",
+              "timestamp": "2027-03-13T11:35:00Z"
+            },
+            {
+              "author_id": "callum-reid",
+              "entity_refs": {},
+              "id": "chat-fulfilment-03",
+              "text": "Desmond pulled the yard log. Eight of eleven are located and were never collected. Three are still unaccounted for.",
+              "timestamp": "2027-03-17T16:50:00Z"
+            },
+            {
+              "author_id": "otto-lindqvist",
+              "entity_refs": {},
+              "id": "chat-fulfilment-04",
+              "text": "I have the eleven names. I am not sending anything until Callum can tell each of them something true.",
+              "timestamp": "2027-03-18T09:10:00Z"
+            }
+          ],
+          "name": "fulfilment",
+          "topic": "Swiftline, inventory and everything in a box"
+        },
+        {
+          "id": "channel-storefront",
+          "member_ids": [
+            "gus-ferreira",
+            "anya-kowalski",
+            "mira-halvorsen",
+            "yuki-tanabe",
+            "tomas-brekke"
+          ],
+          "messages": [
+            {
+              "author_id": "anya-kowalski",
+              "entity_refs": {},
+              "id": "chat-storefront-01",
+              "text": "Verified-buyer badges are live. Matching is on account id, so guest orders never match — issue 211.",
+              "timestamp": "2027-03-09T13:00:00Z"
+            },
+            {
+              "author_id": "mira-halvorsen",
+              "entity_refs": {},
+              "id": "chat-storefront-02",
+              "text": "Ship it unbadged rather than badge everyone. An unbadged real buyer is a smaller lie than a badged stranger.",
+              "timestamp": "2027-03-09T13:20:00Z"
+            },
+            {
+              "author_id": "anya-kowalski",
+              "entity_refs": {},
+              "id": "chat-storefront-03",
+              "text": "Email matching needs a decision on case folding and plus-addressing before I touch it.",
+              "timestamp": "2027-03-11T10:45:00Z"
+            },
+            {
+              "author_id": "gus-ferreira",
+              "entity_refs": {},
+              "id": "chat-storefront-04",
+              "text": "1.4 MB of unused CSS on every product page — issue 217. After the drop.",
+              "timestamp": "2027-03-16T15:30:00Z"
+            }
+          ],
+          "name": "storefront",
+          "topic": "The shop, the product pages and the reviews"
+        },
+        {
+          "id": "channel-pantry-club",
+          "member_ids": [
+            "felix-arana",
+            "rosa-delgado",
+            "kit-nwosu",
+            "otto-lindqvist",
+            "iris-mendel",
+            "tomas-brekke"
+          ],
+          "messages": [
+            {
+              "author_id": "felix-arana",
+              "entity_refs": {},
+              "id": "chat-club-01",
+              "text": "March boxes are out. Members billed on the 1st shipped on the 4th; everyone else on the 11th. The split was mine and it was wrong.",
+              "timestamp": "2027-03-04T09:30:00Z"
+            },
+            {
+              "author_id": "rosa-delgado",
+              "entity_refs": {
+                "project_id": "project-club-billing-fix"
+              },
+              "id": "chat-club-02",
+              "text": "Two duplicate charges in the March run. Both from a retry after a timeout. Tomas has the reproduction.",
+              "timestamp": "2027-03-16T16:15:00Z"
+            },
+            {
+              "author_id": "tomas-brekke",
+              "entity_refs": {},
+              "id": "chat-club-03",
+              "text": "The idempotency key is in the call signature and we never set it. Issue 215. One line, plus a test that kills the connection mid-charge.",
+              "timestamp": "2027-03-16T16:40:00Z"
+            },
+            {
+              "author_id": "felix-arana",
+              "entity_refs": {},
+              "id": "chat-club-04",
+              "text": "Holding the April teaser send until the credits are out. A promotional email on top of a double charge is not a good look.",
+              "timestamp": "2027-03-17T10:20:00Z"
+            },
+            {
+              "author_id": "rosa-delgado",
+              "entity_refs": {},
+              "id": "chat-club-05",
+              "text": "Hugo's February renewal declined twice on an expired card. Second reminder on the 22nd, then pause rather than retry a third time.",
+              "timestamp": "2027-03-18T09:45:00Z"
+            }
+          ],
+          "name": "pantry-club",
+          "topic": "The subscription box: boxes, renewals and members"
+        }
+      ],
+      "documents": [
+        {
+          "content": "# Fieldstone, 25 March\n\nFour pieces: mug, plate, jug, serving bowl.\n\n## The bowl\n\nSecond kiln run produced 93 sellable bowls against 140 units of demand at the last two\ndrops. It opens as a preorder. The announcement says so in the first paragraph.\n\n## Open before launch\n\n- Issue 210: preorder badge is wrong on the collection grid.\n- Issue 218: preorder stock is not held against the third kiln run.\n\n## Do not\n\nDo not give a preorder ship date before the 27 March inspection.",
+          "id": "doc-fieldstone-launch",
+          "mime_type": "text/markdown",
+          "modified_at": "2027-03-17T18:10:00Z",
+          "name": "Fieldstone launch plan.md",
+          "owner_id": "mira-halvorsen"
+        },
+        {
+          "content": "# Harbour mug, first run\n\nAbout forty mugs from the first Harbour run craze after repeated dishwasher cycles. The\nglaze and the clay body move at different rates. It is a fit fault, not a safety fault.\n\n## What we do\n\nReplace every mug from that run. No return, no receipt, no proof of the fault.\n\n## What we say\n\nThat it is ours, which run it was, and that Fieldstone uses a different glaze and a\ndifferent body and went through thirty dishwasher cycles before listing.\n\n## Status\n\n34 of 40 replacements sent. Six addresses need confirming first.",
+          "id": "doc-crazing-response",
+          "mime_type": "text/markdown",
+          "modified_at": "2027-03-15T16:40:00Z",
+          "name": "Harbour mug crazing — response plan.md",
+          "owner_id": "sana-devi"
+        },
+        {
+          "content": "# March duplicate charges\n\nTwo members were charged twice: club-bennett-cho and club-maren-oduya.\n\n## Cause\n\nThe charge succeeded at the provider and the response timed out locally. The retry sent a\nsecond charge with no idempotency key. Issue 215.\n\n## Position\n\nFound in reconciliation, not reported by a member. Both were told before the public post.\nOne credit note is issued; the second follows this week. Issue 216 means a credit note does\nnot yet reference the invoice it corrects, so say the invoice number in the message.",
+          "id": "doc-club-billing",
+          "mime_type": "text/markdown",
+          "modified_at": "2027-03-17T17:55:00Z",
+          "name": "Pantry Club duplicate charge — what we know.md",
+          "owner_id": "rosa-delgado"
+        },
+        {
+          "content": "# Runbook: verified-buyer badges\n\nA review is badged when its author's account id matches an order for the same product.\n\n## Known gap\n\nGuest checkout writes no account id, so a guest buyer is never badged. Issue 211.\n\n## Do not\n\nDo not badge on self-declared purchase. An unbadged real buyer is a smaller problem than\na badged stranger.\n\n## Backfill\n\nRerun the matcher after any change; it is idempotent and takes about forty seconds.",
+          "id": "doc-review-badges",
+          "mime_type": "text/markdown",
+          "modified_at": "2027-03-09T14:25:00Z",
+          "name": "Runbook: verified-buyer badges.md",
+          "owner_id": "anya-kowalski"
+        }
+      ],
+      "mail": [
+        {
+          "body_text": "Hello,\n\nI bought two Harbour mugs in September and both have fine cracks all through the glaze. They only ever went in the dishwasher, nothing else. I am not asking for money back, I would just like to know whether they are still safe to drink from.\n\nClara",
+          "from_id": "clara-voight",
+          "id": "mail-clara-crazing",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Support"
+          ],
+          "order_id": "order-10101",
+          "sent_at": "2027-02-12T09:00:00Z",
+          "snippet": "Fine cracks through the whole glaze after about a month of dishwasher use.",
+          "subject": "My Harbour mugs have cracked all over",
+          "thread_id": "thread-harbour-clara",
+          "to_ids": [
+            "sana-devi"
+          ]
+        },
+        {
+          "body_text": "Hello Clara,\n\nThey are safe to drink from. What you are seeing is crazing: the glaze and the clay body shrink at slightly different rates, and repeated dishwasher cycles open fine cracks in the glaze. It is a fault in our first Harbour run and it is ours.\n\nTwo replacements are going out today. Please keep the originals; there is nothing to return and no receipt needed.\n\nSana",
+          "from_id": "sana-devi",
+          "id": "mail-sana-crazing-reply",
+          "labels": [
+            "SENT",
+            "Support"
+          ],
+          "order_id": "order-10101",
+          "sent_at": "2027-02-13T11:00:00Z",
+          "snippet": "It is a glaze fit fault in the first run. Replacements are on the way and you keep the originals.",
+          "subject": "Re: My Harbour mugs have cracked all over",
+          "thread_id": "thread-harbour-clara",
+          "to_ids": [
+            "clara-voight"
+          ]
+        },
+        {
+          "body_text": "Hi,\n\nFour mugs from October. Three have crazed, the fourth is fine and it is the one I have never put in the dishwasher. I have left a review saying so.\n\nFranklin",
+          "from_id": "franklin-obi",
+          "id": "mail-franklin-crazing",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Support"
+          ],
+          "order_id": "order-10102",
+          "sent_at": "2027-02-25T08:00:00Z",
+          "snippet": "Three of the four have crazed. The one I hand wash has not.",
+          "subject": "Three of four mugs crazed",
+          "thread_id": "thread-harbour-franklin",
+          "to_ids": [
+            "sana-devi"
+          ]
+        },
+        {
+          "body_text": "Hello Alma,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-alma-reyes",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-01",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:02:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-01",
+          "to_ids": [
+            "alma-reyes"
+          ]
+        },
+        {
+          "body_text": "Hello Clara,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-clara-voight",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-02",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:04:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-02",
+          "to_ids": [
+            "clara-voight"
+          ]
+        },
+        {
+          "body_text": "Hello Esme,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-esme-fontaine",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-03",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:06:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-03",
+          "to_ids": [
+            "esme-fontaine"
+          ]
+        },
+        {
+          "body_text": "Hello Greta,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-greta-lindholm",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-04",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:08:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-04",
+          "to_ids": [
+            "greta-lindholm"
+          ]
+        },
+        {
+          "body_text": "Hello Imogen,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-imogen-bell",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-05",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:10:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-05",
+          "to_ids": [
+            "imogen-bell"
+          ]
+        },
+        {
+          "body_text": "Hello Jonas,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-jonas-wirth",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-06",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:12:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-06",
+          "to_ids": [
+            "jonas-wirth"
+          ]
+        },
+        {
+          "body_text": "Hello Leo,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-leo-santoro",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-07",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:14:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-07",
+          "to_ids": [
+            "leo-santoro"
+          ]
+        },
+        {
+          "body_text": "Hello Orla,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-orla-brennan",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-08",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:16:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-08",
+          "to_ids": [
+            "orla-brennan"
+          ]
+        },
+        {
+          "body_text": "Hello Quinn,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-quinn-abara",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-09",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:18:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-09",
+          "to_ids": [
+            "quinn-abara"
+          ]
+        },
+        {
+          "body_text": "Hello Soren,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-soren-mikkelsen",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-10",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:20:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-10",
+          "to_ids": [
+            "soren-mikkelsen"
+          ]
+        },
+        {
+          "body_text": "Hello Vera,\n\nThis month's box: a refillable tin of flaked sea salt, the November olive oil from the grove at Vall d'Or, and a set of three beeswax wraps.\n\nFieldstone, our new stoneware collection, opens on 25 March. Club members see it a day early.\n\nFelix\nMarlow & Pine",
+          "customer_id": "club-vera-pahlsson",
+          "from_id": "felix-arana",
+          "id": "mail-campaign-march-11",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-03T08:22:00Z",
+          "snippet": "Flaked sea salt, the November olive oil, and a set of beeswax wraps.",
+          "subject": "Inside the March pantry box",
+          "thread_id": "thread-campaign-march-11",
+          "to_ids": [
+            "vera-pahlsson"
+          ]
+        },
+        {
+          "body_text": "Hello,\n\nJust to say the March box was the best one you have sent. The olive oil especially — please keep sourcing from that grove.\n\nTilda",
+          "from_id": "tilda-nyberg",
+          "id": "mail-tilda-thanks",
+          "labels": [
+            "INBOX",
+            "Customers"
+          ],
+          "sent_at": "2027-03-05T08:00:00Z",
+          "snippet": "The olive oil especially. Please keep sourcing from that grove.",
+          "subject": "The March box was the best one yet",
+          "thread_id": "thread-club-tilda",
+          "to_ids": [
+            "felix-arana"
+          ]
+        },
+        {
+          "body_text": "Hi,\n\nMy review of the oak board is not showing the verified badge. I did buy it, in December, though I checked out as a guest rather than making an account.\n\nJonas",
+          "from_id": "jonas-wirth",
+          "id": "mail-jonas-badge",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Support"
+          ],
+          "sent_at": "2027-03-08T15:00:00Z",
+          "snippet": "I did buy the board. Guest checkout, if that matters.",
+          "subject": "My review is not marked as verified",
+          "thread_id": "thread-badge-jonas",
+          "to_ids": [
+            "yuki-tanabe"
+          ]
+        },
+        {
+          "body_text": "Hello Jonas,\n\nYou are right and the badge is wrong. We match reviews to orders by account, and a guest order has no account to match. Your review stands as it is until we can match on the order email instead.\n\nWe would rather show an honest gap than badge everyone.\n\nYuki",
+          "from_id": "yuki-tanabe",
+          "id": "mail-yuki-badge-reply",
+          "labels": [
+            "SENT",
+            "Support"
+          ],
+          "sent_at": "2027-03-08T16:00:00Z",
+          "snippet": "Guest orders do not match yet. That is our gap, not a doubt about you.",
+          "subject": "Re: My review is not marked as verified",
+          "thread_id": "thread-badge-jonas",
+          "to_ids": [
+            "jonas-wirth"
+          ]
+        },
+        {
+          "body_text": "Hello,\n\nTwo of my four Fieldstone plates rock very slightly on a flat table. Not enough to spill anything, but I noticed. Is that expected for thrown pieces or should I send them back?\n\nGreta",
+          "from_id": "greta-lindholm",
+          "id": "mail-greta-plate",
+          "labels": [
+            "INBOX",
+            "Support"
+          ],
+          "sent_at": "2027-03-08T17:00:00Z",
+          "snippet": "Two of four rock very slightly. Is that expected?",
+          "subject": "Two of my Fieldstone plates sit unevenly",
+          "thread_id": "thread-support-greta",
+          "to_ids": [
+            "otto-lindqvist"
+          ]
+        },
+        {
+          "body_text": "Hello Greta,\n\nA little movement is expected: the plates are thrown and the foot is trued by hand. Our tolerance is about a millimetre. If yours rock more than that, or if it bothers you at all, say the word and we will replace them.\n\nOtto",
+          "from_id": "otto-lindqvist",
+          "id": "mail-otto-plate-reply",
+          "labels": [
+            "SENT",
+            "Support"
+          ],
+          "sent_at": "2027-03-08T18:00:00Z",
+          "snippet": "Expected within about a millimetre. Beyond that we replace them.",
+          "subject": "Re: Two of my Fieldstone plates sit unevenly",
+          "thread_id": "thread-support-greta",
+          "to_ids": [
+            "greta-lindholm"
+          ]
+        },
+        {
+          "body_text": "Hello Hugo,\n\nThe February renewal was declined twice; the card on file expired in January. Invoice 2032 for 64.00 USD is open.\n\nYou can update the card whenever suits. If we have not heard by 22 March we will pause the membership rather than retry a third time.\n\nRosa",
+          "from_id": "rosa-delgado",
+          "id": "mail-hugo-card",
+          "invoice_id": "inv-2032",
+          "labels": [
+            "SENT",
+            "Finance"
+          ],
+          "sent_at": "2027-03-10T09:00:00Z",
+          "snippet": "The card on file has expired. We will pause rather than keep retrying.",
+          "subject": "Your February Pantry Club renewal did not go through",
+          "thread_id": "thread-club-hugo",
+          "to_ids": [
+            "hugo-marchetti"
+          ]
+        },
+        {
+          "body_text": "Kit, Mira,\n\nSecond run out of the kiln. 112 bowls fired, 19 rejected for crawl marks along the rim, 93 sellable. The glaze is thicker on the bowl than on the plate and that is where it is catching.\n\nThird run is booked for 27 March. I am not going to promise a yield.\n\nHarriet",
+          "from_id": "harriet-vance",
+          "id": "mail-harriet-kiln",
+          "labels": [
+            "INBOX",
+            "Suppliers"
+          ],
+          "sent_at": "2027-03-12T09:00:00Z",
+          "snippet": "Nineteen bowls rejected for crawl marks. Third run booked for 27 March.",
+          "subject": "Second Fieldstone run: 93 of 112",
+          "thread_id": "thread-harrow-run",
+          "to_ids": [
+            "kit-nwosu",
+            "mira-halvorsen"
+          ]
+        },
+        {
+          "body_text": "Harriet,\n\nThank you for the honest number. We are opening the bowl as a preorder rather than pretending we have stock. Please do not thin the glaze to raise the yield; the thickness is what the collection looks like.\n\nKit",
+          "from_id": "kit-nwosu",
+          "id": "mail-kit-kiln-reply",
+          "labels": [
+            "SENT",
+            "Suppliers"
+          ],
+          "sent_at": "2027-03-12T11:00:00Z",
+          "snippet": "Understood. We are opening the bowl as a preorder rather than as stock.",
+          "subject": "Re: Second Fieldstone run: 93 of 112",
+          "thread_id": "thread-harrow-run",
+          "to_ids": [
+            "harriet-vance"
+          ]
+        },
+        {
+          "body_text": "Hello,\n\nMy order says it shipped on 12 March and the tracking page has not changed since. I am not in a hurry but I would like to know whether it is actually moving.\n\nQuinn",
+          "from_id": "quinn-abara",
+          "id": "mail-quinn-tracking",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Support"
+          ],
+          "order_id": "order-10023",
+          "sent_at": "2027-03-13T10:00:00Z",
+          "snippet": "The page says shipped on 12 March and there has been no scan since.",
+          "subject": "Tracking has not moved in five days",
+          "thread_id": "thread-tracking-quinn",
+          "to_ids": [
+            "otto-lindqvist"
+          ]
+        },
+        {
+          "body_text": "Hello Quinn,\n\nIt is not moving, and I would rather tell you that than send you back to the tracking page. Your parcel is one of eleven that were scanned onto a pallet at our warehouse on 12 March without the carrier collecting them. We are working through the yard log now.\n\nI will write again when I can tell you where your parcel is, not before.\n\nOtto",
+          "from_id": "otto-lindqvist",
+          "id": "mail-otto-tracking-reply",
+          "labels": [
+            "SENT",
+            "Support"
+          ],
+          "order_id": "order-10023",
+          "sent_at": "2027-03-14T16:00:00Z",
+          "snippet": "Your parcel is one of eleven on a pallet that was scanned but not collected. We are tracing it.",
+          "subject": "Re: Tracking has not moved in five days",
+          "thread_id": "thread-tracking-quinn",
+          "to_ids": [
+            "quinn-abara"
+          ]
+        },
+        {
+          "body_text": "Hello,\n\nI preordered the serving bowl and two mugs. I am happy to wait, I would just like a rough idea so I know whether it is weeks or months.\n\nAlma",
+          "from_id": "alma-reyes",
+          "id": "mail-alma-preorder",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Support"
+          ],
+          "order_id": "order-10201",
+          "sent_at": "2027-03-15T14:00:00Z",
+          "snippet": "Happy to wait, would just like a rough idea.",
+          "subject": "When does the Fieldstone bowl ship?",
+          "thread_id": "thread-preorder-alma",
+          "to_ids": [
+            "sana-devi"
+          ]
+        },
+        {
+          "body_text": "Bea, Sana,\n\nDraft attached to the response plan. Three things it has to do: name the run, explain that crazing is a glaze fit fault and not a safety problem, and say plainly that it is ours.\n\nIt must not say 'in rare cases' or 'a small number of customers may'. Forty mugs is forty mugs.\n\nIris",
+          "from_id": "iris-mendel",
+          "id": "mail-iris-crazing-note",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-15T18:00:00Z",
+          "snippet": "It says which run, that it is a fit fault, and that it is ours. No hedging.",
+          "subject": "Harbour note: my draft",
+          "thread_id": "thread-harbour-note",
+          "to_ids": [
+            "bea-morrow",
+            "sana-devi"
+          ]
+        },
+        {
+          "body_text": "Iris,\n\nAgreed on all three. One addition: say that Fieldstone uses a different glaze and a different clay body and went through thirty dishwasher cycles before we listed it. Someone will ask it in the comments within the hour and it is better said first.\n\nBea",
+          "from_id": "bea-morrow",
+          "id": "mail-bea-note-reply",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-15T19:00:00Z",
+          "snippet": "Agreed. One change: say the Fieldstone glaze is different, because people will ask.",
+          "subject": "Re: Harbour note: my draft",
+          "thread_id": "thread-harbour-note",
+          "to_ids": [
+            "iris-mendel"
+          ]
+        },
+        {
+          "body_text": "Hello Bennett,\n\nYour Pantry Club renewal charged twice on 1 March. A retry ran after the first charge had already succeeded. That is our bug and the credit note for 64.00 USD is issued today against invoice 2034.\n\nNothing is needed from you.\n\nRosa",
+          "from_id": "rosa-delgado",
+          "id": "mail-bennett-credit",
+          "invoice_id": "inv-2034",
+          "labels": [
+            "SENT",
+            "Finance"
+          ],
+          "sent_at": "2027-03-16T10:00:00Z",
+          "snippet": "A credit note for 64.00 USD is issued against invoice 2034.",
+          "subject": "You were charged twice in March, and it is corrected",
+          "thread_id": "thread-club-bennett",
+          "to_ids": [
+            "bennett-cho"
+          ]
+        },
+        {
+          "body_text": "Sana,\n\n34 of 40 replacements are sent. The remaining six have shipping addresses more than a year old, so I am mailing each of them to confirm before sending rather than posting a mug to an address someone has moved out of.\n\nOtto",
+          "from_id": "otto-lindqvist",
+          "id": "mail-otto-replacements",
+          "labels": [
+            "SENT",
+            "Support"
+          ],
+          "sent_at": "2027-03-16T11:00:00Z",
+          "snippet": "Six of the forty orders have addresses older than a year.",
+          "subject": "Six replacement addresses need confirming",
+          "thread_id": "thread-harbour-addresses",
+          "to_ids": [
+            "sana-devi"
+          ]
+        },
+        {
+          "body_text": "Lena, Bea,\n\nFieldstone day two is delivered: the jug on the light ground, the bowl rim details, and the full table set. 211 frames in the shared folder.\n\nThe jug reads much closer to the real glaze now. The grey cast was the ground, not the camera.\n\nJuno",
+          "from_id": "juno-park",
+          "id": "mail-juno-shoot",
+          "labels": [
+            "INBOX",
+            "Suppliers"
+          ],
+          "sent_at": "2027-03-16T13:00:00Z",
+          "snippet": "Jug on the light ground plus the bowl detail set. Two hundred and eleven frames.",
+          "subject": "Fieldstone frames delivered",
+          "thread_id": "thread-bramble-shoot",
+          "to_ids": [
+            "lena-fischer",
+            "bea-morrow"
+          ]
+        },
+        {
+          "body_text": "Hello Alma,\n\nWeeks rather than months, but I am not going to give you a date yet. The third kiln run is on 27 March and we will not know the sellable count until it is inspected.\n\nI will write to you the day we know, whether the news is good or not. Your mugs can ship now if you would rather not wait for the bowl.\n\nSana",
+          "from_id": "sana-devi",
+          "id": "mail-sana-preorder-reply",
+          "labels": [
+            "SENT",
+            "Support"
+          ],
+          "order_id": "order-10201",
+          "sent_at": "2027-03-16T15:00:00Z",
+          "snippet": "The third kiln run is on 27 March. We will not give a date before it is inspected.",
+          "subject": "Re: When does the Fieldstone bowl ship?",
+          "thread_id": "thread-preorder-alma",
+          "to_ids": [
+            "alma-reyes"
+          ]
+        },
+        {
+          "body_text": "Rosa, Iris,\n\nI am holding the April Pantry Club teaser until both credit notes are out. Sending a promotional email to a list that contains two people we charged twice is not something I want to explain afterwards.\n\nFelix",
+          "from_id": "felix-arana",
+          "id": "mail-felix-hold",
+          "labels": [
+            "SENT",
+            "Marketing"
+          ],
+          "sent_at": "2027-03-17T10:00:00Z",
+          "snippet": "A promotional email on top of a double charge is not a good look.",
+          "subject": "Holding the April teaser send",
+          "thread_id": "thread-club-april",
+          "to_ids": [
+            "rosa-delgado",
+            "iris-mendel"
+          ]
+        },
+        {
+          "body_text": "Hello,\n\nI have two Pantry Club charges on 1 March, same amount, same day. I saw your post so I assume this is the known problem, but the credit has not reached my statement yet.\n\nMaren",
+          "from_id": "maren-oduya",
+          "id": "mail-maren-double-charge",
+          "invoice_id": "inv-2033",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Finance"
+          ],
+          "sent_at": "2027-03-17T12:00:00Z",
+          "snippet": "My statement shows the Pantry Club charge twice on the same day.",
+          "subject": "Two charges for the March box",
+          "thread_id": "thread-club-maren",
+          "to_ids": [
+            "rosa-delgado"
+          ]
+        },
+        {
+          "body_text": "Callum,\n\nYard log for 12 March. Pallet 4471 was scanned as outbound but the carrier collection did not happen; the driver refused the load because the manifest did not match. Eight of the eleven parcels are still in bay 3. Three are not on the pallet and I do not yet know where they are.\n\nI am not going to guess. I will have the remaining three by Friday.\n\nDesmond",
+          "from_id": "desmond-oyelaran",
+          "id": "mail-desmond-pallet",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Suppliers"
+          ],
+          "sent_at": "2027-03-17T16:00:00Z",
+          "snippet": "Eight parcels were scanned and never collected. Three are unaccounted for.",
+          "subject": "Pallet 4471: eight of eleven located",
+          "thread_id": "thread-swiftline-pallet",
+          "to_ids": [
+            "callum-reid"
+          ]
+        },
+        {
+          "body_text": "Desmond,\n\nShip the eight today with real tracking numbers. For the three, please do not send us a shipment scan until there is a parcel and a tracking number attached to it — an empty scan is what told eleven people their order had shipped.\n\nCallum",
+          "from_id": "callum-reid",
+          "id": "mail-callum-pallet-reply",
+          "labels": [
+            "SENT",
+            "Suppliers"
+          ],
+          "sent_at": "2027-03-17T17:00:00Z",
+          "snippet": "Ship the eight today. Do not send a scan for the three until they exist.",
+          "subject": "Re: Pallet 4471: eight of eleven located",
+          "thread_id": "thread-swiftline-pallet",
+          "to_ids": [
+            "desmond-oyelaran"
+          ]
+        },
+        {
+          "body_text": "Iris,\n\nWhat I am bringing to the go or no-go: launch all four pieces on the 25th with the serving bowl as a preorder. 93 sellable bowls against roughly 140 units of expected demand.\n\nThe two open issues are 210, the badge on the collection grid, and 218, preorder stock not held against the third run. 210 blocks the launch. 218 blocks taking walk-up orders after it.\n\nNo ship date for the preorder until the 27 March inspection.\n\nMira",
+          "from_id": "mira-halvorsen",
+          "id": "mail-mira-drop-brief",
+          "labels": [
+            "INBOX",
+            "Product"
+          ],
+          "sent_at": "2027-03-17T20:00:00Z",
+          "snippet": "Launch four pieces, bowl on preorder, no ship date until the 27th.",
+          "subject": "Fieldstone: the decision I am bringing tomorrow",
+          "thread_id": "thread-fieldstone-brief",
+          "to_ids": [
+            "iris-mendel"
+          ]
+        },
+        {
+          "body_text": "Hello Maren,\n\nYes, this is the fault we published. The credit note is issued today against invoice 2033 for 64.00 USD. It will appear as its own line rather than as a reversal of the original charge, which is confusing and is something we are fixing.\n\nWe found this in our own reconciliation rather than from a complaint, which is why you heard from us first.\n\nRosa",
+          "from_id": "rosa-delgado",
+          "id": "mail-rosa-credit-reply",
+          "invoice_id": "inv-2033",
+          "labels": [
+            "SENT",
+            "Finance"
+          ],
+          "sent_at": "2027-03-18T09:00:00Z",
+          "snippet": "Credit note issued today against invoice 2033. It appears as a separate line, not a reversal.",
+          "subject": "Re: Two charges for the March box",
+          "thread_id": "thread-club-maren",
+          "to_ids": [
+            "maren-oduya"
+          ]
+        }
+      ]
+    },
+    "finance": {
+      "anchor_invoices": [
+        {
+          "amount_cents": 3900,
+          "currency": "USD",
+          "customer_id": "club-orla-brennan",
+          "description": "Pantry Club standard box — March",
+          "due_on": "2027-03-28",
+          "id": "inv-2031",
+          "issued_on": "2027-03-12",
+          "number": "2031",
+          "status": "open"
+        },
+        {
+          "amount_cents": 6400,
+          "currency": "USD",
+          "customer_id": "club-hugo-marchetti",
+          "description": "Pantry Club large box — February. Card expired; retry declined twice.",
+          "due_on": "2027-03-10",
+          "id": "inv-2032",
+          "issued_on": "2027-01-31",
+          "number": "2032",
+          "status": "overdue"
+        },
+        {
+          "amount_cents": 6400,
+          "currency": "USD",
+          "customer_id": "club-maren-oduya",
+          "description": "Pantry Club large box — March. Charged twice; credit note pending.",
+          "due_on": "2027-03-22",
+          "id": "inv-2033",
+          "issued_on": "2027-03-01",
+          "number": "2033",
+          "status": "open"
+        },
+        {
+          "amount_cents": 6400,
+          "currency": "USD",
+          "customer_id": "club-bennett-cho",
+          "description": "Pantry Club large box — March. Charged twice; credit note issued 18 March.",
+          "due_on": "2027-03-22",
+          "id": "inv-2034",
+          "issued_on": "2027-03-01",
+          "number": "2034",
+          "status": "open"
+        }
+      ],
+      "billing_owner_id": "rosa-delgado",
+      "currency": "USD",
+      "customers": [
+        {
+          "contact_id": "alma-reyes",
+          "due_day": 10,
+          "id": "club-alma-reyes",
+          "invoice_day": 1,
+          "monthly_amount_cents": 3900,
+          "name": "Alma Reyes",
+          "number_suffix": "01",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "bennett-cho",
+          "due_day": 10,
+          "id": "club-bennett-cho",
+          "invoice_day": 1,
+          "monthly_amount_cents": 6400,
+          "name": "Bennett Cho",
+          "number_suffix": "02",
+          "organization_id": "penny-post",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "clara-voight",
+          "due_day": 15,
+          "id": "club-clara-voight",
+          "invoice_day": 5,
+          "monthly_amount_cents": 3900,
+          "name": "Clara Voight",
+          "number_suffix": "03",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "esme-fontaine",
+          "due_day": 15,
+          "id": "club-esme-fontaine",
+          "invoice_day": 5,
+          "monthly_amount_cents": 3900,
+          "name": "Esme Fontaine",
+          "number_suffix": "04",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "franklin-obi",
+          "due_day": 18,
+          "id": "club-franklin-obi",
+          "invoice_day": 8,
+          "monthly_amount_cents": 6400,
+          "name": "Franklin Obi",
+          "number_suffix": "05",
+          "organization_id": "penny-post",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "greta-lindholm",
+          "due_day": 18,
+          "id": "club-greta-lindholm",
+          "invoice_day": 8,
+          "monthly_amount_cents": 3900,
+          "name": "Greta Lindholm",
+          "number_suffix": "06",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "hugo-marchetti",
+          "due_day": 10,
+          "id": "club-hugo-marchetti",
+          "invoice_day": 1,
+          "monthly_amount_cents": 6400,
+          "name": "Hugo Marchetti",
+          "number_suffix": "07",
+          "organization_id": "penny-post",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "imogen-bell",
+          "due_day": 22,
+          "id": "club-imogen-bell",
+          "invoice_day": 12,
+          "monthly_amount_cents": 3900,
+          "name": "Imogen Bell",
+          "number_suffix": "08",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "jonas-wirth",
+          "due_day": 22,
+          "id": "club-jonas-wirth",
+          "invoice_day": 12,
+          "monthly_amount_cents": 3900,
+          "name": "Jonas Wirth",
+          "number_suffix": "09",
+          "organization_id": "penny-post",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "kaia-nakamura",
+          "due_day": 25,
+          "id": "club-kaia-nakamura",
+          "invoice_day": 15,
+          "monthly_amount_cents": 6400,
+          "name": "Kaia Nakamura",
+          "number_suffix": "10",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "leo-santoro",
+          "due_day": 25,
+          "id": "club-leo-santoro",
+          "invoice_day": 15,
+          "monthly_amount_cents": 3900,
+          "name": "Leo Santoro",
+          "number_suffix": "11",
+          "organization_id": "penny-post",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "maren-oduya",
+          "due_day": 10,
+          "id": "club-maren-oduya",
+          "invoice_day": 1,
+          "monthly_amount_cents": 6400,
+          "name": "Maren Oduya",
+          "number_suffix": "12",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "orla-brennan",
+          "due_day": 28,
+          "id": "club-orla-brennan",
+          "invoice_day": 20,
+          "monthly_amount_cents": 3900,
+          "name": "Orla Brennan",
+          "number_suffix": "13",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "quinn-abara",
+          "due_day": 28,
+          "id": "club-quinn-abara",
+          "invoice_day": 20,
+          "monthly_amount_cents": 3900,
+          "name": "Quinn Abara",
+          "number_suffix": "14",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "rania-haddad",
+          "due_day": 15,
+          "id": "club-rania-haddad",
+          "invoice_day": 5,
+          "monthly_amount_cents": 6400,
+          "name": "Rania Haddad",
+          "number_suffix": "15",
+          "organization_id": "penny-post",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "soren-mikkelsen",
+          "due_day": 5,
+          "id": "club-soren-mikkelsen",
+          "invoice_day": 25,
+          "monthly_amount_cents": 3900,
+          "name": "Soren Mikkelsen",
+          "number_suffix": "16",
+          "organization_id": "everyday-mail",
+          "service": "Pantry Club standard box"
+        },
+        {
+          "contact_id": "tilda-nyberg",
+          "due_day": 5,
+          "id": "club-tilda-nyberg",
+          "invoice_day": 25,
+          "monthly_amount_cents": 6400,
+          "name": "Tilda Nyberg",
+          "number_suffix": "17",
+          "organization_id": "penny-post",
+          "service": "Pantry Club large box"
+        },
+        {
+          "contact_id": "vera-pahlsson",
+          "due_day": 22,
+          "id": "club-vera-pahlsson",
+          "invoice_day": 12,
+          "monthly_amount_cents": 3900,
+          "name": "Vera Pahlsson",
+          "number_suffix": "18",
+          "organization_id": "penny-post",
+          "service": "Pantry Club standard box"
+        }
+      ],
+      "history_months": 6,
+      "suppliers": [
+        {
+          "bill_day": 8,
+          "contact_id": "harriet-vance",
+          "id": "supplier-harrow-works",
+          "monthly_amount_cents": 185000,
+          "name": "Harrow Works",
+          "organization_id": "harrow-works",
+          "service": "Stoneware production run"
+        },
+        {
+          "bill_day": 12,
+          "contact_id": "desmond-oyelaran",
+          "id": "supplier-swiftline",
+          "monthly_amount_cents": 96000,
+          "name": "Swiftline Logistics",
+          "organization_id": "swiftline-logistics",
+          "service": "Pick, pack and storage"
+        },
+        {
+          "bill_day": 20,
+          "contact_id": "juno-park",
+          "id": "supplier-bramble",
+          "monthly_amount_cents": 42000,
+          "name": "Bramble Studio",
+          "organization_id": "bramble-studio",
+          "service": "Creative retainer"
+        }
+      ]
+    },
+    "social": {
+      "comments": [
+        {
+          "author_id": "sana-devi",
+          "body": "This is a glaze fault in the first Harbour run and it is ours. A replacement is on its way and you do not need to return anything.",
+          "id": "comment-harbour-01",
+          "parent_id": "review-harbour-01",
+          "parent_kind": "review",
+          "posted_at": "2027-02-13T10:00:00Z"
+        },
+        {
+          "author_id": "sana-devi",
+          "body": "Hand washing does slow it down, but it should not be the price of keeping a mug. All four are being replaced.",
+          "id": "comment-harbour-02",
+          "parent_id": "review-harbour-02",
+          "parent_kind": "review",
+          "posted_at": "2027-02-26T09:00:00Z"
+        },
+        {
+          "author_id": "sana-devi",
+          "body": "Replacement sent this morning. We are writing to everyone who bought from that run rather than waiting to be asked.",
+          "id": "comment-harbour-03",
+          "parent_id": "review-harbour-03",
+          "parent_kind": "review",
+          "posted_at": "2027-03-03T14:00:00Z"
+        },
+        {
+          "author_id": "yuki-tanabe",
+          "body": "You are right that it is the dishwasher. The published note explains the fit problem behind it.",
+          "id": "comment-harbour-04",
+          "parent_id": "review-harbour-04",
+          "parent_kind": "review",
+          "posted_at": "2027-03-07T11:00:00Z"
+        },
+        {
+          "author_id": "bennett-cho",
+          "body": "I had not noticed. Credit received, thank you for finding it first.",
+          "id": "comment-post-billing-01",
+          "parent_id": "post-club-billing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-17T18:00:00Z"
+        },
+        {
+          "author_id": "maren-oduya",
+          "body": "Still showing two charges on my statement. Is the credit separate?",
+          "id": "comment-post-billing-02",
+          "parent_id": "post-club-billing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-18T08:00:00Z"
+        },
+        {
+          "author_id": "rosa-delgado",
+          "body": "Separate, and issued on the 18th. It appears as a credit note against the March invoice rather than a reversal.",
+          "id": "comment-post-billing-03",
+          "parent_id": "post-club-billing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-18T09:00:00Z"
+        },
+        {
+          "author_id": "clara-voight",
+          "body": "Thank you for saying which run it was. I assumed I had done something wrong.",
+          "id": "comment-post-crazing-01",
+          "parent_id": "post-harbour-crazing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-16T13:00:00Z"
+        },
+        {
+          "author_id": "franklin-obi",
+          "body": "Replacement arrived before I read this. Well handled.",
+          "id": "comment-post-crazing-02",
+          "parent_id": "post-harbour-crazing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-16T15:00:00Z"
+        },
+        {
+          "author_id": "vera-pahlsson",
+          "body": "Does this affect the Fieldstone mugs? Different glaze or the same one?",
+          "id": "comment-post-crazing-03",
+          "parent_id": "post-harbour-crazing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-17T08:00:00Z"
+        },
+        {
+          "author_id": "iris-mendel",
+          "body": "Different glaze and a different clay body. Fieldstone went through thirty dishwasher cycles before we listed it.",
+          "id": "comment-post-crazing-04",
+          "parent_id": "post-harbour-crazing",
+          "parent_kind": "post",
+          "posted_at": "2027-03-17T09:00:00Z"
+        },
+        {
+          "author_id": "alma-reyes",
+          "body": "Preordered the bowl. Any sense of how long the wait is?",
+          "id": "comment-post-fieldstone-01",
+          "parent_id": "post-fieldstone-preview",
+          "parent_kind": "post",
+          "posted_at": "2027-03-13T20:00:00Z"
+        },
+        {
+          "author_id": "mira-halvorsen",
+          "body": "The second kiln run is on 27 March. If it passes inspection, preorders ship the following week. We will not give a date before that.",
+          "id": "comment-post-fieldstone-02",
+          "parent_id": "post-fieldstone-preview",
+          "parent_kind": "post",
+          "posted_at": "2027-03-13T21:00:00Z"
+        },
+        {
+          "author_id": "soren-mikkelsen",
+          "body": "Two bowls and four plates ordered. The plate photograph sold it.",
+          "id": "comment-post-fieldstone-03",
+          "parent_id": "post-fieldstone-preview",
+          "parent_kind": "post",
+          "posted_at": "2027-03-14T12:00:00Z"
+        },
+        {
+          "author_id": "greta-lindholm",
+          "body": "The crawl mark photograph is more convincing than any product shot.",
+          "id": "comment-post-kiln-01",
+          "parent_id": "post-kiln-visit",
+          "parent_kind": "post",
+          "posted_at": "2027-03-10T18:00:00Z"
+        },
+        {
+          "author_id": "lena-fischer",
+          "body": "Harriet let us stay for the unloading, which is the part nobody photographs.",
+          "id": "comment-post-kiln-02",
+          "parent_id": "post-kiln-visit",
+          "parent_kind": "post",
+          "posted_at": "2027-03-10T19:00:00Z"
+        },
+        {
+          "author_id": "tilda-nyberg",
+          "body": "Box arrived on the 6th. The olive oil is the best one you have sent.",
+          "id": "comment-post-pantry-01",
+          "parent_id": "post-pantry-march",
+          "parent_kind": "post",
+          "posted_at": "2027-03-05T08:00:00Z"
+        },
+        {
+          "author_id": "hugo-marchetti",
+          "body": "Mine has not arrived and I am billed on the 1st. Should I be worried?",
+          "id": "comment-post-pantry-02",
+          "parent_id": "post-pantry-march",
+          "parent_kind": "post",
+          "posted_at": "2027-03-06T17:00:00Z"
+        },
+        {
+          "author_id": "otto-lindqvist",
+          "body": "Yours went out on the 11th with the second wave. That was our error in the split, not the warehouse's.",
+          "id": "comment-post-pantry-03",
+          "parent_id": "post-pantry-march",
+          "parent_kind": "post",
+          "posted_at": "2027-03-06T18:00:00Z"
+        },
+        {
+          "author_id": "jonas-wirth",
+          "body": "My review is unbadged and I definitely bought it. Guest checkout, so that explains it.",
+          "id": "comment-post-reviews-01",
+          "parent_id": "post-verified-reviews",
+          "parent_kind": "post",
+          "posted_at": "2027-03-08T16:00:00Z"
+        },
+        {
+          "author_id": "quinn-abara",
+          "body": "Mine has not moved in five days. Is that the pallet problem?",
+          "id": "comment-post-shipping-01",
+          "parent_id": "post-shipping-honestly",
+          "parent_kind": "post",
+          "posted_at": "2027-02-27T14:00:00Z"
+        },
+        {
+          "author_id": "callum-reid",
+          "body": "It is. Eleven orders were scanned onto a pallet without their labels being read. We are tracing each one individually.",
+          "id": "comment-post-shipping-02",
+          "parent_id": "post-shipping-honestly",
+          "parent_kind": "post",
+          "posted_at": "2027-02-27T15:00:00Z"
+        }
+      ],
+      "posts": [
+        {
+          "author_id": "bea-morrow",
+          "body": "Fieldstone is four pieces: a mug, a plate, a jug and a serving bowl. Everything is thrown at Harrow Works and glazed in batches of about two hundred. The bowl is the hardest of the four to get right, and the first run is short, so it opens as a preorder rather than as stock we do not have.",
+          "id": "post-fieldstone-preview",
+          "posted_at": "2027-03-12T15:00:00Z",
+          "product_ids": [
+            "prod-fieldstone-mug",
+            "prod-fieldstone-plate",
+            "prod-fieldstone-jug",
+            "prod-fieldstone-bowl"
+          ],
+          "tags": [
+            "fieldstone",
+            "launch"
+          ],
+          "title": "Fieldstone arrives on 25 March"
+        },
+        {
+          "author_id": "iris-mendel",
+          "body": "About forty Harbour mugs from the first run develop fine cracks in the glaze after a few dishwasher cycles. It is a glaze fit problem, not a safety problem, and it is ours. We are writing to everyone who bought one. You do not need to send it back and you do not need a receipt.",
+          "id": "post-harbour-crazing",
+          "posted_at": "2027-03-16T11:30:00Z",
+          "product_ids": [
+            "prod-harbour-mug"
+          ],
+          "tags": [
+            "quality",
+            "harbour"
+          ],
+          "title": "The Harbour mug is crazing, and we are replacing it"
+        },
+        {
+          "author_id": "lena-fischer",
+          "body": "Photographs from the second Fieldstone firing: the glaze bucket, the kiln log, and Harriet holding the one bowl in twelve that came out with a crawl mark. The rejected pieces are why the bowl is short.",
+          "id": "post-kiln-visit",
+          "posted_at": "2027-03-09T16:20:00Z",
+          "product_ids": [
+            "prod-fieldstone-bowl"
+          ],
+          "tags": [
+            "fieldstone",
+            "making"
+          ],
+          "title": "Two days at Harrow Works"
+        },
+        {
+          "author_id": "felix-arana",
+          "body": "Flaked sea salt, the November olive oil, and a set of beeswax wraps. Boxes went out on the 4th for members billed on the 1st, and on the 11th for everyone else.",
+          "id": "post-pantry-march",
+          "posted_at": "2027-03-04T09:45:00Z",
+          "product_ids": [
+            "prod-sea-salt",
+            "prod-olive-oil",
+            "prod-beeswax-wrap"
+          ],
+          "tags": [
+            "pantry-club"
+          ],
+          "title": "What is in the March pantry box"
+        },
+        {
+          "author_id": "rosa-delgado",
+          "body": "A renewal retry ran after the first attempt had already succeeded but had not been recorded. Two members paid twice. We found it in the March reconciliation, not from a complaint, and both credits are issued this week.",
+          "id": "post-club-billing",
+          "posted_at": "2027-03-17T17:10:00Z",
+          "product_ids": [],
+          "tags": [
+            "pantry-club",
+            "billing"
+          ],
+          "title": "Two members were charged twice in March"
+        },
+        {
+          "author_id": "yuki-tanabe",
+          "body": "Warm water, no fabric softener, and take it out of the dryer damp. Linen sheds its stiffness in about six washes and then stays that way for years.",
+          "id": "post-linen-care",
+          "posted_at": "2027-02-19T10:00:00Z",
+          "product_ids": [
+            "prod-linen-apron",
+            "prod-linen-napkins",
+            "prod-linen-runner"
+          ],
+          "tags": [
+            "care",
+            "linen"
+          ],
+          "title": "How to wash linen so it gets better"
+        },
+        {
+          "author_id": "callum-reid",
+          "body": "Orders leave Swiftline in Columbus. A label is created when the box is packed and the first scan happens when the carrier collects, which can be a day later. If the tracking page has not moved in three days, that is a real problem and we want to hear about it.",
+          "id": "post-shipping-honestly",
+          "posted_at": "2027-02-26T13:15:00Z",
+          "product_ids": [],
+          "tags": [
+            "shipping"
+          ],
+          "title": "Where your order actually is"
+        },
+        {
+          "author_id": "mira-halvorsen",
+          "body": "Every review on a product page carries a verified badge if we can match it to an order. Guest checkout does not match yet, so some genuine buyers are still unbadged. We would rather show that than badge everyone.",
+          "id": "post-verified-reviews",
+          "posted_at": "2027-03-07T12:00:00Z",
+          "product_ids": [],
+          "tags": [
+            "storefront",
+            "reviews"
+          ],
+          "title": "Reviews now say whether the writer bought the thing"
+        }
+      ],
+      "reviews": [
+        {
+          "author_id": "kaia-nakamura",
+          "body": "The smell of onion never quite leaves. For bread and cheese they are excellent.",
+          "id": "review-beeswax-01",
+          "posted_at": "2027-02-15T20:00:00Z",
+          "product_id": "prod-beeswax-wrap",
+          "rating": 4,
+          "status": "published",
+          "title": "Works for cheese, not for onions",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "rania-haddad",
+          "body": "Warm them in your hands and they seal properly. Six months in and still tacky.",
+          "id": "review-beeswax-02",
+          "posted_at": "2027-02-27T11:00:00Z",
+          "product_id": "prod-beeswax-wrap",
+          "rating": 5,
+          "status": "published",
+          "title": "Sticky in the right way",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "alma-reyes",
+          "body": "Sold out before I could reorder. Burned evenly for about nine hours each.",
+          "id": "review-candle-01",
+          "posted_at": "2027-01-22T19:00:00Z",
+          "product_id": "prod-candle-pair",
+          "rating": 5,
+          "status": "published",
+          "title": "Wish I had bought four",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "greta-lindholm",
+          "body": "Pleasant but subtle. If you want a room-filling candle this is not that.",
+          "id": "review-candle-02",
+          "posted_at": "2027-02-09T16:00:00Z",
+          "product_id": "prod-candle-pair",
+          "rating": 4,
+          "status": "published",
+          "title": "Scent is faint",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "alma-reyes",
+          "body": "The handle is wide enough for two fingers and the glaze is matte without being chalky. I ordered two more.",
+          "id": "review-fieldstone-01",
+          "posted_at": "2027-02-28T09:00:00Z",
+          "product_id": "prod-fieldstone-mug",
+          "rating": 5,
+          "status": "published",
+          "title": "Heavier than it looks, in a good way",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "leo-santoro",
+          "body": "Coffee is still warm twenty minutes later. The base is unglazed so it grips the table.",
+          "id": "review-fieldstone-02",
+          "posted_at": "2027-03-04T20:00:00Z",
+          "product_id": "prod-fieldstone-mug",
+          "rating": 5,
+          "status": "published",
+          "title": "Holds heat properly",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "greta-lindholm",
+          "body": "Two of the four sit very slightly proud. Told it is normal for thrown pieces and I believe them, but worth saying.",
+          "id": "review-fieldstone-03",
+          "posted_at": "2027-03-08T18:00:00Z",
+          "product_id": "prod-fieldstone-plate",
+          "rating": 4,
+          "status": "published",
+          "title": "Lovely, slightly uneven",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "quinn-abara",
+          "body": "No dribble down the side, which is the only thing I care about in a jug.",
+          "id": "review-fieldstone-04",
+          "posted_at": "2027-03-10T12:00:00Z",
+          "product_id": "prod-fieldstone-jug",
+          "rating": 5,
+          "status": "published",
+          "title": "The pour is clean",
+          "verified_buyer": false
+        },
+        {
+          "author_id": "clara-voight",
+          "body": "I loved this mug for about four weeks. Now the whole glaze is covered in tiny cracks. It only ever went in the dishwasher.",
+          "id": "review-harbour-01",
+          "order_id": "order-10101",
+          "posted_at": "2027-02-12T19:00:00Z",
+          "product_id": "prod-harbour-mug",
+          "rating": 2,
+          "status": "published",
+          "title": "Cracked all over after a month",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "franklin-obi",
+          "body": "Four mugs, three crazed. The fourth one I have been washing by hand and it is still fine, which tells you something.",
+          "id": "review-harbour-02",
+          "order_id": "order-10102",
+          "posted_at": "2027-02-25T08:00:00Z",
+          "product_id": "prod-harbour-mug",
+          "rating": 2,
+          "status": "published",
+          "title": "Same crazing as the other reviews",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "nils-bergstrom",
+          "body": "Fine cracks through the glaze after six weeks. Not sharp, not leaking, just clearly wrong for the price.",
+          "id": "review-harbour-03",
+          "order_id": "order-10103",
+          "posted_at": "2027-03-02T21:00:00Z",
+          "product_id": "prod-harbour-mug",
+          "rating": 2,
+          "status": "published",
+          "title": "Beautiful until it was not",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "imogen-bell",
+          "body": "Three mugs, no cracks, but I never put them in the dishwasher. Reading the other reviews I think that is the difference.",
+          "id": "review-harbour-04",
+          "order_id": "order-10106",
+          "posted_at": "2027-03-06T07:00:00Z",
+          "product_id": "prod-harbour-mug",
+          "rating": 4,
+          "status": "published",
+          "title": "Mine are fine, but I hand wash",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "esme-fontaine",
+          "body": "Washed weekly since 2025. The straps have softened and nothing has torn.",
+          "id": "review-linen-apron-01",
+          "posted_at": "2027-01-17T11:00:00Z",
+          "product_id": "prod-linen-apron",
+          "rating": 5,
+          "status": "published",
+          "title": "Third year, still going",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "maren-oduya",
+          "body": "I am five foot two and it reaches my shins. Still lovely, just size down if you can.",
+          "id": "review-linen-apron-02",
+          "posted_at": "2027-02-01T15:00:00Z",
+          "product_id": "prod-linen-apron",
+          "rating": 4,
+          "status": "published",
+          "title": "Runs long",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "tilda-nyberg",
+          "body": "Stiff out of the box, perfect after three washes. Exactly as the care post said.",
+          "id": "review-linen-napkins-01",
+          "posted_at": "2027-02-08T17:00:00Z",
+          "product_id": "prod-linen-napkins",
+          "rating": 5,
+          "status": "published",
+          "title": "Better after washing",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "dmitri-sokolov",
+          "body": "That is linen and I knew that. Still, if you want a flat napkin this is not it.",
+          "id": "review-linen-napkins-02",
+          "posted_at": "2027-02-17T13:00:00Z",
+          "product_id": "prod-linen-napkins",
+          "rating": 3,
+          "status": "published",
+          "title": "Good but they wrinkle instantly",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "orla-brennan",
+          "body": "Two metres covers our table with a proper drop at both ends.",
+          "id": "review-linen-runner-01",
+          "posted_at": "2027-01-25T10:00:00Z",
+          "product_id": "prod-linen-runner",
+          "rating": 5,
+          "status": "published",
+          "title": "Right length for a long table",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "bennett-cho",
+          "body": "No two look the same. Mine has a knot near the handle and I like it more for that.",
+          "id": "review-oak-board-01",
+          "posted_at": "2027-01-29T14:00:00Z",
+          "product_id": "prod-oak-board",
+          "rating": 5,
+          "status": "published",
+          "title": "Grain is gorgeous",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "jonas-wirth",
+          "body": "Every six weeks in a dry house, not every three months. Easy enough.",
+          "id": "review-oak-board-02",
+          "posted_at": "2027-02-22T09:00:00Z",
+          "product_id": "prod-oak-board",
+          "rating": 4,
+          "status": "published",
+          "title": "Needs oiling more than they say",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "wes-agyeman",
+          "body": "You can taste that it is this year's. The tin keeps it dark, which matters.",
+          "id": "review-olive-oil-01",
+          "posted_at": "2027-02-24T10:00:00Z",
+          "product_id": "prod-olive-oil",
+          "rating": 5,
+          "status": "published",
+          "title": "Peppery, in a good way",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "zoya-petrosyan",
+          "body": "Three weeks from order to door. The oil is excellent and I would buy it again, but say so on the page.",
+          "id": "review-olive-oil-02",
+          "posted_at": "2027-03-05T21:00:00Z",
+          "product_id": "prod-olive-oil",
+          "rating": 3,
+          "status": "published",
+          "title": "Lovely oil, slow delivery",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "soren-mikkelsen",
+          "body": "Salt is salt, but a tin you can open with one hand next to the stove is worth the money.",
+          "id": "review-sea-salt-01",
+          "posted_at": "2027-02-20T18:00:00Z",
+          "product_id": "prod-sea-salt",
+          "rating": 5,
+          "status": "published",
+          "title": "The tin is the point",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "umberto-rossi",
+          "body": "Still good, just do not expect the big pyramids in the photograph.",
+          "id": "review-sea-salt-02",
+          "posted_at": "2027-03-03T12:00:00Z",
+          "product_id": "prod-sea-salt",
+          "rating": 4,
+          "status": "published",
+          "title": "Flakes are smaller than pictured",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "hugo-marchetti",
+          "body": "Eggs did not stick on the first use, which has never happened to me with a new pan.",
+          "id": "review-skillet-01",
+          "posted_at": "2027-01-07T08:00:00Z",
+          "product_id": "prod-cast-skillet",
+          "rating": 5,
+          "status": "published",
+          "title": "Seasoning was real",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "paavo-virtanen",
+          "body": "It is cast iron so of course it is heavy, but the handle is short and that makes it worse. Cooks beautifully.",
+          "id": "review-skillet-02",
+          "posted_at": "2027-02-05T19:00:00Z",
+          "product_id": "prod-cast-skillet",
+          "rating": 4,
+          "status": "published",
+          "title": "Heavy",
+          "verified_buyer": true
+        },
+        {
+          "author_id": "vera-pahlsson",
+          "body": "Bought in October, used most days since. No complaints at all.",
+          "id": "review-skillet-03",
+          "posted_at": "2027-02-13T16:00:00Z",
+          "product_id": "prod-cast-skillet",
+          "rating": 5,
+          "status": "published",
+          "title": "Replaced three non-stick pans",
+          "verified_buyer": false
+        }
+      ]
+    },
+    "software": {
+      "database": {
+        "cluster": "marlow-pine-production",
+        "collections": [
+          "customers",
+          "orders",
+          "products",
+          "reviews",
+          "support_cases"
+        ],
+        "name": "marlowpine"
+      },
+      "repositories": [
+        {
+          "description": "The public storefront, product pages, reviews and checkout.",
+          "id": "repo-storefront",
+          "issues": [
+            {
+              "assignee": "gus-ferreira",
+              "author": "mira-halvorsen",
+              "body": "The product page shows the preorder state correctly. The collection grid reads a cached availability flag written before the status changed, so the Fieldstone bowl looks in stock until you open it. The drop is on 25 March.",
+              "id": "issue-210",
+              "labels": [
+                "bug",
+                "fieldstone",
+                "storefront"
+              ],
+              "number": 210,
+              "state": "open",
+              "title": "Preorder badge does not render on collection tiles"
+            },
+            {
+              "assignee": "anya-kowalski",
+              "author": "anya-kowalski",
+              "body": "The badge is granted by matching a review author's account id to an order. A guest order has no account id, so a genuine buyer shows unbadged. Matching on the order email is the obvious fix and needs a decision about case and plus-addressing.",
+              "id": "issue-211",
+              "labels": [
+                "bug",
+                "reviews"
+              ],
+              "number": 211,
+              "state": "open",
+              "title": "Verified-buyer badge misses orders placed as a guest"
+            },
+            {
+              "assignee": "anya-kowalski",
+              "author": "yuki-tanabe",
+              "body": "Most helpful first is the useful default on a product with more than ten reviews.",
+              "id": "issue-212",
+              "labels": [
+                "enhancement",
+                "reviews"
+              ],
+              "number": 212,
+              "state": "open",
+              "title": "Review list sorts by newest with no way to change it"
+            },
+            {
+              "assignee": "gus-ferreira",
+              "author": "gus-ferreira",
+              "body": "The whole design system loads on every route. Splitting it would halve first paint on mobile.",
+              "id": "issue-217",
+              "labels": [
+                "performance",
+                "storefront"
+              ],
+              "number": 217,
+              "state": "open",
+              "title": "Product pages ship 1.4 MB of unused CSS"
+            }
+          ],
+          "language": "TypeScript",
+          "member_ids": [
+            "gus-ferreira",
+            "anya-kowalski",
+            "mira-halvorsen"
+          ],
+          "name": "storefront",
+          "owner_id": "marlow-pine",
+          "topics": [
+            "web",
+            "commerce",
+            "storefront"
+          ]
+        },
+        {
+          "description": "Orders, allocation, fulfilment webhooks and returns.",
+          "id": "repo-order-service",
+          "issues": [
+            {
+              "assignee": "gus-ferreira",
+              "author": "callum-reid",
+              "body": "Swiftline sent eleven scans on 12 March with an empty tracking field. The service marked all eleven orders shipped and told eleven people their parcel was on its way. A scan with no tracking number is not a shipment and should be rejected.",
+              "id": "issue-213",
+              "labels": [
+                "bug",
+                "fulfilment"
+              ],
+              "number": 213,
+              "state": "open",
+              "support_case_id": "case-missing-tracking",
+              "title": "Shipment webhook accepts a scan with no tracking number"
+            },
+            {
+              "assignee": "gus-ferreira",
+              "author": "otto-lindqvist",
+              "body": "Fixed by batching the carrier call. Closed after the wholesale return in February.",
+              "id": "issue-214",
+              "labels": [
+                "bug",
+                "returns"
+              ],
+              "number": 214,
+              "state": "closed",
+              "title": "Return label request times out above twenty items"
+            },
+            {
+              "assignee": "gus-ferreira",
+              "author": "kit-nwosu",
+              "body": "Preordered bowls are not held against the second kiln run, so a walk-up order placed after the drop could take stock a preorder has already paid for.",
+              "id": "issue-218",
+              "labels": [
+                "bug",
+                "fieldstone",
+                "inventory"
+              ],
+              "number": 218,
+              "state": "open",
+              "title": "Backorder allocation ignores preorder quantity"
+            }
+          ],
+          "language": "Go",
+          "member_ids": [
+            "gus-ferreira",
+            "callum-reid",
+            "tomas-brekke"
+          ],
+          "name": "order-service",
+          "owner_id": "marlow-pine",
+          "topics": [
+            "orders",
+            "fulfilment",
+            "api"
+          ]
+        },
+        {
+          "description": "Pantry Club renewals, credit notes and the monthly billing run.",
+          "id": "repo-club-billing",
+          "issues": [
+            {
+              "assignee": "tomas-brekke",
+              "author": "rosa-delgado",
+              "body": "The charge succeeds at the provider, the response times out locally, and the retry sends a second charge without an idempotency key. Two members paid twice in March. The key exists in the provider call and is not being set.",
+              "id": "issue-215",
+              "labels": [
+                "bug",
+                "billing",
+                "pantry-club"
+              ],
+              "number": 215,
+              "state": "open",
+              "support_case_id": "case-double-charge",
+              "title": "Renewal retry can charge twice when the first attempt times out"
+            },
+            {
+              "assignee": "tomas-brekke",
+              "author": "rosa-delgado",
+              "body": "A member sees a credit with no reference, which reads like an unrelated refund.",
+              "id": "issue-216",
+              "labels": [
+                "bug",
+                "billing"
+              ],
+              "number": 216,
+              "state": "open",
+              "title": "Credit notes are not linked to the invoice they correct"
+            }
+          ],
+          "language": "Python",
+          "member_ids": [
+            "tomas-brekke",
+            "rosa-delgado"
+          ],
+          "name": "club-billing",
+          "owner_id": "marlow-pine",
+          "topics": [
+            "billing",
+            "subscriptions"
+          ]
+        }
+      ]
+    },
+    "support": {
+      "cases": [
+        {
+          "contact_id": "clara-voight",
+          "customer_id": "club-clara-voight",
+          "id": "case-crazing-batch",
+          "next_action": "Send the last eleven replacements and close each review reply.",
+          "opened_at": "2027-02-13T09:40:00Z",
+          "order_id": "order-10101",
+          "owner_id": "sana-devi",
+          "priority": "high",
+          "state": "replacing",
+          "title": "Harbour mug glaze crazing in the first run"
+        },
+        {
+          "contact_id": "quinn-abara",
+          "customer_id": "club-quinn-abara",
+          "id": "case-missing-tracking",
+          "next_action": "Get the pallet trace from Swiftline, then write to all eleven with a real answer.",
+          "opened_at": "2027-03-13T11:15:00Z",
+          "order_id": "order-10023",
+          "owner_id": "otto-lindqvist",
+          "priority": "high",
+          "state": "engineering",
+          "title": "Eleven orders shipped with no carrier movement"
+        },
+        {
+          "contact_id": "maren-oduya",
+          "customer_id": "club-maren-oduya",
+          "id": "case-double-charge",
+          "next_action": "Issue the second credit note and reply on the public thread.",
+          "opened_at": "2027-03-16T16:05:00Z",
+          "owner_id": "rosa-delgado",
+          "priority": "high",
+          "state": "finance",
+          "title": "Two Pantry Club members charged twice in March"
+        },
+        {
+          "contact_id": "hugo-marchetti",
+          "customer_id": "club-hugo-marchetti",
+          "id": "case-late-box",
+          "next_action": "None. The split error is fixed for April.",
+          "opened_at": "2027-03-06T10:30:00Z",
+          "owner_id": "otto-lindqvist",
+          "priority": "normal",
+          "state": "resolved",
+          "title": "March pantry box arrived a week late for the 1st-of-month members"
+        },
+        {
+          "contact_id": "alma-reyes",
+          "customer_id": "club-alma-reyes",
+          "id": "case-preorder-question",
+          "next_action": "Answer after the 27 March kiln inspection. Do not give a date before it.",
+          "opened_at": "2027-03-15T14:20:00Z",
+          "order_id": "order-10201",
+          "owner_id": "sana-devi",
+          "priority": "normal",
+          "state": "waiting-on-us",
+          "title": "When does the Fieldstone bowl preorder ship"
+        },
+        {
+          "contact_id": "hugo-marchetti",
+          "customer_id": "club-hugo-marchetti",
+          "id": "case-expired-card",
+          "next_action": "Second reminder on 22 March, then pause the membership rather than retry again.",
+          "opened_at": "2027-03-10T09:00:00Z",
+          "owner_id": "rosa-delgado",
+          "priority": "normal",
+          "state": "waiting-on-customer",
+          "title": "February renewal declined twice on an expired card"
+        }
+      ]
+    },
+    "work": {
+      "projects": [
+        {
+          "id": "project-fieldstone-drop",
+          "member_ids": [
+            "mira-halvorsen",
+            "bea-morrow",
+            "kit-nwosu",
+            "gus-ferreira",
+            "lena-fischer"
+          ],
+          "name": "Fieldstone drop",
+          "owner_id": "mira-halvorsen",
+          "start_on": "2027-02-06",
+          "status": "in-progress",
+          "summary": "Launch four Fieldstone pieces on 25 March with the serving bowl on preorder.",
+          "target_on": "2027-03-25"
+        },
+        {
+          "customer_id": "club-clara-voight",
+          "id": "project-harbour-response",
+          "member_ids": [
+            "sana-devi",
+            "otto-lindqvist",
+            "iris-mendel",
+            "bea-morrow"
+          ],
+          "name": "Harbour mug replacement",
+          "owner_id": "sana-devi",
+          "start_on": "2027-02-11",
+          "status": "in-progress",
+          "summary": "Replace every mug from the first Harbour run and say publicly why.",
+          "target_on": "2027-03-22"
+        },
+        {
+          "id": "project-club-billing-fix",
+          "member_ids": [
+            "rosa-delgado",
+            "tomas-brekke"
+          ],
+          "name": "Pantry Club billing correction",
+          "owner_id": "rosa-delgado",
+          "start_on": "2027-03-15",
+          "status": "in-progress",
+          "summary": "Fix the renewal retry, issue both credit notes, and link credits to invoices.",
+          "target_on": "2027-03-29"
+        },
+        {
+          "id": "project-fulfilment-recovery",
+          "member_ids": [
+            "callum-reid",
+            "otto-lindqvist",
+            "gus-ferreira"
+          ],
+          "name": "Pallet trace and tracking guard",
+          "owner_id": "callum-reid",
+          "start_on": "2027-03-13",
+          "status": "in-progress",
+          "summary": "Find the eleven parcels, then stop the order service from believing an empty scan.",
+          "target_on": "2027-03-23"
+        }
+      ],
+      "tasks": [
+        {
+          "assignee_id": "gus-ferreira",
+          "description": "Invalidate the availability cache when a product status changes. Ship before the 25th.",
+          "due_on": "2027-03-21",
+          "id": "task-preorder-badge",
+          "labels": [
+            "storefront",
+            "fieldstone"
+          ],
+          "priority": "urgent",
+          "project_id": "project-fieldstone-drop",
+          "reporter_id": "mira-halvorsen",
+          "status": "in-progress",
+          "title": "Fix the preorder badge on collection tiles"
+        },
+        {
+          "assignee_id": "kit-nwosu",
+          "description": "Harrow Works rejected nineteen of the first hundred and twelve. Get the number we can actually promise.",
+          "due_on": "2027-03-19",
+          "id": "task-bowl-count",
+          "labels": [
+            "inventory"
+          ],
+          "priority": "high",
+          "project_id": "project-fieldstone-drop",
+          "reporter_id": "mira-halvorsen",
+          "status": "in-progress",
+          "title": "Confirm the sellable bowl count"
+        },
+        {
+          "assignee_id": "bea-morrow",
+          "description": "Lead with the four pieces. Say the bowl is a preorder and why, in the first paragraph.",
+          "due_on": "2027-03-22",
+          "id": "task-drop-email",
+          "labels": [
+            "marketing"
+          ],
+          "priority": "high",
+          "project_id": "project-fieldstone-drop",
+          "reporter_id": "mira-halvorsen",
+          "status": "review",
+          "title": "Write the drop announcement"
+        },
+        {
+          "assignee_id": "lena-fischer",
+          "description": "The current photograph makes the glaze read grey. It is closer to oatmeal.",
+          "due_on": "2027-03-16",
+          "id": "task-jug-reshoot",
+          "labels": [
+            "studio"
+          ],
+          "priority": "normal",
+          "project_id": "project-fieldstone-drop",
+          "reporter_id": "bea-morrow",
+          "status": "done",
+          "title": "Reshoot the jug on a light ground"
+        },
+        {
+          "assignee_id": "gus-ferreira",
+          "description": "Issue 218. A walk-up order must not take a bowl a preorder has paid for.",
+          "due_on": "2027-03-24",
+          "id": "task-backorder-hold",
+          "labels": [
+            "orders"
+          ],
+          "priority": "high",
+          "project_id": "project-fieldstone-drop",
+          "reporter_id": "kit-nwosu",
+          "status": "ready",
+          "title": "Hold preorder stock against the second kiln run"
+        },
+        {
+          "assignee_id": "otto-lindqvist",
+          "description": "Six orders from the affected run are still unsent. No returns required, no receipts required.",
+          "due_on": "2027-03-20",
+          "id": "task-replacement-list",
+          "labels": [
+            "support"
+          ],
+          "priority": "high",
+          "project_id": "project-harbour-response",
+          "reporter_id": "sana-devi",
+          "status": "in-progress",
+          "title": "Finish the replacement list"
+        },
+        {
+          "assignee_id": "iris-mendel",
+          "description": "Say what the fault is, that it is not a safety problem, and that it is ours.",
+          "due_on": "2027-03-16",
+          "id": "task-crazing-note",
+          "labels": [
+            "marketing",
+            "quality"
+          ],
+          "priority": "high",
+          "project_id": "project-harbour-response",
+          "reporter_id": "bea-morrow",
+          "status": "done",
+          "title": "Publish the crazing note"
+        },
+        {
+          "assignee_id": "sana-devi",
+          "description": "Reply on the review itself, not by mail. The replies are part of the public record.",
+          "due_on": "2027-03-21",
+          "id": "task-review-replies",
+          "labels": [
+            "support",
+            "reviews"
+          ],
+          "priority": "normal",
+          "project_id": "project-harbour-response",
+          "reporter_id": "yuki-tanabe",
+          "status": "in-progress",
+          "title": "Reply to every two-star Harbour review"
+        },
+        {
+          "assignee_id": "tomas-brekke",
+          "description": "Issue 215. The key is already in the provider call signature and is not being passed.",
+          "due_on": "2027-03-20",
+          "id": "task-idempotency-key",
+          "labels": [
+            "billing"
+          ],
+          "priority": "urgent",
+          "project_id": "project-club-billing-fix",
+          "reporter_id": "rosa-delgado",
+          "status": "in-progress",
+          "title": "Set the idempotency key on the renewal charge"
+        },
+        {
+          "assignee_id": "rosa-delgado",
+          "description": "One is out. The second is waiting on the reconciliation line for the duplicate charge.",
+          "due_on": "2027-03-19",
+          "id": "task-credit-notes",
+          "labels": [
+            "finance"
+          ],
+          "priority": "high",
+          "project_id": "project-club-billing-fix",
+          "reporter_id": "rosa-delgado",
+          "status": "in-progress",
+          "title": "Issue both March credit notes"
+        },
+        {
+          "assignee_id": "tomas-brekke",
+          "description": "Issue 216. A credit with no reference reads like an unrelated refund.",
+          "due_on": "2027-04-01",
+          "id": "task-credit-links",
+          "labels": [
+            "billing"
+          ],
+          "priority": "normal",
+          "project_id": "project-club-billing-fix",
+          "reporter_id": "rosa-delgado",
+          "status": "backlog",
+          "title": "Link a credit note to the invoice it corrects"
+        },
+        {
+          "assignee_id": "rosa-delgado",
+          "description": "Before anyone asks. Name the number affected and what happens next.",
+          "due_on": "2027-03-17",
+          "id": "task-billing-post",
+          "labels": [
+            "marketing"
+          ],
+          "priority": "high",
+          "project_id": "project-club-billing-fix",
+          "reporter_id": "iris-mendel",
+          "status": "done",
+          "title": "Say publicly that two members were charged twice"
+        },
+        {
+          "assignee_id": "callum-reid",
+          "description": "Eleven orders, one pallet, 12 March. Desmond has the yard log.",
+          "due_on": "2027-03-18",
+          "id": "task-pallet-trace",
+          "labels": [
+            "fulfilment"
+          ],
+          "priority": "urgent",
+          "project_id": "project-fulfilment-recovery",
+          "reporter_id": "callum-reid",
+          "status": "in-progress",
+          "title": "Get the pallet trace from Swiftline"
+        },
+        {
+          "assignee_id": "gus-ferreira",
+          "description": "Issue 213. The service must not tell someone their parcel has shipped on an empty scan.",
+          "due_on": "2027-03-23",
+          "id": "task-tracking-guard",
+          "labels": [
+            "orders"
+          ],
+          "priority": "high",
+          "project_id": "project-fulfilment-recovery",
+          "reporter_id": "callum-reid",
+          "status": "ready",
+          "title": "Reject a shipment scan with no tracking number"
+        },
+        {
+          "assignee_id": "otto-lindqvist",
+          "description": "One message each, with the real position. Not a status page link.",
+          "due_on": "2027-03-20",
+          "id": "task-eleven-emails",
+          "labels": [
+            "support"
+          ],
+          "priority": "high",
+          "project_id": "project-fulfilment-recovery",
+          "reporter_id": "callum-reid",
+          "status": "blocked",
+          "title": "Write to all eleven affected orders"
+        },
+        {
+          "assignee_id": "anya-kowalski",
+          "description": "Issue 212. Not a launch blocker; queued behind the badge work.",
+          "due_on": "2027-04-08",
+          "id": "task-review-sort",
+          "labels": [
+            "reviews"
+          ],
+          "priority": "normal",
+          "project_id": "project-fieldstone-drop",
+          "reporter_id": "yuki-tanabe",
+          "status": "backlog",
+          "title": "Add a most-helpful sort to product reviews"
+        }
+      ],
+      "team": {
+        "key": "MP",
+        "name": "Marlow & Pine"
+      },
+      "time_entries": [
+        {
+          "date": "2027-03-17",
+          "id": "time-001",
+          "minutes": 145,
+          "note": "Traced the stale availability flag to the collection cache.",
+          "person_id": "gus-ferreira",
+          "task_id": "task-preorder-badge"
+        },
+        {
+          "date": "2027-03-18",
+          "id": "time-002",
+          "minutes": 90,
+          "note": "Cache invalidation on status change; still writing the test.",
+          "person_id": "gus-ferreira",
+          "task_id": "task-preorder-badge"
+        },
+        {
+          "date": "2027-03-16",
+          "id": "time-003",
+          "minutes": 60,
+          "note": "Counted the second-run rejects with Harriet on a call.",
+          "person_id": "kit-nwosu",
+          "task_id": "task-bowl-count"
+        },
+        {
+          "date": "2027-03-16",
+          "id": "time-004",
+          "minutes": 180,
+          "note": "Matched affected orders to current addresses.",
+          "person_id": "otto-lindqvist",
+          "task_id": "task-replacement-list"
+        },
+        {
+          "date": "2027-03-17",
+          "id": "time-005",
+          "minutes": 75,
+          "note": "Four review replies written and posted.",
+          "person_id": "sana-devi",
+          "task_id": "task-review-replies"
+        },
+        {
+          "date": "2027-03-17",
+          "id": "time-006",
+          "minutes": 120,
+          "note": "Reproduced the double charge against the provider sandbox.",
+          "person_id": "tomas-brekke",
+          "task_id": "task-idempotency-key"
+        },
+        {
+          "date": "2027-03-17",
+          "id": "time-007",
+          "minutes": 55,
+          "note": "First credit note issued and reconciled.",
+          "person_id": "rosa-delgado",
+          "task_id": "task-credit-notes"
+        },
+        {
+          "date": "2027-03-18",
+          "id": "time-008",
+          "minutes": 165,
+          "note": "Yard log pulled; eight of eleven located.",
+          "person_id": "callum-reid",
+          "task_id": "task-pallet-trace"
+        },
+        {
+          "date": "2027-03-15",
+          "id": "time-009",
+          "minutes": 40,
+          "note": "Wrote the rejection rule; waiting on the pallet trace to confirm the shape.",
+          "person_id": "gus-ferreira",
+          "task_id": "task-tracking-guard"
+        },
+        {
+          "date": "2027-03-16",
+          "id": "time-010",
+          "minutes": 110,
+          "note": "Draft one of the drop announcement.",
+          "person_id": "bea-morrow",
+          "task_id": "task-drop-email"
+        }
+      ]
+    }
+  },
+  "id": "pack.retail-operations"
+}

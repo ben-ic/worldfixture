@@ -1,0 +1,156 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "agentic": {
+      "actor_id": "maya-chen",
+      "capabilities": [
+        "mail.read",
+        "mail.send",
+        "calendar.read",
+        "documents.read",
+        "slack.read",
+        "slack.post",
+        "github.issue.read",
+        "github.issue.comment",
+        "finance.invoice.read"
+      ],
+      "causal_rules": [
+        {
+          "emits": [
+            "finance.ledger.updated",
+            "finance.bank-transaction.created",
+            "mail.payment-receipt.available"
+          ],
+          "id": "rule-invoice-payment",
+          "requires": [
+            "invoice_id",
+            "payment_id",
+            "amount_cents"
+          ],
+          "when": "finance.invoice.paid"
+        },
+        {
+          "emits": [
+            "support.case.updated",
+            "slack.customer-channel.notified"
+          ],
+          "id": "rule-support-reply",
+          "requires": [
+            "customer_id",
+            "thread_id"
+          ],
+          "when": "mail.customer-reply.received"
+        }
+      ],
+      "constraints": [
+        "Treat every record as synthetic",
+        "Do not invent payments or release decisions",
+        "Use normal application APIs and tools",
+        "Cite canonical entity references in evaluation output",
+        "Do not expose session credentials"
+      ],
+      "goals": [
+        {
+          "id": "goal-renewal-brief",
+          "instructions": "Summarize the export incident, state what is known and unknown, confirm the invoice state, and propose the next customer message without promising an untested release.",
+          "success_evidence": [
+            "References issue 318",
+            "Says invoice 4471 is open but not overdue",
+            "Names the safe workaround commitment",
+            "Does not claim the fix is merged"
+          ],
+          "title": "Prepare an accurate Lumen renewal brief"
+        },
+        {
+          "id": "goal-triage-export",
+          "instructions": "Use mail, chat, and source-control evidence to identify the failing path and the tests required before merge.",
+          "success_evidence": [
+            "Distinguishes manual from scheduled execution",
+            "Names 50k, 75k, and cancellation tests",
+            "Links the customer case to issue 318"
+          ],
+          "title": "Triage the scheduled-export failure"
+        }
+      ],
+      "grounding": [
+        {
+          "entity_id": "priya-raman",
+          "kind": "person"
+        },
+        {
+          "entity_id": "lumen-labs",
+          "kind": "organization"
+        },
+        {
+          "entity_id": "inv-4471",
+          "kind": "invoice"
+        },
+        {
+          "entity_id": "case-lumen-export",
+          "fact": {
+            "next_action": "Send workaround before 15:00",
+            "state": "engineering"
+          },
+          "kind": "support-case"
+        }
+      ]
+    },
+    "model_facts": [
+      {
+        "id": "fact-export-timeout",
+        "kind": "support",
+        "text": "Lumen's manual export retry works, but scheduled exports still pass a 120-second worker limit."
+      }
+    ],
+    "stories": [
+      {
+        "entity_refs": [
+          "lumen-labs",
+          "priya-raman",
+          "case-lumen-export",
+          "issue-318",
+          "inv-4471",
+          "doc-lumen-renewal"
+        ],
+        "id": "story-lumen-renewal",
+        "state": "active",
+        "summary": "Lumen's scheduled exports fail above 50,000 rows. The fix is known but still needs load and cancellation tests before the team can promise a release.",
+        "title": "A renewal depends on an honest export answer"
+      }
+    ],
+    "timeline": [
+      {
+        "after_seconds": 90,
+        "id": "arrival-priya-sample-result",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "One more data point: the 48,002-row sample completed in 1m34s. I reran the saved 52,184-row export on the schedule and it failed at 2m00s again. I can keep using manual retry through Tuesday if that is the safest workaround.\n\nPriya",
+          "customer_id": "lumen",
+          "from_id": "priya-raman",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Customers"
+          ],
+          "snippet": "The 48k sample completed; the scheduled 52k run failed again.",
+          "subject": "Re: Export is still timing out on our scheduled account run",
+          "thread_id": "thread-lumen-export",
+          "to_id": "maya-chen"
+        }
+      },
+      {
+        "after_seconds": 540,
+        "id": "arrival-lumen-payment",
+        "kind": "webhook",
+        "payload": {
+          "amount_cents": 41200,
+          "customer_id": "lumen",
+          "event": "finance.invoice.paid",
+          "invoice_id": "inv-4471",
+          "payment_id": "pay-4471"
+        }
+      }
+    ]
+  },
+  "id": "story.lumen-renewal"
+}

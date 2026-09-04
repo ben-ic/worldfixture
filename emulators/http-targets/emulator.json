@@ -1,0 +1,87 @@
+{
+  "app_id": "905-emulator-http-targets",
+  "slug": "emulator-http-targets",
+  "name": "WorldFixture HTTP Target Emulator",
+  "version": "v1.4.1",
+  "upstream": [],
+  "build": {
+    "port": 8080,
+    "readiness_path": "/readyz",
+    "generated_secrets": []
+  },
+  "runtime_contract": {
+    "backup_restore_adapter": {
+      "backup_verified": true,
+      "fresh_login_readback_verified": true,
+      "kind": "none",
+      "paths": [],
+      "restore_verified": true
+    },
+    "cold_install": {
+      "cache_condition": "not applicable to a session fixture",
+      "cache_empty": true,
+      "status": "authoritative"
+    },
+    "environment_ownership": [
+      {
+        "name": "WORLDFIXTURE_HTTP_TARGETS_LISTEN",
+        "owner": "set_by_platform",
+        "phase": "runtime"
+      },
+      {
+        "name": "WORLDFIXTURE_HTTP_TARGETS_PUBLIC_URL",
+        "owner": "set_by_platform",
+        "phase": "runtime"
+      },
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "owner": "set_by_platform",
+        "phase": "runtime"
+      },
+      {
+        "name": "WORLDFIXTURE_WORLD_SHA256",
+        "owner": "set_by_platform",
+        "phase": "runtime"
+      }
+    ],
+    "first_use_credential": {
+      "present": false,
+      "reveal": "none",
+      "rotation_supported": false,
+      "value_in_logs": false,
+      "value_in_manifest": false
+    },
+    "health_checks": [
+      {
+        "accept_statuses": [200],
+        "kind": "http",
+        "path": "/readyz",
+        "port": 8080
+      }
+    ],
+    "lifecycle_commands": {
+      "migration": "none",
+      "redeploy": "fresh session state",
+      "restart": "reload the immutable world projection",
+      "startup": "load one verified HTTP target projection and serve it"
+    },
+    "lifecycle_supported": true,
+    "memory": {
+      "scope": "bounded request counters and one world projection",
+      "status": "authoritative"
+    },
+    "migration_upgrade_range": {
+      "from": "1.0.0",
+      "supported": false,
+      "to": "1.4.1"
+    },
+    "persistent_paths": [],
+    "ports": [
+      {
+        "container_port": 8080,
+        "name": "http",
+        "protocol": "tcp"
+      }
+    ]
+  }
+}

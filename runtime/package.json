@@ -1,0 +1,14 @@
+{
+  "name": "worldfixture-runtime",
+  "version": "0.2.2",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "The WorldFixture headless runtime: environment resolution, supervision and state.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "bin": {
+    "worldfixture": "bin/worldfixture.mjs"
+  }
+}

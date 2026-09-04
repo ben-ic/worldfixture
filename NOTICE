@@ -1,0 +1,32 @@
+WorldFixture
+Copyright 2026 Benjamin Cates
+
+This product includes software developed by Benjamin Cates and the WorldFixture
+contributors, licensed under the Apache License, Version 2.0. The licence text
+is in the LICENSE file at the root of this repository.
+
+WorldFixture's own source is Apache-2.0. The published container image is an
+aggregate of separately licensed works: it installs unmodified third-party
+distribution packages and runs them as separate server processes, each of which
+keeps its own licence. Notably MariaDB is GPL-2.0 and PostgreSQL is under the
+PostgreSQL License; no WorldFixture code links against or derives from either,
+and neither is redistributed as part of the WorldFixture source.
+
+Notices for the third-party material that ships inside this repository or its
+images are kept beside the material they describe:
+
+  emulators/mail/THIRD_PARTY_NOTICES.md
+      Cyrus IMAP and the packages in the mail image.
+
+  emulators/s3/THIRD_PARTY_NOTICES.md
+      SeaweedFS and the packages in the S3 image.
+
+  emulators/emulate/contracts/notion/THIRD_PARTY_NOTICES.md
+      The vendored Notion OpenAPI descriptions and the recorded hosted MCP
+      tools capture the Notion emulator's contract tests assert against.
+
+Trademarks named in this repository belong to their respective owners. Slack,
+Gmail, GitHub, Notion, Amazon S3, and the other services WorldFixture emulates
+are trademarks of their respective owners. WorldFixture is an independent
+project and is not affiliated with, sponsored by, or endorsed by any of them.
+The names are used only to say which interface a given emulator reproduces.

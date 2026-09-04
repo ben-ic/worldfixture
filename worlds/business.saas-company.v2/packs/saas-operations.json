@@ -1,0 +1,1211 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "communication": {
+      "calendar_events": [
+        {
+          "attendees": [
+            "maya@northstar-relay.worldfixture.test",
+            "david@northstar-relay.worldfixture.test",
+            "priya@lumen-labs.worldfixture.test"
+          ],
+          "calendar_id": "calendar-primary",
+          "description": "Renewal, export reliability, usage growth, and next-quarter plan.",
+          "end": "2026-08-25T13:45:00Z",
+          "id": "event-lumen-review",
+          "start": "2026-08-25T13:00:00Z",
+          "summary": "Lumen renewal review"
+        },
+        {
+          "attendees": [
+            "jon@northstar-relay.worldfixture.test",
+            "elena@northstar-relay.worldfixture.test",
+            "lucas@northstar-relay.worldfixture.test"
+          ],
+          "calendar_id": "calendar-company",
+          "description": "Decide whether the export timeout fix enters 2.8.",
+          "end": "2026-08-24T12:00:00Z",
+          "id": "event-release-go-no-go",
+          "start": "2026-08-24T11:30:00Z",
+          "summary": "2.8 go or no-go"
+        },
+        {
+          "attendees": [
+            "theo@northstar-relay.worldfixture.test",
+            "imani@northstar-relay.worldfixture.test",
+            "jon@northstar-relay.worldfixture.test"
+          ],
+          "calendar_id": "calendar-company",
+          "description": "Introductions, first-week plan, and access check.",
+          "end": "2026-08-24T10:00:00Z",
+          "id": "event-theo-welcome",
+          "start": "2026-08-24T09:30:00Z",
+          "summary": "Welcome Theo"
+        }
+      ],
+      "calendars": [
+        {
+          "id": "calendar-primary",
+          "name": "Maya Chen",
+          "primary": true
+        },
+        {
+          "id": "calendar-company",
+          "name": "Northstar Relay",
+          "primary": false
+        }
+      ],
+      "channels": [
+        {
+          "id": "channel-general",
+          "member_ids": [
+            "maya-chen",
+            "jon-bell",
+            "noor-alvarez",
+            "elena-petrov",
+            "samira-okafor",
+            "lucas-meyer",
+            "hana-ito",
+            "david-banerjee",
+            "imani-brooks",
+            "theo-martin"
+          ],
+          "messages": [
+            {
+              "author_id": "imani-brooks",
+              "entity_refs": {
+                "document_id": "doc-theo-onboarding",
+                "person_id": "theo-martin"
+              },
+              "id": "chat-general-0819",
+              "text": "Theo's onboarding page is ready. Staging access is the only unchecked item; I left the owner blank because I do not know whether Jon or Lucas is handling it.",
+              "timestamp": "2026-08-19T15:42:00Z"
+            },
+            {
+              "author_id": "noor-alvarez",
+              "entity_refs": {},
+              "id": "chat-general-0820",
+              "text": "Friday reminder: please submit August expenses before 16:00. Missing receipts can wait until Monday; the amount and customer still need to be entered today.",
+              "timestamp": "2026-08-20T08:17:00Z"
+            }
+          ],
+          "name": "general",
+          "topic": "Company updates and questions for everyone"
+        },
+        {
+          "id": "channel-lumen-renewal",
+          "member_ids": [
+            "maya-chen",
+            "jon-bell",
+            "noor-alvarez",
+            "elena-petrov",
+            "samira-okafor",
+            "lucas-meyer",
+            "david-banerjee"
+          ],
+          "messages": [
+            {
+              "author_id": "samira-okafor",
+              "entity_refs": {
+                "customer_id": "lumen",
+                "support_case_id": "case-lumen-export"
+              },
+              "id": "chat-lumen-001",
+              "text": "Priya sent a useful boundary: 48k rows finishes in 1m34s; 52k reaches the two-minute worker limit. Interactive retry works, scheduled retry does not.",
+              "timestamp": "2026-08-20T09:06:00Z"
+            },
+            {
+              "author_id": "lucas-meyer",
+              "entity_refs": {
+                "issue_id": "issue-318",
+                "repository_id": "repo-exports"
+              },
+              "id": "chat-lumen-002",
+              "text": "I can reproduce it. The scheduler still passes the old timeout to the export worker. Fix is small; the load test is not.",
+              "timestamp": "2026-08-20T09:18:00Z"
+            },
+            {
+              "author_id": "jon-bell",
+              "entity_refs": {
+                "issue_id": "issue-318",
+                "repository_id": "repo-exports"
+              },
+              "id": "chat-lumen-003",
+              "text": "Please do not merge on the small fixture alone. Run 50k, 75k, and a cancelled job. If cancellation leaks workers, 2.8 waits.",
+              "timestamp": "2026-08-20T09:31:00Z"
+            },
+            {
+              "author_id": "noor-alvarez",
+              "entity_refs": {
+                "customer_id": "lumen",
+                "invoice_id": "inv-4471"
+              },
+              "id": "chat-lumen-004",
+              "text": "Account note: invoice 4471 is open, but it is not overdue until the 30th. Keep billing out of the incident reply unless Priya asks.",
+              "timestamp": "2026-08-20T10:02:00Z"
+            }
+          ],
+          "name": "lumen-renewal",
+          "topic": "Lumen Labs renewal, export reliability, and account follow-up"
+        },
+        {
+          "id": "channel-release-28",
+          "member_ids": [
+            "jon-bell",
+            "elena-petrov",
+            "lucas-meyer",
+            "hana-ito",
+            "samira-okafor",
+            "imani-brooks"
+          ],
+          "messages": [
+            {
+              "author_id": "elena-petrov",
+              "entity_refs": {
+                "issue_id": "issue-318",
+                "release_id": "release-2-8"
+              },
+              "id": "chat-release-001",
+              "text": "Audit page copy is final. Export timeout is the only item that can still change the release date. I need a go or no-go by Monday noon.",
+              "timestamp": "2026-08-20T13:10:00Z"
+            },
+            {
+              "author_id": "hana-ito",
+              "entity_refs": {
+                "issue_id": "issue-322",
+                "repository_id": "repo-console"
+              },
+              "id": "chat-release-002",
+              "text": "The audit page review found one timezone label bug. It is visual only; I opened 322 and kept it out of the export branch.",
+              "timestamp": "2026-08-20T13:22:00Z"
+            }
+          ],
+          "name": "release-2-8",
+          "topic": "Release 2.8 readiness and decisions"
+        }
+      ],
+      "documents": [
+        {
+          "content": "# Lumen Labs renewal\n\nUsage is up 38% since February. Compliance workspace added in June.\n\n## Export incident\n\nTODO: Replace after engineering go/no-go. Do not promise 2.8 until load and cancellation tests pass.\n\n## Billing\n\nInvoice 4471: 412.00 USD, open, due 30 August. Not overdue.",
+          "id": "doc-lumen-renewal",
+          "mime_type": "text/markdown",
+          "modified_at": "2026-08-20T16:25:00Z",
+          "name": "Lumen renewal brief — working draft.md",
+          "owner_id": "david-banerjee"
+        },
+        {
+          "content": "# Theo's first week\n\n- [x] Laptop\n- [x] Email and chat\n- [ ] Staging access — owner not assigned\n- [x] Architecture session with Jon\n- [x] Pairing block with Hana\n",
+          "id": "doc-theo-onboarding",
+          "mime_type": "text/markdown",
+          "modified_at": "2026-08-19T15:39:00Z",
+          "name": "Theo — first week.md",
+          "owner_id": "imani-brooks"
+        }
+      ],
+      "mail": [
+        {
+          "body_text": "Hi Maya,\n\nThe manual retry Samira suggested finished, but last night's scheduled export stopped at exactly two minutes again. We are using the same saved export with 52,184 rows.\n\nI have a renewal review on Tuesday. I do not need a final fix before then, but I do need a clear workaround and an honest date.\n\nPriya",
+          "customer_id": "lumen",
+          "from_id": "priya-raman",
+          "id": "mail-priya-export",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Customers"
+          ],
+          "sent_at": "2026-08-21T07:42:00Z",
+          "snippet": "The manual retry finished, but last night's scheduled export stopped at exactly two minutes again.",
+          "subject": "Export is still timing out on our scheduled account run",
+          "thread_id": "thread-lumen-export",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Maya,\n\nFor the renewal brief: invoice 4471 is open for 412.00 USD and due on 30 August. It is not late. Priya confirmed the billing address last week, so there is no finance action unless it remains open after month-end.\n\nNoor",
+          "customer_id": "lumen",
+          "from_id": "noor-alvarez",
+          "id": "mail-noor-invoice-note",
+          "invoice_id": "inv-4471",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Finance"
+          ],
+          "sent_at": "2026-08-21T08:03:00Z",
+          "snippet": "Invoice 4471 is open for 412.00 and due on the 30th, so it is not late.",
+          "subject": "Lumen account note before Tuesday",
+          "thread_id": "thread-invoice-4471-internal",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Commercial section is done. Usage grew 38% since February and they added the compliance workspace in June.\n\nI left the export incident paragraph marked in yellow. Please replace it after Jon decides whether the fix is in 2.8.\n\nDavid",
+          "customer_id": "lumen",
+          "from_id": "david-banerjee",
+          "id": "mail-david-brief",
+          "labels": [
+            "INBOX",
+            "Customers"
+          ],
+          "sent_at": "2026-08-20T16:28:00Z",
+          "snippet": "Commercial section is done. I left the export incident paragraph marked in yellow.",
+          "subject": "Draft Lumen renewal brief — needs the technical paragraph",
+          "thread_id": "thread-lumen-renewal",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Hello Maya,\n\nThe courier moved the delivery to Monday between 08:00 and 10:00. The desk riser is in the same shipment. No signature is required.\n\nFern",
+          "from_id": "fern-ellery",
+          "id": "mail-fern-chair",
+          "labels": [
+            "INBOX",
+            "Operations"
+          ],
+          "sent_at": "2026-08-20T12:14:00Z",
+          "snippet": "The courier moved the delivery to Monday between 08:00 and 10:00.",
+          "subject": "Delivery window for Theo's chair",
+          "thread_id": "thread-chair-delivery",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "This week: queue visibility metrics, a new Paris region, and planned maintenance in Toronto. Northstar's London workloads are not affected.\n\nYou receive this because you are an account owner.",
+          "from_id": "adil-hassan",
+          "id": "mail-newsletter",
+          "labels": [
+            "INBOX",
+            "Newsletters"
+          ],
+          "sent_at": "2026-08-21T05:00:00Z",
+          "snippet": "Three platform notes and a maintenance window that does not affect your region.",
+          "subject": "CloudHarbor weekly: queues, regions, and maintenance",
+          "thread_id": "thread-newsletter-aug21",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Hi Priya,\n\nWe reproduced the difference between manual and scheduled runs. The scheduler is passing the old two-minute limit to the worker.\n\nWe are testing the focused fix against larger exports and cancellation today. Samira will send you a safe workaround before 15:00, even if the release date is not final by then.\n\nMaya",
+          "customer_id": "lumen",
+          "from_id": "maya-chen",
+          "id": "mail-maya-priya-reply",
+          "labels": [
+            "SENT",
+            "Customers"
+          ],
+          "sent_at": "2026-08-21T08:26:00Z",
+          "snippet": "We reproduced the scheduled-run difference and are testing the fix against larger exports today.",
+          "subject": "Re: Export is still timing out on our scheduled account run",
+          "thread_id": "thread-lumen-export",
+          "to_ids": [
+            "priya-raman"
+          ]
+        },
+        {
+          "body_text": "Hi Maya,\n\nThe manual retry completed in one minute and forty seconds. The scheduled run still stopped at two minutes, so the workaround is usable but not safe to leave in place.\n\nPlease send the short-term steps before the renewal call.\n\nPriya",
+          "customer_id": "lumen",
+          "from_id": "priya-raman",
+          "id": "mail-priya-export-followup",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Customers",
+            "STARRED"
+          ],
+          "sent_at": "2026-08-21T09:10:00Z",
+          "snippet": "The manual retry completed, but the scheduled run still stopped at two minutes.",
+          "subject": "Re: Export is still timing out on our scheduled account run",
+          "thread_id": "thread-lumen-export",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Hi Priya,\n\nUse the manual retry with the saved export and keep the browser tab open until the download starts. We will update you after the 50k and cancellation checks.\n\nMaya",
+          "customer_id": "lumen",
+          "from_id": "maya-chen",
+          "id": "mail-maya-priya-workaround",
+          "labels": [
+            "SENT",
+            "Customers"
+          ],
+          "sent_at": "2026-08-21T09:26:00Z",
+          "snippet": "Use the manual retry with the saved export until the load and cancellation checks finish.",
+          "subject": "Re: Export is still timing out on our scheduled account run",
+          "thread_id": "thread-lumen-export",
+          "to_ids": [
+            "priya-raman"
+          ]
+        },
+        {
+          "body_text": "The 50k load test passed. The 75k run is still in progress, and cancellation left one worker busy for three minutes. I am checking whether that is cleanup or a leak before I call it green.",
+          "from_id": "lucas-meyer",
+          "id": "mail-lucas-load-test",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Work"
+          ],
+          "sent_at": "2026-08-21T10:05:00Z",
+          "snippet": "The 50k load test passed; the 75k run and cancellation cleanup still need review.",
+          "subject": "Export worker load-test results",
+          "thread_id": "thread-export-load-test",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Please keep the release gate closed until the cancellation result is explained. A fast success at 50k is useful, but it does not prove that a cancelled 75k job releases its worker.",
+          "from_id": "jon-bell",
+          "id": "mail-jon-release-gate",
+          "labels": [
+            "INBOX",
+            "Work",
+            "STARRED"
+          ],
+          "sent_at": "2026-08-21T10:22:00Z",
+          "snippet": "Keep the release gate closed until the cancelled 75k job is understood.",
+          "subject": "Re: Export worker load-test results",
+          "thread_id": "thread-export-load-test",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "The release notes are ready for review. I called out saved views and export retries, but I left the timeout wording neutral until Jon confirms the cancellation result.",
+          "from_id": "elena-petrov",
+          "id": "mail-elena-release-notes",
+          "labels": [
+            "INBOX",
+            "Product"
+          ],
+          "sent_at": "2026-08-21T11:00:00Z",
+          "snippet": "Release notes are ready; the timeout wording stays neutral until the gate is clear.",
+          "subject": "2.8 release notes ready for review",
+          "thread_id": "thread-release-2-8",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "I added the commercial section to the Lumen brief. Please check the usage sentence and the paragraph about the export incident before Tuesday.",
+          "customer_id": "lumen",
+          "from_id": "david-banerjee",
+          "id": "mail-david-customer-brief",
+          "labels": [
+            "INBOX",
+            "Customers"
+          ],
+          "sent_at": "2026-08-21T11:20:00Z",
+          "snippet": "The commercial section is ready; please check the usage and export paragraphs.",
+          "subject": "Lumen renewal brief — final review",
+          "thread_id": "thread-lumen-renewal",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Please submit August expenses before 16:00. A missing receipt can wait until Monday, but every amount and customer must be entered today.",
+          "from_id": "noor-alvarez",
+          "id": "mail-noor-expense-reminder",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Operations"
+          ],
+          "sent_at": "2026-08-20T08:17:00Z",
+          "snippet": "Submit August expenses before 16:00; missing receipts can wait until Monday.",
+          "subject": "August expense reminder",
+          "thread_id": "thread-ops-expenses",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "I entered the two customer expenses. I will add the remaining receipt after the supplier sends the copy.",
+          "from_id": "maya-chen",
+          "id": "mail-maya-noor-expenses",
+          "labels": [
+            "SENT",
+            "Operations"
+          ],
+          "sent_at": "2026-08-20T08:42:00Z",
+          "snippet": "The two customer expenses are entered; the last receipt is pending the supplier copy.",
+          "subject": "Re: August expense reminder",
+          "thread_id": "thread-ops-expenses",
+          "to_ids": [
+            "noor-alvarez"
+          ]
+        },
+        {
+          "body_text": "I can access the repository, but I still need an owner for the staging account. Is that with Jon or Lucas? I will finish the checklist after the answer.",
+          "from_id": "theo-martin",
+          "id": "mail-theo-access",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Work"
+          ],
+          "sent_at": "2026-08-19T08:50:00Z",
+          "snippet": "The repository works, but the staging account still needs an owner.",
+          "subject": "Theo onboarding — staging access",
+          "thread_id": "thread-theo-onboarding",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "I assigned the support queue hand-off to Samira and left staging access open for Jon. The checklist is ready for your review.",
+          "from_id": "imani-brooks",
+          "id": "mail-imani-theo-checklist",
+          "labels": [
+            "INBOX",
+            "Work"
+          ],
+          "sent_at": "2026-08-19T09:10:00Z",
+          "snippet": "The support hand-off is assigned and staging access is open for Jon.",
+          "subject": "Re: Theo onboarding — staging access",
+          "thread_id": "thread-theo-onboarding",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "The export dashboard is useful, but the overnight report still has a blank customer column. Can you confirm whether the new retry worker changes the report format?",
+          "from_id": "ravi-okonkwo",
+          "id": "mail-ravi-export-question",
+          "customer_id": "ember",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Customers"
+          ],
+          "sent_at": "2026-08-18T14:03:00Z",
+          "snippet": "The overnight report has a blank customer column after the retry change.",
+          "subject": "Question about the overnight export report",
+          "thread_id": "thread-ember-export",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "The retry worker should not change the report shape. Please send one run ID and I will compare it with the last successful export.",
+          "from_id": "maya-chen",
+          "id": "mail-maya-ravi-response",
+          "customer_id": "ember",
+          "labels": [
+            "SENT",
+            "Customers"
+          ],
+          "sent_at": "2026-08-18T14:28:00Z",
+          "snippet": "The retry worker should not change the report shape; send one run ID for comparison.",
+          "subject": "Re: Question about the overnight export report",
+          "thread_id": "thread-ember-export",
+          "to_ids": [
+            "ravi-okonkwo"
+          ]
+        },
+        {
+          "body_text": "I attached a copy of invoice 4471 and the current account note. The amount is unchanged, and the due date remains the end of the month.",
+          "from_id": "marta-silva",
+          "id": "mail-marta-invoice-copy",
+          "customer_id": "lumen",
+          "invoice_id": "inv-4471",
+          "labels": [
+            "INBOX",
+            "Finance",
+            "Receipts"
+          ],
+          "sent_at": "2026-08-17T09:30:00Z",
+          "snippet": "Invoice 4471 is unchanged; the current account note is attached.",
+          "subject": "Invoice 4471 — account copy",
+          "thread_id": "thread-invoice-4471",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "The courier moved Theo's desk delivery to Monday between 08:00 and 10:00. No signature is required.",
+          "from_id": "fern-ellery",
+          "id": "mail-fern-delivery-update",
+          "labels": [
+            "INBOX",
+            "Operations"
+          ],
+          "sent_at": "2026-08-22T12:14:00Z",
+          "snippet": "Theo's desk delivery moved to Monday between 08:00 and 10:00.",
+          "subject": "Delivery window for Theo's desk",
+          "thread_id": "thread-chair-delivery",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "This week's platform notes cover queue visibility, a new Paris region and planned Toronto maintenance. London workloads are not affected.",
+          "from_id": "adil-hassan",
+          "id": "mail-adil-maintenance",
+          "labels": [
+            "INBOX",
+            "Newsletters"
+          ],
+          "sent_at": "2026-08-22T05:00:00Z",
+          "snippet": "Queue visibility, a new Paris region and Toronto maintenance are in this week's notes.",
+          "subject": "CloudHarbor weekly: regions and maintenance",
+          "thread_id": "thread-newsletter-aug22",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "The audit page review found one timezone label bug. It is visual only, so I opened a separate issue and kept it out of the export branch.",
+          "from_id": "hana-ito",
+          "id": "mail-hana-audit-label",
+          "labels": [
+            "INBOX",
+            "Work"
+          ],
+          "sent_at": "2026-08-22T13:45:00Z",
+          "snippet": "The timezone label bug is visual only and is tracked outside the export branch.",
+          "subject": "Audit page review — timezone label",
+          "thread_id": "thread-release-audit",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "Thanks. Keep it out of the export branch and add the screenshot to the release review so we do not lose the context.",
+          "from_id": "maya-chen",
+          "id": "mail-maya-hana-audit",
+          "labels": [
+            "SENT",
+            "Work"
+          ],
+          "sent_at": "2026-08-22T14:02:00Z",
+          "snippet": "Keep the visual issue separate and add its screenshot to the release review.",
+          "subject": "Re: Audit page review — timezone label",
+          "thread_id": "thread-release-audit",
+          "to_ids": [
+            "hana-ito"
+          ]
+        },
+        {
+          "body_text": "We still need the retention, export access and audit-log answers before the security review can close. A short table is enough.",
+          "from_id": "owen-price",
+          "id": "mail-owen-security-review",
+          "customer_id": "ember",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Customers",
+            "STARRED"
+          ],
+          "sent_at": "2026-08-23T07:32:00Z",
+          "snippet": "Retention, export access and audit-log answers are still needed for the security review.",
+          "subject": "Security review follow-up",
+          "thread_id": "thread-ember-security",
+          "to_ids": [
+            "maya-chen"
+          ]
+        },
+        {
+          "body_text": "I will send the retention and export answers today. I am checking the audit-log owner with Samira before I make the final table.",
+          "from_id": "maya-chen",
+          "id": "mail-maya-owen-security",
+          "customer_id": "ember",
+          "labels": [
+            "SENT",
+            "Customers"
+          ],
+          "sent_at": "2026-08-23T08:01:00Z",
+          "snippet": "I will send the retention and export answers today after confirming the audit-log owner.",
+          "subject": "Re: Security review follow-up",
+          "thread_id": "thread-ember-security",
+          "to_ids": [
+            "owen-price"
+          ]
+        }
+      ]
+    },
+    "finance": {
+      "anchor_invoices": [
+        {
+          "amount_cents": 41200,
+          "currency": "USD",
+          "customer_id": "lumen",
+          "description": "Northstar Scale plan — August",
+          "due_on": "2026-08-30",
+          "id": "inv-4471",
+          "issued_on": "2026-08-14",
+          "number": "4471",
+          "status": "open"
+        }
+      ],
+      "billing_owner_id": "noor-alvarez",
+      "currency": "USD",
+      "customers": [
+        {
+          "contact_id": "priya-raman",
+          "due_day": 30,
+          "id": "lumen",
+          "invoice_day": 14,
+          "monthly_amount_cents": 41200,
+          "name": "Lumen Labs",
+          "number_suffix": "71",
+          "organization_id": "lumen-labs",
+          "service": "Northstar Scale plan"
+        },
+        {
+          "contact_id": "ravi-okonkwo",
+          "due_day": 5,
+          "id": "ember",
+          "invoice_day": 5,
+          "monthly_amount_cents": 28900,
+          "name": "Ember Commerce",
+          "number_suffix": "42",
+          "organization_id": "ember-commerce",
+          "service": "Northstar Growth plan"
+        },
+        {
+          "contact_id": "marta-silva",
+          "due_day": 8,
+          "id": "fieldnote",
+          "invoice_day": 8,
+          "monthly_amount_cents": 9900,
+          "name": "Fieldnote Studio",
+          "number_suffix": "18",
+          "organization_id": "fieldnote-studio",
+          "service": "Northstar Team plan"
+        },
+        {
+          "contact_id": "owen-price",
+          "due_day": 11,
+          "id": "harbor",
+          "invoice_day": 11,
+          "monthly_amount_cents": 35600,
+          "name": "Harbor Mobility",
+          "number_suffix": "63",
+          "organization_id": "harbor-mobility",
+          "service": "Northstar Scale plan"
+        }
+      ],
+      "history_months": 12,
+      "suppliers": [
+        {
+          "bill_day": 12,
+          "contact_id": "fern-ellery",
+          "id": "cedar",
+          "monthly_amount_cents": 18400,
+          "name": "Cedar Office",
+          "organization_id": "cedar-office",
+          "service": "Office, equipment, and meeting space"
+        },
+        {
+          "bill_day": 2,
+          "contact_id": "adil-hassan",
+          "id": "cloudharbor",
+          "monthly_amount_cents": 73100,
+          "name": "CloudHarbor",
+          "organization_id": "cloudharbor",
+          "service": "Compute, storage, and managed database"
+        }
+      ]
+    },
+    "software": {
+      "repositories": [
+        {
+          "description": "Core job orchestration and connector runtime",
+          "id": "repo-core",
+          "issues": [
+            {
+              "assignee": "lucasmeyer",
+              "author": "samira-o",
+              "body": "Lumen reproduced at 52,184 rows. Manual retry uses the account limit; scheduled execution still passes 120 seconds. Test 50k, 75k, and cancellation before merge.",
+              "customer_id": "lumen",
+              "id": "issue-318",
+              "labels": [
+                "bug",
+                "customer-lumen",
+                "release-2.8"
+              ],
+              "number": 318,
+              "state": "open",
+              "support_case_id": "case-lumen-export",
+              "title": "Scheduled exports keep the legacy 120s worker timeout"
+            }
+          ],
+          "language": "Go",
+          "member_ids": [
+            "jon-bell",
+            "lucas-meyer",
+            "hana-ito"
+          ],
+          "name": "relay-core",
+          "owner_id": "northstar-relay",
+          "topics": [
+            "jobs",
+            "connectors",
+            "queues"
+          ]
+        },
+        {
+          "description": "Export preparation, chunking, and delivery service",
+          "id": "repo-exports",
+          "issues": [
+            {
+              "assignee": "hanaito",
+              "author": "jonbell",
+              "body": "Current fixture measures completion only. A cancelled 75k-row job must release its worker lease and partial object.",
+              "id": "issue-319",
+              "labels": [
+                "test",
+                "release-2.8"
+              ],
+              "number": 319,
+              "state": "open",
+              "title": "Add cancellation case to large-export load fixture"
+            }
+          ],
+          "language": "TypeScript",
+          "member_ids": [
+            "jon-bell",
+            "lucas-meyer",
+            "hana-ito"
+          ],
+          "name": "exports-service",
+          "owner_id": "northstar-relay",
+          "topics": [
+            "exports",
+            "workers",
+            "storage"
+          ]
+        },
+        {
+          "description": "Customer dashboard and audit interface",
+          "id": "repo-console",
+          "issues": [
+            {
+              "assignee": "hanaito",
+              "author": "hanaito",
+              "body": "Value is converted correctly, but the suffix remains UTC. Visual bug only; keep out of the export worker branch.",
+              "id": "issue-322",
+              "labels": [
+                "bug",
+                "audit-page",
+                "small"
+              ],
+              "number": 322,
+              "state": "open",
+              "title": "Audit export labels timestamps as UTC after local conversion"
+            }
+          ],
+          "language": "TypeScript",
+          "member_ids": [
+            "elena-petrov",
+            "hana-ito",
+            "imani-brooks"
+          ],
+          "name": "web-console",
+          "owner_id": "northstar-relay",
+          "topics": [
+            "web",
+            "audit",
+            "dashboard"
+          ]
+        }
+      ]
+    },
+    "support": {
+      "cases": [
+        {
+          "contact_id": "priya-raman",
+          "customer_id": "lumen",
+          "id": "case-lumen-export",
+          "next_action": "Send workaround before 15:00 and update after cancellation test.",
+          "opened_at": "2026-08-18T10:21:00Z",
+          "owner_id": "samira-okafor",
+          "priority": "high",
+          "state": "engineering",
+          "title": "Scheduled export stops at two minutes"
+        },
+        {
+          "contact_id": "ravi-okonkwo",
+          "customer_id": "ember",
+          "id": "case-ember-header",
+          "next_action": "Wait for the saved export id from Ravi.",
+          "opened_at": "2026-08-19T14:08:00Z",
+          "owner_id": "samira-okafor",
+          "priority": "normal",
+          "state": "waiting-customer",
+          "title": "CSV header order changed after connector update"
+        }
+      ]
+    },
+    "work": {
+      "projects": [
+        {
+          "customer_id": "lumen",
+          "id": "project-lumen-renewal",
+          "member_ids": [
+            "maya-chen",
+            "david-banerjee",
+            "samira-okafor",
+            "jon-bell",
+            "lucas-meyer"
+          ],
+          "name": "Lumen renewal",
+          "owner_id": "maya-chen",
+          "start_on": "2026-08-11",
+          "status": "active",
+          "summary": "Prepare the renewal with an accurate account record and a safe export workaround.",
+          "target_on": "2026-08-25"
+        },
+        {
+          "id": "project-release-28",
+          "member_ids": [
+            "elena-petrov",
+            "jon-bell",
+            "lucas-meyer",
+            "hana-ito",
+            "imani-brooks",
+            "samira-okafor"
+          ],
+          "name": "Release 2.8",
+          "owner_id": "elena-petrov",
+          "start_on": "2026-07-27",
+          "status": "at-risk",
+          "summary": "Ship the audit improvements without hiding the remaining export risk.",
+          "target_on": "2026-08-27"
+        },
+        {
+          "id": "project-theo-onboarding",
+          "member_ids": [
+            "imani-brooks",
+            "theo-martin",
+            "jon-bell",
+            "hana-ito"
+          ],
+          "name": "Theo onboarding",
+          "owner_id": "imani-brooks",
+          "start_on": "2026-08-17",
+          "status": "active",
+          "summary": "Give Theo a useful first week while the engineering team completes release work.",
+          "target_on": "2026-08-28"
+        },
+        {
+          "id": "project-month-end",
+          "member_ids": [
+            "noor-alvarez",
+            "maya-chen",
+            "david-banerjee"
+          ],
+          "name": "August month-end",
+          "owner_id": "noor-alvarez",
+          "start_on": "2026-08-17",
+          "status": "active",
+          "summary": "Close August books with complete expenses and clear customer balances.",
+          "target_on": "2026-09-03"
+        }
+      ],
+      "tasks": [
+        {
+          "assignee_id": "maya-chen",
+          "description": "Replace the marked technical paragraph after engineering gives a tested status. Keep invoice 4471 separate from the incident.",
+          "due_on": "2026-08-24",
+          "id": "task-renewal-brief",
+          "labels": [
+            "customer",
+            "renewal"
+          ],
+          "priority": "high",
+          "project_id": "project-lumen-renewal",
+          "reporter_id": "david-banerjee",
+          "status": "in-progress",
+          "title": "Finish the renewal brief"
+        },
+        {
+          "assignee_id": "samira-okafor",
+          "description": "Document manual retry as the temporary path. Do not promise a release date.",
+          "due_on": "2026-08-21",
+          "id": "task-safe-workaround",
+          "labels": [
+            "support",
+            "customer"
+          ],
+          "priority": "urgent",
+          "project_id": "project-lumen-renewal",
+          "reporter_id": "maya-chen",
+          "status": "ready",
+          "title": "Send Priya the scheduled-export workaround"
+        },
+        {
+          "assignee_id": "lucas-meyer",
+          "description": "Record duration and worker memory for the scheduled path on the fix branch.",
+          "due_on": "2026-08-21",
+          "id": "task-load-50k",
+          "labels": [
+            "exports",
+            "test"
+          ],
+          "priority": "high",
+          "project_id": "project-release-28",
+          "reporter_id": "jon-bell",
+          "status": "done",
+          "title": "Run the 50k-row export test"
+        },
+        {
+          "assignee_id": "lucas-meyer",
+          "description": "Use the production-like object size and confirm the worker lease closes.",
+          "due_on": "2026-08-21",
+          "id": "task-load-75k",
+          "labels": [
+            "exports",
+            "test"
+          ],
+          "priority": "high",
+          "project_id": "project-release-28",
+          "reporter_id": "jon-bell",
+          "status": "done",
+          "title": "Run the 75k-row export test"
+        },
+        {
+          "assignee_id": "lucas-meyer",
+          "description": "The worker lease closes, but the cancelled 75k-row run leaves a partial object. Add cleanup and prove idempotent retry.",
+          "due_on": "2026-08-24",
+          "id": "task-cancel-cleanup",
+          "labels": [
+            "exports",
+            "bug",
+            "release-blocker"
+          ],
+          "priority": "urgent",
+          "project_id": "project-release-28",
+          "reporter_id": "jon-bell",
+          "status": "blocked",
+          "title": "Remove the partial object after cancellation"
+        },
+        {
+          "assignee_id": "hana-ito",
+          "description": "The timestamp value is correct. The label says UTC after local conversion.",
+          "due_on": "2026-08-25",
+          "id": "task-timezone-label",
+          "labels": [
+            "audit",
+            "ui"
+          ],
+          "priority": "normal",
+          "project_id": "project-release-28",
+          "reporter_id": "hana-ito",
+          "status": "review",
+          "title": "Correct the audit timezone label"
+        },
+        {
+          "assignee_id": "elena-petrov",
+          "description": "Explain local time display and the new export activity entries in customer language.",
+          "due_on": "2026-08-25",
+          "id": "task-release-notes",
+          "labels": [
+            "release",
+            "docs"
+          ],
+          "priority": "normal",
+          "project_id": "project-release-28",
+          "reporter_id": "maya-chen",
+          "status": "in-progress",
+          "title": "Write release notes for audit history"
+        },
+        {
+          "assignee_id": "imani-brooks",
+          "description": "Use the short copy. Do not show an error when a new workspace has no export history.",
+          "due_on": "2026-08-19",
+          "id": "task-audit-empty-state",
+          "labels": [
+            "audit",
+            "design"
+          ],
+          "priority": "normal",
+          "project_id": "project-release-28",
+          "reporter_id": "elena-petrov",
+          "status": "done",
+          "title": "Approve the audit empty state"
+        },
+        {
+          "assignee_id": "jon-bell",
+          "description": "Owner is not assigned. Access must be ready before Tuesday pairing, not before the Monday welcome call.",
+          "due_on": "2026-08-25",
+          "id": "task-staging-access",
+          "labels": [
+            "access",
+            "onboarding"
+          ],
+          "priority": "high",
+          "project_id": "project-theo-onboarding",
+          "reporter_id": "imani-brooks",
+          "status": "backlog",
+          "title": "Create Theo's staging access"
+        },
+        {
+          "assignee_id": "jon-bell",
+          "description": "Use the Ember CSV incident as a small example of why connector contracts are versioned.",
+          "due_on": "2026-08-24",
+          "id": "task-architecture-session",
+          "labels": [
+            "onboarding",
+            "engineering"
+          ],
+          "priority": "normal",
+          "project_id": "project-theo-onboarding",
+          "reporter_id": "imani-brooks",
+          "status": "ready",
+          "title": "Prepare the connector architecture session"
+        },
+        {
+          "assignee_id": "hana-ito",
+          "description": "Pick a bounded audit-page issue. Do not use the Lumen release blocker as an onboarding task.",
+          "due_on": "2026-08-20",
+          "id": "task-pairing-plan",
+          "labels": [
+            "onboarding"
+          ],
+          "priority": "normal",
+          "project_id": "project-theo-onboarding",
+          "reporter_id": "imani-brooks",
+          "status": "done",
+          "title": "Choose Theo's first pairing issue"
+        },
+        {
+          "assignee_id": "noor-alvarez",
+          "description": "Three entries have an amount but no receipt. Ask owners today and leave unresolved receipts marked pending.",
+          "due_on": "2026-08-21",
+          "id": "task-august-expenses",
+          "labels": [
+            "finance",
+            "month-end"
+          ],
+          "priority": "high",
+          "project_id": "project-month-end",
+          "reporter_id": "noor-alvarez",
+          "status": "in-progress",
+          "title": "Collect missing August expenses"
+        },
+        {
+          "assignee_id": "noor-alvarez",
+          "description": "Invoice 4471 is open and not overdue. Review only if it remains open after 30 August.",
+          "due_on": "2026-08-31",
+          "id": "task-lumen-balance",
+          "labels": [
+            "finance",
+            "customer"
+          ],
+          "priority": "normal",
+          "project_id": "project-month-end",
+          "reporter_id": "maya-chen",
+          "status": "backlog",
+          "title": "Review Lumen balance after due date"
+        },
+        {
+          "assignee_id": "noor-alvarez",
+          "description": "Match August customer receipts and supplier payments before the close review.",
+          "due_on": "2026-09-02",
+          "id": "task-cash-reconcile",
+          "labels": [
+            "finance",
+            "reconciliation"
+          ],
+          "priority": "normal",
+          "project_id": "project-month-end",
+          "reporter_id": "noor-alvarez",
+          "status": "ready",
+          "title": "Reconcile operating cash"
+        }
+      ],
+      "time_entries": [
+        {
+          "date": "2026-08-20",
+          "id": "time-001",
+          "minutes": 95,
+          "note": "Prepared the scheduled fixture and captured the baseline.",
+          "person_id": "lucas-meyer",
+          "task_id": "task-load-50k"
+        },
+        {
+          "date": "2026-08-21",
+          "id": "time-002",
+          "minutes": 40,
+          "note": "Ran the fix branch and checked worker memory.",
+          "person_id": "lucas-meyer",
+          "task_id": "task-load-50k"
+        },
+        {
+          "date": "2026-08-21",
+          "id": "time-003",
+          "minutes": 55,
+          "note": "Completed the large run and checked lease release.",
+          "person_id": "lucas-meyer",
+          "task_id": "task-load-75k"
+        },
+        {
+          "date": "2026-08-21",
+          "id": "time-004",
+          "minutes": 70,
+          "note": "Found the partial object left by cancellation.",
+          "person_id": "lucas-meyer",
+          "task_id": "task-cancel-cleanup"
+        },
+        {
+          "date": "2026-08-20",
+          "id": "time-005",
+          "minutes": 35,
+          "note": "Reproduced the suffix error and added a view test.",
+          "person_id": "hana-ito",
+          "task_id": "task-timezone-label"
+        },
+        {
+          "date": "2026-08-20",
+          "id": "time-006",
+          "minutes": 50,
+          "note": "Drafted the audit history section.",
+          "person_id": "elena-petrov",
+          "task_id": "task-release-notes"
+        },
+        {
+          "date": "2026-08-19",
+          "id": "time-007",
+          "minutes": 45,
+          "note": "Reviewed copy in the narrow and wide layouts.",
+          "person_id": "imani-brooks",
+          "task_id": "task-audit-empty-state"
+        },
+        {
+          "date": "2026-08-20",
+          "id": "time-008",
+          "minutes": 20,
+          "note": "Selected a small audit filter issue for Tuesday.",
+          "person_id": "hana-ito",
+          "task_id": "task-pairing-plan"
+        },
+        {
+          "date": "2026-08-20",
+          "id": "time-009",
+          "minutes": 35,
+          "note": "Reviewed usage and billing facts with David.",
+          "person_id": "maya-chen",
+          "task_id": "task-renewal-brief"
+        },
+        {
+          "date": "2026-08-20",
+          "id": "time-010",
+          "minutes": 65,
+          "note": "Matched card entries and requested three receipts.",
+          "person_id": "noor-alvarez",
+          "task_id": "task-august-expenses"
+        }
+      ]
+    }
+  },
+  "id": "pack.saas-operations"
+}

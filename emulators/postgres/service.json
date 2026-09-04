@@ -1,0 +1,119 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "postgres",
+  "version": "15.19.0",
+  "runtime": {
+    "command": [
+      "/usr/local/bin/worldfixture-postgres"
+    ],
+    "readiness": [
+      {
+        "port": "postgres",
+        "protocol": "postgres",
+        "kind": "protocol",
+        "username": "worldfixture",
+        "database": "postgres",
+        "expect": "Authentication"
+      }
+    ],
+    "ports": [
+      {
+        "name": "postgres",
+        "protocol": "postgres",
+        "container_port": 5432,
+        "env": "WORLDFIXTURE_POSTGRES_PORT",
+        "env_format": "port",
+        "bind_env": "WORLDFIXTURE_POSTGRES_BIND",
+        "published": true
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": false
+      },
+      {
+        "name": "POSTGRES_USER",
+        "from": "constant",
+        "value": "worldfixture",
+        "required": true
+      },
+      {
+        "name": "POSTGRES_PASSWORD",
+        "from": "constant",
+        "value": "worldfixture-local",
+        "required": true
+      },
+      {
+        "name": "POSTGRES_DB",
+        "from": "constant",
+        "value": "postgres",
+        "required": true
+      }
+    ],
+    "container": {
+      "name": "worldfixture-postgres",
+      "tag": "docker.io/library/postgres:15-bookworm@sha256:5d1d70e254e3c5d7d76847a9deebb18478cd518df37abf6b278d4bdb1fe5d96c"
+    }
+  },
+  "provides": [
+    {
+      "profile": "postgres.wire.v1",
+      "port": "postgres",
+      "binds": [
+        {
+          "name": "host",
+          "from": "port.host"
+        },
+        {
+          "name": "port",
+          "from": "port.port"
+        },
+        {
+          "name": "username",
+          "from": "constant",
+          "value": "worldfixture"
+        },
+        {
+          "name": "password",
+          "from": "constant",
+          "value": "worldfixture-local"
+        },
+        {
+          "name": "database",
+          "from": "constant",
+          "value": "postgres"
+        },
+        {
+          "name": "url",
+          "from": "port.connection_url",
+          "scheme": "postgresql",
+          "username": "worldfixture",
+          "password": "worldfixture-local",
+          "database": "postgres"
+        }
+      ]
+    }
+  ],
+  "world": {
+    "requires": []
+  },
+  "events": {
+    "consumes": [],
+    "produces": []
+  },
+  "lifecycle": {
+    "seed": false,
+    "reset": false,
+    "reset_mechanism": "restart",
+    "verify": false,
+    "recoverable_changes": false,
+    "state": {
+      "export": false,
+      "import": false,
+      "clear_paths": [],
+      "snapshot_paths": []
+    }
+  }
+}

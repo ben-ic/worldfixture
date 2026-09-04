@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/connector-request.v1.schema.json",
+  "title": "WorldFixture connector seed request v1",
+  "type": "object",
+  "required": [
+    "api_version",
+    "request_id",
+    "world",
+    "packs",
+    "options"
+  ],
+  "properties": {
+    "api_version": {
+      "const": "worldfixture.connector-request/v1"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "world": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "artifact_sha256",
+        "synthetic"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "title": {
+          "type": "string"
+        },
+        "clock": {
+          "type": "object"
+        },
+        "synthetic": {
+          "const": true
+        }
+      }
+    },
+    "packs": {
+      "type": "object",
+      "description": "The world's records, grouped by pack. Every pack, collection and field is listed with a real record of each in docs/connectors/packs.md, which is generated from the artifact; run `worldfixture connector docs` to read the version installed with your build. A record's `id` is a stable slug and is what a worldfixture_ref addresses. A field ending `_id` names one record and never dangles; a field ending `_ids` is a membership list and may be trimmed by a scale slice.",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
+    "options": {
+      "type": "object",
+      "description": "How this request is to be treated. `mode` is `preview` for a plan and `apply` for a seed. `scale` is present when the request carries a slice of the world rather than all of it; `complete` is false there, and `collections` says how many of each were sent against how many the world holds. A slice is always referentially whole, so it needs no special handling.",
+      "properties": {
+        "mode": {
+          "enum": [
+            "preview",
+            "apply"
+          ]
+        },
+        "scale": {
+          "type": "object",
+          "properties": {
+            "preset": {
+              "type": "string"
+            },
+            "complete": {
+              "type": "boolean"
+            },
+            "collections": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "collection",
+                  "sent",
+                  "available"
+                ],
+                "properties": {
+                  "collection": {
+                    "type": "string"
+                  },
+                  "sent": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "available": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

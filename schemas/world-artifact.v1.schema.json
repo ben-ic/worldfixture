@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/world-artifact.v1.schema.json",
+  "title": "WorldFixture world artifact manifest v1",
+  "description": "The manifest of one immutable, content-addressed world artifact. A run pins these digests and never fetches mutable world source.",
+  "type": "object",
+  "required": [
+    "api_version",
+    "build_mode",
+    "world_id",
+    "world_version",
+    "source_sha256",
+    "source_files",
+    "artifact_sha256",
+    "files",
+    "synthetic"
+  ],
+  "properties": {
+    "api_version": {"const": "worldfixture.world-artifact/v1"},
+    "build_mode": {
+      "description": "`prebuilt` compiles reviewed source deterministically. `generated` records a model generation receipt.",
+      "enum": ["prebuilt", "generated"]
+    },
+    "world_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+    "world_version": {"type": "string", "pattern": "^v[0-9]+$"},
+    "profile": {"type": ["string", "null"]},
+    "source_sha256": {"$ref": "#/$defs/sha256"},
+    "source_files": {
+      "description": "Every authoring file that contributed to this artifact.",
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/file"}
+    },
+    "artifact_sha256": {
+      "description": "Digest of the canonical digest map of every file below. It is the content identity of the artifact.",
+      "$ref": "#/$defs/sha256"
+    },
+    "files": {
+      "description": "Every file in the artifact except this manifest, which cannot carry its own digest.",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/file"}
+    },
+    "categories": {"type": "array", "items": {"type": "string"}},
+    "packs": {"type": "array", "items": {"type": "string"}},
+    "scenario": {
+      "type": "object",
+      "required": ["id", "class"],
+      "properties": {
+        "id": {"type": "string"},
+        "class": {"enum": ["normal", "data-quality", "bad-actor", "fraud", "operational-failure"]},
+        "title": {"type": "string"}
+      }
+    },
+    "generation_receipt": {
+      "description": "Present only when build_mode is `generated`.",
+      "type": "object"
+    },
+    "synthetic": {"const": true}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "file": {
+      "type": "object",
+      "required": ["sha256", "size"],
+      "properties": {
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

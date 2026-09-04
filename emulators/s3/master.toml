@@ -1,0 +1,24 @@
+# One volume per collection at a time, not seven.
+#
+# MEASURED, because the default silently breaks the second half of a world. An
+# S3 bucket is a SeaweedFS collection, and the master grows a collection by
+# `copy_1` volumes at once. Upstream's `copy_1` is 7 and `weed server`'s
+# `-volume.max` is 8, so the FIRST bucket written to takes seven of the eight
+# slots and the second takes the last one. Nothing is left: a third bucket, or
+# any write outside a bucket, then fails with
+#
+#   failed to find writable volumes for collection: ... no free volumes left
+#
+# while /healthz, the filer UI and bucket listing all keep answering normally.
+# That is the same shape of failure the image comment records for
+# `-volume.max=1`, one step further along.
+#
+# Growing one volume at a time makes the slot budget scale with the number of
+# buckets the world declares rather than with an upstream constant. The volumes
+# still grow on demand up to `-volume.max`, so nothing about capacity changes;
+# only how greedily the first collection claims it.
+[master.volume_growth]
+copy_1 = 1
+copy_2 = 1
+copy_3 = 1
+copy_other = 1

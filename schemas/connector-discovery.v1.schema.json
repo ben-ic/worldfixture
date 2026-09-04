@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/connector-discovery.v1.schema.json",
+  "title": "WorldFixture connector discovery v1",
+  "type": "object",
+  "required": ["api_version", "application", "capabilities", "accepts"],
+  "properties": {
+    "api_version": {"const": "worldfixture.connector/v1"},
+    "application": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+        "name": {"type": "string", "minLength": 1}
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "required": ["plan", "seed", "event", "status", "reset"],
+      "properties": {
+        "plan": {"type": "boolean"},
+        "seed": {"type": "boolean"},
+        "event": {"type": "boolean"},
+        "status": {"type": "boolean"},
+        "reset": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "accepts": {"type": "array", "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}, "uniqueItems": true},
+    "endpoints": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^/[^/].*|^/[A-Za-z0-9._~-]+$"}
+    }
+  },
+  "additionalProperties": false
+}

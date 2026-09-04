@@ -1,0 +1,2030 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "agentic": {
+      "actor_id": "maya-chen",
+      "capabilities": [
+        "mail.read",
+        "mail.send",
+        "calendar.read",
+        "documents.read",
+        "slack.read",
+        "slack.post",
+        "github.issue.read",
+        "github.issue.comment",
+        "finance.invoice.read",
+        "storage.object.read"
+      ],
+      "causal_rules": [
+        {
+          "emits": [
+            "finance.ledger.updated",
+            "finance.bank-transaction.created",
+            "mail.payment-receipt.available"
+          ],
+          "id": "rule-invoice-payment",
+          "requires": [
+            "invoice_id",
+            "payment_id",
+            "amount_cents"
+          ],
+          "when": "finance.invoice.paid"
+        },
+        {
+          "emits": [
+            "support.case.updated",
+            "slack.customer-channel.notified"
+          ],
+          "id": "rule-support-reply",
+          "requires": [
+            "customer_id",
+            "thread_id"
+          ],
+          "when": "mail.customer-reply.received"
+        },
+        {
+          "emits": [
+            "software.issue.updated",
+            "slack.release-channel.notified"
+          ],
+          "id": "rule-issue-comment",
+          "requires": [
+            "issue_id"
+          ],
+          "when": "software.issue.commented"
+        }
+      ],
+      "constraints": [
+        "Treat every record as synthetic",
+        "Do not invent payments or release decisions",
+        "Use normal application APIs and tools",
+        "Cite canonical entity references in evaluation output",
+        "Do not expose session credentials",
+        "Do not promise a date that no test supports"
+      ],
+      "goals": [
+        {
+          "id": "goal-renewal-brief",
+          "instructions": "Summarize the export reliability position for Lumen, state what the heartbeat proves and what issue 903 leaves open, confirm the invoice position including the metering correction, and propose the next customer message without promising an untested release.",
+          "success_evidence": [
+            "References issue 902 and issue 903 separately",
+            "Says the cancellation cleanup is not closed",
+            "Names the metering correction before the customer asks",
+            "Does not claim release 3.2 has shipped"
+          ],
+          "title": "Prepare an accurate Lumen renewal brief"
+        },
+        {
+          "id": "goal-release-decision",
+          "instructions": "State whether release 3.2 meets its gate, using only merged work as evidence.",
+          "success_evidence": [
+            "Names both gate conditions",
+            "Distinguishes merged from in review",
+            "Recommends slipping when only one condition holds"
+          ],
+          "title": "Give a go or no-go on release 3.2"
+        },
+        {
+          "id": "goal-billing-disclosure",
+          "instructions": "Draft the message to an affected account about the metering overcount. Say what was wrong, that Northstar found it, and what happens next.",
+          "success_evidence": [
+            "States the invoice is above true usage",
+            "Does not give a credit-note date that reconciliation has not produced",
+            "Offers the usage breakdown"
+          ],
+          "title": "Tell an affected account about the overcount"
+        }
+      ],
+      "grounding": [
+        {
+          "entity_id": "priya-raman",
+          "kind": "person"
+        },
+        {
+          "entity_id": "lumen-labs",
+          "kind": "organization"
+        },
+        {
+          "entity_id": "nadia-farouk",
+          "kind": "person"
+        },
+        {
+          "entity_id": "case-lumen-lease",
+          "fact": {
+            "next_action": "Ship the lease heartbeat in 3.2",
+            "state": "engineering"
+          },
+          "kind": "support-case"
+        },
+        {
+          "entity_id": "case-billing-overcount",
+          "fact": {
+            "next_action": "Reconcile, then credit",
+            "state": "finance"
+          },
+          "kind": "support-case"
+        },
+        {
+          "entity_id": "inv-5172",
+          "kind": "invoice"
+        }
+      ]
+    },
+    "model_facts": [
+      {
+        "id": "fact-lease-boundary",
+        "kind": "support",
+        "text": "The 2.8 change raised the export timeout and did not touch lease renewal. Those are different clocks, which is why issue 902 is still open."
+      },
+      {
+        "id": "fact-release-gate",
+        "kind": "release",
+        "text": "Release 3.2 requires both the lease heartbeat and the cancellation cleanup. Only one of the two is merged."
+      },
+      {
+        "id": "fact-partial-object",
+        "kind": "support",
+        "text": "A cancelled export can leave a partial object in the destination bucket. Issue 903 is open."
+      },
+      {
+        "id": "fact-billing-overcount",
+        "kind": "finance",
+        "text": "Exports that resume were metered twice for rows before the resume point. The billing run is on hold and credit notes follow reconciliation."
+      },
+      {
+        "id": "fact-audit-open",
+        "kind": "security",
+        "text": "Destination changes are not written to the audit log, and the webhook signing key is past its rotation date."
+      }
+    ],
+    "site": {
+      "feed": {
+        "description": "Release, customer, reliability and billing updates from the synthetic Northstar world.",
+        "items": [
+          {
+            "id": "feed-release-32",
+            "path": "/notes/release-3-2",
+            "published_at": "2027-08-19T08:15:00Z",
+            "summary": "Release 3.2 needs the lease heartbeat and the cancellation cleanup. Only one is merged.",
+            "title": "Release 3.2 has a two-part gate"
+          },
+          {
+            "id": "feed-lumen",
+            "path": "/notes/lumen-reliability",
+            "published_at": "2027-08-19T14:30:00Z",
+            "summary": "The heartbeat holds at Lumen's real volume. Cancellation cleanup is still open and is stated as such.",
+            "title": "What we can and cannot promise on scheduled exports"
+          },
+          {
+            "id": "feed-billing",
+            "path": "/notes/billing-correction",
+            "published_at": "2027-08-18T11:00:00Z",
+            "summary": "Resumed exports were metered twice. The billing run is on hold and affected accounts were told first.",
+            "title": "A metering fault we found before you did"
+          },
+          {
+            "id": "feed-postmortem",
+            "path": "/notes/postmortem-12-august",
+            "published_at": "2027-08-12T17:45:00Z",
+            "summary": "Nothing failed. Everything was late. The preventing action is a pre-warmed worker floor.",
+            "title": "Postmortem: 41 minutes of late exports"
+          },
+          {
+            "arrival_id": "arrival-chat-000",
+            "id": "feed-arrival-suite",
+            "path": "/notes/release-3-2",
+            "published_at": "2027-08-20T09:20:00Z",
+            "summary": "Nine hundred overnight runs with no lease loss and no duplicate chunks.",
+            "title": "The overnight burst suite is clean"
+          },
+          {
+            "arrival_id": "arrival-chat-016",
+            "id": "feed-arrival-slip",
+            "path": "/notes/release-3-2",
+            "published_at": "2027-08-20T09:40:00Z",
+            "summary": "Cancellation cleanup is not ready, so 3.2 slips by a week rather than shipping half a fix.",
+            "title": "Release 3.2 slips by one week"
+          },
+          {
+            "arrival_id": "arrival-chat-004",
+            "id": "feed-arrival-lumen",
+            "path": "/notes/lumen-reliability",
+            "published_at": "2027-08-20T09:30:00Z",
+            "summary": "268,410 rows in twelve minutes with no lease loss, on the customer's own saved export.",
+            "title": "A customer rerun confirms the heartbeat"
+          },
+          {
+            "arrival_id": "arrival-object-001",
+            "id": "feed-arrival-reconciliation",
+            "path": "/notes/billing-correction",
+            "published_at": "2027-08-20T09:50:00Z",
+            "summary": "The reconciliation output is published, per account, with the credit owed.",
+            "title": "Billing reconciliation is complete"
+          }
+        ],
+        "path": "/feeds/company.xml",
+        "title": "Northstar Relay operating notes"
+      },
+      "metrics": [
+        {
+          "help": "Open support cases in the synthetic Northstar world.",
+          "name": "northstar_support_cases_open",
+          "source": {
+            "count": "open_support_cases"
+          }
+        },
+        {
+          "help": "Open issues that block release 3.2.",
+          "name": "northstar_release_blockers",
+          "source": {
+            "count": "open_issues_with_label",
+            "label": "release-3.2"
+          }
+        },
+        {
+          "help": "Open issues from the security audit.",
+          "name": "northstar_security_findings_open",
+          "source": {
+            "count": "open_issues_with_label",
+            "label": "soc2"
+          }
+        },
+        {
+          "help": "Open invoice value in cents.",
+          "name": "northstar_open_invoice_cents",
+          "source": {
+            "count": "open_invoice_cents"
+          }
+        },
+        {
+          "help": "Overdue invoice value in cents.",
+          "name": "northstar_overdue_invoice_cents",
+          "source": {
+            "count": "overdue_invoice_cents"
+          }
+        },
+        {
+          "help": "People known to the synthetic world.",
+          "name": "northstar_people",
+          "source": {
+            "count": "people"
+          }
+        }
+      ],
+      "pages": [
+        {
+          "heading": "Operational data exports with an audit trail",
+          "path": "/",
+          "sections": [
+            {
+              "body": "Release 3.2 carries the export lease heartbeat and the cancellation cleanup. The gate is both, not either.",
+              "heading": "Current work"
+            },
+            {
+              "body": "Large scheduled exports, clinical data integrity, and a regulatory reporting window on 4 September.",
+              "heading": "Customer focus"
+            },
+            {
+              "body": "We tell affected accounts before they notice, and we do not give a date that no test supports.",
+              "heading": "How we report faults"
+            }
+          ],
+          "summary": "A software company that automates large operational data exports.",
+          "title": "Northstar Relay"
+        },
+        {
+          "heading": "Release 3.2 readiness",
+          "path": "/notes/release-3-2",
+          "request_variants": [
+            "Cancellation cleanup is in review; the defer ordering is wrong under a panic path.",
+            "Cancellation cleanup passes the mid-chunk kill test. Both gates are green."
+          ],
+          "sections": [
+            {
+              "body": "Issue 902, lease heartbeat, verified above 250,000 rows. Issue 903, cancellation cleanup, correct under the panic path.",
+              "heading": "Exit criteria"
+            },
+            {
+              "body": "The 2.8 change raised the timeout and never touched lease renewal. A year passed with the bug open because the release note said otherwise.",
+              "heading": "What we learned"
+            }
+          ],
+          "summary": "Two fixes, not one. Last time only one landed and the release note said fixed.",
+          "title": "Release 3.2 has a two-part gate"
+        },
+        {
+          "heading": "Scheduled export reliability",
+          "path": "/notes/lumen-reliability",
+          "sections": [
+            {
+              "body": "268,410 rows in twelve minutes on a customer's own saved export, with no lease loss.",
+              "heading": "What holds"
+            },
+            {
+              "body": "Issue 903 is open. A cancelled run can leave a partial object in the destination bucket. Check the destination after a cancellation.",
+              "heading": "What does not"
+            }
+          ],
+          "summary": "The heartbeat holds at real customer volume. A cancelled run can still leave a partial object.",
+          "title": "What we can and cannot promise on scheduled exports"
+        },
+        {
+          "heading": "Metering overcount and correction",
+          "path": "/notes/billing-correction",
+          "sections": [
+            {
+              "body": "Billing run on hold, reconciliation reviewed by an engineer, affected accounts told, then credit notes. Telling comes before crediting.",
+              "heading": "Sequence"
+            }
+          ],
+          "summary": "Exports that resume were counted twice for rows before the resume point.",
+          "title": "A metering fault we found before you did"
+        },
+        {
+          "heading": "12 August",
+          "path": "/notes/postmortem-12-august",
+          "sections": [
+            {
+              "body": "No data lost. No export failed. Every export in the window was late.",
+              "heading": "Impact"
+            },
+            {
+              "body": "A pre-warmed floor of workers during known peak hours. Issue 911, not yet deployed.",
+              "heading": "The one action"
+            }
+          ],
+          "summary": "A burst of scheduled exports arrived faster than the autoscaler added workers.",
+          "title": "Postmortem: 41 minutes of late exports"
+        }
+      ],
+      "probes": [
+        {
+          "body": "ok",
+          "mode": "stable",
+          "name": "Public API",
+          "path": "/health/api",
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "body": "ok: lease heartbeat active",
+          "mode": "stable",
+          "name": "Scheduled export worker",
+          "path": "/health/export-worker",
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "body": "degraded: a cancelled run can leave a partial object",
+          "mode": "failing",
+          "name": "Export cancellation cleanup",
+          "path": "/health/export-cancellation",
+          "statuses": [
+            503
+          ]
+        },
+        {
+          "body": "request-sequenced synthetic health",
+          "mode": "flapping",
+          "name": "Webhook delivery",
+          "path": "/health/webhook-delivery",
+          "statuses": [
+            200,
+            200,
+            503,
+            200
+          ]
+        },
+        {
+          "body": "schema-change detection is not yet strict",
+          "mode": "flapping",
+          "name": "Warehouse sync",
+          "path": "/health/warehouse-sync",
+          "statuses": [
+            200,
+            503,
+            200,
+            200,
+            200
+          ]
+        }
+      ],
+      "status": {
+        "incident": "A cancelled scheduled export can leave a partial object in the destination bucket.",
+        "issue": 903,
+        "status": "degraded",
+        "workaround": "Check the destination after cancelling a run until release 3.2 ships."
+      }
+    },
+    "stories": [
+      {
+        "entity_refs": [
+          "lumen-labs",
+          "priya-raman",
+          "case-lumen-lease",
+          "issue-902",
+          "issue-903",
+          "doc-lumen-renewal"
+        ],
+        "id": "story-lumen-renewal",
+        "state": "active",
+        "summary": "The lease heartbeat holds at Lumen's real volume, but cancellation cleanup is still open. The renewal depends on saying both out loud.",
+        "title": "A renewal that depends on an honest answer, again"
+      },
+      {
+        "entity_refs": [
+          "issue-902",
+          "issue-903",
+          "channel-release-32",
+          "doc-release-32"
+        ],
+        "id": "story-release-32",
+        "state": "active",
+        "summary": "Release 3.2 needs two fixes, not one. The last time only one landed, the release note said fixed and the bug stayed open for a year.",
+        "title": "Release 3.2 has a two-part gate"
+      },
+      {
+        "entity_refs": [
+          "issue-905",
+          "case-billing-overcount",
+          "doc-billing-incident",
+          "rowan-whitfield"
+        ],
+        "id": "story-billing-overcount",
+        "state": "active",
+        "summary": "Metering counted resumed exports twice. Northstar found it before any customer did, put the billing run on hold, and told the affected accounts first.",
+        "title": "A billing fault the company found first"
+      },
+      {
+        "entity_refs": [
+          "issue-906",
+          "issue-920",
+          "case-verity-findings",
+          "doc-audit-scope",
+          "zara-ahmed"
+        ],
+        "id": "story-soc2-window",
+        "state": "active",
+        "summary": "Two audit findings remain open before the November window. Both are scoped narrow on purpose so they land in weeks rather than months.",
+        "title": "Two findings and a November deadline"
+      },
+      {
+        "entity_refs": [
+          "issue-911",
+          "case-outage-0812",
+          "doc-postmortem-0812",
+          "ingrid-solberg"
+        ],
+        "id": "story-outage-followup",
+        "state": "active",
+        "summary": "Nothing failed on 12 August; everything was late. The single preventing action is a pre-warmed worker floor, and it is not deployed yet.",
+        "title": "An outage where nothing broke"
+      },
+      {
+        "entity_refs": [
+          "issue-909",
+          "case-kestrel-columns",
+          "nadia-farouk",
+          "kwame-mensah"
+        ],
+        "id": "story-kestrel-columns",
+        "state": "active",
+        "summary": "A renamed source column was dropped silently from a clinical data sync. The customer found it. The blast-radius report comes before the fix.",
+        "title": "Silent data loss in the worst place to have it"
+      },
+      {
+        "entity_refs": [
+          "issue-904",
+          "issue-912",
+          "case-cobalt-connector",
+          "project-snowflake-connector"
+        ],
+        "id": "story-connector-block",
+        "state": "blocked",
+        "summary": "The Snowflake connector is blocked on a chunk writer that replays its last chunk on retry. Building on it first would build the bug into a new connector.",
+        "title": "A feature blocked by the right dependency"
+      },
+      {
+        "entity_refs": [
+          "theo-martin",
+          "doc-onboarding",
+          "priyanka-nair"
+        ],
+        "id": "story-onboarding-access",
+        "state": "minor-loose-end",
+        "summary": "Staging access has taken up to nine days because nobody owned it. Somebody owns it now, and the next two starters are the test.",
+        "title": "The slowest step in onboarding finally has an owner"
+      }
+    ],
+    "timeline": [
+      {
+        "after_seconds": 20,
+        "id": "arrival-chat-000",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "lucas-meyer",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Overnight burst suite finished. Nine hundred runs, no lease loss, no duplicate chunks. The heartbeat holds."
+        }
+      },
+      {
+        "after_seconds": 28,
+        "id": "arrival-background-000",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ulla-virtanen",
+          "channel_id": "channel-engineering",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 33,
+        "id": "arrival-background-001",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "david-banerjee",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 35,
+        "id": "arrival-chat-001",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "bianca-rossi",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Two failures in the suite, both in the cancellation path. Same defer ordering Lucas flagged yesterday."
+        }
+      },
+      {
+        "after_seconds": 40,
+        "id": "arrival-background-002",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "priyanka-nair",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 47,
+        "id": "arrival-background-003",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "jamal-rashid",
+          "channel_id": "channel-general",
+          "entity_refs": {},
+          "text": "Agreed on the call; recording the decision here so it is findable."
+        }
+      },
+      {
+        "after_seconds": 50,
+        "id": "arrival-chat-002",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "daniel-osei",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Then 903 is not ready and I am not merging it. I would rather slip the release than ship a cleanup that only works when nothing panics."
+        }
+      },
+      {
+        "after_seconds": 53,
+        "id": "arrival-background-004",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "mateo-vargas",
+          "channel_id": "channel-console",
+          "entity_refs": {},
+          "text": "This is the third time this week. Writing it down."
+        }
+      },
+      {
+        "after_seconds": 55,
+        "id": "arrival-background-005",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "zoe-patterson",
+          "channel_id": "channel-design",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 63,
+        "id": "arrival-background-006",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nikolai-petrov",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 65,
+        "id": "arrival-chat-003",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "jon-bell",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Slip it. We say so on the Lumen call and we say why. That is a better conversation than the one we have in October."
+        }
+      },
+      {
+        "after_seconds": 71,
+        "id": "arrival-background-007",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "amara-diallo",
+          "channel_id": "channel-product",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 73,
+        "id": "arrival-background-008",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "omar-bakri",
+          "channel_id": "channel-oncall",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 80,
+        "id": "arrival-chat-004",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "keiko-sato",
+          "channel_id": "channel-lumen",
+          "entity_refs": {},
+          "text": "Callan's rerun finished. 268,410 rows, twelve minutes, no lease loss. Their number, not ours."
+        }
+      },
+      {
+        "after_seconds": 82,
+        "id": "arrival-background-009",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "olivia-barnes",
+          "channel_id": "channel-incidents",
+          "entity_refs": {},
+          "text": "Handover: nothing open from my shift."
+        }
+      },
+      {
+        "after_seconds": 89,
+        "id": "arrival-background-010",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "uma-krishnan",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 93,
+        "id": "arrival-background-011",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rosa-delgado",
+          "channel_id": "channel-data",
+          "entity_refs": {},
+          "text": "Confirmed with the customer. No change needed on our side."
+        }
+      },
+      {
+        "after_seconds": 95,
+        "id": "arrival-chat-005",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "lucas-meyer",
+          "channel_id": "channel-lumen",
+          "entity_refs": {},
+          "text": "That is the result I wanted. Their data shape is wider than our fixture and it still held."
+        }
+      },
+      {
+        "after_seconds": 100,
+        "id": "arrival-background-012",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "dalia-mansour",
+          "channel_id": "channel-kestrel",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 106,
+        "id": "arrival-background-013",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "mei-zhang",
+          "channel_id": "channel-random",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 109,
+        "id": "arrival-background-014",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "imani-brooks",
+          "channel_id": "channel-people",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 110,
+        "id": "arrival-chat-006",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "fatima-haddad",
+          "channel_id": "channel-billing-incident",
+          "entity_refs": {},
+          "text": "Reconciliation script reviewed. The resume-point logic is right; it counts from the checkpoint, not from zero."
+        }
+      },
+      {
+        "after_seconds": 115,
+        "id": "arrival-background-015",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "amara-diallo",
+          "channel_id": "channel-exports",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 115,
+        "id": "arrival-issue-000",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "lucas-meyer",
+          "body": "The defer ordering is wrong under a panic path: the lease release runs before the object cleanup, so a panic between them leaves the partial object with no lease to find it by. Reordering and adding a test that panics mid-write.",
+          "issue_id": "issue-903",
+          "repository_id": "repo-exports"
+        }
+      },
+      {
+        "after_seconds": 121,
+        "id": "arrival-background-016",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "oscar-ruiz",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 125,
+        "id": "arrival-chat-007",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "tobias-krause",
+          "channel_id": "channel-billing-incident",
+          "entity_refs": {},
+          "text": "Running it against production metering now. Three invoices to correct."
+        }
+      },
+      {
+        "after_seconds": 130,
+        "id": "arrival-background-017",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "olivia-barnes",
+          "channel_id": "channel-finance",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 137,
+        "id": "arrival-background-018",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "mei-zhang",
+          "channel_id": "channel-kestrel",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 140,
+        "id": "arrival-background-019",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "alina-popescu",
+          "channel_id": "channel-success",
+          "entity_refs": {},
+          "text": "This is the third time this week. Writing it down."
+        }
+      },
+      {
+        "after_seconds": 140,
+        "id": "arrival-mail-000",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "Callan's rerun came back clean at our real volume. That answers my first question.\n\nOn the second: put the partial-object behaviour in the documentation and I will accept it as a known limit rather than a surprise. Renewal is a yes from my side.\n\nPriya",
+          "from_id": "priya-raman",
+          "labels": [
+            "INBOX",
+            "UNREAD"
+          ],
+          "snippet": "Callan's rerun came back clean at our real volume. That answers my first question.",
+          "subject": "Re: Renewal and export reliability",
+          "thread_id": "thread-lumen-renewal",
+          "to_id": "maya-chen"
+        }
+      },
+      {
+        "after_seconds": 145,
+        "id": "arrival-background-020",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "tobias-krause",
+          "channel_id": "channel-docs",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 145,
+        "id": "arrival-chat-008",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ingrid-solberg",
+          "channel_id": "channel-incidents",
+          "entity_refs": {},
+          "text": "Queue depth is climbing again. Not a burst this time, and the autoscaler floor is still not deployed."
+        }
+      },
+      {
+        "after_seconds": 151,
+        "id": "arrival-background-021",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nikolai-petrov",
+          "channel_id": "channel-data",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 158,
+        "id": "arrival-background-022",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "sean-murphy",
+          "channel_id": "channel-soc2",
+          "entity_refs": {},
+          "text": "Confirmed with the customer. No change needed on our side."
+        }
+      },
+      {
+        "after_seconds": 160,
+        "id": "arrival-chat-009",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "priyanka-nair",
+          "channel_id": "channel-incidents",
+          "entity_refs": {},
+          "text": "Migrated accounts. Eleven of them all scheduled on the hour. This is the case Ingrid warned about."
+        }
+      },
+      {
+        "after_seconds": 164,
+        "id": "arrival-background-023",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "amara-diallo",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 170,
+        "id": "arrival-background-024",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "marcus-webb",
+          "channel_id": "channel-console",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 175,
+        "id": "arrival-chat-010",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rafael-costa",
+          "channel_id": "channel-incidents",
+          "entity_refs": {},
+          "text": "Stable. Peak depth 900, cleared in four minutes. Not an incident, but it is the shape of one."
+        }
+      },
+      {
+        "after_seconds": 177,
+        "id": "arrival-background-025",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nikolai-petrov",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Agreed on the call; recording the decision here so it is findable."
+        }
+      },
+      {
+        "after_seconds": 184,
+        "id": "arrival-background-026",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "leila-farouk",
+          "channel_id": "channel-people",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 185,
+        "id": "arrival-payment-000",
+        "kind": "stripe-payment",
+        "payload": {
+          "amount_cents": 168000,
+          "currency": "usd",
+          "customer_id": "riverbend",
+          "description": "Riverbend Bank — August, corrected after reconciliation"
+        }
+      },
+      {
+        "after_seconds": 188,
+        "id": "arrival-background-027",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "omar-bakri",
+          "channel_id": "channel-success",
+          "entity_refs": {},
+          "text": "I updated the runbook while this was fresh."
+        }
+      },
+      {
+        "after_seconds": 195,
+        "id": "arrival-chat-011",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "priyanka-nair",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "I am not widening the migration flag until 911 is deployed. That is now a hard blocker, not a preference."
+        }
+      },
+      {
+        "after_seconds": 196,
+        "id": "arrival-background-028",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ugo-bianchi",
+          "channel_id": "channel-finance",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 203,
+        "id": "arrival-background-029",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nathan-ford",
+          "channel_id": "channel-reliability",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 205,
+        "id": "arrival-mail-001",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "Fourteen runs matches what we found. Thank you for sending the list before the fix date; that was the right order.\n\nNadia",
+          "from_id": "nadia-farouk",
+          "labels": [
+            "INBOX",
+            "UNREAD"
+          ],
+          "snippet": "Fourteen runs matches what we found. Thank you for sending the list before the fix date; that was the right or",
+          "subject": "Re: Renamed column dropped from your clinical sync",
+          "thread_id": "thread-kestrel-columns",
+          "to_id": "kwame-mensah"
+        }
+      },
+      {
+        "after_seconds": 208,
+        "id": "arrival-background-030",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ravi-kapoor",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "I will pick this up after the release decision."
+        }
+      },
+      {
+        "after_seconds": 211,
+        "id": "arrival-background-031",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "luca-ferrari",
+          "channel_id": "channel-reliability",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 215,
+        "id": "arrival-chat-012",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "kwame-mensah",
+          "channel_id": "channel-kestrel",
+          "entity_refs": {},
+          "text": "Affected-run list is ready for Kestrel. Fourteen runs across nine days, all in the one renamed column."
+        }
+      },
+      {
+        "after_seconds": 219,
+        "id": "arrival-background-032",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rina-chowdhury",
+          "channel_id": "channel-docs",
+          "entity_refs": {},
+          "text": "Confirmed with the customer. No change needed on our side."
+        }
+      },
+      {
+        "after_seconds": 223,
+        "id": "arrival-background-033",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "yusuf-demir",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 230,
+        "id": "arrival-background-034",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rosa-delgado",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 230,
+        "id": "arrival-issue-001",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "fatima-haddad",
+          "body": "Reconciliation confirms the double count starts at the resume checkpoint, not at zero. Three invoices affected this billing period.",
+          "issue_id": "issue-905",
+          "repository_id": "repo-billing"
+        }
+      },
+      {
+        "after_seconds": 235,
+        "id": "arrival-chat-013",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nikolai-petrov",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Destination audit logging is in review. Narrow scope, as agreed."
+        }
+      },
+      {
+        "after_seconds": 236,
+        "id": "arrival-background-035",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ravi-kapoor",
+          "channel_id": "channel-escalations",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 245,
+        "id": "arrival-background-036",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rafael-costa",
+          "channel_id": "channel-finance",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 249,
+        "id": "arrival-background-037",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "luca-ferrari",
+          "channel_id": "channel-data",
+          "entity_refs": {},
+          "text": "Handover: nothing open from my shift."
+        }
+      },
+      {
+        "after_seconds": 250,
+        "id": "arrival-object-000",
+        "kind": "s3-object",
+        "payload": {
+          "body": "run_id,started_at,column,rows\nrun-88412,2027-08-11T02:00:00Z,patient_ref,18422\nrun-88467,2027-08-12T02:00:00Z,patient_ref,18901\nrun-88512,2027-08-13T02:00:00Z,patient_ref,17655\n",
+          "bucket": "northstar-relay-exports",
+          "content_type": "text/csv",
+          "key": "reports/2027-08/kestrel-affected-runs.csv"
+        }
+      },
+      {
+        "after_seconds": 254,
+        "id": "arrival-background-038",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "bianca-rossi",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Agreed on the call; recording the decision here so it is findable."
+        }
+      },
+      {
+        "after_seconds": 255,
+        "id": "arrival-chat-014",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "oscar-ruiz",
+          "channel_id": "channel-console",
+          "entity_refs": {},
+          "text": "Summary table is backfilling for Riverbend. Sixty-one thousand runs, about forty minutes."
+        }
+      },
+      {
+        "after_seconds": 259,
+        "id": "arrival-background-039",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "hana-ito",
+          "channel_id": "channel-kestrel",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 266,
+        "id": "arrival-background-040",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "luca-ferrari",
+          "channel_id": "channel-incidents",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 270,
+        "id": "arrival-mail-002",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "Understood. I would rather have the date after the test exists than a date that moves twice.\n\nAnders",
+          "from_id": "anders-holm",
+          "labels": [
+            "INBOX",
+            "UNREAD"
+          ],
+          "snippet": "Understood. I would rather have the date after the test exists than a date that moves twice.",
+          "subject": "Re: Duplicate rows after retried chunks",
+          "thread_id": "thread-harbor-duplicates",
+          "to_id": "samira-okafor"
+        }
+      },
+      {
+        "after_seconds": 274,
+        "id": "arrival-background-041",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nikolai-petrov",
+          "channel_id": "channel-soc2",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 277,
+        "id": "arrival-background-042",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "yuki-tanaka",
+          "channel_id": "channel-soc2",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 280,
+        "id": "arrival-chat-015",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "grace-okonkwo",
+          "channel_id": "channel-escalations",
+          "entity_refs": {},
+          "text": "Harbor asked for a date again. I gave them the honest one: after the mid-chunk kill test passes."
+        }
+      },
+      {
+        "after_seconds": 283,
+        "id": "arrival-background-043",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "imani-brooks",
+          "channel_id": "channel-success",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 290,
+        "id": "arrival-issue-002",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "ingrid-solberg",
+          "body": "Queue spike at 09:12 today was migrated accounts all scheduled on the hour, not a customer burst. Same nine-minute gap. This blocks widening the migration flag.",
+          "issue_id": "issue-911",
+          "repository_id": "repo-infra"
+        }
+      },
+      {
+        "after_seconds": 291,
+        "id": "arrival-background-044",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "yara-nasser",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 295,
+        "id": "arrival-background-045",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rina-chowdhury",
+          "channel_id": "channel-product",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 300,
+        "id": "arrival-chat-016",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "maya-chen",
+          "channel_id": "channel-general",
+          "entity_refs": {},
+          "text": "Release 3.2 slips by one week. Cancellation cleanup is not ready and we are not shipping a partial fix as a whole one."
+        }
+      },
+      {
+        "after_seconds": 304,
+        "id": "arrival-background-046",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "lena-fischer",
+          "channel_id": "channel-billing-incident",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 309,
+        "id": "arrival-background-047",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "victor-almeida",
+          "channel_id": "channel-billing-incident",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 310,
+        "id": "arrival-payment-001",
+        "kind": "stripe-payment",
+        "payload": {
+          "amount_cents": 412000,
+          "currency": "usd",
+          "customer_id": "harbor",
+          "description": "Harbor Mobility — August"
+        }
+      },
+      {
+        "after_seconds": 315,
+        "id": "arrival-background-048",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "keiko-sato",
+          "channel_id": "channel-reliability",
+          "entity_refs": {},
+          "text": "Reviewed. One comment about naming, otherwise fine."
+        }
+      },
+      {
+        "after_seconds": 320,
+        "id": "arrival-background-049",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "freya-nilsen",
+          "channel_id": "channel-riverbend",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 327,
+        "id": "arrival-background-050",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "fatima-haddad",
+          "channel_id": "channel-exports",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 330,
+        "id": "arrival-chat-017",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ben-hartley",
+          "channel_id": "channel-product",
+          "entity_refs": {},
+          "text": "Per-account pricing comparison is done. Nineteen accounts pay less, four pay more, and those four get a conversation before anything is announced."
+        }
+      },
+      {
+        "after_seconds": 334,
+        "id": "arrival-background-051",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "pedro-silva",
+          "channel_id": "channel-docs",
+          "entity_refs": {},
+          "text": "I updated the runbook while this was fresh."
+        }
+      },
+      {
+        "after_seconds": 340,
+        "id": "arrival-mail-003",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "The breakdown explains it. Payment released today.\n\nGareth",
+          "from_id": "gareth-powell",
+          "labels": [
+            "INBOX",
+            "UNREAD"
+          ],
+          "snippet": "The breakdown explains it. Payment released today.",
+          "subject": "Re: Query on invoice",
+          "thread_id": "thread-marlow-invoice",
+          "to_id": "ulla-virtanen"
+        }
+      },
+      {
+        "after_seconds": 341,
+        "id": "arrival-background-052",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "stefan-weber",
+          "channel_id": "channel-lumen",
+          "entity_refs": {},
+          "text": "Handover: nothing open from my shift."
+        }
+      },
+      {
+        "after_seconds": 343,
+        "id": "arrival-background-053",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "quentin-leroy",
+          "channel_id": "channel-exports",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 351,
+        "id": "arrival-background-054",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "alina-popescu",
+          "channel_id": "channel-lumen",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 357,
+        "id": "arrival-background-055",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "david-banerjee",
+          "channel_id": "channel-escalations",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 360,
+        "id": "arrival-chat-018",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "yuki-tanaka",
+          "channel_id": "channel-oncall",
+          "entity_refs": {},
+          "text": "Handover: nothing open. The queue spike at 145 is written up in the runbook."
+        }
+      },
+      {
+        "after_seconds": 365,
+        "id": "arrival-background-056",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "callum-fraser",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 368,
+        "id": "arrival-background-057",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "arjun-mehta",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Confirmed with the customer. No change needed on our side."
+        }
+      },
+      {
+        "after_seconds": 374,
+        "id": "arrival-background-058",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "omar-bakri",
+          "channel_id": "channel-reliability",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 380,
+        "id": "arrival-issue-003",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "lucas-meyer",
+          "body": "Callan reran Lumen's largest saved export against the flag account: 268,410 rows, twelve minutes, no lease loss. Closing after 903 lands so the release note can be honest about both.",
+          "issue_id": "issue-902",
+          "repository_id": "repo-exports"
+        }
+      },
+      {
+        "after_seconds": 383,
+        "id": "arrival-background-059",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ravi-kapoor",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 388,
+        "id": "arrival-background-060",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rowan-whitfield",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "This is the third time this week. Writing it down."
+        }
+      },
+      {
+        "after_seconds": 392,
+        "id": "arrival-background-061",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "wesley-chan",
+          "channel_id": "channel-finance",
+          "entity_refs": {},
+          "text": "I will pick this up after the release decision."
+        }
+      },
+      {
+        "after_seconds": 399,
+        "id": "arrival-background-062",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "imani-brooks",
+          "channel_id": "channel-product",
+          "entity_refs": {},
+          "text": "Numbers are in the doc rather than here, the table does not survive Slack."
+        }
+      },
+      {
+        "after_seconds": 400,
+        "id": "arrival-chat-019",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "daniel-osei",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Defer ordering fixed. Cancellation cleanup passes under the panic path now. Re-running the suite."
+        }
+      },
+      {
+        "after_seconds": 403,
+        "id": "arrival-background-063",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "viktor-horvath",
+          "channel_id": "channel-lumen",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 411,
+        "id": "arrival-background-064",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "xiomara-reyes",
+          "channel_id": "channel-general",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 415,
+        "id": "arrival-background-065",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "hiro-nakamura",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "I will pick this up after the release decision."
+        }
+      },
+      {
+        "after_seconds": 415,
+        "id": "arrival-object-001",
+        "kind": "s3-object",
+        "payload": {
+          "body": "customer,invoiced_cents,true_cents,credit_cents\nlumen,412000,388400,23600\nharbor,412000,401200,10800\nriverbend,168000,161500,6500\n",
+          "bucket": "northstar-relay-exports",
+          "content_type": "text/csv",
+          "key": "reports/2027-08/billing-reconciliation.csv"
+        }
+      },
+      {
+        "after_seconds": 420,
+        "id": "arrival-mail-004",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "The history page loads in under two seconds now. That clears our evidence requirement for the window.\n\nCormac",
+          "from_id": "cormac-byrne",
+          "labels": [
+            "INBOX",
+            "UNREAD"
+          ],
+          "snippet": "The history page loads in under two seconds now. That clears our evidence requirement for the window.",
+          "subject": "Re: Export history page and the reporting window",
+          "thread_id": "thread-riverbend-history",
+          "to_id": "keiko-sato"
+        }
+      },
+      {
+        "after_seconds": 425,
+        "id": "arrival-background-066",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "aiko-yamamoto",
+          "channel_id": "channel-data",
+          "entity_refs": {},
+          "text": "I will pick this up after the release decision."
+        }
+      },
+      {
+        "after_seconds": 427,
+        "id": "arrival-background-067",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ulla-virtanen",
+          "channel_id": "channel-marketing",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 436,
+        "id": "arrival-background-068",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "mei-zhang",
+          "channel_id": "channel-finance",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 440,
+        "id": "arrival-chat-020",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "callum-fraser",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Suite is green. Both gates pass."
+        }
+      },
+      {
+        "after_seconds": 442,
+        "id": "arrival-background-069",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "xander-rooij",
+          "channel_id": "channel-data",
+          "entity_refs": {},
+          "text": "This is the third time this week. Writing it down."
+        }
+      },
+      {
+        "after_seconds": 448,
+        "id": "arrival-background-070",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "gabriel-sousa",
+          "channel_id": "channel-riverbend",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 450,
+        "id": "arrival-issue-004",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "bianca-rossi",
+          "body": "Mid-chunk kill test passes on the reordered defer. Suite is green.",
+          "issue_id": "issue-903",
+          "repository_id": "repo-exports"
+        }
+      },
+      {
+        "after_seconds": 452,
+        "id": "arrival-background-071",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "daniel-osei",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "This is the third time this week. Writing it down."
+        }
+      },
+      {
+        "after_seconds": 457,
+        "id": "arrival-background-072",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "xiomara-reyes",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "Rebased onto main; the conflict was only in the test fixtures."
+        }
+      },
+      {
+        "after_seconds": 460,
+        "id": "arrival-payment-002",
+        "kind": "stripe-payment",
+        "payload": {
+          "amount_cents": 412000,
+          "currency": "usd",
+          "customer_id": "lumen",
+          "description": "Lumen Labs — August, corrected after reconciliation"
+        }
+      },
+      {
+        "after_seconds": 467,
+        "id": "arrival-background-073",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "farida-bello",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 470,
+        "id": "arrival-chat-021",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "jon-bell",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Then we go next Monday, and the release note says what it actually fixed."
+        }
+      },
+      {
+        "after_seconds": 472,
+        "id": "arrival-background-074",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nils-andersson",
+          "channel_id": "channel-incidents",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 477,
+        "id": "arrival-background-075",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "maya-chen",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "This is the third time this week. Writing it down."
+        }
+      },
+      {
+        "after_seconds": 485,
+        "id": "arrival-background-076",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "sofia-marchetti",
+          "channel_id": "channel-engineering",
+          "entity_refs": {},
+          "text": "I will pick this up after the release decision."
+        }
+      },
+      {
+        "after_seconds": 490,
+        "id": "arrival-background-077",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nour-khalil",
+          "channel_id": "channel-security",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 494,
+        "id": "arrival-background-078",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "celine-aubert",
+          "channel_id": "channel-docs",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 503,
+        "id": "arrival-background-079",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "nikolai-petrov",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 505,
+        "id": "arrival-background-080",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "tobias-krause",
+          "channel_id": "channel-docs",
+          "entity_refs": {},
+          "text": "Moved this to the project board so it has an owner."
+        }
+      },
+      {
+        "after_seconds": 511,
+        "id": "arrival-background-081",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "alina-popescu",
+          "channel_id": "channel-escalations",
+          "entity_refs": {},
+          "text": "Agreed on the call; recording the decision here so it is findable."
+        }
+      },
+      {
+        "after_seconds": 520,
+        "id": "arrival-webhook-000",
+        "kind": "webhook",
+        "payload": {
+          "amount_cents": 412000,
+          "customer_id": "lumen",
+          "event": "finance.invoice.paid",
+          "invoice_id": "inv-5124",
+          "payment_id": "pay-5124"
+        }
+      },
+      {
+        "after_seconds": 521,
+        "id": "arrival-background-082",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ulla-virtanen",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Flagging early: this will need a migration, not a config change."
+        }
+      },
+      {
+        "after_seconds": 527,
+        "id": "arrival-background-083",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "eero-makinen",
+          "channel_id": "channel-design",
+          "entity_refs": {},
+          "text": "Flagging early: this will need a migration, not a config change."
+        }
+      },
+      {
+        "after_seconds": 529,
+        "id": "arrival-background-084",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rosa-delgado",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Agreed on the call; recording the decision here so it is findable."
+        }
+      },
+      {
+        "after_seconds": 539,
+        "id": "arrival-background-085",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "zeno-papadakis",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 545,
+        "id": "arrival-background-086",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "wren-callahan",
+          "channel_id": "channel-marketing",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 548,
+        "id": "arrival-background-087",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "gustavo-herrera",
+          "channel_id": "channel-release-32",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 555,
+        "id": "arrival-background-088",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ravi-kapoor",
+          "channel_id": "channel-support",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 561,
+        "id": "arrival-background-089",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "luca-ferrari",
+          "channel_id": "channel-oncall",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 565,
+        "id": "arrival-background-090",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "mei-zhang",
+          "channel_id": "channel-success",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      },
+      {
+        "after_seconds": 573,
+        "id": "arrival-background-091",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rina-chowdhury",
+          "channel_id": "channel-sales",
+          "entity_refs": {},
+          "text": "Waiting on the customer for the request ids."
+        }
+      },
+      {
+        "after_seconds": 577,
+        "id": "arrival-background-092",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "qing-liu",
+          "channel_id": "channel-random",
+          "entity_refs": {},
+          "text": "Agreed on the call; recording the decision here so it is findable."
+        }
+      },
+      {
+        "after_seconds": 586,
+        "id": "arrival-background-093",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "ugo-bianchi",
+          "channel_id": "channel-platform",
+          "entity_refs": {},
+          "text": "Added the alert. It fires on queue depth rather than on error rate."
+        }
+      },
+      {
+        "after_seconds": 589,
+        "id": "arrival-background-094",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "wesley-chan",
+          "channel_id": "channel-gantry",
+          "entity_refs": {},
+          "text": "Deployed to staging. Nothing surprising in the logs."
+        }
+      },
+      {
+        "after_seconds": 599,
+        "id": "arrival-background-095",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "noor-alvarez",
+          "channel_id": "channel-finance",
+          "entity_refs": {},
+          "text": "Closing the loop -- shipped and verified."
+        }
+      }
+    ]
+  },
+  "id": "story.live-timeline"
+}

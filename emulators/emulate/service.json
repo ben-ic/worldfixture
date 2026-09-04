@@ -1,0 +1,1040 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "emulate",
+  "version": "1.5.0",
+  "runtime": {
+    "command": [
+      "node",
+      "src/main.mjs"
+    ],
+    "readiness": [
+      {
+        "port": "slack",
+        "protocol": "http",
+        "path": "/api/auth.test",
+        "expect": "not_authed",
+        "kind": "protocol",
+        "method": "POST"
+      },
+      {
+        "port": "github",
+        "protocol": "http",
+        "path": "/meta",
+        "expect": "verifiable_password_authentication",
+        "kind": "protocol"
+      },
+      {
+        "port": "google",
+        "protocol": "http",
+        "path": "/.well-known/openid-configuration",
+        "expect": "authorization_endpoint",
+        "kind": "protocol"
+      },
+      {
+        "port": "stripe",
+        "protocol": "http",
+        "path": "/v1/customers",
+        "expect": "\"object\":\"list\"",
+        "kind": "protocol"
+      },
+      {
+        "port": "resend",
+        "protocol": "http",
+        "path": "/domains",
+        "expect": "\"object\":\"list\"",
+        "kind": "protocol"
+      },
+      {
+        "port": "clerk",
+        "protocol": "http",
+        "path": "/v1/users",
+        "expect": "UNAUTHORIZED",
+        "kind": "protocol"
+      },
+      {
+        "port": "okta",
+        "protocol": "http",
+        "path": "/api/v1/users",
+        "expect": "E0000004",
+        "kind": "protocol"
+      },
+      {
+        "port": "microsoft",
+        "protocol": "http",
+        "path": "/v1.0/me",
+        "expect": "InvalidAuthenticationToken",
+        "kind": "protocol"
+      },
+      {
+        "port": "vercel",
+        "protocol": "http",
+        "path": "/v2/user",
+        "expect": "not_authenticated",
+        "kind": "protocol"
+      },
+      {
+        "port": "mongoatlas",
+        "protocol": "http",
+        "path": "/api/atlas/v2/groups",
+        "expect": "\"results\"",
+        "kind": "protocol"
+      },
+      {
+        "port": "apple",
+        "protocol": "http",
+        "path": "/auth/keys",
+        "expect": "\"keys\"",
+        "kind": "protocol"
+      },
+      {
+        "port": "linear",
+        "protocol": "http",
+        "path": "/graphql",
+        "expect": "GraphQL query is required",
+        "kind": "protocol"
+      },
+      {
+        "port": "twilio",
+        "protocol": "http",
+        "path": "/2010-04-01/Accounts.json",
+        "expect": "20003",
+        "kind": "protocol"
+      },
+      {
+        "port": "notion",
+        "protocol": "http",
+        "path": "/.well-known/oauth-protected-resource",
+        "expect": "authorization_servers",
+        "kind": "protocol"
+      }
+    ],
+    "ports": [
+      {
+        "name": "apple",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_APPLE",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_APPLE",
+        "optional": true
+      },
+      {
+        "name": "aws",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_AWS",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_AWS",
+        "optional": true
+      },
+      {
+        "name": "clerk",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_CLERK",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_CLERK",
+        "optional": true
+      },
+      {
+        "name": "github",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_GITHUB",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_GITHUB",
+        "optional": true
+      },
+      {
+        "name": "google",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_GOOGLE",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_GOOGLE",
+        "container_port": 4000,
+        "optional": true
+      },
+      {
+        "name": "linear",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_LINEAR",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_LINEAR",
+        "optional": true
+      },
+      {
+        "name": "microsoft",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_MICROSOFT",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_MICROSOFT",
+        "optional": true
+      },
+      {
+        "name": "mongoatlas",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_MONGOATLAS",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_MONGOATLAS",
+        "optional": true
+      },
+      {
+        "name": "notion",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_NOTION",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_NOTION",
+        "optional": true
+      },
+      {
+        "name": "okta",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_OKTA",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_OKTA",
+        "optional": true
+      },
+      {
+        "name": "resend",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_RESEND",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_RESEND",
+        "optional": true
+      },
+      {
+        "name": "slack",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_SLACK",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_SLACK",
+        "optional": true
+      },
+      {
+        "name": "stripe",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_STRIPE",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_STRIPE",
+        "optional": true
+      },
+      {
+        "name": "twilio",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_TWILIO",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_TWILIO",
+        "optional": true
+      },
+      {
+        "name": "vercel",
+        "protocol": "http",
+        "env": "WORLDFIXTURE_PORT_VERCEL",
+        "env_format": "port",
+        "published": true,
+        "bind_env": "WORLDFIXTURE_BIND_VERCEL",
+        "optional": true
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": true
+      },
+      {
+        "name": "WORLDFIXTURE_STATE_PATH",
+        "from": "runtime.state",
+        "required": true
+      }
+    ]
+  },
+  "provides": [
+    {
+      "profile": "slack.messaging.v1",
+      "port": "slack",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "slack.oauth.v1",
+      "port": "slack",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "notion.users.v1",
+      "port": "notion",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "notion.oauth.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.webhooks.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.admin.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens" }
+      ]
+    },
+    {
+      "profile": "notion.pages-read.v1",
+      "port": "notion",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "notion.blocks-read.v1",
+      "port": "notion",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "notion.pages-write.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.blocks-write.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.meeting-notes.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.agents.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.sessions.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.databases.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.data-sources.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.views.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.custom-emojis.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.async-tasks.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.markdown.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.comments.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ]
+    },
+    {
+      "profile": "notion.file-uploads.v1",
+      "port": "notion",
+      "binds": [
+        { "name": "base_url", "from": "port.url" },
+        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+      ],
+      "requires": [
+        {
+          "profile": "aws.s3.objects.v1",
+          "bind": "base_url",
+          "environment": "WORLDFIXTURE_NOTION_OBJECT_STORE_URL"
+        }
+      ]
+    },
+    {
+      "profile": "github.repositories.v1",
+      "port": "github",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "github.issues.v1",
+      "port": "github",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "github.apps.v1",
+      "port": "github",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "github.oauth.v1",
+      "port": "github",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "google.oauth.v1",
+      "port": "google",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "google.gmail.v1",
+      "port": "google",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "google.calendar.v1",
+      "port": "google",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "google.drive.v1",
+      "port": "google",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "microsoft.graph-users.v1",
+      "port": "microsoft",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "microsoft.oauth.v1",
+      "port": "microsoft",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "apple.oauth.v1",
+      "port": "apple",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "okta.users.v1",
+      "port": "okta",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "okta.groups.v1",
+      "port": "okta",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "okta.oauth.v1",
+      "port": "okta",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "aws.iam.v1",
+      "port": "aws",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "aws.sqs.v1",
+      "port": "aws",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "aws.sts.v1",
+      "port": "aws",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "resend.email.v1",
+      "port": "resend",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "resend.contacts.v1",
+      "port": "resend",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "resend.domains.v1",
+      "port": "resend",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "stripe.customers.v1",
+      "port": "stripe",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "stripe.catalog.v1",
+      "port": "stripe",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "mongoatlas.projects.v1",
+      "port": "mongoatlas",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "mongoatlas.clusters.v1",
+      "port": "mongoatlas",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "clerk.users.v1",
+      "port": "clerk",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "clerk.organizations.v1",
+      "port": "clerk",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "vercel.projects.v1",
+      "port": "vercel",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "vercel.teams.v1",
+      "port": "vercel",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "linear.issues.v1",
+      "port": "linear",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "linear.teams.v1",
+      "port": "linear",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "twilio.messaging.v1",
+      "port": "twilio",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "twilio.verify.v1",
+      "port": "twilio",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ]
+    }
+  ],
+  "world": {
+    "requires": [
+      "identity.people.v1",
+      "identity.organizations.v1",
+      "communication.channels.v1",
+      "software.repositories.v1",
+      "work.projects.v1",
+      "finance.customers.v1"
+    ],
+    "projections": [
+      {
+        "file": "projections/emulator-overlay.json",
+        "verified": true
+      },
+      {
+        "file": "manifest.json",
+        "subtree": "/files",
+        "verified": true
+      }
+    ]
+  },
+  "events": {
+    "consumes": [],
+    "produces": []
+  },
+  "lifecycle": {
+    "seed": true,
+    "reset": true,
+    "reset_mechanism": "restore",
+    "verify": true,
+    "recoverable_changes": false,
+    "state": {
+      "export": true,
+      "import": true,
+      "format": "worldfixture.emulate-snapshot/v1"
+    }
+  },
+  "disclaims": [
+    {
+      "profile": "aws.s3.buckets.v1",
+      "port": "aws",
+      "reason": "@emulators/aws serves a live, writable /s3/ and self-seeds three buckets the world never declares. SeaweedFS owns S3. Withholding the projection did not remove these routes, so the resolver must refuse this port whenever the s3 service is selected. This vendor is also the only one with no readiness check, deliberately: without one the resolver refuses it outright, so a run cannot raise a second S3 owner even by asking for aws.iam.v1. Give it a check only when these routes are gone."
+    },
+    {
+      "profile": "aws.s3.objects.v1",
+      "port": "aws",
+      "reason": "Same routes as aws.s3.buckets.v1: measured PUT bucket, PUT object and GET object all returning 200. This vendor is also the only one with no readiness check, deliberately: without one the resolver refuses it outright, so a run cannot raise a second S3 owner even by asking for aws.iam.v1. Give it a check only when these routes are gone."
+    }
+  ]
+}

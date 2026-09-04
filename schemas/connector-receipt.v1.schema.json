@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/connector-receipt.v1.schema.json",
+  "title": "WorldFixture connector receipt v1",
+  "type": "object",
+  "required": ["api_version", "status", "counts", "references"],
+  "properties": {
+    "api_version": {"const": "worldfixture.connector-receipt/v1"},
+    "status": {"enum": ["applied", "already_applied", "reset"]},
+    "idempotency_key": {"type": "string"},
+    "event_id": {"type": "string"},
+    "summary": {"type": "string"},
+    "counts": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["worldfixture_ref", "application_ref"],
+        "properties": {
+          "worldfixture_ref": {"type": "string"},
+          "application_ref": {"type": "string"}
+        }
+      }
+    },
+    "warnings": {"type": "array", "items": {"type": "string"}}
+  }
+}

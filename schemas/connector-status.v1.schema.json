@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/connector-status.v1.schema.json",
+  "title": "WorldFixture connector status v1",
+  "type": "object",
+  "required": ["api_version", "state", "receipts"],
+  "properties": {
+    "api_version": {"const": "worldfixture.connector-status/v1"},
+    "state": {"enum": ["empty", "planned", "seeded", "changed", "resetting", "error"]},
+    "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "receipts": {"type": "array", "items": {"$ref": "connector-receipt.v1.schema.json"}}
+  }
+}

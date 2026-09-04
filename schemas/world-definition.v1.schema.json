@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/world-definition.v1.schema.json",
+  "title": "WorldFixture world source v1",
+  "description": "One resolved world source. The compiler core validates this envelope. A world that declares a profile also has to satisfy that profile's records.",
+  "type": "object",
+  "required": [
+    "api_version",
+    "id",
+    "version",
+    "title",
+    "synthetic_notice",
+    "scenario",
+    "clock"
+  ],
+  "properties": {
+    "api_version": {"const": "worldfixture.world-source/v1"},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+    "version": {"type": "string", "pattern": "^v[0-9]+$"},
+    "profile": {
+      "description": "Which built-in profile validates and projects this world. A world without a profile is records and a timeline only.",
+      "type": "string",
+      "enum": ["business.operations/v1"]
+    },
+    "title": {"type": "string", "minLength": 1},
+    "synthetic_notice": {"type": "string", "minLength": 20},
+    "scenario": {
+      "type": "object",
+      "required": ["id", "class", "title"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+        "class": {"enum": ["normal", "data-quality", "bad-actor", "fraud", "operational-failure"]},
+        "title": {"type": "string", "minLength": 1}
+      }
+    },
+    "categories": {"type": "array", "items": {"type": "string"}},
+    "clock": {
+      "type": "object",
+      "required": ["anchor", "timezone", "locale"],
+      "properties": {
+        "anchor": {"type": "string", "format": "date-time"},
+        "timezone": {"type": "string"},
+        "locale": {"type": "string"},
+        "rebase": {
+          "description": "Which branches carry scenario-relative dates that a rebase may shift.",
+          "type": "object",
+          "required": ["relative_paths"],
+          "properties": {
+            "relative_paths": {
+              "type": "array",
+              "items": {"type": "string", "pattern": "^[a-z_]+(?:\\.[a-z_]+)*$"}
+            }
+          }
+        }
+      }
+    },
+    "records": {
+      "description": "Open world records. The runtime requires no person, provider identity, or organization field.",
+      "type": "array"
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "after_seconds", "kind"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
+          "after_seconds": {"type": "integer", "minimum": 0},
+          "kind": {"enum": ["incoming-email", "chat-message", "github-comment", "stripe-payment", "s3-object", "application-event", "webhook"]},
+          "payload": {"type": "object"}
+        }
+      }
+    },
+    "organizations": {"type": "array"},
+    "people": {"type": "array"},
+    "communication": {"type": "object"},
+    "work": {"type": "object"},
+    "software": {"type": "object"},
+    "finance": {"type": "object"},
+    "commerce": {
+      "description": "Optional catalog and order book for a world that sells goods to people. An order states its own subtotal and total, and the compiler checks both against its own lines.",
+      "type": "object",
+      "properties": {
+        "products": {"type": "array"},
+        "orders": {"type": "array"}
+      }
+    },
+    "social": {
+      "description": "Optional public activity: posts a world publishes, reviews people leave on its products, and comments on either.",
+      "type": "object",
+      "properties": {
+        "posts": {"type": "array"},
+        "reviews": {"type": "array"},
+        "comments": {"type": "array"}
+      }
+    },
+    "support": {"type": "object"},
+    "stories": {"type": "array"},
+    "agentic": {"type": "object"},
+    "model_facts": {"type": "array"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"profile": {"const": "business.operations/v1"}}, "required": ["profile"]},
+      "then": {
+        "required": ["organizations", "people", "communication", "work", "software", "finance", "timeline"],
+        "properties": {
+          "organizations": {"type": "array", "minItems": 1},
+          "people": {"type": "array", "minItems": 2},
+          "work": {
+            "type": "object",
+            "required": ["projects", "tasks", "time_entries"],
+            "properties": {
+              "projects": {"type": "array"},
+              "tasks": {"type": "array"},
+              "time_entries": {"type": "array"}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

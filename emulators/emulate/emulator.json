@@ -1,0 +1,79 @@
+{
+  "app_id": "902-emulator-api",
+  "slug": "emulator-api",
+  "name": "WorldFixture API Emulator",
+  "repository_url": "https://github.com/vercel-labs/emulate",
+  "version": "v1.5.0",
+  "build": {
+    "port": 4000,
+    "readiness_path": "/.well-known/openid-configuration",
+    "generated_secrets": []
+  },
+  "runtime_contract": {
+    "backup_restore_adapter": {
+      "backup_verified": true,
+      "fresh_login_readback_verified": true,
+      "kind": "none",
+      "paths": [],
+      "restore_verified": true
+    },
+    "cold_install": {
+      "cache_condition": "not yet measured",
+      "cache_empty": false,
+      "status": "not_authoritative"
+    },
+    "environment_ownership": [
+      {
+        "name": "EMULATE_PORT",
+        "owner": "generated_by_worldfixture",
+        "phase": "runtime"
+      },
+      {
+        "name": "NODE_ENV",
+        "owner": "defaulted_by_recipe",
+        "phase": "runtime"
+      }
+    ],
+    "first_use_credential": {
+      "present": false,
+      "reveal": "normal_in_app_onboarding",
+      "rotation_supported": true,
+      "value_in_logs": false,
+      "value_in_manifest": false
+    },
+    "health_checks": [
+      {
+        "accept_statuses": [
+          200
+        ],
+        "kind": "http",
+        "path": "/.well-known/openid-configuration",
+        "port": 4000
+      }
+    ],
+    "lifecycle_commands": {
+      "migration": "none",
+      "redeploy": "supported",
+      "restart": "supported",
+      "startup": "single node process serving one listener per enabled service"
+    },
+    "lifecycle_supported": true,
+    "memory": {
+      "scope": "not yet measured on this host",
+      "status": "not_authoritative"
+    },
+    "migration_upgrade_range": {
+      "from": "1.4.0",
+      "supported": true,
+      "to": "1.5.0"
+    },
+    "persistent_paths": [],
+    "ports": [
+      {
+        "container_port": 4000,
+        "name": "base",
+        "protocol": "tcp"
+      }
+    ]
+  }
+}

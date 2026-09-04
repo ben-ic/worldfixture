@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/project.v1.schema.json",
+  "title": "WorldFixture project v1",
+  "type": "object",
+  "required": ["api_version", "application_url", "services"],
+  "additionalProperties": false,
+  "properties": {
+    "api_version": {"const": "worldfixture.project/v1"},
+    "application_url": {"type": "string", "pattern": "^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/.*)?$"},
+    "services": {
+      "type": "array",
+      "items": {"enum": ["postgres", "mysql", "s3", "smtp"]}
+    }
+  }
+}

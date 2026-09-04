@@ -1,0 +1,43 @@
+{
+  "api_version": "worldfixture.world-manifest/v1",
+  "world": {
+    "id": "business.saas-company",
+    "version": "v2",
+    "profile": "business.operations/v1",
+    "title": "Northstar Relay — late August",
+    "synthetic_notice": "This is a fictional company and every person, organization, message, and financial record is synthetic.",
+    "categories": [
+      "business",
+      "business-finance",
+      "communication",
+      "software",
+      "support"
+    ],
+    "scenario": {
+      "id": "normal-operations",
+      "class": "normal",
+      "title": "A healthy small company with real loose ends"
+    },
+    "clock": {
+      "anchor": "2026-08-21T09:00:00Z",
+      "timezone": "Europe/London",
+      "locale": "en-GB",
+      "rebase": {
+        "relative_paths": [
+          "clock",
+          "communication",
+          "finance.anchor_invoices",
+          "support",
+          "work"
+        ]
+      }
+    }
+  },
+  "fragments": [
+    "backbones/northstar-relay.json",
+    "packs/saas-operations.json",
+    "stories/lumen-renewal.json",
+    "stories/release-28.json",
+    "stories/theo-onboarding.json"
+  ]
+}

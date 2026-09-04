@@ -1,0 +1,124 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "http-targets",
+  "version": "1.5.0",
+  "runtime": {
+    "command": [
+      "node",
+      "server.mjs"
+    ],
+    "readiness": [
+      {
+        "port": "http",
+        "protocol": "http",
+        "path": "/readyz",
+        "expect": "\"ready\": true",
+        "kind": "protocol"
+      }
+    ],
+    "ports": [
+      {
+        "name": "http",
+        "protocol": "http",
+        "container_port": 8080,
+        "env": "WORLDFIXTURE_HTTP_TARGETS_LISTEN",
+        "env_format": "host_port",
+        "published": true
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": true
+      },
+      {
+        "name": "WORLDFIXTURE_WORLD_SHA256",
+        "from": "world.sha256",
+        "required": false
+      }
+    ]
+  },
+  "provides": [
+    {
+      "profile": "http.public-site.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        }
+      ]
+    },
+    {
+      "profile": "http.feed.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        }
+      ]
+    },
+    {
+      "profile": "http.probes.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        }
+      ]
+    },
+    {
+      "profile": "http.metrics.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        }
+      ]
+    },
+    {
+      "profile": "http.openapi.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        }
+      ]
+    }
+  ],
+  "world": {
+    "requires": [
+      "identity.organizations.v1",
+      "software.repositories.v1",
+      "communication.channels.v1",
+      "finance.invoices.v1",
+      "support.cases.v1"
+    ],
+    "projections": [
+      {
+        "file": "projections/http-targets.json",
+        "verified": false
+      }
+    ]
+  },
+  "events": {
+    "consumes": [],
+    "produces": []
+  },
+  "lifecycle": {
+    "seed": true,
+    "reset": true,
+    "reset_mechanism": "restart",
+    "verify": false,
+    "recoverable_changes": false,
+    "state": {
+      "export": false,
+      "import": false
+    }
+  }
+}

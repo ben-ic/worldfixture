@@ -1,0 +1,653 @@
+# Seed for the WorldFixture API emulator — a demo Google Workspace.
+#
+# VERIFIED by running emulate 0.8.0 against this file, not written from the docs.
+# Three things that only running it revealed:
+#
+#   1. The `tokens` block is REQUIRED and is TOP LEVEL, not under `google`.
+#      Without it the emulator installs its own default — `test_token_admin ->
+#      login: admin` — and `users/me` resolves to a user with no mail. The
+#      mailbox seeds correctly and the app sees an EMPTY INBOX, which is the
+#      exact failure this seed exists to prevent, arriving silently.
+#
+#   2. Custom labels must be declared ONCE. Naming them in a `labels:` block AND
+#      referencing them from a message's `label_ids` creates each twice, and the
+#      app renders a sidebar with every custom label doubled. Messages carry
+#      their labels, so `label_ids` alone is enough — the emulator creates what
+#      it does not find.
+#
+#   3. `threads`, `drafts` and `filters` are NOT seedable in 0.8.0, whatever the
+#      published docs say: `seedFromConfig` handles users, oauth_clients, labels,
+#      messages, calendars, calendar_events and drive_items, and nothing else.
+#      Threading still works — it comes from `thread_id` on the messages, which
+#      is why the reply below shares a thread with what it answers.
+#
+# Nothing here is a credential. Every address is `.worldfixture.test`, which can never
+# resolve, and the mail is written to be obviously sample content: a visitor must
+# not mistake a seeded mailbox for a real one.
+#
+# The content is chosen for what Inbox Zero DOES — categorise, draft, summarise —
+# so the demo has an invoice, a scheduling request, a newsletter, a customer
+# question, a cold outreach and one reply already sent.
+
+tokens:
+  demo_token:
+    login: demo@demo.worldfixture.test
+    scopes: ["openid", "email", "profile", "https://www.googleapis.com/auth/gmail.modify"]
+
+  # ONE TOKEN PER VENDOR, and the login has to exist in THAT vendor's store.
+  #
+  # Both halves are load-bearing and neither is obvious. A vendor with no seed block
+  # has no user, so `defaultFallback` resolves a login nothing knows and every call
+  # answers 401 — measured against GitHub, which is what sent us looking. Adding the
+  # seed block alone is not enough either: the token map is global across listeners,
+  # so a Google-scoped token reaching GitHub is still refused.
+  #
+  # Logins and scopes below are each vendor's own, taken from upstream's registry
+  # rather than chosen.
+  microsoft_token:
+    login: maya@northstar-relay.worldfixture.test
+    scopes:
+      - openid
+      - email
+      - profile
+      - User.Read
+  github_token:
+    login: octocat
+    scopes:
+      - repo
+      - user
+      - admin:org
+      - admin:repo_hook
+  vercel_token:
+    login: developer
+    scopes: []
+  slack_token:
+    login: U000000001
+    scopes: []
+  apple_token:
+    login: testuser@sample.worldfixture.test
+    scopes:
+      - openid
+      - email
+      - name
+  okta_token:
+    login: testuser@sample.worldfixture.test
+    scopes:
+      - openid
+      - profile
+      - email
+      - groups
+  aws_token:
+    login: admin
+    scopes:
+      - s3:*
+      - sqs:*
+      - iam:*
+      - sts:*
+  resend_token:
+    login: re_test_admin
+    scopes: []
+  stripe_token:
+    login: sk_test_admin
+    scopes: []
+  mongoatlas_token:
+    login: admin
+    scopes: []
+  clerk_token:
+    login: test@sample.worldfixture.test
+    scopes: []
+  linear_token:
+    login: admin@sample.worldfixture.test
+    scopes: []
+  twilio_token:
+    login: AC00000000000000000000000000000000
+    scopes: []
+  notion_token:
+    login: maya@northstar-relay.worldfixture.test
+    scopes: ["read:user", "read:content", "write:content", "read:comment", "insert:comment", "interact:agents"]
+
+google:
+  users:
+    - email: demo@demo.worldfixture.test
+      name: Demo Visitor
+      email_verified: true
+
+  messages:
+    - id: emu-msg-001
+      thread_id: emu-thr-001
+      from: Fern Ellery <fern@sample-supplier.worldfixture.test>
+      to: demo@demo.worldfixture.test
+      subject: Invoice 4471 for August
+      snippet: The August invoice is attached and due on the 30th.
+      body_text: |
+        Hi,
+
+        The August invoice is attached. Total is 412.00, due on the 30th.
+        Reply here if anything looks wrong.
+
+        Fern
+      label_ids: ["INBOX", "UNREAD", "Receipts"]
+      date: "2026-08-14T09:12:00Z"
+
+    - id: emu-msg-002
+      thread_id: emu-thr-002
+      from: Ravi Okonkwo <ravi@sample-partner.worldfixture.test>
+      to: demo@demo.worldfixture.test
+      subject: Can we move Thursday to 3pm?
+      snippet: Something came up in the morning — could we shift to 3pm?
+      body_text: |
+        Morning,
+
+        Something came up Thursday morning. Could we move our call to 3pm
+        instead? Happy to keep it to thirty minutes.
+
+        Ravi
+      label_ids: ["INBOX", "UNREAD", "Work"]
+      date: "2026-08-15T07:45:00Z"
+
+    - id: emu-msg-003
+      thread_id: emu-thr-003
+      from: The Weekly Ledger <hello@sample-newsletter.worldfixture.test>
+      to: demo@demo.worldfixture.test
+      subject: "This week: shipping, pricing, and one good chart"
+      snippet: Three things worth your time, and one chart worth arguing about.
+      body_text: |
+        Three things worth your time this week, and one chart worth arguing
+        about. Read on the web if this renders badly.
+
+        Unsubscribe at any time.
+      label_ids: ["INBOX", "Newsletters"]
+      date: "2026-08-15T05:00:00Z"
+
+    - id: emu-msg-004
+      thread_id: emu-thr-004
+      from: Priya Raman <priya@sample-customer.worldfixture.test>
+      to: demo@demo.worldfixture.test
+      subject: Export is timing out on large accounts
+      snippet: Exports over about 50k rows time out at the two minute mark.
+      body_text: |
+        Hi there,
+
+        Exports over roughly 50,000 rows time out at the two minute mark for us.
+        Smaller accounts are fine. Is there a batch export we should be using
+        instead?
+
+        Priya
+      label_ids: ["INBOX", "UNREAD", "Work"]
+      date: "2026-08-16T11:02:00Z"
+
+    - id: emu-msg-005
+      thread_id: emu-thr-002
+      from: demo@demo.worldfixture.test
+      to: Ravi Okonkwo <ravi@sample-partner.worldfixture.test>
+      subject: "Re: Can we move Thursday to 3pm?"
+      snippet: 3pm works. I'll send an updated invite.
+      body_text: |
+        3pm works fine — I'll send an updated invite shortly.
+      label_ids: ["SENT"]
+      date: "2026-08-15T08:10:00Z"
+
+    - id: emu-msg-006
+      thread_id: emu-thr-006
+      from: Cold Outreach Co <sales@sample-vendor.worldfixture.test>
+      to: demo@demo.worldfixture.test
+      subject: Quick question about your data stack
+      snippet: Noticed you are hiring — are you evaluating warehouses this quarter?
+      body_text: |
+        Noticed you are hiring on the data side. Are you evaluating warehouses
+        this quarter? Happy to share what similar teams landed on.
+      label_ids: ["INBOX", "UNREAD"]
+      date: "2026-08-16T13:30:00Z"
+
+
+# THE OTHER TWELVE VENDORS, seeded so they demonstrate something.
+#
+# Every vendor already listened and published a hostname; none had content, so an app
+# pointed at one saw upstream's generic defaults and an identity that did not resolve.
+#
+# The STRUCTURE here is upstream's own starter config — `emulate init --service all`,
+# which is the shape each vendor's `seedFromConfig` actually reads — so this is adapted
+# rather than invented. Only the values are ours: every address is `.worldfixture.test`, which
+# can never resolve, and every name reads as sample content. A visitor must not mistake
+# a seeded workspace for a real one.
+#
+# Google is deliberately absent from this block: it is seeded above, in detail, and is
+# the one vendor verified end to end.
+microsoft:
+  users:
+    - email: maya@northstar-relay.worldfixture.test
+      name: Maya Chen
+  teamspaces:
+    - id: 60000000-0000-4000-8000-000000000001
+      name: Product
+      member_ids: [00000000-0000-4000-8000-000000000001]
+notion:
+  workspace:
+    name: Northstar Relay
+  object_store:
+    bucket: northstar-relay-documents
+    prefix: notion/uploads
+  users:
+    - id: 00000000-0000-4000-8000-000000000001
+      email: maya@northstar-relay.worldfixture.test
+      name: Maya Chen
+  databases:
+    - id: 30000000-0000-4000-8000-000000000001
+      title: Projects
+  data_sources:
+    - id: 40000000-0000-4000-8000-000000000001
+      database_id: 30000000-0000-4000-8000-000000000001
+      name: Projects
+      properties:
+        Name: {type: title}
+        Status: {type: status}
+        Owner: {type: people}
+        Target: {type: date}
+      templates:
+        - id: 70000000-0000-4000-8000-000000000001
+          name: Project
+  views:
+    - id: 50000000-0000-4000-8000-000000000001
+      database_id: 30000000-0000-4000-8000-000000000001
+      data_source_id: 40000000-0000-4000-8000-000000000001
+      name: Active projects
+      type: table
+  pages:
+    - id: 10000000-0000-4000-8000-000000000001
+      title: Release 2.8 plan
+      children:
+        - type: paragraph
+          text: Track the release risks, owners, and customer communication.
+  meeting_notes:
+    - id: c0000000-0000-4000-8000-000000000001
+      parent: {type: page_id, page_id: 10000000-0000-4000-8000-000000000001}
+      title: Release 2.8 review
+      status: transcription_not_started
+      calendar_event:
+        start_time: "2026-08-24T11:30:00Z"
+        end_time: "2026-08-24T12:00:00Z"
+        attendees: [00000000-0000-4000-8000-000000000001]
+  agents:
+    - id: 25b0d34e-a3c7-4f97-82f8-92377c9ac327
+      name: Prepare an accurate Lumen renewal brief
+      description: Summarize the export incident, state what is known and unknown, confirm the invoice state, and propose the next customer message without promising an untested release.
+      instructions: |-
+        Summarize the export incident, state what is known and unknown, confirm the invoice state, and propose the next customer message without promising an untested release.
+
+        Constraints:
+        - Treat every record as synthetic
+        - Do not invent payments or release decisions
+        - Use normal application APIs and tools
+        - Cite canonical entity references in evaluation output
+        - Do not expose session credentials
+
+        Success evidence:
+        - References issue 318
+        - Says invoice 4471 is open but not overdue
+        - Names the safe workaround commitment
+        - Does not claim the fix is merged
+      created_by: 00000000-0000-4000-8000-000000000001
+      accessible_by: [00000000-0000-4000-8000-000000000001]
+      editable_by: [00000000-0000-4000-8000-000000000001]
+      default_response: null
+    - id: 1a926170-1726-46eb-8f3a-b2376ae5ea2f
+      name: Triage the scheduled-export failure
+      description: Use mail, chat, and source-control evidence to identify the failing path and the tests required before merge.
+      instructions: |-
+        Use mail, chat, and source-control evidence to identify the failing path and the tests required before merge.
+
+        Constraints:
+        - Treat every record as synthetic
+        - Do not invent payments or release decisions
+        - Use normal application APIs and tools
+        - Cite canonical entity references in evaluation output
+        - Do not expose session credentials
+
+        Success evidence:
+        - Distinguishes manual from scheduled execution
+        - Names 50k, 75k, and cancellation tests
+        - Links the customer case to issue 318
+      created_by: 00000000-0000-4000-8000-000000000001
+      accessible_by: [00000000-0000-4000-8000-000000000001]
+      editable_by: [00000000-0000-4000-8000-000000000001]
+      default_response: null
+github:
+  users:
+    - login: octocat
+      name: The Octocat
+      email: octocat@sample.worldfixture.test
+      bio: I am the Octocat
+      company: GitHub
+      location: San Francisco
+  orgs:
+    - login: my-org
+      name: My Organization
+      description: A test organization
+  repos:
+    - owner: octocat
+      name: hello-world
+      description: My first repository
+      language: JavaScript
+      topics:
+        - hello
+        - world
+      auto_init: true
+    - owner: my-org
+      name: org-repo
+      description: An organization repository
+      language: TypeScript
+      auto_init: true
+  oauth_apps:
+    - client_id: Iv1.example_client_id
+      client_secret: example_client_secret
+      name: My App
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/github
+vercel:
+  users:
+    - username: developer
+      name: Developer
+      email: dev@sample.worldfixture.test
+  teams:
+    - slug: my-team
+      name: My Team
+  projects:
+    - name: my-app
+      team: my-team
+      framework: nextjs
+  integrations:
+    - client_id: oac_example_client_id
+      client_secret: example_client_secret
+      name: My Vercel App
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/vercel
+slack:
+  team:
+    name: My Workspace
+    domain: my-workspace
+  users:
+    - name: developer
+      real_name: Developer
+      email: dev@sample.worldfixture.test
+      profile:
+        title: Local Developer
+        status_text: Testing locally
+        status_emoji: ":computer:"
+      presence: active
+  channels:
+    - name: general
+      topic: General discussion
+    - name: random
+      topic: Random stuff
+  bots:
+    - name: my-bot
+  oauth_apps:
+    - client_id: "12345.67890"
+      client_secret: example_client_secret
+      app_id: A000000001
+      name: My Slack App
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/slack
+      scopes:
+        - chat:write
+        - channels:read
+        - channels:history
+        - channels:join
+        - channels:manage
+        - channels:write
+        - groups:read
+        - groups:history
+        - groups:write
+        - im:read
+        - im:history
+        - im:write
+        - mpim:read
+        - mpim:history
+        - mpim:write
+        - users:read
+        - users:read.email
+        - users.profile:read
+        - users.profile:write
+        - users:write
+        - files:read
+        - files:write
+        - pins:read
+        - pins:write
+        - bookmarks:read
+        - bookmarks:write
+        - reactions:read
+        - reactions:write
+        - team:read
+      user_scopes:
+        - users:read
+        - users.profile:read
+      bot_name: my-bot
+  strict_scopes: false
+apple:
+  users:
+    - email: testuser@sample.worldfixture.test
+      name: Test User
+  oauth_clients:
+    - client_id: com.example.app
+      team_id: TEAM001
+      name: My Apple App
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/apple
+okta:
+  users:
+    - login: testuser@sample.worldfixture.test
+      email: testuser@sample.worldfixture.test
+      first_name: Test
+      last_name: User
+  groups:
+    - name: Everyone
+      description: All users
+      type: BUILT_IN
+      okta_id: 00g_everyone
+  authorization_servers:
+    - id: default
+      name: default
+      audiences:
+        - api://default
+  oauth_clients:
+    - client_id: okta-test-client
+      client_secret: okta-test-secret
+      name: Sample OIDC Client
+      redirect_uris:
+        - http://localhost:3000/callback
+      auth_server_id: default
+aws:
+  region: us-east-1
+  s3:
+    buckets:
+      - name: my-app-bucket
+      - name: my-app-uploads
+  sqs:
+    queues:
+      - name: my-app-events
+      - name: my-app-dlq
+  iam:
+    users:
+      - user_name: developer
+        create_access_key: true
+    roles:
+      - role_name: lambda-execution-role
+        description: Role for Lambda function execution
+resend:
+  domains:
+    - name: sample.worldfixture.test
+      region: us-east-1
+  contacts:
+    - email: test@sample.worldfixture.test
+      first_name: Test
+      last_name: User
+stripe:
+  customers:
+    - email: test@sample.worldfixture.test
+      name: Test Customer
+  products:
+    - name: Pro Plan
+      description: Monthly pro subscription
+  prices:
+    - product_name: Pro Plan
+      currency: usd
+      unit_amount: 2000
+mongoatlas:
+  projects:
+    - name: Project0
+  clusters:
+    - name: Cluster0
+      project: Project0
+  database_users:
+    - username: admin
+      project: Project0
+  databases:
+    - cluster: Cluster0
+      name: test
+      collections:
+        - items
+clerk:
+  users:
+    - first_name: Test
+      last_name: User
+      email_addresses:
+        - test@sample.worldfixture.test
+      password: clerk_test_password
+  organizations:
+    - name: My Company
+      slug: my-company
+      members:
+        - email: test@sample.worldfixture.test
+          role: admin
+  oauth_applications:
+    - client_id: clerk_emulate_client
+      client_secret: clerk_emulate_secret
+      name: Emulate App
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/clerk
+linear:
+  organization:
+    name: Acme
+    url_key: acme
+  users:
+    - email: admin@sample.worldfixture.test
+      name: Admin User
+      admin: true
+    - email: dev@sample.worldfixture.test
+      name: Developer
+  teams:
+    - key: ENG
+      name: Engineering
+      states:
+        - name: Backlog
+          type: backlog
+        - name: Todo
+          type: unstarted
+        - name: In Progress
+          type: started
+        - name: Done
+          type: completed
+  labels:
+    - name: Bug
+      color: "#d92d20"
+      team: ENG
+    - name: Feature
+      color: "#2563eb"
+      team: ENG
+  issues:
+    - team: ENG
+      title: Fix local checkout test
+      description: Reproduce and fix the checkout failure.
+      state: Todo
+      assignee: dev@sample.worldfixture.test
+      labels:
+        - Bug
+  oauth_apps:
+    - client_id: lin_example_client_id
+      client_secret: example_client_secret
+      name: My Linear App
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/linear
+      scopes:
+        - read
+        - write
+        - issues:create
+        - comments:create
+      actor: user
+  tokens:
+    - token: lin_test_admin
+      user: admin@sample.worldfixture.test
+      scopes:
+        - read
+        - write
+        - issues:create
+        - comments:create
+        - admin
+  strict_scopes: false
+twilio:
+  account:
+    sid: AC00000000000000000000000000000000
+    auth_token: twilio_test_auth_token
+    friendly_name: Local Twilio Account
+  api_keys:
+    - sid: SK00000000000000000000000000000000
+      secret: twilio_test_api_secret
+      friendly_name: Local API Key
+  phone_numbers:
+    - phone_number: "+15551234567"
+      friendly_name: Local SMS and Voice Number
+      sms_url: http://localhost:3000/api/twilio/sms
+      voice_url: http://localhost:3000/api/twilio/voice
+  messaging_services:
+    - friendly_name: Local Messaging Service
+      phone_numbers:
+        - "+15551234567"
+  verify_services:
+    - friendly_name: Local Verify Service
+      code: "123456"
+      default_channel: sms
+  conversations:
+    services:
+      - friendly_name: Local Conversations
+
+# Mail that ARRIVES, rather than mail that is already there.
+#
+# Everything above is applied once at start, so `historyId` never advances and a
+# registered Gmail watch would have nothing to deliver for the whole session. These
+# are inserted through the emulator's own `messages.insert` at the stated offset from
+# process start, which records history through the normal path and therefore triggers
+# a real push — the difference between a demo that shows an inbox and a demo that
+# shows software reacting to a message it has not seen before.
+#
+# Read by the composer, never by the vendor emulator: `seedFromConfig` handles only
+# users, oauth_clients, labels, messages, calendars, calendar_events and drive_items,
+# and would ignore an unknown key silently.
+#
+# Timed for a fifteen-minute session with a visitor who has just signed in: the first
+# lands while they are still reading the inbox, the second a couple of minutes later.
+worldfixture:
+  arrivals:
+    - after_seconds: 90
+      message:
+        from: Fern Ellery <fern@sample-supplier.worldfixture.test>
+        to: demo@demo.worldfixture.test
+        subject: "Re: Invoice 4471 for August"
+        snippet: Sorry — wrong total on that invoice, corrected copy below.
+        thread_id: emu-thr-001
+        body_text: |
+          Apologies, the total on 4471 was wrong. It should read 389.00, not
+          412.00. Corrected copy attached.
+
+          Fern
+        label_ids: ["INBOX", "UNREAD", "Receipts"]
+
+    - after_seconds: 240
+      message:
+        from: Status <status@sample-vendor.worldfixture.test>
+        to: demo@demo.worldfixture.test
+        subject: Scheduled maintenance this weekend
+        snippet: Two hours of downtime on Saturday from 02:00 UTC.
+        body_text: |
+          We will be performing scheduled maintenance on Saturday from 02:00 UTC.
+          Expect up to two hours of downtime. No action is needed.
+        label_ids: ["INBOX", "UNREAD"]

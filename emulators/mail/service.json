@@ -1,0 +1,213 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "mail",
+  "version": "2.3.0",
+  "runtime": {
+    "command": [
+      "/usr/local/bin/worldfixture-mail"
+    ],
+    "readiness": [
+      {
+        "port": "health",
+        "protocol": "http",
+        "path": "/readyz",
+        "expect": "200",
+        "kind": "seed_gate"
+      },
+      {
+        "port": "smtp",
+        "protocol": "smtp",
+        "expect": "220",
+        "kind": "protocol"
+      },
+      {
+        "port": "imap",
+        "protocol": "imap",
+        "expect": "* OK",
+        "kind": "protocol"
+      }
+    ],
+    "ports": [
+      {
+        "name": "smtp",
+        "protocol": "smtp",
+        "container_port": 1025,
+        "env": "WORLDFIXTURE_SMTP_LISTEN",
+        "env_format": "host_port",
+        "published": true
+      },
+      {
+        "name": "imap",
+        "protocol": "imap",
+        "container_port": 1143,
+        "env": "WORLDFIXTURE_IMAP_LISTEN",
+        "env_format": "host_port",
+        "published": true
+      },
+      {
+        "name": "mailbox",
+        "protocol": "http",
+        "container_port": 8080,
+        "env": "WORLDFIXTURE_MAILBOX_LISTEN",
+        "env_format": "host_port",
+        "published": false
+      },
+      {
+        "name": "health",
+        "protocol": "http",
+        "container_port": 8025,
+        "env": "WORLDFIXTURE_HEALTH_LISTEN",
+        "env_format": "host_port",
+        "published": false
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": true
+      },
+      {
+        "name": "WORLDFIXTURE_MAIL_PUBLISH",
+        "from": "constant",
+        "value": "1",
+        "required": true
+      }
+    ],
+    "container": {
+      "tag": "worldfixture-mail:local",
+      "build": ".",
+      "platform": "linux/amd64",
+      "mounts": [
+        {
+          "source": "world.path",
+          "target": "/world",
+          "mode": "ro"
+        }
+      ]
+    }
+  },
+  "provides": [
+    {
+      "profile": "mail.smtp-submission.v1",
+      "port": "smtp",
+      "binds": [
+        {
+          "name": "host",
+          "from": "port.host"
+        },
+        {
+          "name": "port",
+          "from": "port.port"
+        },
+        {
+          "name": "host_port",
+          "from": "port.host_port"
+        },
+        {
+          "name": "username",
+          "from": "projection",
+          "pointer": "/users",
+          "per_person": true
+        },
+        {
+          "name": "password",
+          "from": "projection",
+          "pointer": "/users",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "mail.imap.v1",
+      "port": "imap",
+      "binds": [
+        {
+          "name": "host_port",
+          "from": "port.host_port"
+        },
+        {
+          "name": "username",
+          "from": "projection",
+          "pointer": "/users",
+          "per_person": true
+        },
+        {
+          "name": "password",
+          "from": "projection",
+          "pointer": "/users",
+          "per_person": true
+        }
+      ]
+    },
+    {
+      "profile": "mail.lmtp-delivery.v1",
+      "port": "smtp",
+      "binds": [
+        {
+          "name": "host_port",
+          "from": "port.host_port"
+        },
+        {
+          "name": "username",
+          "from": "projection",
+          "pointer": "/users",
+          "per_person": true
+        },
+        {
+          "name": "password",
+          "from": "projection",
+          "pointer": "/users",
+          "per_person": true
+        }
+      ]
+    }
+  ],
+  "world": {
+    "requires": [
+      "identity.people.v1",
+      "identity.organizations.v1",
+      "communication.mail.v1",
+      "finance.invoices.v1"
+    ],
+    "projections": [
+      {
+        "file": "projections/mail.json",
+        "verified": false
+      },
+      {
+        "file": "world.json",
+        "subtree": "/organizations",
+        "verified": false
+      }
+    ]
+  },
+  "events": {
+    "consumes": [],
+    "produces": []
+  },
+  "lifecycle": {
+    "seed": true,
+    "reset": true,
+    "reset_mechanism": "restart",
+    "verify": false,
+    "recoverable_changes": false,
+    "state": {
+      "export": false,
+      "import": false,
+      "clear_paths": [
+        "/tmp/worldfixture-mail"
+      ],
+      "snapshot_paths": [
+        "/tmp/worldfixture-mail/cyrus",
+        "/tmp/worldfixture-mail/spool",
+        "/tmp/worldfixture-mail/seeded-v2"
+      ]
+    }
+  },
+  "ui": {
+    "port": "mailbox",
+    "path": "/",
+    "title": "Mailbox"
+  }
+}

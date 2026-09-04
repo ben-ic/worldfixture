@@ -1,0 +1,35 @@
+# Private migration notes and local source provenance
+.private/
+
+# Local design and extraction records
+docs/extraction-status.md
+docs/product-experience.md
+docs/service-manifest-fit.md
+docs/system-design.md
+
+# Design working directories. These hold Claude Design canvases, their
+# thumbnails and pasted images, and a generated `dc-runtime` bundle that carries
+# no licence header. None of it is project source, and an unqualified `git add`
+# would otherwise commit it into an Apache-2.0 tree.
+Homepage/
+UI/
+Homepage design system */
+
+# Operating-system metadata
+.DS_Store
+
+# Local runtime state
+.worldfixture/
+
+# Local connector dogfood reports from external application worktrees
+docs/connectors/dogfood-*.md
+
+# Python build and cache output
+__pycache__/
+*.pyc
+/dist/
+
+# Node
+node_modules/
+runtime/workbench-ui/dist/
+.gstack/

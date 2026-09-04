@@ -1,0 +1,34 @@
+{
+  "name": "worldfixture-emulate",
+  "version": "1.5.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@emulators/apple": "0.10.0",
+    "@emulators/aws": "0.10.0",
+    "@emulators/clerk": "0.10.0",
+    "@emulators/core": "0.10.0",
+    "@emulators/github": "0.10.0",
+    "@emulators/google": "0.10.0",
+    "@emulators/microsoft": "0.10.0",
+    "@emulators/mongoatlas": "0.10.0",
+    "@emulators/okta": "0.10.0",
+    "@emulators/resend": "0.10.0",
+    "@emulators/slack": "0.10.0",
+    "@emulators/stripe": "0.10.0",
+    "@emulators/vercel": "0.10.0",
+    "emulate": "0.10.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "jose": "6.1.0",
+    "yaml": "2.8.1"
+  },
+  "devDependencies": {
+    "@notionhq/client": "5.26.0",
+    "@notionhq/workers": "0.9.0"
+  }
+}

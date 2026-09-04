@@ -1,0 +1,12 @@
+{
+  "api_version": "worldfixture.application-event/v1",
+  "event_id": "example-task-completed-001",
+  "kind": "task.completed.v1",
+  "occurred_at": "2025-03-15T10:30:00Z",
+  "data": {
+    "task": {
+      "worldfixture_ref": "task/task-0001"
+    },
+    "status": "completed"
+  }
+}

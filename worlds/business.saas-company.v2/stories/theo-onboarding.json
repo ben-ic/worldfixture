@@ -1,0 +1,19 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "stories": [
+      {
+        "entity_refs": [
+          "theo-martin",
+          "doc-theo-onboarding",
+          "event-theo-welcome"
+        ],
+        "id": "story-theo-onboarding",
+        "state": "minor-loose-end",
+        "summary": "Theo's first week is planned, but no one owns the staging access request yet.",
+        "title": "A new engineer starts while the team is busy"
+      }
+    ]
+  },
+  "id": "story.theo-onboarding"
+}

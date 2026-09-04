@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/connector-event.v1.schema.json",
+  "title": "WorldFixture application event v1",
+  "type": "object",
+  "required": ["api_version", "delivery_id", "event_id", "kind", "occurred_at", "data"],
+  "properties": {
+    "api_version": {"const": "worldfixture.application-event/v1"},
+    "delivery_id": {"type": "string", "minLength": 1},
+    "event_id": {"type": "string", "minLength": 1},
+    "kind": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+\\.v[0-9]+$"},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "actor": {"$ref": "#/$defs/ref"},
+    "subject": {"$ref": "#/$defs/ref"},
+    "data": {"type": "object"}
+  },
+  "$defs": {
+    "ref": {
+      "type": "object",
+      "required": ["worldfixture_ref"],
+      "properties": {"worldfixture_ref": {"type": "string", "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9.-]+$"}}
+    }
+  }
+}

@@ -1,0 +1,257 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "organizations": [
+      {
+        "domain": "northstar-relay.worldfixture.test",
+        "id": "northstar-relay",
+        "name": "Northstar Relay",
+        "primary": true,
+        "slug": "northstar-relay",
+        "summary": "A small software company that automates large operational data exports."
+      },
+      {
+        "domain": "lumen-labs.worldfixture.test",
+        "id": "lumen-labs",
+        "name": "Lumen Labs",
+        "slug": "lumen-labs",
+        "summary": "A growing operations analytics company and Northstar's largest upcoming renewal."
+      },
+      {
+        "domain": "ember-commerce.worldfixture.test",
+        "id": "ember-commerce",
+        "name": "Ember Commerce",
+        "slug": "ember-commerce",
+        "summary": "An online retailer that uses scheduled exports for fulfilment reporting."
+      },
+      {
+        "domain": "fieldnote-studio.worldfixture.test",
+        "id": "fieldnote-studio",
+        "name": "Fieldnote Studio",
+        "slug": "fieldnote-studio",
+        "summary": "A design studio with a small annual Northstar plan."
+      },
+      {
+        "domain": "harbor-mobility.worldfixture.test",
+        "id": "harbor-mobility",
+        "name": "Harbor Mobility",
+        "slug": "harbor-mobility",
+        "summary": "A regional transport operator with compliance export requirements."
+      },
+      {
+        "domain": "cedar-office.worldfixture.test",
+        "id": "cedar-office",
+        "name": "Cedar Office",
+        "slug": "cedar-office",
+        "summary": "Northstar's office and equipment supplier."
+      },
+      {
+        "domain": "cloudharbor.worldfixture.test",
+        "id": "cloudharbor",
+        "name": "CloudHarbor",
+        "slug": "cloudharbor",
+        "summary": "A fictional infrastructure provider used by Northstar."
+      }
+    ],
+    "people": [
+      {
+        "email": "maya@northstar-relay.worldfixture.test",
+        "github_login": "mayac",
+        "id": "maya-chen",
+        "location": "London",
+        "name": "Maya Chen",
+        "organization_id": "northstar-relay",
+        "primary": true,
+        "role": "Co-founder and CEO",
+        "slack_id": "U000000001",
+        "status": "Renewal prep until 14:00",
+        "status_emoji": ":memo:",
+        "team": "leadership"
+      },
+      {
+        "email": "jon@northstar-relay.worldfixture.test",
+        "github_login": "jonbell",
+        "id": "jon-bell",
+        "location": "Bristol",
+        "name": "Jon Bell",
+        "organization_id": "northstar-relay",
+        "role": "Co-founder and CTO",
+        "slack_id": "U000000002",
+        "status": "Load testing exports",
+        "status_emoji": ":test_tube:",
+        "team": "engineering"
+      },
+      {
+        "email": "noor@northstar-relay.worldfixture.test",
+        "github_login": "nooralvarez",
+        "id": "noor-alvarez",
+        "location": "Madrid",
+        "name": "Noor Alvarez",
+        "organization_id": "northstar-relay",
+        "role": "Operations and finance lead",
+        "slack_id": "U000000003",
+        "status": "Month-end preparation",
+        "status_emoji": ":abacus:",
+        "team": "operations"
+      },
+      {
+        "email": "elena@northstar-relay.worldfixture.test",
+        "github_login": "elenap",
+        "id": "elena-petrov",
+        "location": "Berlin",
+        "name": "Elena Petrov",
+        "organization_id": "northstar-relay",
+        "role": "Product manager",
+        "slack_id": "U000000004",
+        "status": "Planning 2.8",
+        "status_emoji": ":spiral_calendar_pad:",
+        "team": "product"
+      },
+      {
+        "email": "samira@northstar-relay.worldfixture.test",
+        "github_login": "samira-o",
+        "id": "samira-okafor",
+        "location": "Dublin",
+        "name": "Samira Okafor",
+        "organization_id": "northstar-relay",
+        "role": "Customer support lead",
+        "slack_id": "U000000005",
+        "status": "Watching Lumen export",
+        "status_emoji": ":eyes:",
+        "team": "support"
+      },
+      {
+        "email": "lucas@northstar-relay.worldfixture.test",
+        "github_login": "lucasmeyer",
+        "id": "lucas-meyer",
+        "location": "Hamburg",
+        "name": "Lucas Meyer",
+        "organization_id": "northstar-relay",
+        "role": "Senior engineer",
+        "slack_id": "U000000006",
+        "status": "Export worker fix",
+        "status_emoji": ":wrench:",
+        "team": "engineering"
+      },
+      {
+        "email": "hana@northstar-relay.worldfixture.test",
+        "github_login": "hanaito",
+        "id": "hana-ito",
+        "location": "Leeds",
+        "name": "Hana Ito",
+        "organization_id": "northstar-relay",
+        "role": "Software engineer",
+        "slack_id": "U000000007",
+        "status": "Reviewing audit page",
+        "status_emoji": ":mag:",
+        "team": "engineering"
+      },
+      {
+        "email": "david@northstar-relay.worldfixture.test",
+        "github_login": "davidb",
+        "id": "david-banerjee",
+        "location": "London",
+        "name": "David Banerjee",
+        "organization_id": "northstar-relay",
+        "role": "Sales and partnerships",
+        "slack_id": "U000000008",
+        "status": "Customer calls",
+        "status_emoji": ":telephone_receiver:",
+        "team": "commercial"
+      },
+      {
+        "email": "imani@northstar-relay.worldfixture.test",
+        "github_login": "imanib",
+        "id": "imani-brooks",
+        "location": "Manchester",
+        "name": "Imani Brooks",
+        "organization_id": "northstar-relay",
+        "role": "Product designer",
+        "slack_id": "U000000009",
+        "status": "Onboarding notes",
+        "status_emoji": ":pencil2:",
+        "team": "product"
+      },
+      {
+        "email": "theo@northstar-relay.worldfixture.test",
+        "github_login": "theomartin",
+        "id": "theo-martin",
+        "location": "Glasgow",
+        "name": "Theo Martin",
+        "organization_id": "northstar-relay",
+        "role": "Software engineer",
+        "slack_id": "U000000010",
+        "status": "Starts Monday",
+        "status_emoji": ":wave:",
+        "team": "engineering"
+      },
+      {
+        "email": "priya@lumen-labs.worldfixture.test",
+        "github_login": "priya-raman",
+        "id": "priya-raman",
+        "location": "Amsterdam",
+        "name": "Priya Raman",
+        "organization_id": "lumen-labs",
+        "role": "Director of operations",
+        "slack_id": "U100000001",
+        "team": "external"
+      },
+      {
+        "email": "ravi@ember-commerce.worldfixture.test",
+        "github_login": "ravi-okonkwo",
+        "id": "ravi-okonkwo",
+        "location": "Birmingham",
+        "name": "Ravi Okonkwo",
+        "organization_id": "ember-commerce",
+        "role": "Data operations manager",
+        "slack_id": "U100000002",
+        "team": "external"
+      },
+      {
+        "email": "marta@fieldnote-studio.worldfixture.test",
+        "github_login": "marta-silva",
+        "id": "marta-silva",
+        "location": "Porto",
+        "name": "Marta Silva",
+        "organization_id": "fieldnote-studio",
+        "role": "Studio manager",
+        "slack_id": "U100000003",
+        "team": "external"
+      },
+      {
+        "email": "owen@harbor-mobility.worldfixture.test",
+        "github_login": "owen-price",
+        "id": "owen-price",
+        "location": "Cardiff",
+        "name": "Owen Price",
+        "organization_id": "harbor-mobility",
+        "role": "Compliance systems lead",
+        "slack_id": "U100000004",
+        "team": "external"
+      },
+      {
+        "email": "fern@cedar-office.worldfixture.test",
+        "github_login": "fern-ellery",
+        "id": "fern-ellery",
+        "location": "London",
+        "name": "Fern Ellery",
+        "organization_id": "cedar-office",
+        "role": "Account manager",
+        "slack_id": "U100000005",
+        "team": "external"
+      },
+      {
+        "email": "adil@cloudharbor.worldfixture.test",
+        "github_login": "adil-hassan",
+        "id": "adil-hassan",
+        "location": "Paris",
+        "name": "Adil Hassan",
+        "organization_id": "cloudharbor",
+        "role": "Customer success engineer",
+        "slack_id": "U100000006",
+        "team": "external"
+      }
+    ]
+  },
+  "id": "backbone.northstar-relay"
+}

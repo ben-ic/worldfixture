@@ -1,0 +1,233 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "s3",
+  "version": "4.41.1",
+  "runtime": {
+    "command": [
+      "/usr/local/bin/worldfixture-s3"
+    ],
+    "readiness": [
+      {
+        "port": "filer",
+        "protocol": "http",
+        "path": "/worldfixture/ready",
+        "expect": "200",
+        "kind": "seed_gate"
+      },
+      {
+        "port": "s3",
+        "protocol": "s3",
+        "path": "/",
+        "expect": "ListAllMyBucketsResult",
+        "kind": "protocol"
+      }
+    ],
+    "ports": [
+      {
+        "name": "master",
+        "protocol": "http",
+        "container_port": 61000,
+        "env": "WORLDFIXTURE_MASTER_PORT",
+        "env_format": "port",
+        "published": false
+      },
+      {
+        "name": "master-grpc",
+        "protocol": "grpc",
+        "container_port": 61001,
+        "env": "WORLDFIXTURE_MASTER_GRPC_PORT",
+        "env_format": "port",
+        "published": false
+      },
+      {
+        "name": "volume",
+        "protocol": "http",
+        "container_port": 61002,
+        "env": "WORLDFIXTURE_VOLUME_PORT",
+        "env_format": "port",
+        "published": false
+      },
+      {
+        "name": "volume-grpc",
+        "protocol": "grpc",
+        "container_port": 61003,
+        "env": "WORLDFIXTURE_VOLUME_GRPC_PORT",
+        "env_format": "port",
+        "published": false
+      },
+      {
+        "name": "filer",
+        "protocol": "http",
+        "container_port": 61004,
+        "env": "WORLDFIXTURE_FILER_PORT",
+        "env_format": "port",
+        "published": false
+      },
+      {
+        "name": "filer-grpc",
+        "protocol": "grpc",
+        "container_port": 61005,
+        "env": "WORLDFIXTURE_FILER_GRPC_PORT",
+        "env_format": "port",
+        "published": false
+      },
+      {
+        "name": "s3",
+        "protocol": "s3",
+        "container_port": 61006,
+        "env": "WORLDFIXTURE_S3_PORT",
+        "env_format": "port",
+        "published": true
+      },
+      {
+        "name": "s3-grpc",
+        "protocol": "grpc",
+        "container_port": 61007,
+        "env": "WORLDFIXTURE_S3_GRPC_PORT",
+        "env_format": "port",
+        "published": false
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": true
+      }
+    ],
+    "container": {
+      "tag": "worldfixture-s3:local",
+      "build": ".",
+      "platform": "linux/amd64",
+      "mounts": [
+        {
+          "source": "world.path",
+          "target": "/world",
+          "mode": "ro"
+        }
+      ]
+    }
+  },
+  "provides": [
+    {
+      "profile": "aws.s3.buckets.v1",
+      "port": "s3",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "access_key_id",
+          "from": "constant",
+          "value": "worldfixture-local"
+        },
+        {
+          "name": "secret_access_key",
+          "from": "constant",
+          "value": "worldfixture-local-secret"
+        },
+        {
+          "name": "region",
+          "from": "projection",
+          "file": "projections/aws.json",
+          "pointer": "/s3/buckets/0/region"
+        },
+        {
+          "name": "bucket",
+          "from": "projection",
+          "file": "projections/aws.json",
+          "pointer": "/s3/buckets/0/name"
+        },
+        {
+          "name": "path_style",
+          "from": "constant",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "profile": "aws.s3.objects.v1",
+      "port": "s3",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "access_key_id",
+          "from": "constant",
+          "value": "worldfixture-local"
+        },
+        {
+          "name": "secret_access_key",
+          "from": "constant",
+          "value": "worldfixture-local-secret"
+        },
+        {
+          "name": "region",
+          "from": "projection",
+          "file": "projections/aws.json",
+          "pointer": "/s3/buckets/0/region"
+        },
+        {
+          "name": "bucket",
+          "from": "projection",
+          "file": "projections/aws.json",
+          "pointer": "/s3/buckets/0/name"
+        },
+        {
+          "name": "path_style",
+          "from": "constant",
+          "value": "true"
+        }
+      ]
+    },
+    {
+      "profile": "aws.s3.multipart.v1",
+      "port": "s3",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        }
+      ]
+    }
+  ],
+  "world": {
+    "requires": [
+      "identity.organizations.v1",
+      "communication.documents.v1"
+    ],
+    "projections": [
+      {
+        "file": "projections/aws.json",
+        "subtree": "/s3",
+        "verified": false
+      }
+    ]
+  },
+  "events": {
+    "consumes": [],
+    "produces": []
+  },
+  "lifecycle": {
+    "seed": true,
+    "reset": true,
+    "reset_mechanism": "restart",
+    "verify": false,
+    "recoverable_changes": false,
+    "state": {
+      "export": false,
+      "import": false,
+      "clear_paths": [
+        "/tmp/seaweedfs",
+        "/tmp/worldfixture-s3"
+      ],
+      "snapshot_paths": [
+        "/tmp/seaweedfs",
+        "/tmp/worldfixture-s3"
+      ]
+    }
+  }
+}

@@ -1,0 +1,422 @@
+{
+  "migration": {
+    "manifest.json": {
+      "added_keys": {
+        "profile": "business.operations/v1"
+      },
+      "api_version": {
+        "from": "droplive.world-artifact/v1",
+        "to": "worldfixture.world-artifact/v1"
+      },
+      "derived_keys": [
+        "artifact_sha256",
+        "files.packs/communication.json.sha256",
+        "files.packs/communication.json.size",
+        "files.packs/finance.json.sha256",
+        "files.packs/finance.json.size",
+        "files.packs/identity.json.sha256",
+        "files.packs/identity.json.size",
+        "files.projections/agent.json.sha256",
+        "files.projections/agent.json.size",
+        "files.projections/apple.json.sha256",
+        "files.projections/apple.json.size",
+        "files.projections/aws.json.sha256",
+        "files.projections/aws.json.size",
+        "files.projections/clerk.json.sha256",
+        "files.projections/clerk.json.size",
+        "files.projections/emulator-overlay.json.sha256",
+        "files.projections/emulator-overlay.json.size",
+        "files.projections/github.json.sha256",
+        "files.projections/github.json.size",
+        "files.projections/google.json.sha256",
+        "files.projections/google.json.size",
+        "files.projections/http-targets.json.sha256",
+        "files.projections/http-targets.json.size",
+        "files.projections/linear.json.sha256",
+        "files.projections/linear.json.size",
+        "files.projections/mail.json.sha256",
+        "files.projections/mail.json.size",
+        "files.projections/microsoft.json.sha256",
+        "files.projections/microsoft.json.size",
+        "files.projections/mongoatlas.json.sha256",
+        "files.projections/mongoatlas.json.size",
+        "files.projections/notion.json.sha256",
+        "files.projections/notion.json.size",
+        "files.projections/okta.json.sha256",
+        "files.projections/okta.json.size",
+        "files.projections/resend.json.sha256",
+        "files.projections/resend.json.size",
+        "files.projections/slack.json.sha256",
+        "files.projections/slack.json.size",
+        "files.projections/stripe.json.sha256",
+        "files.projections/stripe.json.size",
+        "files.projections/twilio.json.sha256",
+        "files.projections/twilio.json.size",
+        "files.projections/vercel.json.sha256",
+        "files.projections/vercel.json.size",
+        "files.world.json.sha256",
+        "files.world.json.size",
+        "source_files",
+        "source_sha256"
+      ],
+      "reason": "derived provenance: the artifact contract, the profile, and the digests of the migrated source and world files"
+    },
+    "packs/finance.json": {
+      "added_keys": [
+        "customers",
+        "suppliers"
+      ],
+      "reason": "The finance pack exported invoices, bills, payments and the ledger, and every one of them carries a customer_id or supplier_id. The customers and suppliers those keys name were in the world source and were never projected into the pack, so a connector reading the pack saw an opaque key it could not resolve to a name, to billing terms, or to the organization in identity. Exporting the accounts closes that chain. No existing record changed: reversing this migration reproduces the reference digest exactly."
+    },
+    "projections/aws.json": {
+      "reason": "slice 3: the world's declared documents become S3 objects so the bucket is not empty. The exports bucket stays empty because no world record declares anything in it, which is a world-data gap and not something the compiler should invent.",
+      "s3_keys_added": [
+        "objects"
+      ]
+    },
+    "projections/emulator-overlay.json": {
+      "added_key_prefix": "tokens.slack_token_",
+      "aws_keys_removed": [
+        "s3"
+      ],
+      "changed_keys": {
+        "tokens.slack_token.login": {
+          "from": "U000000001",
+          "to": "mayac"
+        }
+      },
+      "channel_keys_added": [
+        "messages",
+        "members"
+      ],
+      "github_repo_keys_added": [
+        "issues"
+      ],
+      "provider_keys_added": [
+        "notion"
+      ],
+      "reason": "slice 2 and 3 plus the Notion provider: the Slack token map named the world's canonical slack_id, which the emulator assigns to its own default admin, so tokens now name the person and every Slack person gets one. The overlay also carries content the emulators' seed configs cannot express and the composer inserts through their public stores after seeding: Slack channel history and membership, and each repository's authored issues. Channel membership matters because upstream seeding otherwise puts every user in every channel. The AWS vendor no longer receives the S3 block: @emulators/aws serves /s3/ too, and SeaweedFS is the S3 authority, so handing both the buckets would give one provider's mutable state two route owners. The Notion projection contains world-scoped users, documents, projects, databases, data sources, and views. Its shared token supports existing consumers, and its person tokens preserve actor identity.",
+      "token_key_prefixes_added": [
+        "notion_token_"
+      ],
+      "token_keys_added": [
+        "notion_admin_token",
+        "notion_token"
+      ]
+    },
+    "projections/http-targets.json": {
+      "api_version": {
+        "from": "droplive.http-targets/v1",
+        "to": "worldfixture.http-targets/v1"
+      },
+      "reason": "the HTTP-targets service slice: the projection contract moves to the public namespace together with the service that reads it. Slice 1 deferred this rename precisely until now, because renaming a contract before its reader had been extracted would have broken the connected gate that proves behaviour was preserved. The api_version string is the only difference; every HTTP target, route, feed item, probe sequence, metric and API response is byte-identical to the reference."
+    },
+    "projections/notion.json": {
+      "added_file": true,
+      "reason": "the first Notion provider slice adds a deterministic projection of the world's organization members, documents, and projects"
+    },
+    "world.json": {
+      "added_keys": {
+        "profile": "business.operations/v1"
+      },
+      "api_version": {
+        "from": "droplive.world-source/v1",
+        "to": "worldfixture.world-source/v1"
+      },
+      "reason": "one schema migration: the world contract namespace plus the declared profile"
+    }
+  },
+  "namespace_migration": {
+    "api_version": {
+      "from": "droplive.agent-world/v1",
+      "to": "worldfixture.agent-world/v1"
+    },
+    "domain": {
+      "from": ".droplive.test",
+      "to": ".worldfixture.test"
+    },
+    "field_prefix": {
+      "from": "droplive_",
+      "to": "worldfixture_"
+    },
+    "reason": "the originating product's name is removed from the public contract, before anyone depends on it. It appeared in data every consumer reads: organization domains and person addresses under `.droplive.test`, the `droplive_*` field names carried inside provider API responses, the agent projection's api_version, and the composer's scheduled-arrivals seed key. Reversing this rename on the parsed JSON reproduces all 23 unmigrated reference files exactly, which is what proves no world fact moved with the name. It has to be reversed on the parsed JSON and not on the bytes: the projections are canonical JSON with sorted keys, so `droplive_person_id` sorted before `email` while `worldfixture_person_id` sorts after `name`, and the rename reorders keys as well as renaming them.",
+    "seed_key": {
+      "from": "droplive",
+      "to": "worldfixture"
+    },
+    "value_prefix": {
+      "from": "droplive_",
+      "to": "worldfixture_"
+    }
+  },
+  "note": "Parity baseline for the compiler extraction. The reference column is the artifact the private source builds today. The worldfixture column is what the extracted compiler builds. Every difference must be explained by the declared migration below; a file that is not listed as migrated must stay byte-identical forever.",
+  "reference": {
+    "bundle_sha256": "b8b97a23b8ac7dc7fd2e1c7b7d73278b828f00b9d49ee0ae9d85f8d1aeb1b3c1",
+    "bundle_size": 481280,
+    "content_sha256": "e886c32b4df6cc9ff506b04d031964f889206a6995688ec4be5ea4fc607ba58a",
+    "files": {
+      "manifest.json": {
+        "sha256": "577c0b635e4d9fde6f10575af2c8f801ed6618830c952e0ac9904211d220871c",
+        "size": 4401
+      },
+      "packs/communication.json": {
+        "sha256": "d4fe2ad0ccd0d31b86c97af9bb2ce2abd4720e693e3afa266e3bc7fe911effc8",
+        "size": 77346
+      },
+      "packs/finance.json": {
+        "sha256": "2399f0d62a884a372842fbabeadea21d08ff70563edc1d2cc236e7049a1f23f0",
+        "size": 61838
+      },
+      "packs/identity.json": {
+        "sha256": "26596bf978fa23d4d57548833f793c8d51a9c59ba257c78a8c28e8eb1dc2acb3",
+        "size": 5798
+      },
+      "packs/software.json": {
+        "sha256": "cd35e6ff8958611b89bf28d5d36c606263c5458e3160df2a1ffacbd4c00520f6",
+        "size": 1848
+      },
+      "packs/support.json": {
+        "sha256": "664ce3a7acdf9f33c5580f5ab020ca2293d650ff7ac2e77368a454b425f02bc2",
+        "size": 619
+      },
+      "packs/work.json": {
+        "sha256": "a0a923f5cb32be3ac3d6d9fe95a051b175b24253e31144a4cc30fc8beeacfe3b",
+        "size": 7991
+      },
+      "projections/agent.json": {
+        "sha256": "0ac7f2ccc8d469742813c140d1567f13b6705b560adcdf367931b7ebd77717fb",
+        "size": 6763
+      },
+      "projections/apple.json": {
+        "sha256": "b60ad7b241d7382d63df0a9a51d162a402b676264b66fac5c3cf1922b3cd9c8d",
+        "size": 1727
+      },
+      "projections/aws.json": {
+        "sha256": "6fafc8b79471ed421a1cb7a4efc8186c57b70ef183219759e0a806a2daeb1c19",
+        "size": 883
+      },
+      "projections/clerk.json": {
+        "sha256": "91666f64611d57f2f00a0e8446d26cb3b382c53190e4f02f7c2f262d3ea086cd",
+        "size": 2838
+      },
+      "projections/emulator-overlay.json": {
+        "sha256": "d7479a96c7c23a2644b36f1f2882de699db70696cbd3ec7811c61d4d402e12ec",
+        "size": 40587
+      },
+      "projections/github.json": {
+        "sha256": "bb09f6a67cadcd2c565ca4e86e5d16e1d1b765d227e5a6bffbd2c8a4522876c8",
+        "size": 3868
+      },
+      "projections/google.json": {
+        "sha256": "4c43438e001fd865ff73ee6d3462dee10fb2a567a24a279ca6feb979482ae076",
+        "size": 17470
+      },
+      "projections/http-targets.json": {
+        "sha256": "2b31102b6b5eda6b239a86359e260deac0bb373f9d51e94f157c5523cdb18ae9",
+        "size": 8218
+      },
+      "projections/linear.json": {
+        "sha256": "f94cf2b8a10af3b135f95acb641771b57b76d3709f7e7abea09c369af74a1936",
+        "size": 8111
+      },
+      "projections/mail.json": {
+        "sha256": "06a2a17175635367144f8edb2affb33246ed88424be2e0d72323b27abe1057b3",
+        "size": 46216
+      },
+      "projections/microsoft.json": {
+        "sha256": "586e6c452f3e6615e88e0103c59f9efdfd064d065e0c7dbbbb37f51bfee6ba03",
+        "size": 1777
+      },
+      "projections/model.json": {
+        "sha256": "6a73193b0dfd6e35d8d6f910bdda3c297a2ad350852456a9c0db621735326740",
+        "size": 3914
+      },
+      "projections/mongoatlas.json": {
+        "sha256": "10f5c771933b89406cab908c70b28b517c2dfec40c6fef17e0d67f97045bffbe",
+        "size": 552
+      },
+      "projections/okta.json": {
+        "sha256": "19155248875e8bd89201643b68c3e2b662dd9e69dc752edea24ed9edcdf8a077",
+        "size": 2523
+      },
+      "projections/resend.json": {
+        "sha256": "4e19ef122c9f93342cad0a84ad5eed664e4b81dc93ebddead063269d3bd8d6a3",
+        "size": 799
+      },
+      "projections/slack.json": {
+        "sha256": "9e6dbaf818128e0795e0bebfa45d84cd1fc4fc70c62c17cb11a7c6154e2c3240",
+        "size": 5906
+      },
+      "projections/stripe.json": {
+        "sha256": "0acef202680915b3ee1bf4518efc85fce5959f19180eebcce9afb1b7cb59c3c9",
+        "size": 1155
+      },
+      "projections/twilio.json": {
+        "sha256": "8e6edc043f883e620f2d0ad52c0f85108d4abea95c3ee0691fbe7490328a189d",
+        "size": 693
+      },
+      "projections/vercel.json": {
+        "sha256": "e5a3972f9d50844853da196c30c897c36b5b37eae678eebfc35272c265a7ae29",
+        "size": 359
+      },
+      "timeline.json": {
+        "sha256": "24fe7dc6e60cea1339b080a1a66bb692448550e236ca85bab720aee2a9e5520a",
+        "size": 2980
+      },
+      "world.json": {
+        "sha256": "7306a2b7382e374d1b604ab50ea399435a5528b0371fb0ec458fc7318d1932c7",
+        "size": 140804
+      }
+    },
+    "recorded_on": "2026-09-02",
+    "source_commit": "f910d855c8a4fee415f75cb64168c6ca6ea488a3"
+  },
+  "unchanged_files": [
+    "packs/communication.json",
+    "packs/identity.json",
+    "packs/software.json",
+    "packs/support.json",
+    "packs/work.json",
+    "projections/agent.json",
+    "projections/apple.json",
+    "projections/clerk.json",
+    "projections/github.json",
+    "projections/google.json",
+    "projections/linear.json",
+    "projections/mail.json",
+    "projections/microsoft.json",
+    "projections/model.json",
+    "projections/mongoatlas.json",
+    "projections/okta.json",
+    "projections/resend.json",
+    "projections/slack.json",
+    "projections/stripe.json",
+    "projections/twilio.json",
+    "projections/vercel.json",
+    "timeline.json"
+  ],
+  "world": "business.saas-company.v2",
+  "worldfixture": {
+    "bundle_sha256": "4d7bd8be6395044c7911c25640cb0f3f043ba8fd97d6f29af46861ec54861cca",
+    "bundle_size": 542720,
+    "content_sha256": "981cadb0b227e8c3cc050a1198a7a4f60153bbbacb545facdc5c5e374b026bb6",
+    "files": {
+      "manifest.json": {
+        "sha256": "1edb5cc72a8408f32c493c6da51c86a218d67bb7de0cfc0ff04ad2d34c680182",
+        "size": 4558
+      },
+      "packs/communication.json": {
+        "sha256": "1411a37bf8322f17e03f7e4b533adeb4542baa987dbc165eed18ebbfba1100ec",
+        "size": 77382
+      },
+      "packs/finance.json": {
+        "sha256": "5c57255e0259405805b12f003760e90230495dc77894843baf79c1c70fe886fa",
+        "size": 63103
+      },
+      "packs/identity.json": {
+        "sha256": "dfcf0d04cf64f80ead738b51782b033b0eda9d7b4fd4bb58eb5ae261ecffd958",
+        "size": 5890
+      },
+      "packs/software.json": {
+        "sha256": "cd35e6ff8958611b89bf28d5d36c606263c5458e3160df2a1ffacbd4c00520f6",
+        "size": 1848
+      },
+      "packs/support.json": {
+        "sha256": "664ce3a7acdf9f33c5580f5ab020ca2293d650ff7ac2e77368a454b425f02bc2",
+        "size": 619
+      },
+      "packs/work.json": {
+        "sha256": "a0a923f5cb32be3ac3d6d9fe95a051b175b24253e31144a4cc30fc8beeacfe3b",
+        "size": 7991
+      },
+      "projections/agent.json": {
+        "sha256": "b6e68812aa775af82ec47c1d09c29a30ed97c937eb4f943cb8c68e006bd7a885",
+        "size": 6775
+      },
+      "projections/apple.json": {
+        "sha256": "1627f21913def08f9bd9d8bf357e1eb5cd49b4548a770553ff4dee4e73ceed19",
+        "size": 1807
+      },
+      "projections/aws.json": {
+        "sha256": "c0e2854650866cb15a955044e604806bdfca421b90fc8575aabd3968c519d6c5",
+        "size": 1901
+      },
+      "projections/clerk.json": {
+        "sha256": "0b0221cf217941c0b6bf4c4e68d90f6123a5d41c7786acce534ffb32a6b20e9c",
+        "size": 3042
+      },
+      "projections/emulator-overlay.json": {
+        "sha256": "b82ebf41659f6ccc9baaceddab737dfd1cb0c98218c7089566498e5ac8da5e53",
+        "size": 67949
+      },
+      "projections/github.json": {
+        "sha256": "51be4c2c9157b79f5ecbc2b4ae81e8c3ca9e699bde5bb914b20027b21ada2c76",
+        "size": 3948
+      },
+      "projections/google.json": {
+        "sha256": "66a2b3ad29065c6363e4e5129bfe79e92d5619c438806d1162f32132e12a56ba",
+        "size": 17810
+      },
+      "projections/http-targets.json": {
+        "sha256": "0dc8e60caedbe5fcf5d79ca5341cbccfcba4a0b0bdc74dbdd9dea50c9fe9f43c",
+        "size": 8222
+      },
+      "projections/linear.json": {
+        "sha256": "787853aec3902b26d76b6f9780783dab598d0f5472a2451f7d28368030964c8e",
+        "size": 8359
+      },
+      "projections/mail.json": {
+        "sha256": "c6f2ca3233e33409c7b1a6036bf2aec8f687bdf34b1d2b6bdb72078c60647eb2",
+        "size": 46936
+      },
+      "projections/microsoft.json": {
+        "sha256": "031e588ca06411cc3f03cde4690b839deb0afe16dd6a4aeba33912e9ce6681ca",
+        "size": 1857
+      },
+      "projections/model.json": {
+        "sha256": "6a73193b0dfd6e35d8d6f910bdda3c297a2ad350852456a9c0db621735326740",
+        "size": 3914
+      },
+      "projections/mongoatlas.json": {
+        "sha256": "25ee47df44b030e48630f0e6e262fa840c13893cfeabb44ae23a33b64e0a4e22",
+        "size": 556
+      },
+      "projections/notion.json": {
+        "sha256": "62612d166595a8c2c4819b6605711d3d4e2403e60e58630435bcfdd8701a9d59",
+        "size": 20948
+      },
+      "projections/okta.json": {
+        "sha256": "7a1d0d4b04d8b01ecd1b0b275d6555f09c0445b201929c624e429b6c1add5c13",
+        "size": 2643
+      },
+      "projections/resend.json": {
+        "sha256": "7f32e1574359bedadc107852c5cbb6bfa3b3ed06c4381c01d1f8404c0c148a36",
+        "size": 851
+      },
+      "projections/slack.json": {
+        "sha256": "6690809f450317e3c245f7e7c405c05496477e3f56a6803a22171bc65c62739f",
+        "size": 6018
+      },
+      "projections/stripe.json": {
+        "sha256": "4bc3f6ed166978160700b0608ea031a174b1d427892f7d800e5d8beea839715f",
+        "size": 1203
+      },
+      "projections/twilio.json": {
+        "sha256": "ba7fa72ee5adc03e74cfbdae8065ee95d67f393dbb9dec733fbdc71f1c1bd5df",
+        "size": 701
+      },
+      "projections/vercel.json": {
+        "sha256": "c2dc16d06a31dcca18a53af3eedd7a47e20b1ee0f696456a761b8a3c72420dcb",
+        "size": 375
+      },
+      "timeline.json": {
+        "sha256": "24fe7dc6e60cea1339b080a1a66bb692448550e236ca85bab720aee2a9e5520a",
+        "size": 2980
+      },
+      "world.json": {
+        "sha256": "b15142170b687f395ac736ad794518a43412faaaf788a1609feb3d2cc97fad44",
+        "size": 140971
+      }
+    }
+  }
+}

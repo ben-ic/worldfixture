@@ -1,0 +1,5 @@
+# The upstream image points LevelDB at /data, which is read-only in a joined
+# fixture. Keep all metadata in the session's /tmp scratch mount instead.
+[leveldb2]
+enabled = true
+dir = "/tmp/seaweedfs/filerldb2"

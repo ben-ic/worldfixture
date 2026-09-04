@@ -1,0 +1,25 @@
+{
+  "api_version": "worldfixture.world-manifest/v1",
+  "world": {
+    "id": "demo.minimal",
+    "version": "v1",
+    "profile": "business.operations/v1",
+    "title": "Tiny Co \u2014 the smallest world that runs",
+    "synthetic_notice": "Every person and organization here is synthetic.",
+    "categories": [
+      "business"
+    ],
+    "clock": {
+      "anchor": "2027-03-01T09:00:00Z",
+      "timezone": "UTC"
+    },
+    "scenario": {
+      "id": "quiet-week",
+      "class": "normal",
+      "title": "A quiet week at a two-person company"
+    }
+  },
+  "fragments": [
+    "fragments/core.json"
+  ]
+}

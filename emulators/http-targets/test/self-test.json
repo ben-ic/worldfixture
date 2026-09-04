@@ -1,0 +1,79 @@
+{
+  "api_version": "worldfixture.http-targets/v1",
+  "world_id": "build.self-test",
+  "world_version": "v1",
+  "synthetic_notice": "This content exists only for the fixture build protocol test.",
+  "organization": {
+    "id": "build-test",
+    "name": "Northstar Test",
+    "summary": "A bounded build-time protocol fixture."
+  },
+  "feeds": [
+    {
+      "path": "/feeds/company.xml",
+      "title": "Northstar Test updates",
+      "description": "Build-time feed",
+      "items": [
+                {
+                    "id": "test-item",
+                    "path": "/notes/lumen-export",
+                    "title": "Test story",
+                    "summary": "The feed uses the same route as the page.",
+                    "published_at": "2026-08-21T09:00:00Z"
+                },
+                {
+                    "id": "test-arrival",
+                    "path": "/notes/lumen-export",
+                    "title": "Test arrival",
+                    "summary": "This item becomes available after the fixture starts.",
+                    "published_at": "2026-08-21T09:00:01Z",
+                    "available_after_seconds": 10
+                }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "path": "/",
+      "title": "Northstar Test",
+      "heading": "World-backed HTTP targets",
+      "summary": "A bounded build-time protocol fixture.",
+      "sections": [
+        {"heading": "Purpose", "body": "Verify HTTP behavior without a session world."}
+      ]
+    },
+    {
+      "path": "/notes/lumen-export",
+      "title": "Changing test page",
+      "heading": "Changing test page",
+      "summary": "This page changes once by request count.",
+      "sections": [
+        {"heading": "Stable fact", "body": "The story identity does not change."}
+      ],
+      "request_variants": ["First observation", "Second observation"]
+    }
+  ],
+  "probes": [
+    {"path": "/health/api", "name": "Stable", "mode": "stable", "statuses": [200], "body": "ok"},
+    {"path": "/health/export-worker", "name": "Failing", "mode": "failing", "statuses": [503], "body": "degraded"},
+    {"path": "/health/webhook-delivery", "name": "Flapping", "mode": "flapping", "statuses": [200, 200, 503, 200], "body": "sequenced"}
+  ],
+  "metrics": [
+    {"name": "northstar_test_value", "help": "Build-time test value.", "type": "gauge", "value": 7}
+  ],
+  "api": {
+    "openapi_path": "/openapi.json",
+    "responses": {
+      "/api/v1/company": {"name": "Northstar Test", "synthetic": true}
+    },
+    "document": {
+      "openapi": "3.0.3",
+      "info": {"title": "Northstar Test API", "version": "1.0.0"},
+      "paths": {
+        "/api/v1/company": {
+          "get": {"responses": {"200": {"description": "Successful response"}}}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "app_id": "901-emulator-mail",
+  "slug": "emulator-mail-cyrus",
+  "name": "WorldFixture Mail Emulator",
+  "version": "v2.2.1",
+  "upstream": [
+    {
+      "name": "Cyrus IMAP",
+      "repository_url": "https://github.com/cyrusimap/cyrus-imapd",
+      "version": "3.6.1",
+      "package_version": "3.6.1-4+deb12u4",
+      "license": "BSD-3-Clause-CMU"
+    }
+  ],
+  "build": {
+    "port": 8025,
+    "readiness_path": "/readyz",
+    "generated_secrets": []
+  },
+  "runtime_contract": {
+    "backup_restore_adapter": {
+      "backup_verified": true,
+      "fresh_login_readback_verified": true,
+      "kind": "none",
+      "paths": [],
+      "restore_verified": true
+    },
+    "cold_install": {
+      "cache_condition": "not applicable to a session fixture",
+      "cache_empty": true,
+      "status": "authoritative"
+    },
+    "environment_ownership": [
+      {"name": "WORLDFIXTURE_SMTP_LISTEN", "owner": "set_by_platform", "phase": "runtime"},
+      {"name": "WORLDFIXTURE_IMAP_LISTEN", "owner": "set_by_platform", "phase": "runtime"},
+      {"name": "WORLDFIXTURE_MAILBOX_LISTEN", "owner": "set_by_platform", "phase": "runtime"},
+      {"name": "WORLDFIXTURE_HEALTH_LISTEN", "owner": "set_by_platform", "phase": "runtime"},
+      {"name": "WORLDFIXTURE_WORLD_PATH", "owner": "set_by_platform", "phase": "runtime"},
+      {"name": "WORLDFIXTURE_MAIL_PASSWORDS", "owner": "set_by_platform", "phase": "runtime"}
+    ],
+    "first_use_credential": {
+      "present": true,
+      "reveal": "resolved_from_projection_password_ref",
+      "rotation_supported": false,
+      "value_in_logs": false,
+      "value_in_manifest": false
+    },
+    "health_checks": [
+      {"accept_statuses": [200], "kind": "http", "path": "/readyz", "port": 8025}
+    ],
+    "lifecycle_commands": {
+      "migration": "none",
+      "redeploy": "fresh session state",
+      "restart": "idempotent seed",
+      "startup": "one entry point loads the world mail projection, creates its accounts and folders, seeds its messages over LMTP, then supervises Cyrus IMAP, the loopback SMTP bridge, the mailbox UI, and readiness"
+    },
+    "lifecycle_supported": true,
+    "memory": {"scope": "bounded by the session scratch tmpfs", "status": "authoritative"},
+    "migration_upgrade_range": {"from": "1.30.7", "supported": false, "to": "2.2.1"},
+    "persistent_paths": [],
+    "ports": [
+      {"container_port": 1025, "name": "smtp", "protocol": "tcp"},
+      {"container_port": 1143, "name": "imap", "protocol": "tcp"},
+      {"container_port": 8080, "name": "mailbox", "protocol": "tcp"},
+      {"container_port": 8025, "name": "health", "protocol": "tcp"}
+    ]
+  }
+}

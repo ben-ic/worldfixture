@@ -1,0 +1,34 @@
+.connector-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+}
+
+.connector-state p {
+  margin: 4px 0;
+  color: var(--muted);
+}
+
+.connector-state code {
+  color: var(--dim);
+}
+
+.connector-plan > p {
+  padding: 0 14px;
+}
+
+.connector-columns {
+  grid-template-columns: minmax(220px, 1fr) 24px minmax(180px, 1fr) 90px;
+}
+
+.panel-pad {
+  padding: 14px;
+}
+
+/* The slice note, kept clear of the first-run guide.
+   `.first-run` is a fixed panel in the bottom-right corner, so a full-width
+   paragraph at the bottom of the connector form runs underneath it and loses its
+   last few words. A first run is exactly when both are on screen at once. */
+.slice-note{max-width:58ch}

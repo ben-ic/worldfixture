@@ -1,0 +1,113 @@
+{
+  "app_id": "903-emulator-s3",
+  "slug": "emulator-s3",
+  "name": "WorldFixture S3 Emulator",
+  "version": "v4.41",
+  "upstream": [
+    {
+      "name": "SeaweedFS",
+      "repository_url": "https://github.com/seaweedfs/seaweedfs",
+      "version": "4.41",
+      "source_revision": "de34a1a87c02893507f961cda9574172ee5064e9",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "jq",
+      "repository_url": "https://github.com/jqlang/jq",
+      "package_version": "1.8.2-r0",
+      "license": "MIT"
+    }
+  ],
+  "build": {
+    "port": 61004,
+    "readiness_path": "/worldfixture/ready",
+    "generated_secrets": [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY"
+    ]
+  },
+  "runtime_contract": {
+    "backup_restore_adapter": {
+      "backup_verified": true,
+      "fresh_login_readback_verified": true,
+      "kind": "none",
+      "paths": [],
+      "restore_verified": true
+    },
+    "cold_install": {
+      "cache_condition": "not applicable to a session fixture",
+      "cache_empty": true,
+      "status": "authoritative"
+    },
+    "environment_ownership": [
+      {
+        "name": "WORLDFIXTURE_MASTER_PORT/WORLDFIXTURE_MASTER_GRPC_PORT/WORLDFIXTURE_VOLUME_PORT/WORLDFIXTURE_VOLUME_GRPC_PORT/WORLDFIXTURE_FILER_PORT/WORLDFIXTURE_FILER_GRPC_PORT/WORLDFIXTURE_S3_PORT/WORLDFIXTURE_S3_GRPC_PORT",
+        "owner": "set_by_platform",
+        "phase": "runtime"
+      },
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "owner": "set_by_platform",
+        "phase": "runtime"
+      },
+      {
+        "name": "AWS_ACCESS_KEY_ID",
+        "owner": "generated_by_worldfixture",
+        "phase": "runtime",
+        "note": "handed to the application so its S3 client can be constructed. This build runs with -s3.iam=false and no identity file, so the server neither requires nor verifies a signature. See README.md."
+      },
+      {
+        "name": "AWS_SECRET_ACCESS_KEY",
+        "owner": "generated_by_worldfixture",
+        "phase": "runtime",
+        "note": "handed to the application so its S3 client can be constructed. This build runs with -s3.iam=false and no identity file, so the server neither requires nor verifies a signature. See README.md."
+      }
+    ],
+    "first_use_credential": {
+      "present": false,
+      "reveal": "normal_in_app_onboarding",
+      "rotation_supported": true,
+      "value_in_logs": false,
+      "value_in_manifest": false
+    },
+    "health_checks": [
+      {
+        "accept_statuses": [
+          200
+        ],
+        "kind": "http",
+        "path": "/worldfixture/ready",
+        "port": 61004
+      }
+    ],
+    "lifecycle_commands": {
+      "migration": "none",
+      "redeploy": "fresh session state",
+      "restart": "idempotent seed",
+      "startup": "one entry point reads projections/aws.json, starts weed server -filer -s3, creates every declared bucket, stores every declared object over the S3 API, and publishes readiness only once seeding is complete; state lives in /tmp and dies with the session"
+    },
+    "lifecycle_supported": true,
+    "memory": {
+      "scope": "bounded by the session scratch tmpfs",
+      "status": "authoritative"
+    },
+    "migration_upgrade_range": {
+      "from": "4.41",
+      "supported": true,
+      "to": "4.41"
+    },
+    "persistent_paths": [],
+    "ports": [
+      {
+        "container_port": 61004,
+        "name": "filer",
+        "protocol": "tcp"
+      },
+      {
+        "container_port": 61006,
+        "name": "s3",
+        "protocol": "tcp"
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+.git
+.agents
+.codex
+.private
+.worldfixture
+dist
+index.html
+**/node_modules
+**/.DS_Store
+
+# WorldFixture local secret
+/.worldfixture/token
+
+# Design working directories. Claude Design canvases, thumbnails, pasted images
+# and a generated bundle with no licence header. Ignored by git for the same
+# reason; named here so a stray copy on disk cannot reach an image layer.
+Homepage
+UI
+Homepage design system *
+
+# Local design and extraction records. These are git-ignored and do not normally
+# exist in a checkout, but a build copies whatever is on disk, and a layer that
+# baked one of them would publish it. The list mirrors .gitignore on purpose.
+docs/extraction-status.md
+docs/product-experience.md
+docs/service-manifest-fit.md
+docs/system-design.md
+docs/connectors/dogfood-*.md

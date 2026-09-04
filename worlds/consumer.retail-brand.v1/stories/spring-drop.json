@@ -1,0 +1,670 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "contributes": {
+    "agentic": {
+      "actor_id": "iris-mendel",
+      "capabilities": [
+        "mail.read",
+        "mail.send",
+        "calendar.read",
+        "documents.read",
+        "slack.read",
+        "slack.post",
+        "github.issue.read",
+        "github.issue.comment",
+        "finance.invoice.read",
+        "commerce.order.read",
+        "social.review.read",
+        "storage.object.read"
+      ],
+      "causal_rules": [
+        {
+          "emits": [
+            "finance.ledger.updated",
+            "mail.order-confirmation.available"
+          ],
+          "id": "rule-order-paid",
+          "requires": [
+            "order_id",
+            "amount_cents"
+          ],
+          "when": "commerce.order.paid"
+        },
+        {
+          "emits": [
+            "social.product-rating.updated",
+            "support.case.considered"
+          ],
+          "id": "rule-review-published",
+          "requires": [
+            "review_id",
+            "product_id"
+          ],
+          "when": "social.review.published"
+        },
+        {
+          "emits": [
+            "finance.ledger.updated",
+            "mail.payment-receipt.available"
+          ],
+          "id": "rule-invoice-payment",
+          "requires": [
+            "invoice_id",
+            "payment_id",
+            "amount_cents"
+          ],
+          "when": "finance.invoice.paid"
+        }
+      ],
+      "constraints": [
+        "Treat every record as synthetic",
+        "Do not invent orders, payments or ship dates",
+        "Use normal application APIs and tools",
+        "Cite canonical entity references in evaluation output",
+        "Do not expose session credentials",
+        "Do not give a customer a date that no kiln run supports"
+      ],
+      "goals": [
+        {
+          "id": "goal-drop-decision",
+          "instructions": "State whether the serving bowl should launch as stock or as a preorder, using the kiln yields and the open storefront issues as evidence. Name what has to ship before the drop and what can wait.",
+          "success_evidence": [
+            "Uses the sellable bowl count rather than the fired count",
+            "Names issue 210 as a launch blocker and issue 218 as a post-launch one",
+            "Does not give a preorder ship date before the third kiln run"
+          ],
+          "title": "Decide how the Fieldstone bowl launches"
+        },
+        {
+          "id": "goal-crazing-letter",
+          "instructions": "Draft the reply to a shopper reporting crazing. Say what the fault is, that it is the first Harbour run, that it is not a safety problem, and that a replacement needs no return and no receipt.",
+          "success_evidence": [
+            "Says the mug is safe to drink from",
+            "Does not ask for the mug back or for proof of purchase",
+            "Does not describe forty mugs as a rare or isolated case"
+          ],
+          "title": "Write to a customer whose Harbour mug crazed"
+        },
+        {
+          "id": "goal-tracking-answer",
+          "instructions": "Write to a shopper whose order was marked shipped from an empty scan. Say where the parcel actually is, what went wrong, and what happens next.",
+          "success_evidence": [
+            "Does not point the shopper back at the tracking page",
+            "States that the parcel was scanned but not collected",
+            "Gives a next step rather than an apology only"
+          ],
+          "title": "Answer the eleven orders with no carrier movement"
+        }
+      ],
+      "grounding": [
+        {
+          "entity_id": "clara-voight",
+          "kind": "person"
+        },
+        {
+          "entity_id": "quinn-abara",
+          "kind": "person"
+        },
+        {
+          "entity_id": "harrow-works",
+          "kind": "organization"
+        },
+        {
+          "entity_id": "inv-2033",
+          "kind": "invoice"
+        },
+        {
+          "entity_id": "case-crazing-batch",
+          "fact": {
+            "next_action": "Send the last eleven replacements",
+            "state": "replacing"
+          },
+          "kind": "support-case"
+        },
+        {
+          "entity_id": "prod-fieldstone-bowl",
+          "fact": {
+            "sellable_after_two_runs": 93,
+            "status": "preorder"
+          },
+          "kind": "product"
+        }
+      ]
+    },
+    "model_facts": [
+      {
+        "id": "fact-bowl-preorder",
+        "kind": "inventory",
+        "text": "The Fieldstone serving bowl opens as a preorder because two kiln runs produced 93 sellable bowls against about 140 units of demand."
+      },
+      {
+        "id": "fact-crazing-scope",
+        "kind": "quality",
+        "text": "Crazing affects the first Harbour mug run only. It is a glaze fit fault, not a safety fault, and every affected mug is replaced without a return."
+      },
+      {
+        "id": "fact-double-charge",
+        "kind": "finance",
+        "text": "Two Pantry Club members were charged twice in March because a renewal retry ran without an idempotency key. Issue 215 is open."
+      },
+      {
+        "id": "fact-empty-scan",
+        "kind": "fulfilment",
+        "text": "Eleven orders were marked shipped from a warehouse scan that carried no tracking number. The parcels were never collected."
+      },
+      {
+        "id": "fact-guest-badge",
+        "kind": "storefront",
+        "text": "A verified-buyer badge is granted by matching a review author's account to an order, so a genuine buyer who checked out as a guest shows unbadged."
+      }
+    ],
+    "site": {
+      "feed": {
+        "description": "Launches, faults, and how orders actually move, from the synthetic Marlow & Pine world.",
+        "items": [
+          {
+            "id": "feed-fieldstone",
+            "path": "/journal/fieldstone",
+            "published_at": "2027-03-12T15:00:00Z",
+            "summary": "Four pieces. The serving bowl opens as a preorder because the first two kiln runs were short.",
+            "title": "Fieldstone arrives on 25 March"
+          },
+          {
+            "id": "feed-crazing",
+            "path": "/journal/harbour-crazing",
+            "published_at": "2027-03-16T11:30:00Z",
+            "summary": "About forty mugs from the first run. No return, no receipt, and a plain description of the fault.",
+            "title": "The Harbour mug is crazing, and we are replacing it"
+          },
+          {
+            "id": "feed-club-billing",
+            "path": "/journal/pantry-club-march",
+            "published_at": "2027-03-17T17:10:00Z",
+            "summary": "A renewal retry ran after the first charge had already succeeded. Found in reconciliation, not by a complaint.",
+            "title": "Two members were charged twice in March"
+          },
+          {
+            "id": "feed-shipping",
+            "path": "/journal/where-your-order-is",
+            "published_at": "2027-02-26T13:15:00Z",
+            "summary": "A label is not a collection. Eleven orders are currently proving the difference.",
+            "title": "Where your order actually is"
+          },
+          {
+            "arrival_id": "arrival-chat-pallet-closed",
+            "id": "feed-arrival-pallet",
+            "path": "/journal/where-your-order-is",
+            "published_at": "2027-03-18T09:32:00Z",
+            "summary": "Eight were never collected and three were re-labelled onto a returns pallet. Every one now has a real tracking number.",
+            "title": "All eleven parcels are located"
+          },
+          {
+            "arrival_id": "arrival-kiln-inspection",
+            "id": "feed-arrival-kiln",
+            "path": "/journal/fieldstone",
+            "published_at": "2027-03-18T09:36:00Z",
+            "summary": "104 sellable bowls from 118 fired, which is 197 in total and about fifty spare on drop day.",
+            "title": "The third kiln run covers every preorder"
+          },
+          {
+            "arrival_id": "arrival-chat-hugo-paid",
+            "id": "feed-arrival-credits",
+            "path": "/journal/pantry-club-march",
+            "published_at": "2027-03-18T09:42:00Z",
+            "summary": "The retry fix is merged and the reconciliation file is published per invoice.",
+            "title": "Both March credit notes are out"
+          }
+        ],
+        "path": "/feeds/journal.xml",
+        "title": "Marlow & Pine journal"
+      },
+      "metrics": [
+        {
+          "help": "Products currently available to buy.",
+          "name": "marlow_pine_catalog_products_active",
+          "source": {
+            "count": "products",
+            "status": "active"
+          }
+        },
+        {
+          "help": "Orders in the synthetic Marlow & Pine world.",
+          "name": "marlow_pine_orders_total",
+          "source": {
+            "count": "orders"
+          }
+        },
+        {
+          "help": "Orders marked shipped and not yet delivered.",
+          "name": "marlow_pine_orders_shipped",
+          "source": {
+            "count": "orders",
+            "status": "shipped"
+          }
+        },
+        {
+          "help": "Total value of every order in the world, in cents.",
+          "name": "marlow_pine_order_value_cents",
+          "source": {
+            "count": "order_value_cents"
+          }
+        },
+        {
+          "help": "Published product reviews.",
+          "name": "marlow_pine_reviews_published",
+          "source": {
+            "count": "reviews"
+          }
+        },
+        {
+          "help": "Published reviews rated three or better. Against the total, this gives the critical ones.",
+          "name": "marlow_pine_reviews_three_stars_and_up",
+          "source": {
+            "count": "reviews",
+            "min_rating": 3
+          }
+        },
+        {
+          "help": "Open support cases.",
+          "name": "marlow_pine_support_cases_open",
+          "source": {
+            "count": "open_support_cases"
+          }
+        },
+        {
+          "help": "Open Pantry Club invoice value in cents.",
+          "name": "marlow_pine_open_invoice_cents",
+          "source": {
+            "count": "open_invoice_cents"
+          }
+        },
+        {
+          "help": "Overdue Pantry Club invoice value in cents.",
+          "name": "marlow_pine_overdue_invoice_cents",
+          "source": {
+            "count": "overdue_invoice_cents"
+          }
+        },
+        {
+          "help": "People known to the synthetic world.",
+          "name": "marlow_pine_people",
+          "source": {
+            "count": "people"
+          }
+        }
+      ],
+      "openapi_path": "/openapi.json",
+      "pages": [
+        {
+          "heading": "Homeware made in small batches, sold direct",
+          "path": "/",
+          "sections": [
+            {
+              "body": "Fieldstone launches on 25 March. The serving bowl opens as a preorder because the kiln runs were short, and we would rather say so than take money for stock we do not have.",
+              "heading": "This week"
+            },
+            {
+              "body": "We publish the fault before the reviews do. The Harbour mug crazing note and the March billing note are both on the journal.",
+              "heading": "When something is wrong"
+            }
+          ],
+          "summary": "A direct-to-consumer homeware brand selling stoneware, linens and a monthly pantry box.",
+          "title": "Marlow & Pine"
+        },
+        {
+          "heading": "Four pieces, one of them short",
+          "path": "/journal/fieldstone",
+          "request_variants": [
+            "The third kiln run is booked for 27 March and no yield has been promised.",
+            "The third run produced 104 sellable bowls, so every preorder is covered."
+          ],
+          "sections": [
+            {
+              "body": "Two kiln runs produced 93 sellable bowls against roughly 140 units of demand at the last two drops. Nineteen of the second run's 112 were rejected for crawl marks along the rim.",
+              "heading": "The numbers"
+            },
+            {
+              "body": "We will not give a preorder ship date before the third run is inspected on 27 March.",
+              "heading": "What we will not do"
+            }
+          ],
+          "summary": "Four pieces. The serving bowl opens as a preorder because the first two kiln runs were short.",
+          "title": "Fieldstone arrives on 25 March"
+        },
+        {
+          "heading": "A glaze fit fault in the first Harbour run",
+          "path": "/journal/harbour-crazing",
+          "sections": [
+            {
+              "body": "The glaze and the clay body shrink at slightly different rates. Repeated dishwasher cycles open fine cracks in the glaze. It is not a safety problem and the mug is safe to drink from.",
+              "heading": "What crazing is"
+            },
+            {
+              "body": "Every mug from that run is replaced. Nothing to return, no receipt needed. Fieldstone uses a different glaze and a different body and went through thirty dishwasher cycles before we listed it.",
+              "heading": "What happens now"
+            }
+          ],
+          "summary": "About forty mugs from the first run. No return, no receipt, and a plain description of the fault.",
+          "title": "The Harbour mug is crazing, and we are replacing it"
+        },
+        {
+          "heading": "A retry that should never have run",
+          "path": "/journal/pantry-club-march",
+          "sections": [
+            {
+              "body": "The charge succeeded at the provider and the response timed out locally. The retry sent a second charge without an idempotency key.",
+              "heading": "The cause"
+            },
+            {
+              "body": "Both members were told before this note was published. Credit notes are issued against the March invoices; a credit note does not yet reference the invoice it corrects, so the invoice number is stated in the message.",
+              "heading": "The correction"
+            }
+          ],
+          "summary": "A renewal retry ran after the first charge had already succeeded. Found in reconciliation, not by a complaint.",
+          "title": "Two members were charged twice in March"
+        },
+        {
+          "heading": "A label is not a collection",
+          "path": "/journal/where-your-order-is",
+          "sections": [
+            {
+              "body": "Orders leave Swiftline in Columbus. A label is created when the box is packed and the first carrier scan happens on collection, which can be a day later.",
+              "heading": "How it normally works"
+            },
+            {
+              "body": "A pallet was scanned outbound with no tracking numbers and the carrier refused the load. Eleven orders were marked shipped and were still in bay 3.",
+              "heading": "What went wrong on 12 March"
+            }
+          ],
+          "summary": "A label is not a collection. Eleven orders are currently proving the difference.",
+          "title": "Where your order actually is"
+        }
+      ],
+      "probes": [
+        {
+          "body": "ok",
+          "mode": "stable",
+          "name": "Public API",
+          "path": "/health/api",
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "body": "ok",
+          "mode": "stable",
+          "name": "Checkout",
+          "path": "/health/checkout",
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "body": "degraded: eleven orders are marked shipped with no carrier scan",
+          "mode": "failing",
+          "name": "Order tracking",
+          "path": "/health/order-tracking",
+          "statuses": [
+            503
+          ]
+        },
+        {
+          "body": "guest orders do not match an account",
+          "mode": "flapping",
+          "name": "Verified-buyer badges",
+          "path": "/health/review-badges",
+          "statuses": [
+            200,
+            200,
+            503,
+            200
+          ]
+        }
+      ],
+      "status": {
+        "incident": "Eleven orders were marked shipped from a warehouse scan that carried no tracking number.",
+        "issue": 213,
+        "status": "degraded",
+        "workaround": "Support is writing to each affected order individually. Do not rely on the tracking page for orders placed before 12 March."
+      }
+    },
+    "stories": [
+      {
+        "entity_refs": [
+          "prod-fieldstone-bowl",
+          "issue-210",
+          "issue-218",
+          "project-fieldstone-drop",
+          "doc-fieldstone-launch"
+        ],
+        "id": "story-fieldstone-drop",
+        "state": "active",
+        "summary": "Fieldstone opens on 25 March. The serving bowl's first two kiln runs produced 93 sellable pieces against about 140 units of demand, so it opens as a preorder rather than as stock that does not exist.",
+        "title": "A collection launching with one piece short"
+      },
+      {
+        "entity_refs": [
+          "prod-harbour-mug",
+          "case-crazing-batch",
+          "post-harbour-crazing",
+          "review-harbour-01",
+          "doc-crazing-response"
+        ],
+        "id": "story-harbour-crazing",
+        "state": "active",
+        "summary": "About forty Harbour mugs from the first run craze in the dishwasher. Marlow & Pine is replacing every one without a return or a receipt, and said so publicly before the reviews forced it.",
+        "title": "A glaze fault the brand announced first"
+      },
+      {
+        "entity_refs": [
+          "issue-215",
+          "issue-216",
+          "case-double-charge",
+          "inv-2033",
+          "inv-2034",
+          "doc-club-billing"
+        ],
+        "id": "story-club-double-charge",
+        "state": "active",
+        "summary": "A renewal retry with no idempotency key charged two Pantry Club members twice in March. Finance found it, not the members. One credit note is issued and the second follows.",
+        "title": "Two members charged twice, found in reconciliation"
+      },
+      {
+        "entity_refs": [
+          "issue-213",
+          "case-missing-tracking",
+          "project-fulfilment-recovery",
+          "post-shipping-honestly"
+        ],
+        "id": "story-pallet-trace",
+        "state": "active",
+        "summary": "Swiftline scanned a pallet outbound with no tracking numbers and the order service believed it. Eleven people were told their parcel was on its way. Support is holding the message until there is a true one.",
+        "title": "Eleven orders that said shipped and were not"
+      },
+      {
+        "entity_refs": [
+          "issue-211",
+          "issue-212",
+          "post-verified-reviews",
+          "doc-review-badges"
+        ],
+        "id": "story-verified-badges",
+        "state": "active",
+        "summary": "Verified-buyer badges match a review to an order by account id, so guest buyers stay unbadged. The team shipped the gap rather than badging everyone.",
+        "title": "A badge that is honest about what it cannot prove"
+      }
+    ],
+    "timeline": [
+      {
+        "after_seconds": 45,
+        "id": "arrival-desmond-three-found",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "Callum,\n\nFound them. All three were re-labelled onto a returns pallet on the 13th by someone covering the bay. Nothing was lost. They go out today with real tracking numbers.\n\nThe manifest mismatch that started this was ours as well.\n\nDesmond",
+          "from_id": "desmond-oyelaran",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Suppliers"
+          ],
+          "snippet": "All three were re-labelled onto a returns pallet by mistake. They ship today.",
+          "subject": "Re: Pallet 4471: the last three",
+          "thread_id": "thread-swiftline-pallet",
+          "to_id": "callum-reid"
+        }
+      },
+      {
+        "after_seconds": 75,
+        "id": "arrival-chat-pallet-closed",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "callum-reid",
+          "channel_id": "channel-fulfilment",
+          "text": "All eleven located. The last three were re-labelled onto a returns pallet. Otto, you can write to them with something true now."
+        }
+      },
+      {
+        "after_seconds": 130,
+        "id": "arrival-chat-eleven-sent",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "otto-lindqvist",
+          "channel_id": "channel-fulfilment",
+          "text": "Eleven messages out, one each, with the parcel's actual position and a tracking number. No status page link."
+        }
+      },
+      {
+        "after_seconds": 180,
+        "id": "arrival-kiln-inspection",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "Kit,\n\nThird run: 118 fired, 14 rejected, 104 sellable. The crawl was the second glaze dip going on too heavy at the rim; we thinned only that dip and left the body coat alone.\n\nThat is 197 sellable bowls in total. I still will not promise a yield for the fourth run.\n\nHarriet",
+          "from_id": "harriet-vance",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Suppliers"
+          ],
+          "snippet": "Fourteen rejected. The rim crawl is down to the glaze thickness on the second dip.",
+          "subject": "Third run: 104 of 118",
+          "thread_id": "thread-harrow-run",
+          "to_id": "kit-nwosu"
+        }
+      },
+      {
+        "after_seconds": 215,
+        "id": "arrival-chat-preorder-covered",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "kit-nwosu",
+          "channel_id": "channel-fieldstone",
+          "text": "197 sellable bowls after the third run. Every preorder is covered and there are about fifty left for the drop."
+        }
+      },
+      {
+        "after_seconds": 260,
+        "id": "arrival-issue-210-fixed",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "gus-ferreira",
+          "body": "Fixed. The collection grid now reads the same availability source as the product page, and the cache is invalidated on any status change. Added a test that flips a product to preorder and asserts the grid within one request.",
+          "issue_id": "issue-210"
+        }
+      },
+      {
+        "after_seconds": 300,
+        "id": "arrival-issue-215-fixed",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "tomas-brekke",
+          "body": "Idempotency key is now set from the renewal id, so a retry after a timeout returns the original charge instead of creating a second one. Test kills the connection mid-charge and asserts one charge at the provider.",
+          "issue_id": "issue-215"
+        }
+      },
+      {
+        "after_seconds": 340,
+        "id": "arrival-issue-213-comment",
+        "kind": "github-comment",
+        "payload": {
+          "author_id": "callum-reid",
+          "body": "Swiftline has agreed not to send a scan without a tracking number, but the guard still belongs here. A partner's promise is not a validation rule.",
+          "issue_id": "issue-213"
+        }
+      },
+      {
+        "after_seconds": 385,
+        "id": "arrival-orla-payment",
+        "kind": "stripe-payment",
+        "payload": {
+          "amount_cents": 3900,
+          "currency": "usd",
+          "customer_id": "club-orla-brennan",
+          "description": "Pantry Club standard box — March",
+          "invoice_id": "inv-2031"
+        }
+      },
+      {
+        "after_seconds": 420,
+        "id": "arrival-hugo-payment",
+        "kind": "stripe-payment",
+        "payload": {
+          "amount_cents": 6400,
+          "currency": "usd",
+          "customer_id": "club-hugo-marchetti",
+          "description": "Pantry Club large box — February, on a replacement card",
+          "invoice_id": "inv-2032"
+        }
+      },
+      {
+        "after_seconds": 450,
+        "id": "arrival-chat-hugo-paid",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "rosa-delgado",
+          "channel_id": "channel-pantry-club",
+          "text": "Hugo updated his card and February is settled. No pause needed. Both March credit notes are out as well."
+        }
+      },
+      {
+        "after_seconds": 500,
+        "id": "arrival-reconciliation-object",
+        "kind": "s3-object",
+        "payload": {
+          "bucket": "marlow-pine-documents",
+          "content": "invoice,customer,charged_cents,expected_cents,credit_cents\ninv-2033,club-maren-oduya,12800,6400,6400\ninv-2034,club-bennett-cho,12800,6400,6400\n",
+          "content_type": "text/csv",
+          "key": "finance/march-club-reconciliation.csv"
+        }
+      },
+      {
+        "after_seconds": 545,
+        "id": "arrival-alma-preorder-reply",
+        "kind": "incoming-email",
+        "payload": {
+          "body_text": "Hello Sana,\n\nThank you for not making up a date. I would rather wait and get everything in one box, so please hold the mugs and send them with the bowl.\n\nAlma",
+          "from_id": "alma-reyes",
+          "labels": [
+            "INBOX",
+            "UNREAD",
+            "Support"
+          ],
+          "snippet": "Happy to wait for the bowl. Please hold the mugs and send it all together.",
+          "subject": "Re: When does the Fieldstone bowl ship?",
+          "thread_id": "thread-preorder-alma",
+          "to_id": "sana-devi"
+        }
+      },
+      {
+        "after_seconds": 600,
+        "id": "arrival-chat-drop-decision",
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "mira-halvorsen",
+          "channel_id": "channel-fieldstone",
+          "text": "Decision: all four pieces launch on the 25th, bowl included as normal stock now that the third run covers the preorders. Issue 218 still ships before we take walk-up orders."
+        }
+      }
+    ]
+  },
+  "id": "story.spring-drop"
+}
