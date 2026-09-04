@@ -5,6 +5,7 @@ import { registerOAuthRoutes } from "./oauth.mjs";
 import { createNotionAdmin, registerNotionAdminRoutes } from "./admin.mjs";
 import { registerAgentRoutes, seedNotionAgents } from "./agents.mjs";
 import { registerAdminApiRoutes, seedNotionAdminApi } from "./admin-api.mjs";
+import { registerHostedRoutes } from "./hosted.mjs";
 
 export const plugin = {
   name: "notion",
@@ -17,6 +18,7 @@ export const plugin = {
     registerAdminApiRoutes(app, store);
     registerMcpRoutes(app, store, baseUrl, options);
     registerNotionAdminRoutes(app, store, tokenMap, admin);
+    registerHostedRoutes(app, store, baseUrl);
   },
 };
 
