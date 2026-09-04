@@ -1676,18 +1676,24 @@ def _stripe_projection(world: dict[str, Any]) -> dict[str, Any]:
             product["name"] not in plans,
             f"catalog product {product['id']} is named after subscription plan {product['name']!r}",
         )
+    stripe_fragment = lambda value: re.sub(r"[^a-zA-Z0-9]", "_", value)
+    customer_ids = {customer["id"]: f"cus_{stripe_fragment(customer['id'])}" for customer in customers}
+    product_ids = {name: f"prod_{stripe_fragment(name).lower()}" for name in plans}
+    price_ids = {customer["id"]: f"price_{stripe_fragment(customer['id'])}" for customer in customers}
     return {
         "customers": [
             {
+                "id": customer_ids[customer["id"]],
                 "email": people[customer["contact_id"]]["email"],
                 "name": customer["name"],
                 "worldfixture_customer_id": customer["id"],
             }
             for customer in customers
         ],
-        "products": [{"name": name, "description": f"Monthly {name} subscription"} for name in plans]
+        "products": [{"id": product_ids[name], "name": name, "description": f"Monthly {name} subscription"} for name in plans]
         + [
             {
+                "id": f"prod_{stripe_fragment(product['id'])}",
                 "name": product["name"],
                 "description": product.get("summary", product["name"]),
                 "worldfixture_product_id": product["id"],
@@ -1696,21 +1702,49 @@ def _stripe_projection(world: dict[str, Any]) -> dict[str, Any]:
         ],
         "prices": [
             {
+                "id": price_ids[customer["id"]],
                 "product_name": customer["service"],
                 "currency": "usd",
                 "unit_amount": customer["monthly_amount_cents"],
+                "recurring": {"interval": "month"},
                 "worldfixture_customer_id": customer["id"],
             }
             for customer in customers
         ]
         + [
             {
+                "id": f"price_{stripe_fragment(product['id'])}",
                 "product_name": product["name"],
                 "currency": str(product.get("currency", "USD")).lower(),
                 "unit_amount": product["price_cents"],
                 "worldfixture_product_id": product["id"],
             }
             for product in catalog
+        ],
+        "subscriptions": [
+            {
+                "id": f"sub_{stripe_fragment(customer['id'])}",
+                "customer": customer_ids[customer["id"]],
+                "price": price_ids[customer["id"]],
+                "status": "active",
+                "metadata": {"worldfixture_customer_id": customer["id"]},
+            }
+            for customer in customers
+        ],
+        "invoices": [
+            {
+                "id": f"in_{stripe_fragment(invoice['id'])}",
+                "number": invoice["number"],
+                "customer": customer_ids[invoice["customer_id"]],
+                "description": invoice["description"],
+                "currency": invoice["currency"].lower(),
+                "status": "open" if invoice["status"] == "overdue" else invoice["status"],
+                "created": int(datetime.fromisoformat(invoice["issued_on"]).replace(tzinfo=timezone.utc).timestamp()),
+                "due_date": int(datetime.fromisoformat(invoice["due_on"]).replace(tzinfo=timezone.utc).timestamp()),
+                "amount_due": invoice["amount_cents"],
+                "metadata": {"worldfixture_invoice_id": invoice["id"], "worldfixture_status": invoice["status"]},
+            }
+            for invoice in world["finance"]["anchor_invoices"]
         ],
     }
 
@@ -2766,17 +2800,20 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
     }
     emulator_stripe = {
         "customers": [
-            {key: copy.deepcopy(customer[key]) for key in ("email", "name")}
+            {key: copy.deepcopy(customer[key]) for key in ("id", "email", "name", "worldfixture_customer_id")}
             for customer in stripe["customers"]
         ],
         "products": [
-            {key: copy.deepcopy(product[key]) for key in ("name", "description")}
+            {key: copy.deepcopy(product[key]) for key in ("id", "name", "description")}
             for product in stripe["products"]
         ],
         "prices": [
-            {key: copy.deepcopy(price[key]) for key in ("product_name", "currency", "unit_amount")}
+            {key: copy.deepcopy(price[key]) for key in ("id", "product_name", "currency", "unit_amount")}
+            | {key: copy.deepcopy(price[key]) for key in ("recurring", "worldfixture_customer_id") if key in price}
             for price in stripe["prices"]
         ],
+        "subscriptions": copy.deepcopy(stripe["subscriptions"]),
+        "invoices": copy.deepcopy(stripe["invoices"]),
     }
     # A world with no software projects no web deployment, so the composer's
     # Vercel vendor is given nothing to seed rather than an invented project.

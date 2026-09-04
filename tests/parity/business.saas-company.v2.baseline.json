@@ -115,6 +115,17 @@
       "added_file": true,
       "reason": "the first Notion provider slice adds a deterministic projection of the world's organization members, documents, and projects"
     },
+    "projections/stripe.json": {
+      "added_fields": [
+        "id",
+        "recurring"
+      ],
+      "added_keys": [
+        "subscriptions",
+        "invoices"
+      ],
+      "reason": "Stripe objects had no ids, so nothing in the world could address a Stripe customer, price or subscription, and a client had to match on name. Every object now carries a deterministic id derived from the world record it projects -- cus_lumen, price_lumen, sub_lumen -- so an invoice in finance and a customer in Stripe are the same thing seen twice. Prices gained the `recurring` interval a subscription price must have, and the projection gained the `subscriptions` and `invoices` a subscription business obviously has and this one did not. No existing record changed: reversing this migration reproduces the reference digest exactly."
+    },
     "world.json": {
       "added_keys": {
         "profile": "business.operations/v1"
@@ -290,19 +301,18 @@
     "projections/okta.json",
     "projections/resend.json",
     "projections/slack.json",
-    "projections/stripe.json",
     "projections/twilio.json",
     "projections/vercel.json",
     "timeline.json"
   ],
   "world": "business.saas-company.v2",
   "worldfixture": {
-    "bundle_sha256": "4d7bd8be6395044c7911c25640cb0f3f043ba8fd97d6f29af46861ec54861cca",
+    "bundle_sha256": "b48a0af3f6c5ff285af134d60a293a92a05a6a7811d2670704848837446f1e14",
     "bundle_size": 542720,
-    "content_sha256": "981cadb0b227e8c3cc050a1198a7a4f60153bbbacb545facdc5c5e374b026bb6",
+    "content_sha256": "a73b7d9e30fa154e34996654a2355a757e54e539542337cc9980d220d91e22ab",
     "files": {
       "manifest.json": {
-        "sha256": "1edb5cc72a8408f32c493c6da51c86a218d67bb7de0cfc0ff04ad2d34c680182",
+        "sha256": "40358b622d0d66c47462ab2de9d06ac78c066f952040c37dc446d2e053aad8d0",
         "size": 4558
       },
       "packs/communication.json": {
@@ -346,8 +356,8 @@
         "size": 3042
       },
       "projections/emulator-overlay.json": {
-        "sha256": "b82ebf41659f6ccc9baaceddab737dfd1cb0c98218c7089566498e5ac8da5e53",
-        "size": 67949
+        "sha256": "e74a525d21ff287b90525c829b12941f869da1c5e44fd1ae155e0c97b8cc225b",
+        "size": 69477
       },
       "projections/github.json": {
         "sha256": "51be4c2c9157b79f5ecbc2b4ae81e8c3ca9e699bde5bb914b20027b21ada2c76",
@@ -398,8 +408,8 @@
         "size": 6018
       },
       "projections/stripe.json": {
-        "sha256": "4bc3f6ed166978160700b0608ea031a174b1d427892f7d800e5d8beea839715f",
-        "size": 1203
+        "sha256": "84d5efc230834d9d3a2e6ad73db65b6336b29bc48eef525cf5bdbdd5808e88ec",
+        "size": 2441
       },
       "projections/twilio.json": {
         "sha256": "ba7fa72ee5adc03e74cfbdae8065ee95d67f393dbb9dec733fbdc71f1c1bd5df",

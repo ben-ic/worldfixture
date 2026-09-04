@@ -111,7 +111,7 @@ class ReferenceParityTest(unittest.TestCase):
         reference = BASELINE["reference"]["files"]
         unchanged = BASELINE["unchanged_files"]
 
-        self.assertEqual(22, len(unchanged))
+        self.assertEqual(21, len(unchanged))
         for name in unchanged:
             self.assertEqual(
                 reference[name]["sha256"],
@@ -208,6 +208,20 @@ class ReferenceParityTest(unittest.TestCase):
             reverted["tokens"] = {
                 key: value for key, value in reverted["tokens"].items() if not key.startswith(prefix)
             }
+        # Stripe gained deterministic object ids, the `recurring` interval a
+        # subscription price must have, and the `subscriptions` and `invoices` a
+        # subscription business obviously has. The overlay carries the same
+        # additions, so the same reversal applies here.
+        # The overlay also began carrying `worldfixture_customer_id`, which the
+        # standalone projection always had and the emulator seed did not.
+        stripe_migration = BASELINE["migration"]["projections/stripe.json"]
+        dropped = set(stripe_migration["added_fields"]) | {"worldfixture_customer_id"}
+        reverted["stripe"] = {
+            key: [{k: v for k, v in item.items() if k not in dropped} for item in value]
+            for key, value in reverted["stripe"].items()
+            if key not in stripe_migration["added_keys"]
+        }
+
         # The AWS vendor's S3 block was removed, so put the reference shape back.
         reference_aws = json.loads(self.files["projections/aws.json"])["s3"]
         reverted["aws"]["s3"] = {
