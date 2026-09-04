@@ -54563,7 +54563,7 @@
           "project_id": "project-release-32",
           "reporter_id": "jon-bell",
           "status": "review",
-          "title": "Write the the lease heartbeat design note"
+          "title": "Write the lease heartbeat design note"
         },
         {
           "assignee_id": "jon-bell",
@@ -54608,7 +54608,7 @@
           "project_id": "project-release-32",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Review the the flag rollout change"
+          "title": "Review the flag rollout change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -54713,7 +54713,7 @@
           "project_id": "project-release-32",
           "reporter_id": "noor-alvarez",
           "status": "review",
-          "title": "Write the the 3.2 release notes design note"
+          "title": "Write the 3.2 release notes design note"
         },
         {
           "assignee_id": "noor-alvarez",
@@ -54848,7 +54848,7 @@
           "project_id": "project-release-32",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the flag rollout rollback plan"
+          "title": "Agree the flag rollout rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -54863,7 +54863,7 @@
           "project_id": "project-release-32",
           "reporter_id": "jon-bell",
           "status": "review",
-          "title": "Write the the lease heartbeat design note"
+          "title": "Write the lease heartbeat design note"
         },
         {
           "assignee_id": "jon-bell",
@@ -54908,7 +54908,7 @@
           "project_id": "project-release-32",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Review the the flag rollout change"
+          "title": "Review the flag rollout change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -55013,7 +55013,7 @@
           "project_id": "project-release-32",
           "reporter_id": "noor-alvarez",
           "status": "review",
-          "title": "Write the the 3.2 release notes design note"
+          "title": "Write the 3.2 release notes design note"
         },
         {
           "assignee_id": "noor-alvarez",
@@ -55133,7 +55133,7 @@
           "project_id": "project-scheduler-migration",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the new scheduler design note"
+          "title": "Write the new scheduler design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -55433,7 +55433,7 @@
           "project_id": "project-scheduler-migration",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the new scheduler design note"
+          "title": "Write the new scheduler design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -55538,7 +55538,7 @@
           "project_id": "project-soc2",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the audit log design note"
+          "title": "Write the audit log design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -55583,7 +55583,7 @@
           "project_id": "project-soc2",
           "reporter_id": "zara-ahmed",
           "status": "review",
-          "title": "Review the the evidence pack change"
+          "title": "Review the evidence pack change"
         },
         {
           "assignee_id": "zara-ahmed",
@@ -55823,7 +55823,7 @@
           "project_id": "project-soc2",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the evidence pack rollback plan"
+          "title": "Agree the evidence pack rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -55838,7 +55838,7 @@
           "project_id": "project-soc2",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the audit log design note"
+          "title": "Write the audit log design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -55883,7 +55883,7 @@
           "project_id": "project-soc2",
           "reporter_id": "zara-ahmed",
           "status": "review",
-          "title": "Review the the evidence pack change"
+          "title": "Review the evidence pack change"
         },
         {
           "assignee_id": "zara-ahmed",
@@ -55943,7 +55943,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the table component design note"
+          "title": "Write the table component design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -55988,7 +55988,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "sofia-marchetti",
           "status": "review",
-          "title": "Review the the empty states change"
+          "title": "Review the empty states change"
         },
         {
           "assignee_id": "sofia-marchetti",
@@ -56078,7 +56078,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "aiko-yamamoto",
           "status": "blocked",
-          "title": "Agree the the export history page rollback plan"
+          "title": "Agree the export history page rollback plan"
         },
         {
           "assignee_id": "aiko-yamamoto",
@@ -56093,7 +56093,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the navigation design note"
+          "title": "Write the navigation design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -56138,7 +56138,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "sofia-marchetti",
           "status": "review",
-          "title": "Review the the export history page change"
+          "title": "Review the export history page change"
         },
         {
           "assignee_id": "sofia-marchetti",
@@ -56228,7 +56228,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "aiko-yamamoto",
           "status": "blocked",
-          "title": "Agree the the empty states rollback plan"
+          "title": "Agree the empty states rollback plan"
         },
         {
           "assignee_id": "aiko-yamamoto",
@@ -56243,7 +56243,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the table component design note"
+          "title": "Write the table component design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -56288,7 +56288,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "sofia-marchetti",
           "status": "review",
-          "title": "Review the the empty states change"
+          "title": "Review the empty states change"
         },
         {
           "assignee_id": "sofia-marchetti",
@@ -56378,7 +56378,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "aiko-yamamoto",
           "status": "blocked",
-          "title": "Agree the the export history page rollback plan"
+          "title": "Agree the export history page rollback plan"
         },
         {
           "assignee_id": "aiko-yamamoto",
@@ -56393,7 +56393,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the navigation design note"
+          "title": "Write the navigation design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -56438,7 +56438,7 @@
           "project_id": "project-console-refresh",
           "reporter_id": "sofia-marchetti",
           "status": "review",
-          "title": "Review the the export history page change"
+          "title": "Review the export history page change"
         },
         {
           "assignee_id": "sofia-marchetti",
@@ -56513,7 +56513,7 @@
           "project_id": "project-billing-accuracy",
           "reporter_id": "maya-chen",
           "status": "review",
-          "title": "Write the the reconciliation script design note"
+          "title": "Write the reconciliation script design note"
         },
         {
           "assignee_id": "maya-chen",
@@ -56558,7 +56558,7 @@
           "project_id": "project-billing-accuracy",
           "reporter_id": "victor-almeida",
           "status": "review",
-          "title": "Review the the usage report change"
+          "title": "Review the usage report change"
         },
         {
           "assignee_id": "victor-almeida",
@@ -56798,7 +56798,7 @@
           "project_id": "project-billing-accuracy",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the usage report rollback plan"
+          "title": "Agree the usage report rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -56813,7 +56813,7 @@
           "project_id": "project-billing-accuracy",
           "reporter_id": "maya-chen",
           "status": "review",
-          "title": "Write the the reconciliation script design note"
+          "title": "Write the reconciliation script design note"
         },
         {
           "assignee_id": "maya-chen",
@@ -56858,7 +56858,7 @@
           "project_id": "project-billing-accuracy",
           "reporter_id": "victor-almeida",
           "status": "review",
-          "title": "Review the the usage report change"
+          "title": "Review the usage report change"
         },
         {
           "assignee_id": "victor-almeida",
@@ -57068,7 +57068,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the renewal brief design note"
+          "title": "Write the renewal brief design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57113,7 +57113,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the renewal call change"
+          "title": "Review the renewal call change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -57203,7 +57203,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "amara-diallo",
           "status": "blocked",
-          "title": "Agree the the reliability summary rollback plan"
+          "title": "Agree the reliability summary rollback plan"
         },
         {
           "assignee_id": "amara-diallo",
@@ -57218,7 +57218,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the usage growth chart design note"
+          "title": "Write the usage growth chart design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57263,7 +57263,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the reliability summary change"
+          "title": "Review the reliability summary change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -57353,7 +57353,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "amara-diallo",
           "status": "blocked",
-          "title": "Agree the the renewal call rollback plan"
+          "title": "Agree the renewal call rollback plan"
         },
         {
           "assignee_id": "amara-diallo",
@@ -57368,7 +57368,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the renewal brief design note"
+          "title": "Write the renewal brief design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57413,7 +57413,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the renewal call change"
+          "title": "Review the renewal call change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -57503,7 +57503,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "amara-diallo",
           "status": "blocked",
-          "title": "Agree the the reliability summary rollback plan"
+          "title": "Agree the reliability summary rollback plan"
         },
         {
           "assignee_id": "amara-diallo",
@@ -57518,7 +57518,7 @@
           "project_id": "project-lumen-renewal",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the usage growth chart design note"
+          "title": "Write the usage growth chart design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57548,7 +57548,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the reporting template design note"
+          "title": "Write the reporting template design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -57593,7 +57593,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the reporting template change"
+          "title": "Review the reporting template change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -57683,7 +57683,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the reporting template rollback plan"
+          "title": "Agree the reporting template rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57698,7 +57698,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the history summary table design note"
+          "title": "Write the history summary table design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -57743,7 +57743,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the history summary table change"
+          "title": "Review the history summary table change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -57833,7 +57833,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the history summary table rollback plan"
+          "title": "Agree the history summary table rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57848,7 +57848,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the go-live checklist design note"
+          "title": "Write the go-live checklist design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -57893,7 +57893,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the go-live checklist change"
+          "title": "Review the go-live checklist change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -57983,7 +57983,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the go-live checklist rollback plan"
+          "title": "Agree the go-live checklist rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -57998,7 +57998,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the reporting template design note"
+          "title": "Write the reporting template design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -58043,7 +58043,7 @@
           "project_id": "project-riverbend-onboarding",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the reporting template change"
+          "title": "Review the reporting template change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -58268,7 +58268,7 @@
           "project_id": "project-gantry-onboarding",
           "reporter_id": "jon-bell",
           "status": "review",
-          "title": "Write the the onboarding checklist design note"
+          "title": "Write the onboarding checklist design note"
         },
         {
           "assignee_id": "jon-bell",
@@ -58313,7 +58313,7 @@
           "project_id": "project-gantry-onboarding",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the onboarding checklist change"
+          "title": "Review the onboarding checklist change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -58403,7 +58403,7 @@
           "project_id": "project-gantry-onboarding",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the onboarding checklist rollback plan"
+          "title": "Agree the onboarding checklist rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -58418,7 +58418,7 @@
           "project_id": "project-gantry-onboarding",
           "reporter_id": "jon-bell",
           "status": "review",
-          "title": "Write the the first scheduled export design note"
+          "title": "Write the first scheduled export design note"
         },
         {
           "assignee_id": "jon-bell",
@@ -58463,7 +58463,7 @@
           "project_id": "project-gantry-onboarding",
           "reporter_id": "mira-kovac",
           "status": "review",
-          "title": "Review the the first scheduled export change"
+          "title": "Review the first scheduled export change"
         },
         {
           "assignee_id": "mira-kovac",
@@ -58553,7 +58553,7 @@
           "project_id": "project-gantry-onboarding",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the first scheduled export rollback plan"
+          "title": "Agree the first scheduled export rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -58643,7 +58643,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "david-banerjee",
           "status": "review",
-          "title": "Write the the chunk writer design note"
+          "title": "Write the chunk writer design note"
         },
         {
           "assignee_id": "david-banerjee",
@@ -58688,7 +58688,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Review the the chunk writer change"
+          "title": "Review the chunk writer change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -58778,7 +58778,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "leila-farouk",
           "status": "blocked",
-          "title": "Agree the the chunk writer rollback plan"
+          "title": "Agree the chunk writer rollback plan"
         },
         {
           "assignee_id": "leila-farouk",
@@ -58793,7 +58793,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "simon-novotny",
           "status": "review",
-          "title": "Write the the destination schema design note"
+          "title": "Write the destination schema design note"
         },
         {
           "assignee_id": "simon-novotny",
@@ -58838,7 +58838,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "leila-farouk",
           "status": "review",
-          "title": "Review the the destination schema change"
+          "title": "Review the destination schema change"
         },
         {
           "assignee_id": "leila-farouk",
@@ -58928,7 +58928,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the destination schema rollback plan"
+          "title": "Agree the destination schema rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -58943,7 +58943,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "david-banerjee",
           "status": "review",
-          "title": "Write the the connector tests design note"
+          "title": "Write the connector tests design note"
         },
         {
           "assignee_id": "david-banerjee",
@@ -58988,7 +58988,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Review the the connector tests change"
+          "title": "Review the connector tests change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -59078,7 +59078,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "leila-farouk",
           "status": "blocked",
-          "title": "Agree the the connector tests rollback plan"
+          "title": "Agree the connector tests rollback plan"
         },
         {
           "assignee_id": "leila-farouk",
@@ -59093,7 +59093,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "simon-novotny",
           "status": "review",
-          "title": "Write the the chunk writer design note"
+          "title": "Write the chunk writer design note"
         },
         {
           "assignee_id": "simon-novotny",
@@ -59138,7 +59138,7 @@
           "project_id": "project-snowflake-connector",
           "reporter_id": "leila-farouk",
           "status": "review",
-          "title": "Review the the chunk writer change"
+          "title": "Review the chunk writer change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -59153,7 +59153,7 @@
           "project_id": "project-outage-followup",
           "reporter_id": "ingrid-solberg",
           "status": "review",
-          "title": "Write the the autoscaler floor design note"
+          "title": "Write the autoscaler floor design note"
         },
         {
           "assignee_id": "ingrid-solberg",
@@ -59198,7 +59198,7 @@
           "project_id": "project-outage-followup",
           "reporter_id": "yuki-tanaka",
           "status": "review",
-          "title": "Review the the autoscaler floor change"
+          "title": "Review the autoscaler floor change"
         },
         {
           "assignee_id": "yuki-tanaka",
@@ -59288,7 +59288,7 @@
           "project_id": "project-outage-followup",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the autoscaler floor rollback plan"
+          "title": "Agree the autoscaler floor rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -59303,7 +59303,7 @@
           "project_id": "project-outage-followup",
           "reporter_id": "ingrid-solberg",
           "status": "review",
-          "title": "Write the the stuck-lease runbook design note"
+          "title": "Write the stuck-lease runbook design note"
         },
         {
           "assignee_id": "ingrid-solberg",
@@ -59348,7 +59348,7 @@
           "project_id": "project-outage-followup",
           "reporter_id": "yuki-tanaka",
           "status": "review",
-          "title": "Review the the stuck-lease runbook change"
+          "title": "Review the stuck-lease runbook change"
         },
         {
           "assignee_id": "yuki-tanaka",
@@ -59438,7 +59438,7 @@
           "project_id": "project-outage-followup",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the stuck-lease runbook rollback plan"
+          "title": "Agree the stuck-lease runbook rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -59573,7 +59573,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "imani-brooks",
           "status": "review",
-          "title": "Write the the exports role design note"
+          "title": "Write the exports role design note"
         },
         {
           "assignee_id": "imani-brooks",
@@ -59618,7 +59618,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "zoe-patterson",
           "status": "review",
-          "title": "Review the the exports role change"
+          "title": "Review the exports role change"
         },
         {
           "assignee_id": "zoe-patterson",
@@ -59708,7 +59708,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the exports role rollback plan"
+          "title": "Agree the exports role rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -59723,7 +59723,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "imani-brooks",
           "status": "review",
-          "title": "Write the the interview loop design note"
+          "title": "Write the interview loop design note"
         },
         {
           "assignee_id": "imani-brooks",
@@ -59768,7 +59768,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "zoe-patterson",
           "status": "review",
-          "title": "Review the the interview loop change"
+          "title": "Review the interview loop change"
         },
         {
           "assignee_id": "zoe-patterson",
@@ -59858,7 +59858,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the interview loop rollback plan"
+          "title": "Agree the interview loop rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -59873,7 +59873,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "imani-brooks",
           "status": "review",
-          "title": "Write the the offer process design note"
+          "title": "Write the offer process design note"
         },
         {
           "assignee_id": "imani-brooks",
@@ -59918,7 +59918,7 @@
           "project_id": "project-hiring-h2",
           "reporter_id": "zoe-patterson",
           "status": "review",
-          "title": "Review the the offer process change"
+          "title": "Review the offer process change"
         },
         {
           "assignee_id": "zoe-patterson",
@@ -59993,7 +59993,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the usage tier model design note"
+          "title": "Write the usage tier model design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -60038,7 +60038,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "noor-alvarez",
           "status": "review",
-          "title": "Review the the usage tier model change"
+          "title": "Review the usage tier model change"
         },
         {
           "assignee_id": "noor-alvarez",
@@ -60128,7 +60128,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the usage tier model rollback plan"
+          "title": "Agree the usage tier model rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -60143,7 +60143,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the migration path design note"
+          "title": "Write the migration path design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -60188,7 +60188,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "noor-alvarez",
           "status": "review",
-          "title": "Review the the migration path change"
+          "title": "Review the migration path change"
         },
         {
           "assignee_id": "noor-alvarez",
@@ -60278,7 +60278,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the migration path rollback plan"
+          "title": "Agree the migration path rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -60293,7 +60293,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the customer briefing design note"
+          "title": "Write the customer briefing design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -60338,7 +60338,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "noor-alvarez",
           "status": "review",
-          "title": "Review the the customer briefing change"
+          "title": "Review the customer briefing change"
         },
         {
           "assignee_id": "noor-alvarez",
@@ -60428,7 +60428,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the customer briefing rollback plan"
+          "title": "Agree the customer briefing rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -60443,7 +60443,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the usage tier model design note"
+          "title": "Write the usage tier model design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -60488,7 +60488,7 @@
           "project_id": "project-pricing-2028",
           "reporter_id": "noor-alvarez",
           "status": "review",
-          "title": "Review the the usage tier model change"
+          "title": "Review the usage tier model change"
         },
         {
           "assignee_id": "noor-alvarez",
@@ -60563,7 +60563,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the export guide design note"
+          "title": "Write the export guide design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -60608,7 +60608,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Review the the export guide change"
+          "title": "Review the export guide change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -60698,7 +60698,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "leila-farouk",
           "status": "blocked",
-          "title": "Agree the the export guide rollback plan"
+          "title": "Agree the export guide rollback plan"
         },
         {
           "assignee_id": "leila-farouk",
@@ -60713,7 +60713,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "simon-novotny",
           "status": "review",
-          "title": "Write the the scheduling guide design note"
+          "title": "Write the scheduling guide design note"
         },
         {
           "assignee_id": "simon-novotny",
@@ -60758,7 +60758,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "leila-farouk",
           "status": "review",
-          "title": "Review the the scheduling guide change"
+          "title": "Review the scheduling guide change"
         },
         {
           "assignee_id": "leila-farouk",
@@ -60848,7 +60848,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "ben-hartley",
           "status": "blocked",
-          "title": "Agree the the scheduling guide rollback plan"
+          "title": "Agree the scheduling guide rollback plan"
         },
         {
           "assignee_id": "ben-hartley",
@@ -60863,7 +60863,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "elena-petrov",
           "status": "review",
-          "title": "Write the the API reference design note"
+          "title": "Write the API reference design note"
         },
         {
           "assignee_id": "elena-petrov",
@@ -60908,7 +60908,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Review the the API reference change"
+          "title": "Review the API reference change"
         },
         {
           "assignee_id": "ben-hartley",
@@ -60998,7 +60998,7 @@
           "project_id": "project-docs-refresh",
           "reporter_id": "leila-farouk",
           "status": "blocked",
-          "title": "Agree the the API reference rollback plan"
+          "title": "Agree the API reference rollback plan"
         },
         {
           "assignee_id": "ada-lindqvist",
@@ -61313,7 +61313,7 @@
           "project_id": "project-sdk-parity",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the shared test suite design note"
+          "title": "Write the shared test suite design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -61358,7 +61358,7 @@
           "project_id": "project-sdk-parity",
           "reporter_id": "tomas-novak",
           "status": "review",
-          "title": "Review the the shared test suite change"
+          "title": "Review the shared test suite change"
         },
         {
           "assignee_id": "arjun-mehta",
@@ -61523,7 +61523,7 @@
           "project_id": "project-warehouse-sync",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the failure mode design note"
+          "title": "Write the failure mode design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -61568,7 +61568,7 @@
           "project_id": "project-warehouse-sync",
           "reporter_id": "rowan-whitfield",
           "status": "review",
-          "title": "Review the the failure mode change"
+          "title": "Review the failure mode change"
         },
         {
           "assignee_id": "rowan-whitfield",
@@ -61658,7 +61658,7 @@
           "project_id": "project-warehouse-sync",
           "reporter_id": "arjun-mehta",
           "status": "blocked",
-          "title": "Agree the the failure mode rollback plan"
+          "title": "Agree the failure mode rollback plan"
         },
         {
           "assignee_id": "arjun-mehta",
@@ -61673,7 +61673,7 @@
           "project_id": "project-warehouse-sync",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the affected-run report design note"
+          "title": "Write the affected-run report design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -61718,7 +61718,7 @@
           "project_id": "project-warehouse-sync",
           "reporter_id": "rowan-whitfield",
           "status": "review",
-          "title": "Review the the affected-run report change"
+          "title": "Review the affected-run report change"
         },
         {
           "assignee_id": "rowan-whitfield",
@@ -61793,7 +61793,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the quickstart design note"
+          "title": "Write the quickstart design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -61838,7 +61838,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "amara-diallo",
           "status": "review",
-          "title": "Review the the quickstart change"
+          "title": "Review the quickstart change"
         },
         {
           "assignee_id": "amara-diallo",
@@ -61928,7 +61928,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "leila-farouk",
           "status": "blocked",
-          "title": "Agree the the quickstart rollback plan"
+          "title": "Agree the quickstart rollback plan"
         },
         {
           "assignee_id": "leila-farouk",
@@ -61943,7 +61943,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "simon-novotny",
           "status": "review",
-          "title": "Write the the sample dataset design note"
+          "title": "Write the sample dataset design note"
         },
         {
           "assignee_id": "simon-novotny",
@@ -61988,7 +61988,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "leila-farouk",
           "status": "review",
-          "title": "Review the the sample dataset change"
+          "title": "Review the sample dataset change"
         },
         {
           "assignee_id": "leila-farouk",
@@ -62078,7 +62078,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "amara-diallo",
           "status": "blocked",
-          "title": "Agree the the sample dataset rollback plan"
+          "title": "Agree the sample dataset rollback plan"
         },
         {
           "assignee_id": "amara-diallo",
@@ -62093,7 +62093,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "ben-hartley",
           "status": "review",
-          "title": "Write the the first-export flow design note"
+          "title": "Write the first-export flow design note"
         },
         {
           "assignee_id": "ben-hartley",
@@ -62138,7 +62138,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "amara-diallo",
           "status": "review",
-          "title": "Review the the first-export flow change"
+          "title": "Review the first-export flow change"
         },
         {
           "assignee_id": "amara-diallo",
@@ -62228,7 +62228,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "leila-farouk",
           "status": "blocked",
-          "title": "Agree the the first-export flow rollback plan"
+          "title": "Agree the first-export flow rollback plan"
         },
         {
           "assignee_id": "leila-farouk",
@@ -62243,7 +62243,7 @@
           "project_id": "project-dx-onboarding",
           "reporter_id": "simon-novotny",
           "status": "review",
-          "title": "Write the the quickstart design note"
+          "title": "Write the quickstart design note"
         },
         {
           "assignee_id": "simon-novotny",
@@ -62266,7 +62266,7 @@
           "date": "2027-08-07",
           "id": "time-0001",
           "minutes": 150,
-          "note": "Write the the lease heartbeat design note.",
+          "note": "Write the lease heartbeat design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0001"
         },
@@ -62370,7 +62370,7 @@
           "date": "2027-08-02",
           "id": "time-0014",
           "minutes": 120,
-          "note": "Write the the 3.2 release notes design note.",
+          "note": "Write the 3.2 release notes design note.",
           "person_id": "maya-chen",
           "task_id": "task-0011"
         },
@@ -62450,7 +62450,7 @@
           "date": "2027-07-31",
           "id": "time-0024",
           "minutes": 120,
-          "note": "Write the the lease heartbeat design note.",
+          "note": "Write the lease heartbeat design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0021"
         },
@@ -62522,7 +62522,7 @@
           "date": "2027-08-05",
           "id": "time-0033",
           "minutes": 150,
-          "note": "Write the the 3.2 release notes design note.",
+          "note": "Write the 3.2 release notes design note.",
           "person_id": "maya-chen",
           "task_id": "task-0031"
         },
@@ -62530,7 +62530,7 @@
           "date": "2027-08-01",
           "id": "time-0034",
           "minutes": 150,
-          "note": "Write the the 3.2 release notes design note.",
+          "note": "Write the 3.2 release notes design note.",
           "person_id": "maya-chen",
           "task_id": "task-0031"
         },
@@ -62610,7 +62610,7 @@
           "date": "2027-08-08",
           "id": "time-0044",
           "minutes": 150,
-          "note": "Write the the new scheduler design note.",
+          "note": "Write the new scheduler design note.",
           "person_id": "ada-lindqvist",
           "task_id": "task-0039"
         },
@@ -62778,7 +62778,7 @@
           "date": "2027-08-12",
           "id": "time-0065",
           "minutes": 75,
-          "note": "Write the the new scheduler design note.",
+          "note": "Write the new scheduler design note.",
           "person_id": "ada-lindqvist",
           "task_id": "task-0059"
         },
@@ -62786,7 +62786,7 @@
           "date": "2027-08-07",
           "id": "time-0066",
           "minutes": 120,
-          "note": "Write the the new scheduler design note.",
+          "note": "Write the new scheduler design note.",
           "person_id": "ada-lindqvist",
           "task_id": "task-0059"
         },
@@ -62882,7 +62882,7 @@
           "date": "2027-08-12",
           "id": "time-0078",
           "minutes": 90,
-          "note": "Review the the evidence pack change.",
+          "note": "Review the evidence pack change.",
           "person_id": "nikolai-petrov",
           "task_id": "task-0069"
         },
@@ -62890,7 +62890,7 @@
           "date": "2027-08-03",
           "id": "time-0079",
           "minutes": 150,
-          "note": "Review the the evidence pack change.",
+          "note": "Review the evidence pack change.",
           "person_id": "nikolai-petrov",
           "task_id": "task-0069"
         },
@@ -62898,7 +62898,7 @@
           "date": "2027-08-08",
           "id": "time-0080",
           "minutes": 90,
-          "note": "Review the the evidence pack change.",
+          "note": "Review the evidence pack change.",
           "person_id": "nikolai-petrov",
           "task_id": "task-0069"
         },
@@ -62986,7 +62986,7 @@
           "date": "2027-08-04",
           "id": "time-0091",
           "minutes": 75,
-          "note": "Agree the the evidence pack rollback plan.",
+          "note": "Agree the evidence pack rollback plan.",
           "person_id": "zara-ahmed",
           "task_id": "task-0085"
         },
@@ -62994,7 +62994,7 @@
           "date": "2027-08-12",
           "id": "time-0092",
           "minutes": 60,
-          "note": "Agree the the evidence pack rollback plan.",
+          "note": "Agree the evidence pack rollback plan.",
           "person_id": "zara-ahmed",
           "task_id": "task-0085"
         },
@@ -63002,7 +63002,7 @@
           "date": "2027-08-11",
           "id": "time-0093",
           "minutes": 60,
-          "note": "Agree the the evidence pack rollback plan.",
+          "note": "Agree the evidence pack rollback plan.",
           "person_id": "zara-ahmed",
           "task_id": "task-0085"
         },
@@ -63034,7 +63034,7 @@
           "date": "2027-08-10",
           "id": "time-0097",
           "minutes": 25,
-          "note": "Review the the evidence pack change.",
+          "note": "Review the evidence pack change.",
           "person_id": "nikolai-petrov",
           "task_id": "task-0089"
         },
@@ -63042,7 +63042,7 @@
           "date": "2027-08-09",
           "id": "time-0098",
           "minutes": 90,
-          "note": "Review the the evidence pack change.",
+          "note": "Review the evidence pack change.",
           "person_id": "nikolai-petrov",
           "task_id": "task-0089"
         },
@@ -63058,7 +63058,7 @@
           "date": "2027-08-04",
           "id": "time-0100",
           "minutes": 60,
-          "note": "Write the the table component design note.",
+          "note": "Write the table component design note.",
           "person_id": "aiko-yamamoto",
           "task_id": "task-0093"
         },
@@ -63066,7 +63066,7 @@
           "date": "2027-08-16",
           "id": "time-0101",
           "minutes": 75,
-          "note": "Write the the table component design note.",
+          "note": "Write the table component design note.",
           "person_id": "aiko-yamamoto",
           "task_id": "task-0093"
         },
@@ -63074,7 +63074,7 @@
           "date": "2027-08-10",
           "id": "time-0102",
           "minutes": 25,
-          "note": "Write the the table component design note.",
+          "note": "Write the table component design note.",
           "person_id": "aiko-yamamoto",
           "task_id": "task-0093"
         },
@@ -63146,7 +63146,7 @@
           "date": "2027-08-08",
           "id": "time-0111",
           "minutes": 25,
-          "note": "Write the the navigation design note.",
+          "note": "Write the navigation design note.",
           "person_id": "aiko-yamamoto",
           "task_id": "task-0103"
         },
@@ -63218,7 +63218,7 @@
           "date": "2027-08-19",
           "id": "time-0120",
           "minutes": 25,
-          "note": "Write the the table component design note.",
+          "note": "Write the table component design note.",
           "person_id": "aiko-yamamoto",
           "task_id": "task-0113"
         },
@@ -63290,7 +63290,7 @@
           "date": "2027-08-08",
           "id": "time-0129",
           "minutes": 150,
-          "note": "Write the the navigation design note.",
+          "note": "Write the navigation design note.",
           "person_id": "aiko-yamamoto",
           "task_id": "task-0123"
         },
@@ -63362,7 +63362,7 @@
           "date": "2027-08-07",
           "id": "time-0138",
           "minutes": 25,
-          "note": "Write the the reconciliation script design note.",
+          "note": "Write the reconciliation script design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0131"
         },
@@ -63370,7 +63370,7 @@
           "date": "2027-08-12",
           "id": "time-0139",
           "minutes": 60,
-          "note": "Write the the reconciliation script design note.",
+          "note": "Write the reconciliation script design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0131"
         },
@@ -63538,7 +63538,7 @@
           "date": "2027-08-11",
           "id": "time-0160",
           "minutes": 60,
-          "note": "Write the the reconciliation script design note.",
+          "note": "Write the reconciliation script design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0151"
         },
@@ -63706,7 +63706,7 @@
           "date": "2027-08-14",
           "id": "time-0181",
           "minutes": 90,
-          "note": "Review the the renewal call change.",
+          "note": "Review the renewal call change.",
           "person_id": "liam-doherty",
           "task_id": "task-0171"
         },
@@ -63754,7 +63754,7 @@
           "date": "2027-08-04",
           "id": "time-0187",
           "minutes": 120,
-          "note": "Agree the the reliability summary rollback plan.",
+          "note": "Agree the reliability summary rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0177"
         },
@@ -63762,7 +63762,7 @@
           "date": "2027-08-16",
           "id": "time-0188",
           "minutes": 75,
-          "note": "Agree the the reliability summary rollback plan.",
+          "note": "Agree the reliability summary rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0177"
         },
@@ -63770,7 +63770,7 @@
           "date": "2027-08-19",
           "id": "time-0189",
           "minutes": 75,
-          "note": "Agree the the reliability summary rollback plan.",
+          "note": "Agree the reliability summary rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0177"
         },
@@ -63794,7 +63794,7 @@
           "date": "2027-08-02",
           "id": "time-0192",
           "minutes": 60,
-          "note": "Review the the reliability summary change.",
+          "note": "Review the reliability summary change.",
           "person_id": "liam-doherty",
           "task_id": "task-0181"
         },
@@ -63802,7 +63802,7 @@
           "date": "2027-08-12",
           "id": "time-0193",
           "minutes": 75,
-          "note": "Review the the reliability summary change.",
+          "note": "Review the reliability summary change.",
           "person_id": "liam-doherty",
           "task_id": "task-0181"
         },
@@ -63850,7 +63850,7 @@
           "date": "2027-08-11",
           "id": "time-0199",
           "minutes": 75,
-          "note": "Agree the the renewal call rollback plan.",
+          "note": "Agree the renewal call rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0187"
         },
@@ -63866,7 +63866,7 @@
           "date": "2027-08-04",
           "id": "time-0201",
           "minutes": 75,
-          "note": "Review the the renewal call change.",
+          "note": "Review the renewal call change.",
           "person_id": "liam-doherty",
           "task_id": "task-0191"
         },
@@ -63914,7 +63914,7 @@
           "date": "2027-08-14",
           "id": "time-0207",
           "minutes": 60,
-          "note": "Agree the the reliability summary rollback plan.",
+          "note": "Agree the reliability summary rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0197"
         },
@@ -63922,7 +63922,7 @@
           "date": "2027-08-12",
           "id": "time-0208",
           "minutes": 120,
-          "note": "Agree the the reliability summary rollback plan.",
+          "note": "Agree the reliability summary rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0197"
         },
@@ -63930,7 +63930,7 @@
           "date": "2027-08-03",
           "id": "time-0209",
           "minutes": 60,
-          "note": "Agree the the reliability summary rollback plan.",
+          "note": "Agree the reliability summary rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0197"
         },
@@ -63986,7 +63986,7 @@
           "date": "2027-08-10",
           "id": "time-0216",
           "minutes": 90,
-          "note": "Review the the reporting template change.",
+          "note": "Review the reporting template change.",
           "person_id": "liam-doherty",
           "task_id": "task-0203"
         },
@@ -63994,7 +63994,7 @@
           "date": "2027-08-15",
           "id": "time-0217",
           "minutes": 120,
-          "note": "Review the the reporting template change.",
+          "note": "Review the reporting template change.",
           "person_id": "liam-doherty",
           "task_id": "task-0203"
         },
@@ -64034,7 +64034,7 @@
           "date": "2027-08-10",
           "id": "time-0222",
           "minutes": 150,
-          "note": "Agree the the reporting template rollback plan.",
+          "note": "Agree the reporting template rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0209"
         },
@@ -64042,7 +64042,7 @@
           "date": "2027-08-02",
           "id": "time-0223",
           "minutes": 45,
-          "note": "Agree the the reporting template rollback plan.",
+          "note": "Agree the reporting template rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0209"
         },
@@ -64050,7 +64050,7 @@
           "date": "2027-08-10",
           "id": "time-0224",
           "minutes": 45,
-          "note": "Agree the the reporting template rollback plan.",
+          "note": "Agree the reporting template rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0209"
         },
@@ -64066,7 +64066,7 @@
           "date": "2027-08-18",
           "id": "time-0226",
           "minutes": 120,
-          "note": "Review the the history summary table change.",
+          "note": "Review the history summary table change.",
           "person_id": "liam-doherty",
           "task_id": "task-0213"
         },
@@ -64106,7 +64106,7 @@
           "date": "2027-08-18",
           "id": "time-0231",
           "minutes": 75,
-          "note": "Agree the the history summary table rollback plan.",
+          "note": "Agree the history summary table rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0219"
         },
@@ -64114,7 +64114,7 @@
           "date": "2027-08-18",
           "id": "time-0232",
           "minutes": 60,
-          "note": "Agree the the history summary table rollback plan.",
+          "note": "Agree the history summary table rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0219"
         },
@@ -64122,7 +64122,7 @@
           "date": "2027-08-04",
           "id": "time-0233",
           "minutes": 90,
-          "note": "Agree the the history summary table rollback plan.",
+          "note": "Agree the history summary table rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0219"
         },
@@ -64138,7 +64138,7 @@
           "date": "2027-08-14",
           "id": "time-0235",
           "minutes": 25,
-          "note": "Review the the go-live checklist change.",
+          "note": "Review the go-live checklist change.",
           "person_id": "liam-doherty",
           "task_id": "task-0223"
         },
@@ -64146,7 +64146,7 @@
           "date": "2027-08-08",
           "id": "time-0236",
           "minutes": 25,
-          "note": "Review the the go-live checklist change.",
+          "note": "Review the go-live checklist change.",
           "person_id": "liam-doherty",
           "task_id": "task-0223"
         },
@@ -64186,7 +64186,7 @@
           "date": "2027-08-13",
           "id": "time-0241",
           "minutes": 45,
-          "note": "Agree the the go-live checklist rollback plan.",
+          "note": "Agree the go-live checklist rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0229"
         },
@@ -64194,7 +64194,7 @@
           "date": "2027-08-08",
           "id": "time-0242",
           "minutes": 25,
-          "note": "Agree the the go-live checklist rollback plan.",
+          "note": "Agree the go-live checklist rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0229"
         },
@@ -64218,7 +64218,7 @@
           "date": "2027-08-14",
           "id": "time-0245",
           "minutes": 45,
-          "note": "Review the the reporting template change.",
+          "note": "Review the reporting template change.",
           "person_id": "liam-doherty",
           "task_id": "task-0233"
         },
@@ -64362,7 +64362,7 @@
           "date": "2027-08-13",
           "id": "time-0263",
           "minutes": 90,
-          "note": "Review the the onboarding checklist change.",
+          "note": "Review the onboarding checklist change.",
           "person_id": "liam-doherty",
           "task_id": "task-0251"
         },
@@ -64370,7 +64370,7 @@
           "date": "2027-08-02",
           "id": "time-0264",
           "minutes": 75,
-          "note": "Review the the onboarding checklist change.",
+          "note": "Review the onboarding checklist change.",
           "person_id": "liam-doherty",
           "task_id": "task-0251"
         },
@@ -64378,7 +64378,7 @@
           "date": "2027-08-15",
           "id": "time-0265",
           "minutes": 150,
-          "note": "Review the the onboarding checklist change.",
+          "note": "Review the onboarding checklist change.",
           "person_id": "liam-doherty",
           "task_id": "task-0251"
         },
@@ -64418,7 +64418,7 @@
           "date": "2027-08-09",
           "id": "time-0270",
           "minutes": 75,
-          "note": "Agree the the onboarding checklist rollback plan.",
+          "note": "Agree the onboarding checklist rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0257"
         },
@@ -64450,7 +64450,7 @@
           "date": "2027-08-15",
           "id": "time-0274",
           "minutes": 120,
-          "note": "Review the the first scheduled export change.",
+          "note": "Review the first scheduled export change.",
           "person_id": "liam-doherty",
           "task_id": "task-0261"
         },
@@ -64506,7 +64506,7 @@
           "date": "2027-08-02",
           "id": "time-0281",
           "minutes": 75,
-          "note": "Agree the the first scheduled export rollback plan.",
+          "note": "Agree the first scheduled export rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0267"
         },
@@ -64514,7 +64514,7 @@
           "date": "2027-08-13",
           "id": "time-0282",
           "minutes": 60,
-          "note": "Agree the the first scheduled export rollback plan.",
+          "note": "Agree the first scheduled export rollback plan.",
           "person_id": "mira-kovac",
           "task_id": "task-0267"
         },
@@ -64554,7 +64554,7 @@
           "date": "2027-08-03",
           "id": "time-0287",
           "minutes": 25,
-          "note": "Write the the chunk writer design note.",
+          "note": "Write the chunk writer design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0273"
         },
@@ -64634,7 +64634,7 @@
           "date": "2027-08-15",
           "id": "time-0297",
           "minutes": 60,
-          "note": "Write the the destination schema design note.",
+          "note": "Write the destination schema design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0283"
         },
@@ -64642,7 +64642,7 @@
           "date": "2027-08-07",
           "id": "time-0298",
           "minutes": 120,
-          "note": "Write the the destination schema design note.",
+          "note": "Write the destination schema design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0283"
         },
@@ -64714,7 +64714,7 @@
           "date": "2027-08-06",
           "id": "time-0307",
           "minutes": 60,
-          "note": "Write the the connector tests design note.",
+          "note": "Write the connector tests design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0293"
         },
@@ -64770,7 +64770,7 @@
           "date": "2027-08-07",
           "id": "time-0314",
           "minutes": 120,
-          "note": "Write the the chunk writer design note.",
+          "note": "Write the chunk writer design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0303"
         },
@@ -64778,7 +64778,7 @@
           "date": "2027-08-14",
           "id": "time-0315",
           "minutes": 90,
-          "note": "Write the the chunk writer design note.",
+          "note": "Write the chunk writer design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0303"
         },
@@ -64794,7 +64794,7 @@
           "date": "2027-08-17",
           "id": "time-0317",
           "minutes": 150,
-          "note": "Write the the autoscaler floor design note.",
+          "note": "Write the autoscaler floor design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0307"
         },
@@ -64802,7 +64802,7 @@
           "date": "2027-08-15",
           "id": "time-0318",
           "minutes": 150,
-          "note": "Write the the autoscaler floor design note.",
+          "note": "Write the autoscaler floor design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0307"
         },
@@ -64810,7 +64810,7 @@
           "date": "2027-08-01",
           "id": "time-0319",
           "minutes": 120,
-          "note": "Write the the autoscaler floor design note.",
+          "note": "Write the autoscaler floor design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0307"
         },
@@ -64890,7 +64890,7 @@
           "date": "2027-08-18",
           "id": "time-0329",
           "minutes": 60,
-          "note": "Write the the stuck-lease runbook design note.",
+          "note": "Write the stuck-lease runbook design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0317"
         },
@@ -64898,7 +64898,7 @@
           "date": "2027-08-19",
           "id": "time-0330",
           "minutes": 90,
-          "note": "Write the the stuck-lease runbook design note.",
+          "note": "Write the stuck-lease runbook design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0317"
         },
@@ -64906,7 +64906,7 @@
           "date": "2027-08-08",
           "id": "time-0331",
           "minutes": 60,
-          "note": "Write the the stuck-lease runbook design note.",
+          "note": "Write the stuck-lease runbook design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0317"
         },
@@ -65018,7 +65018,7 @@
           "date": "2027-08-07",
           "id": "time-0345",
           "minutes": 120,
-          "note": "Write the the exports role design note.",
+          "note": "Write the exports role design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0335"
         },
@@ -65026,7 +65026,7 @@
           "date": "2027-07-30",
           "id": "time-0346",
           "minutes": 150,
-          "note": "Write the the exports role design note.",
+          "note": "Write the exports role design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0335"
         },
@@ -65034,7 +65034,7 @@
           "date": "2027-08-08",
           "id": "time-0347",
           "minutes": 120,
-          "note": "Write the the exports role design note.",
+          "note": "Write the exports role design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0335"
         },
@@ -65114,7 +65114,7 @@
           "date": "2027-08-19",
           "id": "time-0357",
           "minutes": 120,
-          "note": "Write the the interview loop design note.",
+          "note": "Write the interview loop design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0345"
         },
@@ -65170,7 +65170,7 @@
           "date": "2027-08-16",
           "id": "time-0364",
           "minutes": 45,
-          "note": "Write the the offer process design note.",
+          "note": "Write the offer process design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0355"
         },
@@ -65178,7 +65178,7 @@
           "date": "2027-08-11",
           "id": "time-0365",
           "minutes": 25,
-          "note": "Write the the offer process design note.",
+          "note": "Write the offer process design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0355"
         },
@@ -65186,7 +65186,7 @@
           "date": "2027-08-01",
           "id": "time-0366",
           "minutes": 90,
-          "note": "Write the the offer process design note.",
+          "note": "Write the offer process design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0355"
         },
@@ -65234,7 +65234,7 @@
           "date": "2027-08-14",
           "id": "time-0372",
           "minutes": 45,
-          "note": "Write the the usage tier model design note.",
+          "note": "Write the usage tier model design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0363"
         },
@@ -65314,7 +65314,7 @@
           "date": "2027-08-06",
           "id": "time-0382",
           "minutes": 90,
-          "note": "Write the the migration path design note.",
+          "note": "Write the migration path design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0373"
         },
@@ -65322,7 +65322,7 @@
           "date": "2027-08-15",
           "id": "time-0383",
           "minutes": 150,
-          "note": "Write the the migration path design note.",
+          "note": "Write the migration path design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0373"
         },
@@ -65378,7 +65378,7 @@
           "date": "2027-08-18",
           "id": "time-0390",
           "minutes": 150,
-          "note": "Write the the customer briefing design note.",
+          "note": "Write the customer briefing design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0383"
         },
@@ -65386,7 +65386,7 @@
           "date": "2027-08-14",
           "id": "time-0391",
           "minutes": 120,
-          "note": "Write the the customer briefing design note.",
+          "note": "Write the customer briefing design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0383"
         },
@@ -65394,7 +65394,7 @@
           "date": "2027-08-06",
           "id": "time-0392",
           "minutes": 120,
-          "note": "Write the the customer briefing design note.",
+          "note": "Write the customer briefing design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0383"
         },
@@ -65450,7 +65450,7 @@
           "date": "2027-07-30",
           "id": "time-0399",
           "minutes": 25,
-          "note": "Write the the usage tier model design note.",
+          "note": "Write the usage tier model design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0393"
         },
@@ -65458,7 +65458,7 @@
           "date": "2027-07-30",
           "id": "time-0400",
           "minutes": 25,
-          "note": "Write the the usage tier model design note.",
+          "note": "Write the usage tier model design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0393"
         },
@@ -65514,7 +65514,7 @@
           "date": "2027-07-31",
           "id": "time-0407",
           "minutes": 45,
-          "note": "Write the the export guide design note.",
+          "note": "Write the export guide design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0401"
         },
@@ -65522,7 +65522,7 @@
           "date": "2027-08-08",
           "id": "time-0408",
           "minutes": 75,
-          "note": "Write the the export guide design note.",
+          "note": "Write the export guide design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0401"
         },
@@ -65530,7 +65530,7 @@
           "date": "2027-08-08",
           "id": "time-0409",
           "minutes": 75,
-          "note": "Write the the export guide design note.",
+          "note": "Write the export guide design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0401"
         },
@@ -65602,7 +65602,7 @@
           "date": "2027-08-02",
           "id": "time-0418",
           "minutes": 75,
-          "note": "Write the the scheduling guide design note.",
+          "note": "Write the scheduling guide design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0411"
         },
@@ -65666,7 +65666,7 @@
           "date": "2027-08-09",
           "id": "time-0426",
           "minutes": 45,
-          "note": "Write the the API reference design note.",
+          "note": "Write the API reference design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0421"
         },
@@ -65674,7 +65674,7 @@
           "date": "2027-08-02",
           "id": "time-0427",
           "minutes": 150,
-          "note": "Write the the API reference design note.",
+          "note": "Write the API reference design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0421"
         },
@@ -65682,7 +65682,7 @@
           "date": "2027-08-08",
           "id": "time-0428",
           "minutes": 60,
-          "note": "Write the the API reference design note.",
+          "note": "Write the API reference design note.",
           "person_id": "ben-hartley",
           "task_id": "task-0421"
         },
@@ -65898,7 +65898,7 @@
           "date": "2027-08-01",
           "id": "time-0455",
           "minutes": 60,
-          "note": "Write the the shared test suite design note.",
+          "note": "Write the shared test suite design note.",
           "person_id": "ada-lindqvist",
           "task_id": "task-0451"
         },
@@ -65906,7 +65906,7 @@
           "date": "2027-08-04",
           "id": "time-0456",
           "minutes": 150,
-          "note": "Write the the shared test suite design note.",
+          "note": "Write the shared test suite design note.",
           "person_id": "ada-lindqvist",
           "task_id": "task-0451"
         },
@@ -66002,7 +66002,7 @@
           "date": "2027-08-14",
           "id": "time-0468",
           "minutes": 45,
-          "note": "Write the the failure mode design note.",
+          "note": "Write the failure mode design note.",
           "person_id": "arjun-mehta",
           "task_id": "task-0465"
         },
@@ -66010,7 +66010,7 @@
           "date": "2027-08-17",
           "id": "time-0469",
           "minutes": 45,
-          "note": "Write the the failure mode design note.",
+          "note": "Write the failure mode design note.",
           "person_id": "arjun-mehta",
           "task_id": "task-0465"
         },
@@ -66082,7 +66082,7 @@
           "date": "2027-08-17",
           "id": "time-0478",
           "minutes": 75,
-          "note": "Write the the affected-run report design note.",
+          "note": "Write the affected-run report design note.",
           "person_id": "arjun-mehta",
           "task_id": "task-0475"
         },
@@ -66090,7 +66090,7 @@
           "date": "2027-08-18",
           "id": "time-0479",
           "minutes": 25,
-          "note": "Write the the affected-run report design note.",
+          "note": "Write the affected-run report design note.",
           "person_id": "arjun-mehta",
           "task_id": "task-0475"
         },
@@ -66146,7 +66146,7 @@
           "date": "2027-08-06",
           "id": "time-0486",
           "minutes": 120,
-          "note": "Write the the quickstart design note.",
+          "note": "Write the quickstart design note.",
           "person_id": "amara-diallo",
           "task_id": "task-0483"
         },
@@ -66194,7 +66194,7 @@
           "date": "2027-08-19",
           "id": "time-0492",
           "minutes": 120,
-          "note": "Write the the sample dataset design note.",
+          "note": "Write the sample dataset design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0493"
         },
@@ -66202,7 +66202,7 @@
           "date": "2027-07-31",
           "id": "time-0493",
           "minutes": 150,
-          "note": "Write the the sample dataset design note.",
+          "note": "Write the sample dataset design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0493"
         },
@@ -66258,7 +66258,7 @@
           "date": "2027-08-14",
           "id": "time-0500",
           "minutes": 25,
-          "note": "Write the the first-export flow design note.",
+          "note": "Write the first-export flow design note.",
           "person_id": "amara-diallo",
           "task_id": "task-0503"
         },
@@ -66314,7 +66314,7 @@
           "date": "2027-08-02",
           "id": "time-0507",
           "minutes": 60,
-          "note": "Write the the quickstart design note.",
+          "note": "Write the quickstart design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0513"
         },
@@ -66322,7 +66322,7 @@
           "date": "2027-08-08",
           "id": "time-0508",
           "minutes": 60,
-          "note": "Write the the quickstart design note.",
+          "note": "Write the quickstart design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0513"
         },
@@ -66330,7 +66330,7 @@
           "date": "2027-08-11",
           "id": "time-0509",
           "minutes": 60,
-          "note": "Write the the quickstart design note.",
+          "note": "Write the quickstart design note.",
           "person_id": "leila-farouk",
           "task_id": "task-0513"
         }

@@ -758,6 +758,25 @@ PROJECTS = [
     ("project-dx-onboarding", "Developer onboarding", "product", None, "First useful export in under ten minutes.", -50, 50),
 ]
 
+def fill_title(template: str, subject: str) -> str:
+    """Fill a task title template without doubling the article.
+
+    Some templates carry their own article -- "Write the {thing} design note" --
+    and most subjects begin with one, so the naive format produced "Write the the
+    lease heartbeat design note". That was 119 of the world's 514 task titles,
+    and a task tracker seeded from this world showed the error on nearly a
+    quarter of its rows. Data a reader can see is wrong costs more than a missing
+    feature.
+
+    Templates that do NOT carry an article keep the subject's own, so
+    "Implement {thing}" still reads "Implement the lease heartbeat".
+    """
+    marker = "the {thing}"
+    if marker in template and subject.lower().startswith("the "):
+        subject = subject[4:]
+    return template.format(thing=subject)
+
+
 TASK_TEMPLATES = [
     ("Write the {thing} design note", "review", "high"),
     ("Implement {thing}", "in-progress", "high"),
@@ -829,7 +848,7 @@ def work_records():
                     "project_id": project["id"],
                     "reporter_id": members[(position + 1) % len(members)],
                     "status": status,
-                    "title": title_template.format(thing=subject),
+                    "title": fill_title(title_template, subject),
                 }
             )
 
