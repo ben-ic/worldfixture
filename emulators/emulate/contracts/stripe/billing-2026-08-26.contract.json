@@ -1,0 +1,24 @@
+{
+  "source": "https://github.com/stripe/openapi/blob/master/openapi/spec3.json",
+  "retrieved_at": "2026-09-04",
+  "api_version": "2026-08-26.dahlia",
+  "source_sha256": "f0e0fc8fffbffda45bf5f3df59846443c1d47a3cfcbfae232eedf4743124ebee",
+  "schemas": {
+    "invoice": {
+      "properties": ["account_country", "account_name", "account_tax_ids", "amount_due", "amount_overpaid", "amount_paid", "amount_paid_off_stripe", "amount_remaining", "amount_shipping", "application", "attempt_count", "attempted", "auto_advance", "automatic_tax", "automatically_finalizes_at", "billing_reason", "collection_method", "confirmation_secret", "created", "currency", "custom_fields", "customer", "customer_account", "customer_address", "customer_email", "customer_name", "customer_phone", "customer_shipping", "customer_tax_exempt", "customer_tax_ids", "default_payment_method", "default_source", "default_tax_rates", "description", "discounts", "due_date", "effective_at", "ending_balance", "footer", "from_invoice", "hosted_invoice_url", "id", "invoice_pdf", "issuer", "last_finalization_error", "latest_revision", "lines", "livemode", "metadata", "next_payment_attempt", "number", "object", "on_behalf_of", "parent", "payment_settings", "payments", "period_end", "period_start", "post_payment_credit_notes_amount", "pre_payment_credit_notes_amount", "receipt_number", "rendering", "shipping_cost", "shipping_details", "starting_balance", "statement_descriptor", "status", "status_transitions", "subtotal", "subtotal_excluding_tax", "test_clock", "threshold_reason", "total", "total_discount_amounts", "total_excluding_tax", "total_pretax_credit_amounts", "total_taxes", "webhooks_delivered_at"],
+      "required": ["amount_due", "amount_overpaid", "amount_paid", "amount_paid_off_stripe", "amount_remaining", "amount_shipping", "attempt_count", "attempted", "auto_advance", "automatic_tax", "collection_method", "created", "currency", "customer", "default_tax_rates", "discounts", "id", "issuer", "lines", "livemode", "object", "payment_settings", "period_end", "period_start", "post_payment_credit_notes_amount", "pre_payment_credit_notes_amount", "starting_balance", "status_transitions", "subtotal", "total"]
+    },
+    "invoiceitem": {
+      "properties": ["amount", "currency", "customer", "customer_account", "date", "description", "discountable", "discounts", "frozen_fields", "id", "invoice", "livemode", "metadata", "net_amount", "object", "parent", "period", "pricing", "proration", "proration_details", "quantity", "quantity_decimal", "tax_rates", "test_clock"],
+      "required": ["amount", "currency", "customer", "date", "discountable", "id", "livemode", "object", "period", "proration", "quantity", "quantity_decimal"]
+    },
+    "line_item": {
+      "properties": ["amount", "currency", "description", "discount_amounts", "discountable", "discounts", "id", "invoice", "livemode", "metadata", "object", "parent", "period", "pretax_credit_amounts", "pricing", "quantity", "quantity_decimal", "subscription", "subtotal", "taxes"],
+      "required": ["amount", "currency", "discountable", "discounts", "id", "livemode", "metadata", "object", "period", "subtotal"]
+    },
+    "subscription": {
+      "properties": ["application", "application_fee_percent", "automatic_tax", "billing_cycle_anchor", "billing_cycle_anchor_config", "billing_mode", "billing_schedules", "billing_thresholds", "cancel_at", "cancel_at_period_end", "canceled_at", "cancellation_details", "collection_method", "created", "currency", "customer", "customer_account", "days_until_due", "default_payment_method", "default_source", "default_tax_rates", "description", "discounts", "ended_at", "id", "invoice_settings", "items", "latest_invoice", "livemode", "managed_payments", "metadata", "next_pending_invoice_item_invoice", "object", "on_behalf_of", "pause_collection", "payment_settings", "pending_invoice_item_interval", "pending_setup_intent", "pending_update", "presentment_details", "schedule", "start_date", "status", "test_clock", "transfer_data", "trial_end", "trial_settings", "trial_start"],
+      "required": ["automatic_tax", "billing_cycle_anchor", "billing_mode", "billing_schedules", "cancel_at_period_end", "collection_method", "created", "currency", "customer", "discounts", "id", "invoice_settings", "items", "livemode", "metadata", "object", "start_date", "status"]
+    }
+  }
+}

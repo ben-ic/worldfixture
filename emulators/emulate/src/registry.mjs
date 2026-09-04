@@ -23,6 +23,7 @@
 // package, but it keeps their Store visible for exact session snapshots.
 
 import { readdir } from "node:fs/promises";
+import { extendStripePlugin, seedStripeBilling } from "./overrides/stripe-billing.mjs";
 
 // Linear and Twilio are bundled in the pinned `emulate` package but are not
 // package exports. Resolve them beside the public entry point so they can use
@@ -156,7 +157,10 @@ export const VENDORS = {
   stripe: {
     async load() {
       const mod = await import("@emulators/stripe");
-      return { plugin: mod.stripePlugin, seedFromConfig: mod.seedFromConfig };
+      return { plugin: extendStripePlugin(mod.stripePlugin), seedFromConfig(store, baseUrl, config, webhooks) {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedStripeBilling(store, config);
+      } };
     },
     fallback() {
       return { login: "sk_test_admin", id: 1, scopes: [] };
