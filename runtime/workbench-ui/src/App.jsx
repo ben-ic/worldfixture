@@ -5,6 +5,7 @@ import { Button, Notice } from "./components/Primitives.jsx";
 import { Overview } from "./screens/Overview.jsx";
 import { Activity, People, Services, Settings, Target } from "./screens/WorkbenchScreens.jsx";
 import { Chat, Code, Files, Gmail, Mail, Notion, Website } from "./screens/ProviderScreens.jsx";
+import { Clerk, Linear, Microsoft, MongoAtlas, Okta, Resend, Stripe, Twilio, Vercel } from "./screens/ProductScreens.jsx";
 
 export function App() {
   const [data, setData] = useState(null);
@@ -55,8 +56,11 @@ export function App() {
     Overview: <Overview data={data} setScreen={navigate} onRefresh={load} onReset={() => setResetOpen(true)}/>,
     People: <People data={data} actor={actor} setActor={(person) => setActorId(person.id)}/>,
     Activity: <Activity data={data} onRefresh={load}/>, Target: <Target data={data}/>,
-    Settings: <Settings data={data} onReset={() => setResetOpen(true)}/>, Services: <Services data={data}/>,
-    Chat: <Chat {...common}/>, Gmail: <Gmail {...common}/>, Mail: <Mail {...common}/>, Code: <Code {...common}/>, Files: <Files {...common}/>, Notion: <Notion {...common}/>, Website: <Website data={data}/>,
+    Settings: <Settings data={data} onReset={() => setResetOpen(true)}/>, Services: <Services data={data} setScreen={navigate}/>,
+    Chat: <Chat {...common}/>, Gmail: <Gmail {...common}/>, "Local Mail": <Mail {...common}/>, Code: <Code {...common}/>, Files: <Files {...common}/>, Notion: <Notion {...common}/>,
+    Stripe: <Stripe {...common}/>, Linear: <Linear data={data}/>, Okta: <Okta data={data}/>, Clerk: <Clerk data={data}/>,
+    "Microsoft Entra": <Microsoft data={data}/>, Twilio: <Twilio data={data}/>, Resend: <Resend data={data}/>, Vercel: <Vercel data={data}/>, "MongoDB Atlas": <MongoAtlas data={data}/>,
+    Website: <Website data={data}/>,
   };
   async function reset() {
     setResetting(true);

@@ -9,7 +9,7 @@ import { submit } from "./commands.mjs";
 import { inbox } from "./imap.mjs";
 import { probe } from "./readiness.mjs";
 import { send as sendMail } from "./smtp.mjs";
-import { appendEvent, eventsAfter } from "./state.mjs";
+import { appendEvent, eventsAfter, latestEvents } from "./state.mjs";
 import { contents, primaryOrganization, readWorld } from "./world.mjs";
 import {
   connectorPrompt,
@@ -109,31 +109,62 @@ async function gmailOverview(bindings) {
 }
 
 async function githubOverview(bindings, world) {
+  let repositories;
   try {
     const identity = await providerJson(`${bindings.GITHUB_BASE_URL}/user`, bindings.GITHUB_TOKEN);
-    const repositories = await providerJson(`${bindings.GITHUB_BASE_URL}/users/${encodeURIComponent(identity.login)}/repos`, bindings.GITHUB_TOKEN);
-    if (Array.isArray(repositories) && repositories.length) return repositories;
+    const visible = await providerJson(`${bindings.GITHUB_BASE_URL}/users/${encodeURIComponent(identity.login)}/repos`, bindings.GITHUB_TOKEN);
+    if (Array.isArray(visible) && visible.length) repositories = visible;
   } catch {
     /* Use accepted world resource names only to select provider API reads. */
   }
-  const organizations = new Map(world.organizations.map((entry) => [entry.id, entry.slug ?? entry.id]));
-  return Promise.all((world.software?.repositories ?? []).map((repository) =>
-    providerJson(`${bindings.GITHUB_BASE_URL}/repos/${organizations.get(repository.owner_id)}/${repository.name}`, bindings.GITHUB_TOKEN)));
+  if (!repositories) {
+    const organizations = new Map(world.organizations.map((entry) => [entry.id, entry.slug ?? entry.id]));
+    repositories = await Promise.all((world.software?.repositories ?? []).map((repository) =>
+      providerJson(`${bindings.GITHUB_BASE_URL}/repos/${organizations.get(repository.owner_id)}/${repository.name}`, bindings.GITHUB_TOKEN)));
+  }
+  const issueLists = await Promise.all(repositories.map((repository) =>
+    providerJson(`${bindings.GITHUB_BASE_URL}/repos/${repository.full_name}/issues?state=open&per_page=30`, bindings.GITHUB_TOKEN)
+      .catch(() => [])));
+  return { repositories, issues: issueLists.flat().filter((issue) => !issue.pull_request) };
 }
 
-async function slackOverview(bindings) {
+async function slackOverview(bindings, world) {
   const listed = await providerJson(`${bindings.SLACK_BASE_URL}/api/conversations.list`, bindings.SLACK_TOKEN, {
-    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "limit=100",
+    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ limit: "100", types: "public_channel,private_channel,mpim,im" }),
   });
   const histories = await Promise.all((listed.channels ?? []).map((channel) =>
     providerJson(`${bindings.SLACK_BASE_URL}/api/conversations.history`, bindings.SLACK_TOKEN, {
       method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({ channel: channel.id, limit: "100" }),
     }).catch(() => ({ messages: [] }))));
-  return { channels: listed.channels ?? [], messageCount: histories.reduce((total, history) => total + (history.messages?.length ?? 0), 0) };
+  const worldChannels = new Map((world.communication?.channels ?? []).map((channel) => [channel.name, channel]));
+  const people = new Map((world.people ?? []).map((person) => [person.slack_id, person.name]));
+  const channels = (listed.channels ?? []).map((channel, index) => ({
+    ...channel,
+    messageCount: histories[index]?.messages?.length ?? 0,
+    latestTs: Math.max(0, ...(histories[index]?.messages ?? []).map((message) => Number(message.ts) || Date.parse(message.timestamp) / 1000 || 0)),
+    displayName: channel.is_im ? people.get(channel.user) : channel.name,
+    topic: channel.topic?.value ?? channel.topic ?? worldChannels.get(channel.name)?.topic,
+  }));
+  return { channels, messageCount: histories.reduce((total, history) => total + (history.messages?.length ?? 0), 0) };
 }
 
-async function notionOverview(bindings, artifactPath) {
+export function providerBrowserUrl(value, publicBaseUrl) {
+  if (!value || !publicBaseUrl) return value;
+  try {
+    const source = new URL(value);
+    const target = new URL(publicBaseUrl);
+    target.pathname = source.pathname;
+    target.search = source.search;
+    target.hash = source.hash;
+    return target.toString();
+  } catch {
+    return value;
+  }
+}
+
+async function notionOverview(bindings, artifactPath, publicBaseUrl = bindings.NOTION_BASE_URL) {
   const headers = { "Notion-Version": "2026-03-11", "content-type": "application/json" };
   const configured = projection(artifactPath, "emulator-overlay").notion ?? projection(artifactPath, "notion", {});
   const readAll = async (path, inputs = []) => (await Promise.all(inputs.map((input) =>
@@ -185,7 +216,7 @@ async function notionOverview(bindings, artifactPath) {
     providerJson(`${adminBaseUrl}/admin/v1/spaces/${encodeURIComponent(spaceId)}/personal_access_tokens`, adminToken, { headers: adminHeaders }).catch(() => ({ results: [] })),
     providerJson(`${adminBaseUrl}/admin/v1/mcp_client_connections?workspace_id=${encodeURIComponent(spaceId)}`, adminToken, { headers: adminHeaders }).catch(() => ({ results: [] })),
   ]).then(([legalHolds, groups, adminAgents, personalAccessTokens, mcpClientConnections]) => ({ legalHolds: legalHolds.legal_holds ?? [], groups: groups.results ?? [], adminAgents: adminAgents.results ?? [], personalAccessTokens: personalAccessTokens.results ?? [], mcpClientConnections: mcpClientConnections.results ?? [] }));
-  return { users: users.results ?? [], pages: pageResults,
+  return { users: users.results ?? [], pages: pageResults.map((page) => ({ ...page, url: providerBrowserUrl(page.url, publicBaseUrl) })),
     databases, dataSources, views, comments: listedComments.flat(), fileUploads: uploads.results ?? [], agents: agents.results ?? [], agentSessions: sessions.results ?? [],
     asyncTasks: mcp.asyncTasks ?? [], changes: mcp.changes ?? [],
     mcpUrl: `${bindings.NOTION_BASE_URL}/mcp`, mcpSessions: mcp.sessions ?? [], mcpCalls: mcp.calls ?? [],
@@ -193,23 +224,146 @@ async function notionOverview(bindings, artifactPath) {
     webhookDeliveries: admin.webhook_deliveries ?? [], liveWebhookDelivery: Boolean(admin.live_webhook_delivery), ...enterprise, spaceId, available: true };
 }
 
-async function providerOverview(bindings, artifactPath, world) {
+function resultList(value, ...keys) {
+  if (Array.isArray(value)) return value;
+  for (const key of ["data", "results", "items", "value", ...keys]) {
+    if (Array.isArray(value?.[key])) return value[key];
+  }
+  return [];
+}
+
+async function optionalProviderList(baseUrl, token, path, ...keys) {
+  if (!baseUrl) return [];
+  return resultList(await providerJson(`${baseUrl}${path}`, token), ...keys);
+}
+
+// These reads make the Workbench show the state that an application sees. The
+// accepted projections are only used where a provider has no list operation.
+// One failed product read is settled separately in providerOverview, so a
+// broken optional surface cannot hide the rest of the world.
+async function stripeOverview(bindings) {
+  const read = (path) => optionalProviderList(bindings.STRIPE_BASE_URL, bindings.STRIPE_TOKEN, path);
+  const [customers, products, prices, paymentIntents, charges, rawSubscriptions, rawInvoices] = await Promise.all([
+    read("/v1/customers?limit=100"), read("/v1/products?limit=100"), read("/v1/prices?limit=100"),
+    read("/v1/payment_intents?limit=100"), read("/v1/charges?limit=100"),
+    read("/v1/subscriptions?limit=100&status=all"), read("/v1/invoices?limit=100"),
+  ]);
+  const subscriptions = rawSubscriptions.map((subscription) => {
+    const customer = customers.find((entry) => entry.id === subscription.customer);
+    const price = subscription.items?.data?.[0]?.price;
+    const product = products.find((entry) => entry.id === price?.product);
+    return { ...subscription, customer_id: subscription.customer, customer: customer?.name ?? subscription.customer,
+      product: product?.name ?? price?.product ?? "Plan", amount_cents: price?.unit_amount ?? 0, currency: price?.currency ?? subscription.currency };
+  });
+  const invoices = rawInvoices.map((invoice) => ({ ...invoice, amount_cents: invoice.amount_due,
+    due_on: invoice.due_date ? new Date(invoice.due_date * 1000).toISOString().slice(0, 10) : null }));
+  return { customers, products, prices, paymentIntents, charges, subscriptions, invoices };
+}
+
+async function oktaOverview(bindings) {
+  const read = (path) => optionalProviderList(bindings.OKTA_BASE_URL, bindings.OKTA_TOKEN, path);
+  const [users, groups, applications] = await Promise.all([
+    read("/api/v1/users?per_page=100"), read("/api/v1/groups?per_page=100"), read("/api/v1/apps?per_page=100"),
+  ]);
+  return { users, groups, applications };
+}
+
+async function clerkOverview(bindings) {
+  const read = (path) => optionalProviderList(bindings.CLERK_BASE_URL, bindings.CLERK_TOKEN, path);
+  const [users, organizations, sessions] = await Promise.all([
+    read("/v1/users?limit=200"), read("/v1/organizations?limit=100"), read("/v1/sessions?limit=100"),
+  ]);
+  return { users, organizations, sessions };
+}
+
+async function vercelOverview(bindings) {
+  const read = (path, ...keys) => optionalProviderList(bindings.VERCEL_BASE_URL, bindings.VERCEL_TOKEN, path, ...keys);
+  const teams = await read("/v2/teams?limit=100", "teams");
+  const scopes = teams.length ? teams : [{ id: null }];
+  const scoped = await Promise.all(scopes.map(async (team) => {
+    const query = team.id ? `?teamId=${encodeURIComponent(team.id)}&limit=100` : "?limit=100";
+    const [projects, deployments] = await Promise.all([
+      read(`/v10/projects${query}`, "projects"), read(`/v6/deployments${query}`, "deployments"),
+    ]);
+    return { projects, deployments };
+  }));
+  const projects = scoped.flatMap((entry) => entry.projects);
+  const deployments = scoped.flatMap((entry) => entry.deployments);
+  return { projects, teams, deployments };
+}
+
+async function resendOverview(bindings) {
+  const read = (path, ...keys) => optionalProviderList(bindings.RESEND_BASE_URL, bindings.RESEND_TOKEN, path, ...keys);
+  const [emails, domains, audiences] = await Promise.all([
+    read("/emails", "emails"), read("/domains", "domains"), read("/audiences", "audiences"),
+  ]);
+  const contactGroups = await Promise.all(audiences.map(async (audience) => ({
+    audience,
+    contacts: await read(`/audiences/${encodeURIComponent(audience.id)}/contacts`, "contacts"),
+  })));
+  return { emails, domains, audiences, contactGroups };
+}
+
+async function mongoAtlasOverview(bindings) {
+  const read = (path, ...keys) => optionalProviderList(bindings.MONGOATLAS_BASE_URL, bindings.MONGOATLAS_TOKEN, path, ...keys);
+  const projects = await read("/api/atlas/v2/groups", "results");
+  const projectDetails = await Promise.all(projects.map(async (project) => {
+    const id = project.id ?? project.groupId;
+    const [clusters, databaseUsers] = await Promise.all([
+      read(`/api/atlas/v2/groups/${encodeURIComponent(id)}/clusters`, "results"),
+      read(`/api/atlas/v2/groups/${encodeURIComponent(id)}/databaseUsers`, "results"),
+    ]);
+    const databases = (await Promise.all(clusters.map(async (cluster) => {
+      const rows = await read(`/api/atlas/v2/groups/${encodeURIComponent(id)}/clusters/${encodeURIComponent(cluster.name)}/databases`, "results", "databases");
+      return rows.map((database) => ({ ...database, cluster: cluster.name }));
+    }))).flat();
+    return { project, clusters, databaseUsers, databases };
+  }));
+  return { projects, projectDetails };
+}
+
+export function publicTwilioProjection(twilio = {}) {
+  return {
+    account: twilio.account ? { sid: twilio.account.sid, friendly_name: twilio.account.friendly_name } : null,
+    phone_numbers: twilio.phone_numbers ?? [], messaging_services: twilio.messaging_services ?? [],
+    verify_services: (twilio.verify_services ?? []).map(({ code: _code, ...service }) => service),
+  };
+}
+
+async function projectedProviderOverview(bindings, artifactPath) {
+  const result = {};
+  if (bindings.LINEAR_BASE_URL) result.linear = projection(artifactPath, "linear", {});
+  if (bindings.TWILIO_BASE_URL) {
+    const twilio = projection(artifactPath, "twilio", {});
+    result.twilio = publicTwilioProjection(twilio);
+  }
+  if (bindings.MICROSOFT_BASE_URL) result.microsoft = projection(artifactPath, "microsoft", {});
+  return result;
+}
+
+async function providerOverview(bindings, artifactPath, world, activity = [], browserBindings = bindings) {
   const requests = await Promise.allSettled([
-    slackOverview(bindings),
+    slackOverview(bindings, world),
     githubOverview(bindings, world),
     gmailOverview(bindings),
     inbox(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, limit: 20 }),
     inbox(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, mailbox: "Sent", limit: 20 }),
     s3Overview(bindings, artifactPath),
-    notionOverview(bindings, artifactPath),
+    notionOverview(bindings, artifactPath, browserBindings.NOTION_BASE_URL),
     fetch(`${bindings.SITE_BASE_URL}/`).then(async (response) => {
       const text = await response.text();
       if (!response.ok) throw new Error(`HTTP target returned ${response.status}`);
       return text;
     }),
+    stripeOverview(bindings, world, activity),
+    oktaOverview(bindings),
+    clerkOverview(bindings),
+    vercelOverview(bindings),
+    resendOverview(bindings),
+    mongoAtlasOverview(bindings),
   ]);
   const slack = safe(requests[0], { channels: [] });
-  const github = safe(requests[1], []);
+  const github = safe(requests[1], { repositories: [], issues: [] });
   const gmail = safe(requests[2], { messages: [], resultSizeEstimate: 0 });
   const mailInbox = safe(requests[3], { mailbox: "INBOX", exists: 0, messages: [] });
   const mailSent = safe(requests[4], { mailbox: "Sent", exists: 0, messages: [] });
@@ -218,11 +372,19 @@ async function providerOverview(bindings, artifactPath, world) {
   const s3 = safe(requests[5], []);
   const notion = safe(requests[6], { users: [], pages: [], databases: [], dataSources: [], views: [], comments: [], fileUploads: [], agents: [], agentSessions: [], asyncTasks: [], changes: [],
     mcpUrl: bindings.NOTION_BASE_URL ? `${bindings.NOTION_BASE_URL}/mcp` : null, mcpSessions: [], mcpCalls: [], connections: [], connectionTokens: [], webhookSubscriptions: [], webhookDeliveries: [], liveWebhookDelivery: false, available: false });
+  const projected = await projectedProviderOverview(bindings, artifactPath);
   return {
-    slack: { channels: slack.channels ?? [], messageCount: slack.messageCount ?? 0 }, github: { repositories: Array.isArray(github) ? github : [] }, gmail, mail,
+    slack: { channels: slack.channels ?? [], messageCount: slack.messageCount ?? 0 }, github, gmail, mail,
     s3: { details: s3 }, notion, website: { preview: safe(requests[7], "Unavailable").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400) },
+    stripe: safe(requests[8], { customers: [], products: [], prices: [], paymentIntents: [], charges: [], subscriptions: [], invoices: [] }),
+    okta: safe(requests[9], { users: [], groups: [], applications: [] }),
+    clerk: safe(requests[10], { users: [], organizations: [], sessions: [] }),
+    vercel: safe(requests[11], { projects: [], teams: [], deployments: [] }),
+    resend: safe(requests[12], { emails: [], domains: [], audiences: [], contactGroups: [] }),
+    mongoatlas: safe(requests[13], { projects: [], projectDetails: [] }),
+    ...projected,
     errors: requests.map((result, index) => result.status === "rejected"
-      ? { provider: ["Slack", "GitHub", "Gmail", "Mail inbox", "Mail sent", "S3", "Notion", "website"][index], message: result.reason.message }
+      ? { provider: ["Slack", "GitHub", "Gmail", "Mail inbox", "Mail sent", "S3", "Notion", "Website", "Stripe", "Okta", "Clerk", "Vercel", "Resend", "MongoDB Atlas"][index], message: result.reason.message }
       : null).filter(Boolean),
   };
 }
@@ -368,7 +530,7 @@ async function connectorOverview(instance, stateDir, artifactPath) {
       // connectors built against this contract accepted any of them -- so the
       // product's headline demo was unreachable from the Workbench while the
       // world was emitting other kinds the whole time.
-      kinds: observedKinds(eventsAfter(instance.state, 0, 500)),
+      kinds: observedKinds(latestEvents(instance.state, 500)),
     };
   } catch (error) {
     // Three different failures used to arrive as "Application is not reachable",
@@ -552,7 +714,8 @@ export async function startWorkbench(instance, {
         return;
       }
       if (request.method === "GET" && url.pathname === "/api/overview") {
-        const providers = await providerOverview(asInspector(bindings), artifactPath, world);
+        const browserBindings = publicBindings(stateDir, bindings);
+        const providers = await providerOverview(asInspector(bindings), artifactPath, world, latestEvents(instance.state, 500), browserBindings);
         providers.notion.webhookSecretRevealEnabled = allowWebhookSecretReveal;
         const organizations = new Map(world.organizations.map((entry) => [entry.id, entry.name]));
         return json(response, 200, {
@@ -562,9 +725,9 @@ export async function startWorkbench(instance, {
           people: world.people.map(({ id, name, role, organization_id, email, slack_id, github_login }) => ({ id, name, role,
             organization_id, organization_name: organizations.get(organization_id), email, slack_id, github_login })),
           phase: instance.phase ?? "ready",
-          bindings: publicBindings(stateDir, bindings), providers, readiness: readiness(instance),
+          bindings: browserBindings, providers, readiness: readiness(instance),
           surfaces: surfaceReadiness(instance).map(({ checks, ...surface }) => surface),
-          activity: eventsAfter(instance.state, 0, 100).reverse(), acceptedProof,
+          activity: latestEvents(instance.state, 100).reverse(), acceptedProof,
         });
       }
       if (request.method === "GET" && url.pathname === "/api/connector") {
@@ -631,7 +794,7 @@ export async function startWorkbench(instance, {
         // translation lives in `replay.mjs` so the Workbench and the CLI perform
         // the same operation rather than two similar ones.
         if (action === "replay") {
-          const observed = eventsAfter(instance.state, 0, 500);
+          const observed = latestEvents(instance.state, 500);
           let event;
           try {
             event = connectorEventFromWorldEvent(selectWorldEvent(observed, input.event), world);
@@ -746,6 +909,83 @@ export async function startWorkbench(instance, {
           evidence: { bucket: input.bucket, key: input.key, etag: result.headers.get("etag") } });
         notify("provider-change");
         return json(response, 200, { ok: true, message: `SeaweedFS accepted s3://${input.bucket}/${input.key}.`, event });
+      }
+      if (request.method === "POST" && url.pathname === "/api/actions/stripe-create-invoice") {
+        const input = await body(request);
+        const person = personFor(world, input.person_id);
+        const amount = Number(input.amount_cents);
+        if (!Number.isInteger(amount) || amount < 50) return json(response, 400, { error: "Enter an amount of at least 50 cents." });
+        const dueOn = String(input.due_on ?? "");
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dueOn)) return json(response, 400, { error: "Enter a valid due date." });
+        const description = String(input.description ?? "Service invoice").trim() || "Service invoice";
+        const form = { customer: String(input.customer_id), description, collection_method: "send_invoice",
+          due_date: String(Math.floor(new Date(`${dueOn}T00:00:00Z`).getTime() / 1000)) };
+        const draft = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/invoices`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(form),
+        });
+        await providerJson(`${bindings.STRIPE_BASE_URL}/v1/invoiceitems`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ customer: String(input.customer_id), invoice: draft.id, amount: String(amount),
+            currency: String(input.currency ?? "usd").toLowerCase(), description }),
+        });
+        const invoice = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/invoices/${encodeURIComponent(draft.id)}/finalize`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "",
+        });
+        const event = recordProviderEvent(instance, { type: "stripe.invoice.created.v1", source: "stripe", actorId: person.id,
+          evidence: { invoice_id: invoice.id, customer_id: invoice.customer, amount_cents: invoice.amount_due } });
+        notify("provider-change");
+        return json(response, 200, { ok: true, message: `Stripe created invoice ${invoice.number}.`, invoice, event });
+      }
+      if (request.method === "POST" && url.pathname === "/api/actions/stripe-pay-invoice") {
+        const input = await body(request);
+        const person = personFor(world, input.person_id);
+        const invoice = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/invoices/${encodeURIComponent(input.invoice_id)}/pay`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ payment_method: "pm_card_visa" }),
+        });
+        const event = recordProviderEvent(instance, { type: "stripe.invoice.paid.v1", source: "stripe", actorId: person.id,
+          evidence: { invoice_id: invoice.id, customer_id: invoice.customer, amount_cents: invoice.amount_paid } });
+        notify("provider-change");
+        return json(response, 200, { ok: true, message: `Stripe paid invoice ${invoice.number}.`, invoice, event });
+      }
+      if (request.method === "POST" && url.pathname === "/api/actions/stripe-payment") {
+        const input = await body(request);
+        const person = personFor(world, input.person_id);
+        const amount = Number(input.amount_cents);
+        if (!Number.isInteger(amount) || amount < 50) return json(response, 400, { error: "Enter an amount of at least 50 cents." });
+        const created = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/payment_intents`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ amount: String(amount), currency: String(input.currency ?? "usd"),
+            customer: String(input.customer_id ?? ""), description: String(input.description ?? "Workbench payment"), payment_method: "pm_card_visa" }),
+        });
+        const payment = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/payment_intents/${encodeURIComponent(created.id)}/confirm`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ payment_method: "pm_card_visa" }),
+        });
+        const event = recordProviderEvent(instance, { type: "stripe.payment.succeeded.v1", source: "stripe", actorId: person.id,
+          evidence: { payment_intent_id: payment.id, customer_id: input.customer_id, invoice_id: input.invoice_id, amount_cents: amount, currency: payment.currency } });
+        notify("provider-change");
+        return json(response, 200, { ok: true, message: `Stripe accepted ${payment.id}.`, payment, event });
+      }
+      if (request.method === "POST" && url.pathname === "/api/actions/stripe-cancel-payment") {
+        const input = await body(request);
+        const person = personFor(world, input.person_id);
+        const payment = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/payment_intents/${encodeURIComponent(input.payment_intent_id)}/cancel`, bindings.STRIPE_TOKEN, {
+          method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "",
+        });
+        const event = recordProviderEvent(instance, { type: "stripe.payment.canceled.v1", source: "stripe", actorId: person.id,
+          evidence: { payment_intent_id: payment.id } });
+        notify("provider-change");
+        return json(response, 200, { ok: true, message: `Stripe canceled ${payment.id}.`, payment, event });
+      }
+      if (request.method === "POST" && url.pathname === "/api/actions/stripe-cancel-subscription") {
+        const input = await body(request);
+        const person = personFor(world, input.person_id);
+        const subscription = await providerJson(`${bindings.STRIPE_BASE_URL}/v1/subscriptions/${encodeURIComponent(input.subscription_id)}`, bindings.STRIPE_TOKEN, {
+          method: "DELETE", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "",
+        });
+        const event = recordProviderEvent(instance, { type: "stripe.subscription.canceled.v1", source: "stripe", actorId: person.id,
+          evidence: { subscription_id: subscription.id, customer_id: subscription.customer } });
+        notify("provider-change");
+        return json(response, 200, { ok: true, message: `Stripe canceled subscription ${subscription.id}.`, subscription, event });
       }
       if (request.method === "POST" && url.pathname === "/api/actions/notion-admin") {
         const input = await body(request);

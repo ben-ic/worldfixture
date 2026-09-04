@@ -16,13 +16,19 @@ function time(value) {
   return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function eventTitle(value = "activity") {
+  const words = value.replace(/[._-]+/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 export function ActivityTable({ data, limit, onRefresh }) {
   const events = data.activity.slice(0, limit ?? data.activity.length);
+  const people = new Map(data.people.map((person) => [person.id, person.name]));
   return <Panel title="Recent activity" tools={<button className="button small" onClick={onRefresh}>Refresh</button>}>
     <div className="data-row activity-columns table-head"><span>TIME</span><span>ACTOR</span><span>ACTION</span><span>ACCEPTED BY</span><span>OBSERVED</span></div>
     {events.length ? events.map((event) => <div className="data-row activity-columns" key={event.id ?? event.seq}>
-      <code className="dim">{time(event.occurred_at)}</code><span className="truncate">{event.actor_id ?? event.source}</span>
-      <span className="truncate">{event.type}</span><code className="muted">{event.source}</code><code className="blue">{event.id ?? `event ${event.seq}`}</code>
+      <code className="dim">{time(event.occurred_at)}</code><span className="truncate">{people.get(event.actor_id) ?? event.actor_id ?? event.source}</span>
+      <span className="truncate"><strong>{eventTitle(event.type)}</strong><small>{event.type}</small></span><code className="muted">{event.source}</code><code className="blue">{event.id ?? `event ${event.seq}`}</code>
     </div>) : <div className="empty">No observed changes yet. The accepted seeded state is ready.</div>}
   </Panel>;
 }

@@ -6,6 +6,8 @@ import { join } from "node:path";
 import {
   sanitizeNotionInspection,
   sanitizePublicBindings,
+  providerBrowserUrl,
+  publicTwilioProjection,
   selectNotionWebhookReveal,
   startWorkbench,
   workbenchWebhookSecretRevealEnabled,
@@ -31,6 +33,25 @@ test("Workbench browser bindings contain addresses but no credentials", () => {
     IMAP_USERNAME: "maya@example.test",
     SITE_BASE_URL: "http://127.0.0.1:8080",
   });
+});
+
+test("provider links use the active browser binding and keep their resource path", () => {
+  assert.equal(
+    providerBrowserUrl("http://localhost:4716/notion/dff277c5163349f0864817c5e4afcfda?v=abc", "http://127.0.0.1:53480"),
+    "http://127.0.0.1:53480/notion/dff277c5163349f0864817c5e4afcfda?v=abc",
+  );
+});
+
+test("Twilio browser data does not contain account, API key, or verification secrets", () => {
+  const result = publicTwilioProjection({
+    account: { sid: "AC123", friendly_name: "Test", auth_token: "account-secret" },
+    api_keys: [{ sid: "SK123", secret: "api-key-secret" }],
+    verify_services: [{ sid: "VA123", friendly_name: "Sign-in", code: "123456" }],
+  });
+  assert.deepEqual(result.account, { sid: "AC123", friendly_name: "Test" });
+  assert.equal(result.api_keys, undefined);
+  assert.equal(result.verify_services[0].code, undefined);
+  assert.doesNotMatch(JSON.stringify(result), /secret|123456/);
 });
 
 test("Notion inspection state hides webhook secrets and full signatures", () => {

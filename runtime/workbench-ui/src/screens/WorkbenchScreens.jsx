@@ -44,6 +44,7 @@ export function Target({ data }) {
 
   const connected = connector?.state === "connected";
   return <><PageHead title="Target" subtitle="Connect and fill your application with this world." command="worldfixture connector"/>
+    <div className="journey-strip"><span><strong>1</strong> Connect your app</span><span><strong>2</strong> Preview the data</span><span><strong>3</strong> Fill and test</span></div>
     <Panel title="Application connector">
       {connector?.state === "disconnected" && <form className="action-form" onSubmit={(event) => { event.preventDefault(); act("connect", { url }); }}>
         <label>APPLICATION URL<input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="http://localhost:3000"/></label>
@@ -163,15 +164,18 @@ function SchemaErrors({ errors }) {
 }
 
 export function Settings({ data, onReset }) {
-  return <><PageHead title="Settings" subtitle="Identity and lifecycle details for the active instance." command="worldfixture status --verbose"/>
-    <Panel><div className="detail-grid"><strong>World</strong><code>{data.world.id}:{data.world.version}</code><strong>Accepted proof</strong><span>{data.acceptedProof}</span><strong>Instance model</strong><span>One container · stable internal ports · actual host bindings</span><strong>SQLite</strong><span>Owned by the runtime inside the container</span><strong>Reset</strong><span>Exact accepted snapshot restore</span></div></Panel><div className="section"><Button kind="danger" onClick={onReset}>Reset world</Button></div>
+  return <><PageHead title="Settings" subtitle="Identity, storage, and reset behavior for this instance." command="worldfixture status --verbose"/>
+    <Panel title="This instance"><div className="detail-grid"><strong>World</strong><code>{data.world.id}:{data.world.version}</code><strong>Accepted starting state</strong><span>{data.acceptedProof}</span><strong>Service model</strong><span>Services use stable internal ports and actual host bindings.</span><strong>Runtime history</strong><span>The runtime owns its event history inside the instance.</span></div></Panel>
+    <div className="section"><Panel title="Reset"><div className="settings-action"><div><strong>Restore the starting world</strong><p>Reset removes changes from world services. It preserves data in your application databases.</p></div><Button kind="danger" onClick={onReset}>Reset world services</Button></div></Panel></div>
   </>;
 }
 
-export function Services({ data }) {
+const SERVICE_SCREENS = { slack: "Chat", google: "Gmail", mail: "Local Mail", github: "Code", s3: "Files", notion: "Notion", stripe: "Stripe", linear: "Linear", okta: "Okta", clerk: "Clerk", microsoft: "Microsoft Entra", twilio: "Twilio", resend: "Resend", vercel: "Vercel", mongoatlas: "MongoDB Atlas", http: "Website" };
+
+export function Services({ data, setScreen }) {
   return <><PageHead title="Services" subtitle="Selected services are active. Other services can be added by a future instance reconfiguration." command="environment lock"/>
     <Panel title="Selected for this instance"><div className="data-row resource-columns table-head"><span>SERVICE</span><span>IMPLEMENTATION</span><span>STATE</span><span>ACTION</span></div>
-      {data.surfaces.map((service) => <div className="data-row resource-columns" key={service.id}><span><strong>{service.name}</strong><small>{service.implementation} {service.version}</small></span><code className="muted">{service.service}</code><code className={service.state === "ready" ? "green" : "yellow"}>{service.state}</code><Button kind="small" disabled>Running</Button></div>)}
+      {data.surfaces.map((service) => <div className="data-row resource-columns" key={service.id}><span><strong>{service.name}</strong><small>{service.implementation} {service.version}</small></span><code className="muted">{service.service}</code><code className={service.state === "ready" ? "green" : "yellow"}>{service.state}</code>{SERVICE_SCREENS[service.id] ? <Button kind="small" onClick={() => setScreen(SERVICE_SCREENS[service.id])}>Open</Button> : <Button kind="small" disabled>Running</Button>}</div>)}
     </Panel><div className="section"><Panel title="Available after reconfiguration"><div className="data-row resource-columns"><span><strong>Additional provider service</strong><small>Resolve a new environment lock</small></span><span className="muted">Not selected for this instance</span><code className="dim">not selected</code><Button kind="small" disabled title="Instance reconfiguration is not implemented yet">Start</Button></div></Panel></div>
   </>;
 }
