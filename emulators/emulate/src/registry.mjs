@@ -22,6 +22,7 @@
 // bundle beside emulate's public entry point. This is less stable than a public
 // package, but it keeps their Store visible for exact session snapshots.
 
+import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { extendStripePlugin, seedStripeBilling } from "./overrides/stripe-billing.mjs";
 
@@ -229,8 +230,34 @@ export const VENDORS = {
 //
 // A local directory SHADOWS an upstream vendor of the same name, which is how a
 // vendor gets replaced wholesale rather than patched.
-async function discoverLocalVendors() {
-  const dir = new URL("./vendors/", import.meta.url);
+//
+// WHAT A DIRECTORY HAS TO DO TO COUNT, and why the two failures are not treated
+// alike. Discovery used to `await import("./vendors/<name>/index.mjs")` for every
+// subdirectory with nothing around it, so a single stray directory took the whole
+// composer down before a listener bound. Measured: `mkdir src/vendors/stray` and
+// the process died with
+//
+//     Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+//       /…/src/vendors/stray/index.mjs imported from /…/src/registry.mjs
+//
+// and nothing else -- no `[emulator]` prefix, because `main.mjs` installs its
+// `uncaughtException` handler on its last line and this throws while `main.mjs` is
+// still being imported. All thirteen upstream vendors stopped with it, over an
+// editor backup directory that never claimed to be a vendor.
+//
+//   * NO `index.mjs` AT ALL is not a vendor, so it is skipped with a named line
+//     rather than being fatal. An editor's `.orig` directory, a `__pycache__`, a
+//     half-finished vendor with only a README -- none of them has a port, and
+//     none of the others should stop for them. It is announced, not swallowed:
+//     silence is how a half-finished vendor gets forgotten.
+//
+//   * AN `index.mjs` THAT WILL NOT LOAD, or that exports no plugin, IS a broken
+//     vendor and stays fatal. Skipping it would leave a vendor with a port
+//     assigned and nothing behind it, so the app dials the port and gets a
+//     connection refused at demo time -- the failure this whole composer exists
+//     to prevent. The message names the directory and carries the original error
+//     as its cause, which is the part that was missing.
+export async function discoverLocalVendors(dir = new URL("./vendors/", import.meta.url)) {
   let names;
 
   try {
@@ -244,7 +271,19 @@ async function discoverLocalVendors() {
   const found = {};
 
   for (const name of names) {
-    const mod = await import(new URL(`./vendors/${name}/index.mjs`, import.meta.url));
+    const entry = new URL(`${name}/index.mjs`, dir);
+
+    if (!existsSync(entry)) {
+      console.warn(`[emulator] src/vendors/${name} has no index.mjs and is not loaded as a vendor`);
+      continue;
+    }
+
+    let mod;
+    try {
+      mod = await import(entry);
+    } catch (err) {
+      throw new Error(`src/vendors/${name}/index.mjs failed to load: ${err.message}`, { cause: err });
+    }
 
     if (!mod.plugin?.register) {
       throw new Error(`src/vendors/${name} exports no plugin with a register()`);
