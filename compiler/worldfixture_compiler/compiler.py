@@ -569,22 +569,64 @@ def _ordinal(value: int) -> str:
     return f"{value}{suffix}"
 
 
+def _prose_date(day: int, month: int, anchor: date) -> date | None:
+    """The calendar date an authored `30 December` means under this anchor.
+
+    Prose names a day and a month and no year, so the year has to come from the
+    anchor. Reading it as `anchor.year` outright loses every date that sits on
+    the other side of a year boundary: under a 5 January anchor, `30 December`
+    parsed as the December ELEVEN MONTHS AHEAD, landed far outside the +/-35 day
+    window in `_rebase_text`, and was silently left alone while every date around
+    it moved. The nearest of the three candidate years is the one the prose
+    means. It can only ever rebase a date the old reading left frozen: the
+    candidates are a year apart and the window is 70 days wide, so at most one of
+    them can fall inside it.
+
+    A day the month does not have is not a date at all, and this returns None for
+    it. The pattern that finds these matches any one or two digit number before a
+    month name, so `we shipped 62 June units` reached `date()` and raised a bare
+    `ValueError: day 62 must be in range 1..30`, which failed the whole build and
+    named no world, file or field. Prose the compiler cannot read as a date is
+    left exactly as its author wrote it.
+    """
+    candidates = []
+    for year in (anchor.year - 1, anchor.year, anchor.year + 1):
+        try:
+            candidates.append(date(year, month, day))
+        except ValueError:
+            continue
+    if not candidates:
+        return None
+    return min(candidates, key=lambda candidate: abs((candidate - anchor).days))
+
+
 def _rebase_text(value: str, anchor: date, delta: timedelta) -> str:
     """Shift reviewed scenario dates while leaving historical prose unchanged."""
     first = anchor - timedelta(days=35)
     last = anchor + timedelta(days=35)
 
-    def shifted(day: date) -> date | None:
+    def shifted(day: date | None) -> date | None:
+        if day is None:
+            return None
         return day + delta if first <= day <= last else None
 
+    # An ISO shape is not the same thing as an ISO date: `2026-02-30` matches the
+    # pattern and is not a day. Parsing it raised the same bare `ValueError` the
+    # prose forms did, so an unparseable match is left as authored here too.
     def iso_timestamp(match: re.Match[str]) -> str:
-        original = datetime.fromisoformat(match.group().replace("Z", "+00:00"))
+        try:
+            original = datetime.fromisoformat(match.group().replace("Z", "+00:00"))
+        except ValueError:
+            return match.group()
         if shifted(original.date()) is None:
             return match.group()
         return (original + delta).isoformat().replace("+00:00", "Z")
 
     def iso_date(match: re.Match[str]) -> str:
-        original = date.fromisoformat(match.group())
+        try:
+            original = date.fromisoformat(match.group())
+        except ValueError:
+            return match.group()
         return shifted(original).isoformat() if shifted(original) else match.group()
 
     value = _ISO_TIMESTAMP.sub(iso_timestamp, value)
@@ -595,13 +637,17 @@ def _rebase_text(value: str, anchor: date, delta: timedelta) -> str:
     month_pattern = "|".join(_MONTH_NAMES)
 
     def day_month(match: re.Match[str]) -> str:
-        original = date(anchor.year, _MONTH_NAMES.index(match.group(3)) + 1, int(match.group(1)))
-        rebased = shifted(original)
-        return f"{rebased.day} {rebased.strftime('%B')}" if rebased else match.group()
+        rebased = shifted(_prose_date(int(match.group(1)), _MONTH_NAMES.index(match.group(3)) + 1, anchor))
+        if rebased is None:
+            return match.group()
+        # The ordinal suffix is captured and was then thrown away, which turned
+        # `the 3rd March` into `the 10 March`. `_ordinal` exists to write the
+        # suffix the shifted day needs, and is called here rather than nowhere.
+        day = _ordinal(rebased.day) if match.group(2) else str(rebased.day)
+        return f"{day} {rebased.strftime('%B')}"
 
     def month_day(match: re.Match[str]) -> str:
-        original = date(anchor.year, _MONTH_NAMES.index(match.group(1)) + 1, int(match.group(2)))
-        rebased = shifted(original)
+        rebased = shifted(_prose_date(int(match.group(2)), _MONTH_NAMES.index(match.group(1)) + 1, anchor))
         return f"{rebased.strftime('%B')} {rebased.day}" if rebased else match.group()
 
     value = re.sub(rf"\b(\d{{1,2}})(st|nd|rd|th)? ({month_pattern})\b", day_month, value)

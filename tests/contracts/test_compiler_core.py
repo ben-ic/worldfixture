@@ -12,10 +12,11 @@ import copy
 import json
 import tempfile
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 
 from worldfixture_compiler import PROFILES, WorldError, build_world, validate_world
-from worldfixture_compiler.compiler import compile_world
+from worldfixture_compiler.compiler import _rebase_text, compile_world
 
 MINIMAL_WORLD = {
     "api_version": "worldfixture.world-source/v1",
@@ -428,3 +429,60 @@ class MinimalWorldTest(unittest.TestCase):
                     (written / "world.json").write_text(json.dumps(source))
                     with self.assertRaisesRegex(WorldError, domain):
                         build_world(written / "world.json", written / "artifact")
+
+
+class ProseRebaseTest(unittest.TestCase):
+    """Rebasing prose has to move the dates it claims to move, and only those.
+
+    `_rebase_text` rewrites the dates a world's authored prose mentions so that a
+    rebased world reads the way it runs. Three faults were measured against it,
+    each of them silent: a date on the far side of a year boundary was never
+    moved, an ordinal lost its suffix, and a number that is not a day failed the
+    whole build.
+    """
+
+    ANCHOR = date(2027, 1, 5)
+    WEEK = timedelta(days=7)
+
+    def test_a_december_date_rebases_under_a_january_anchor(self) -> None:
+        # `date(anchor.year, ...)` read "30 December" under a 5 January 2027
+        # anchor as 2027-12-30, eleven months ahead, so it fell outside the
+        # +/-35 day window and the sentence was left alone while every date
+        # around it moved.
+        self.assertEqual(
+            "the export ran on 6 January and failed",
+            _rebase_text("the export ran on 30 December and failed", self.ANCHOR, self.WEEK),
+        )
+
+    def test_a_date_a_year_from_the_anchor_is_still_left_alone(self) -> None:
+        # The window is what keeps rebasing out of prose about something real
+        # and fixed. Reading the year from the nearest candidate must not widen
+        # it: the candidates are a year apart and the window is 70 days wide, so
+        # at most one of them can ever fall inside.
+        text = "the company was founded on 30 December"
+
+        self.assertEqual(text, _rebase_text(text, date(2027, 7, 1), self.WEEK))
+
+    def test_an_ordinal_keeps_a_suffix_that_fits_the_shifted_day(self) -> None:
+        # The suffix was captured as group 2 and discarded, so "the 3rd March"
+        # rebased to "the 10 March". `_ordinal` was written for exactly this and
+        # was called from nowhere.
+        self.assertEqual(
+            "the 10th March review",
+            _rebase_text("the 3rd March review", date(2027, 3, 3), self.WEEK),
+        )
+        # The suffix follows the shifted day, not the authored one.
+        self.assertEqual(
+            "due 21st March",
+            _rebase_text("due 14th March", date(2027, 3, 14), self.WEEK),
+        )
+
+    def test_prose_that_is_not_a_date_does_not_fail_the_build(self) -> None:
+        # Each of these raised a bare `ValueError: day 31 must be in range
+        # 1..28` out of `date()`, which failed the build and named no world,
+        # file or field. The pattern matches any one or two digit number before
+        # a month name, so "62 June" is ordinary prose rather than a typo, and
+        # refusing it would refuse a world that is not wrong.
+        for text in ("due 31 February", "we shipped 62 June units", "logged 2026-02-30 in the audit"):
+            with self.subTest(text=text):
+                self.assertEqual(text, _rebase_text(text, date(2026, 2, 20), self.WEEK))
