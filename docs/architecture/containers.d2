@@ -1,0 +1,40 @@
+# Product flow. Keep this at the user level and keep one state authority.
+
+direction: right
+
+up: "worldfixture up"
+application: "Application under test"
+workbench: "Workbench"
+reset: "worldfixture reset"
+world: "Local world\nProvider APIs and shared state"
+
+up -> world: "starts and prints bindings"
+application -> world: "supported SDKs and protocols"
+workbench -> world: "inspect and use safe actions"
+reset -> world: "restore baseline"
+
+up.style.fill: "#172033"
+up.style.font-color: "#ffffff"
+up.style.stroke: "#172033"
+up.style.border-radius: 10
+
+application.style.fill: "#f1f5f9"
+application.style.font-color: "#172033"
+application.style.stroke: "#64748b"
+application.style.border-radius: 10
+
+workbench.style.fill: "#e0f2fe"
+workbench.style.font-color: "#172033"
+workbench.style.stroke: "#0284c7"
+workbench.style.border-radius: 10
+
+reset.style.fill: "#172033"
+reset.style.font-color: "#ffffff"
+reset.style.stroke: "#172033"
+reset.style.border-radius: 10
+
+world.style.fill: "#2563eb"
+world.style.font-color: "#ffffff"
+world.style.stroke: "#1d4ed8"
+world.style.stroke-width: 3
+world.style.border-radius: 14
