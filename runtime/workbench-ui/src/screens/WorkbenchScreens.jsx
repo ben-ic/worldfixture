@@ -170,7 +170,7 @@ export function Settings({ data, onReset }) {
   </>;
 }
 
-const SERVICE_SCREENS = { slack: "Chat", google: "Gmail", mail: "Local Mail", github: "Code", s3: "Files", notion: "Notion", stripe: "Stripe", linear: "Linear", okta: "Okta", clerk: "Clerk", microsoft: "Microsoft Entra", twilio: "Twilio", resend: "Resend", vercel: "Vercel", mongoatlas: "MongoDB Atlas", http: "Website" };
+const SERVICE_SCREENS = { slack: "Chat", google: "Gmail", mail: "Local Mail", github: "Code", s3: "Files", notion: "Notion", stripe: "Stripe", linear: "Linear", okta: "Okta", clerk: "Clerk", twilio: "Twilio", resend: "Resend", vercel: "Vercel", mongoatlas: "MongoDB Atlas", http: "Website" };
 
 export function Services({ data, setScreen }) {
   return <><PageHead title="Services" subtitle="Selected services are active. Other services can be added by a future instance reconfiguration." command="environment lock"/>

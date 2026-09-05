@@ -146,16 +146,6 @@ export function Clerk({ data }) {
   </>;
 }
 
-export function Microsoft({ data }) {
-  const users = list(data.providers.microsoft?.users);
-  const [selected, setSelected] = useState(null);
-  return <><PageHead title="Microsoft Entra" subtitle="Tenant directory identities used by Microsoft Graph and OAuth." command="Microsoft Graph"/>
-    <Metrics items={[["Directory users", users.length], ["Tenant", users[0]?.tenant_id ?? "—"], ["Provider", "Entra ID"], ["Interface", "OAuth + Graph"]]}/>
-    {users.length ? <div className="section"><Panel title="Users"><div className="data-row identity-columns table-head"><span>USER</span><span>EMAIL</span><span>TENANT</span></div>{users.slice(0, 100).map((user) => <button className="data-row identity-columns clickable-row" key={user.id ?? user.worldfixture_person_id} onClick={() => setSelected(user)}><span><strong>{user.name}</strong><small>{user.worldfixture_person_id}</small></span><code className="muted truncate">{user.email}</code><code>{user.tenant_id}</code></button>)}</Panel></div> : <EmptyProduct>No Microsoft users are present.</EmptyProduct>}
-    <RecordDrawer title="Microsoft Entra user" value={selected} onClose={() => setSelected(null)}/>
-  </>;
-}
-
 export function Twilio({ data }) {
   const twilio = data.providers.twilio ?? {};
   const numbers = list(twilio.phone_numbers);

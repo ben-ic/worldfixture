@@ -21,14 +21,15 @@ import {
 
 const ROOT = join(import.meta.dirname, "../..");
 
-test("a reduced world does not report omitted services as failures", async () => {
-  const result = await providerOverview({}, join(ROOT, "dist/business.saas-company.v3"), {
+test("a reduced world does not report omitted services or projection-only Microsoft data", async () => {
+  const result = await providerOverview({ MICROSOFT_BASE_URL: "http://127.0.0.1:1" }, join(ROOT, "dist/business.saas-company.v3"), {
     organizations: [], people: [], communication: {}, software: {},
   });
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.slack.channels, []);
   assert.deepEqual(result.github.repositories, []);
   assert.deepEqual(result.notion.pages, []);
+  assert.equal(Object.hasOwn(result, "microsoft"), false);
 });
 
 test("Workbench browser bindings contain addresses but no credentials", () => {

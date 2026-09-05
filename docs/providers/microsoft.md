@@ -6,7 +6,7 @@ WorldFixture uses `@emulators/microsoft` 0.10.0.
 | --- | --- |
 | Overall API status | **Supported but partial** |
 | Production comparison | **Not verified against the production provider** |
-| Workbench | **Workbench-only** projection view |
+| Workbench | **Not supported** |
 | State and reset | Local OAuth state; reset restores the accepted snapshot |
 | Implementation owner | emulate.dev |
 
@@ -20,8 +20,9 @@ user or one user by ID from Microsoft Graph.
 ## What does not work
 
 You cannot write Graph data. Mail, calendar, Teams, OneDrive, SharePoint,
-groups, subscriptions, and webhooks do not work. The Workbench view reads the
-initial world data. It is **Workbench-only** and can differ from later API state.
+groups, subscriptions, and webhooks do not work. The Workbench does not show a
+Microsoft provider view. Use the registered Graph routes to read Microsoft user
+state.
 
 ## Connection and authentication
 

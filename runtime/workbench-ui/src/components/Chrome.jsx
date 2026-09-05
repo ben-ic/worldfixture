@@ -27,7 +27,7 @@ const surfaceGroups = [
   ]],
   ["BUSINESS SYSTEMS", [
     ["Stripe", "payments", "STRIPE_BASE_URL"], ["Okta", "identity", "OKTA_BASE_URL"],
-    ["Clerk", "app identity", "CLERK_BASE_URL"], ["Microsoft Entra", "oauth + graph", "MICROSOFT_BASE_URL"],
+    ["Clerk", "app identity", "CLERK_BASE_URL"],
     ["Vercel", "deployments", "VERCEL_BASE_URL"], ["MongoDB Atlas", "data", "MONGOATLAS_BASE_URL"],
   ]],
 ];
@@ -76,7 +76,6 @@ export function Sidebar({ data, screen, setScreen, onGuide }) {
     Linear: data.providers.linear?.issues?.length,
     Okta: data.providers.okta?.users?.length,
     Clerk: data.providers.clerk?.users?.length,
-    "Microsoft Entra": data.providers.microsoft?.users?.length,
     Twilio: data.providers.twilio?.phone_numbers?.length,
     Resend: data.providers.resend?.emails?.length,
     Vercel: data.providers.vercel?.projects?.length,

@@ -477,12 +477,6 @@ export async function twilioOverview(bindings) {
     messaging_services: resultList(messaging, "services"), verify_services: resultList(verify, "services") };
 }
 
-async function projectedProviderOverview(bindings, artifactPath) {
-  const result = {};
-  if (bindings.MICROSOFT_BASE_URL) result.microsoft = projection(artifactPath, "microsoft", {});
-  return result;
-}
-
 function httpTargetLinks(artifactPath, baseUrl) {
   if (!baseUrl) return [];
   const configured = projection(artifactPath, "http-targets", {});
@@ -534,7 +528,6 @@ export async function providerOverview(bindings, artifactPath, world, browserBin
   const mail = { ...orderMail(mailInbox), inbox: orderMail(mailInbox), sent: orderMail(mailSent) };
   const s3 = safe(requests[5], []);
   const notion = safe(requests[6], emptyNotion);
-  const projected = await projectedProviderOverview(bindings, artifactPath);
   return {
     slack: { channels: slack.channels ?? [], messageCount: slack.messageCount ?? 0 }, github, gmail, mail,
     s3: { details: s3 }, notion, website: { preview: safe(requests[7], "Unavailable").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400),
@@ -547,7 +540,6 @@ export async function providerOverview(bindings, artifactPath, world, browserBin
     mongoatlas: safe(requests[13], { projects: [], projectDetails: [] }),
     linear: safe(requests[14], { organization: null, teams: [], issues: [] }),
     twilio: safe(requests[15], { account: null, phone_numbers: [], messaging_services: [], verify_services: [] }),
-    ...projected,
     errors: requests.map((result, index) => result.status === "rejected"
       ? { provider: ["Slack", "GitHub", "Gmail", "Mail inbox", "Mail sent", "S3", "Notion", "Website", "Stripe", "Okta", "Clerk", "Vercel", "Resend", "MongoDB Atlas", "Linear", "Twilio"][index], message: result.reason.message }
       : null).filter(Boolean),
