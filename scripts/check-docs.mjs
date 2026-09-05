@@ -29,10 +29,26 @@ function withoutAnchor(value) {
   return decodeURIComponent(value.split("#")[0].split("?")[0]);
 }
 
+function headingAnchors(markdown) {
+  return new Set(
+    [...markdown.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) =>
+      match[1]
+        .replace(/<[^>]+>/g, "")
+        .replace(/[`*_~]/g, "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\p{L}\p{N}_-]/gu, ""),
+    ),
+  );
+}
+
 for (const file of filesBelow(docs).filter((path) => extname(path) === ".md")) {
   const text = readFileSync(file, "utf8");
   const isProviderPage = dirname(file) === join(docs, "providers");
-  const isPolicyOrIndex = ["index.md", "support-policy.md"].includes(relative(dirname(file), file));
+  const isPolicyOrIndex = ["adding-a-provider.md", "index.md", "support-policy.md"].includes(
+    relative(dirname(file), file),
+  );
   if (isProviderPage && !isPolicyOrIndex && text.includes("Supported but partial")) {
     if (!/^## What works$/m.test(text)) {
       failures.push(`${relative(root, file)}: partial support needs a \"What works\" section`);
@@ -52,8 +68,14 @@ for (const file of filesBelow(docs).filter((path) => extname(path) === ".md")) {
       join(target, "index.md"),
       ...(clean.startsWith("/") ? [join(docs, "public", clean)] : []),
     ];
-    if (!candidates.some((candidate) => existsSync(candidate) && statSync(candidate).isFile())) {
+    const found = candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile());
+    if (!found) {
       failures.push(`${relative(root, file)}: missing link target ${href}`);
+      continue;
+    }
+    const fragment = href.includes("#") ? decodeURIComponent(href.split("#")[1].split("?")[0]) : "";
+    if (fragment && extname(found) === ".md" && !headingAnchors(readFileSync(found, "utf8")).has(fragment)) {
+      failures.push(`${relative(root, file)}: missing link anchor ${href}`);
     }
   }
 }
@@ -62,7 +84,7 @@ const architecture = readFileSync(join(docs, "architecture.md"), "utf8");
 const docsPackage = readFileSync(join(docs, "package.json"), "utf8");
 if (architecture.includes("```mermaid")) failures.push("docs/architecture.md: Mermaid source is not allowed");
 if (docsPackage.includes("mermaid")) failures.push("docs/package.json: Mermaid is not required for static D2 diagrams");
-for (const name of ["containers"]) {
+for (const name of ["containers", "system"]) {
   const source = join(docs, "architecture", `${name}.d2`);
   const asset = join(docs, "public", "architecture", `${name}.svg`);
   if (!existsSync(source)) failures.push(`docs/architecture/${name}.d2: missing D2 source`);
