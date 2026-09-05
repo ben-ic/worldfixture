@@ -497,13 +497,42 @@ export async function resetHostInstance(stateDir) {
   return stdout.trim();
 }
 
-export async function runInHostInstance(stateDir, argv, { timeoutMs = 120_000 } = {}) {
-  const instance = await inspectHostInstance(stateDir);
+// A NON-ZERO EXIT IS THE COMMAND ANSWERING, NOT THE TRANSPORT FAILING.
+//
+// `run` is a promisified `execFile`, which rejects when the child exits
+// non-zero. Nothing caught it, so a CLI inside the container that deliberately
+// refused -- printing its reason and setting `process.exitCode = 1` -- reached
+// the user as an unhandled Node error and a six-frame stack, with the written
+// answer buried in `error.stdout` where nobody reads it. Measured against the
+// published image:
+//
+//     $ worldfixture slack send --as maya --channel soc2-audit "test"
+//     Error: Command failed: docker exec 5b3168...
+//         at genericNodeError (node:internal/errors:999:15)
+//       stdout: '"maya" names 2 people in this world. Say which one: ...'
+//
+// The first screen's own "Try this" line is a `slack send`, so this is where a
+// new reader meets their first mistake. `streamInHostInstance` beside this
+// already returns its exit code and lets the caller set `process.exitCode`;
+// this is the buffered sibling agreeing with it.
+//
+// A spawn failure or a timeout still throws: those are the transport failing,
+// and `error.code` is then a string like ENOENT or absent entirely, never the
+// exit status of a command that ran.
+export async function runInHostInstance(stateDir, argv, { timeoutMs = 120_000, runner = run } = {}) {
+  const instance = await inspectHostInstance(stateDir, { runner });
   if (!instance) throw new Error("No host instance is running. Run `worldfixture up` first.");
-  const { stdout, stderr } = await run("docker", ["exec", instance.container_id,
-    "node", "runtime/bin/worldfixture.mjs", ...argv, "--state", "/state"],
-  { timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 });
-  return { stdout, stderr };
+  const command = ["exec", instance.container_id,
+    "node", "runtime/bin/worldfixture.mjs", ...argv, "--state", "/state"];
+  const options = { timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 };
+
+  try {
+    const { stdout, stderr } = await runner("docker", command, options);
+    return { stdout, stderr, code: 0 };
+  } catch (error) {
+    if (typeof error.code !== "number" || error.killed) throw error;
+    return { stdout: error.stdout ?? "", stderr: error.stderr ?? "", code: error.code };
+  }
 }
 
 // The same `docker exec` as above, streamed rather than buffered, for a command

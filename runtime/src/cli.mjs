@@ -1979,6 +1979,10 @@ export async function main(argv) {
         const result = await runInHostInstance(stateDir, [command, ...forwarded]);
         process.stdout.write(result.stdout);
         process.stderr.write(result.stderr);
+        // The command's own exit status, the way the streamed path already does
+        // it. A refusal that prints its reason and exits 0 is a command that
+        // lied to every script calling it.
+        if (result.code) process.exitCode = result.code;
         return;
       }
     }

@@ -9,6 +9,7 @@ import {
   HostLauncherError,
   hostContainerName,
   launchHostInstance,
+  runInHostInstance,
   selectHostPorts,
   stopHostInstance,
   translateBindings,
@@ -334,6 +335,68 @@ test("a launch failure carries a repair line for the command line to print", asy
         return true;
       },
     );
+  } finally {
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});
+
+// The bug this closes: a CLI inside the container that deliberately refused --
+// printed its reason and set `process.exitCode = 1` -- reached the user as an
+// unhandled Node error and a stack trace, because `run` is a promisified
+// `execFile` and nothing caught its rejection. The written answer sat in
+// `error.stdout`. Measured against the published 0.2.3 image with
+// `slack send --as maya`, which this session's ambiguity fix made a common
+// input rather than a rare one.
+test("a command that exits non-zero returns its output and its code, and does not throw", async () => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-exec-code-"));
+  const name = hostContainerName(stateDir);
+  const refusal = '"maya" names 2 people in this world. Say which one:\n';
+
+  const runner = async (_command, args) => {
+    if (args[0] === "inspect") {
+      // `docker inspect --format "{{json .}}"` answers one object, not an array.
+      return { stdout: JSON.stringify({
+        Id: "c0ffee", Name: `/${name}`, State: { Running: true }, Image: "sha256:image",
+        Config: { Image: "worldfixture:test",
+          Labels: { "org.worldfixture.instance": "local", "org.opencontainers.image.title": "WorldFixture" } },
+        Mounts: [{ Destination: "/state", Source: stateDir, Type: "bind", RW: true }],
+      }) };
+    }
+    if (args[0] === "exec") {
+      throw Object.assign(new Error("Command failed"), { code: 1, stdout: refusal, stderr: "" });
+    }
+    return { stdout: "" };
+  };
+
+  try {
+    const result = await runInHostInstance(stateDir, ["slack", "send", "--as", "maya"], { runner });
+    assert.equal(result.code, 1, "the command's own exit status travels back");
+    assert.equal(result.stdout, refusal, "and so does what it wrote");
+  } finally {
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});
+
+// A transport failure is not a command answering, and still throws.
+test("a spawn failure is not mistaken for a command that exited non-zero", async () => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-exec-enoent-"));
+  const name = hostContainerName(stateDir);
+
+  const runner = async (_command, args) => {
+    if (args[0] === "inspect") {
+      // `docker inspect --format "{{json .}}"` answers one object, not an array.
+      return { stdout: JSON.stringify({
+        Id: "c0ffee", Name: `/${name}`, State: { Running: true }, Image: "sha256:image",
+        Config: { Image: "worldfixture:test",
+          Labels: { "org.worldfixture.instance": "local", "org.opencontainers.image.title": "WorldFixture" } },
+        Mounts: [{ Destination: "/state", Source: stateDir, Type: "bind", RW: true }],
+      }) };
+    }
+    throw Object.assign(new Error("spawn docker ENOENT"), { code: "ENOENT" });
+  };
+
+  try {
+    await assert.rejects(() => runInHostInstance(stateDir, ["people"], { runner }), /ENOENT/);
   } finally {
     rmSync(stateDir, { recursive: true, force: true });
   }
