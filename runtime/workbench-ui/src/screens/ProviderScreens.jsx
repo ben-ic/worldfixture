@@ -19,6 +19,13 @@ function useAction(onChanged) {
   return { busy, result, run };
 }
 
+// `user_name` IS RESOLVED BY THE WORKBENCH, NOT BY SLACK. A message from
+// `conversations.history` is `{type, user, text, ts}`, so this screen used to
+// attribute every message to a raw id -- "U6070E88FB" as the author and "U6"
+// in the avatar, for all 1,517 messages in the large world. `slackHistory` in
+// `runtime/src/workbench.mjs` now resolves the id through the provider's own
+// `users.list`, and the raw id stays here as the fallback for an id even Slack
+// cannot name.
 export function Chat({ data, actor, onChanged, liveRevision }) {
   const channels = data.providers.slack.channels;
   // The latest conversation is the least surprising entry point in every

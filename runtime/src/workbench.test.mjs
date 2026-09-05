@@ -9,6 +9,7 @@ import {
   providerBrowserUrl,
   publicTwilioProjection,
   selectNotionWebhookReveal,
+  slackChannelTopic,
   startWorkbench,
   workbenchWebhookSecretRevealEnabled,
 } from "./workbench.mjs";
@@ -134,6 +135,68 @@ test("Workbench enforces the reveal switch and sends no-store reveal responses",
   } finally {
     await disabled.close();
     await enabled.close();
+    await new Promise((resolve) => provider.close(resolve));
+  }
+});
+
+// Closes: a channel whose topic the emulator reports as an empty string kept
+// the empty string instead of falling through to the world's declared topic.
+// The read was `channel.topic?.value ?? channel.topic ?? declared.topic`, and
+// `??` does not fall back over "". The middle branch was unreachable as well:
+// the emulator always emits `topic` as an object, so it could only ever have
+// rendered the object itself.
+test("a blank provider channel topic falls through to the topic the world declares", () => {
+  const declared = { name: "general", topic: "Company updates and questions for everyone" };
+  assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, declared), declared.topic);
+  assert.equal(slackChannelTopic({ name: "general", topic: { value: "Release 3.2" } }, declared), "Release 3.2");
+  assert.equal(slackChannelTopic({ name: "general" }, declared), declared.topic);
+  assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, undefined), undefined);
+});
+
+// Closes: every Slack message was attributed to a raw member id. History
+// carries `user` and no `user_name`, and the world's own `slack_id` values are
+// in an id space the emulator never issues, so the name has to come from the
+// provider's `users.list`.
+test("Slack history names its authors from the provider's own member list", async () => {
+  let userListReads = 0;
+  const provider = createServer(async (request, response) => {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    if (request.url === "/api/users.list") {
+      userListReads += 1;
+      response.writeHead(200, { "content-type": "application/json" });
+      return response.end(JSON.stringify({ ok: true, response_metadata: { next_cursor: "" }, members: [
+        { id: "U6070E88FB", name: "hironakamura", real_name: "Hiro Nakamura", profile: { real_name: "Hiro Nakamura" } },
+        { id: "UBOT", name: "releasebot", real_name: "", profile: { real_name: "" } },
+      ] }));
+    }
+    assert.equal(request.url, "/api/conversations.history");
+    assert.match(body, /channel=C000000001/);
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ ok: true, messages: [
+      { type: "message", user: "U6070E88FB", text: "Writing it down.", ts: "1818688680.000056" },
+      { type: "message", user: "UBOT", text: "Deployed.", ts: "1818688600.000055" },
+      { type: "message", user: "UNKNOWN", text: "Who am I?", ts: "1818688500.000054" },
+    ] }));
+  });
+  await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
+  const providerUrl = `http://127.0.0.1:${provider.address().port}`;
+  const state = { prepare: () => ({ get: () => ({ seq: 0 }) }) };
+  const instance = { state, applicationBindings: { SLACK_BASE_URL: providerUrl, SLACK_TOKEN: "slack-token" }, bindings: () => ({}) };
+  const workbench = await startWorkbench(instance, { artifactPath: join(ROOT, "dist/business.saas-company.v3"), stateDir: ROOT });
+  try {
+    const result = await (await fetch(`${workbench.url}/api/provider/slack?channel=C000000001`)).json();
+    assert.equal(result.messages[0].user_name, "Hiro Nakamura");
+    // A member whose display name is empty falls back to the handle rather than
+    // to the empty string: this is the `||` the sweep is about.
+    assert.equal(result.messages[1].user_name, "releasebot");
+    // An id even Slack cannot name leaves the id on screen instead of nothing.
+    assert.equal(result.messages[2].user_name, undefined);
+    // An unresolved author costs exactly one re-read of the member list, not
+    // one read per message: the workspace token is metered.
+    assert.equal(userListReads, 2);
+  } finally {
+    await workbench.close();
     await new Promise((resolve) => provider.close(resolve));
   }
 });

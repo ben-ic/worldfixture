@@ -128,6 +128,61 @@ async function githubOverview(bindings, world) {
   return { repositories, issues: issueLists.flat().filter((issue) => !issue.pull_request) };
 }
 
+// SLACK MESSAGES CARRY AN ID, NOT A NAME.
+//
+// `conversations.history` returns `{type, user, text, ts}` and no `user_name`,
+// so the Chat screen printed the raw id as the author and made an avatar out of
+// its first letters: every one of the 1,517 messages in
+// business.saas-company.v3 was attributed to something like "U6070E88FB".
+//
+// The world cannot supply the missing name. `world.people[].slack_id` holds
+// U000000001-style ids; the emulator issues ids like UF474D2E90, and zero of
+// the 99 ids that authored those messages appear in the world's map. The
+// provider answers the question itself: `users.list` returns 100 members and
+// resolves all 99 authors.
+//
+// It is read once per base URL and refreshed only when a lookup misses, because
+// the workspace token is metered at 5,000 requests an hour and a name lookup
+// must not be charged per screen refresh.
+const slackNames = new Map();
+
+async function slackUserNames(bindings, { refresh = false } = {}) {
+  const key = bindings.SLACK_BASE_URL;
+  if (!refresh && slackNames.has(key)) return slackNames.get(key);
+  const names = new Map();
+  let cursor = "";
+  do {
+    const page = await providerJson(`${bindings.SLACK_BASE_URL}/api/users.list`, bindings.SLACK_TOKEN, {
+      method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ limit: "1000", ...(cursor ? { cursor } : {}) }),
+    });
+    for (const member of page.members ?? []) {
+      // `||`, not `??`: a member with no display name arrives with these fields
+      // present and empty, and an empty string is not a name.
+      names.set(member.id, member.profile?.real_name || member.real_name || member.name);
+    }
+    cursor = page.response_metadata?.next_cursor ?? "";
+  } while (cursor);
+  slackNames.set(key, names);
+  return names;
+}
+
+// Names are a display nicety: a Slack that refuses `users.list` must still show
+// its history, so a failed read leaves the ids in place and is not cached.
+async function slackUserNamesOrEmpty(bindings, options) {
+  return slackUserNames(bindings, options).catch(() => new Map());
+}
+
+// `||`, not `??`. The emulator always emits `topic` as an object, so a channel
+// with no topic arrives as `{value: ""}` and `??` keeps the empty string. The
+// declared topic behind it is a live fallback and not a dead branch: all 28
+// channel names in business.saas-company.v3 match the world's own channel
+// names. The middle `?? channel.topic` branch is gone -- `topic` is always the
+// object, so that branch could only ever have rendered "[object Object]".
+export function slackChannelTopic(channel = {}, declared) {
+  return channel.topic?.value || declared?.topic;
+}
+
 async function slackOverview(bindings, world) {
   const listed = await providerJson(`${bindings.SLACK_BASE_URL}/api/conversations.list`, bindings.SLACK_TOKEN, {
     method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
@@ -139,13 +194,16 @@ async function slackOverview(bindings, world) {
       body: new URLSearchParams({ channel: channel.id, limit: "100" }),
     }).catch(() => ({ messages: [] }))));
   const worldChannels = new Map((world.communication?.channels ?? []).map((channel) => [channel.name, channel]));
-  const people = new Map((world.people ?? []).map((person) => [person.slack_id, person.name]));
+  // The world's `slack_id` values cannot name a direct message either: they are
+  // U000000001-style ids the emulator never issues. The provider's own member
+  // list is the only source that resolves the ids Slack actually returns.
+  const people = await slackUserNamesOrEmpty(bindings);
   const channels = (listed.channels ?? []).map((channel, index) => ({
     ...channel,
     messageCount: histories[index]?.messages?.length ?? 0,
     latestTs: Math.max(0, ...(histories[index]?.messages ?? []).map((message) => Number(message.ts) || Date.parse(message.timestamp) / 1000 || 0)),
     displayName: channel.is_im ? people.get(channel.user) : channel.name,
-    topic: channel.topic?.value ?? channel.topic ?? worldChannels.get(channel.name)?.topic,
+    topic: slackChannelTopic(channel, worldChannels.get(channel.name)),
   }));
   return { channels, messageCount: histories.reduce((total, history) => total + (history.messages?.length ?? 0), 0) };
 }
@@ -600,7 +658,17 @@ async function slackHistory(bindings, channel) {
     method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ channel, limit: "20" }),
   });
-  return { ...result, messages: [...(result.messages ?? [])].sort((left, right) => Number(right.ts) - Number(left.ts)).slice(0, 20) };
+  const messages = [...(result.messages ?? [])].sort((left, right) => Number(right.ts) - Number(left.ts)).slice(0, 20);
+  // The Chat screen reads `user_name`, which Slack does not send. Resolve it
+  // here so the browser never has to hold a provider credential to learn who
+  // wrote a message. A cached member list that has not seen an author is one
+  // refresh behind a person who joined during the run, so miss once and re-read.
+  let names = await slackUserNamesOrEmpty(bindings);
+  if (messages.some((message) => message.user && !names.has(message.user))) {
+    names = await slackUserNamesOrEmpty(bindings, { refresh: true });
+  }
+  return { ...result, messages: messages.map((message) => ({ ...message,
+    user_name: message.user_name ?? names.get(message.user) })) };
 }
 
 async function sendGmail(bindings, input) {
