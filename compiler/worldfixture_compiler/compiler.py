@@ -2439,8 +2439,23 @@ def _slack_ts(timestamp: str, sequence: int) -> str:
     Slack orders a channel by this value, so it has to be derived from the
     authored time rather than from the clock at seed time. The sequence keeps two
     messages in the same second distinct and ordered.
+
+    AN AUTHORED TIME WITH NO OFFSET IS UTC, SAID HERE EXPLICITLY. Left naive,
+    `datetime.timestamp()` reads the zone of whatever machine is compiling, and
+    the same world source then produces a different artifact. Measured on the v2
+    world with the `Z` removed from one channel message: `artifact_sha256` came
+    out c5c554ef under TZ=UTC, cde8b503 under TZ=Asia/Tokyo and 377d0209 under
+    TZ=US/Pacific -- three artifacts from one source, on a compiler whose whole
+    contract is that a world compiles to one digest.
+
+    No committed world trips it, because every authored time carries `Z`, so
+    this moves no world's bytes. Nothing refused a world that omitted one. The
+    rest of the compiler already reads a bare authored time as UTC; see the
+    `replace(tzinfo=timezone.utc)` in `_stripe_projection`.
     """
     when = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=UTC)
     return f"{int(when.timestamp())}.{sequence:06d}"
 
 

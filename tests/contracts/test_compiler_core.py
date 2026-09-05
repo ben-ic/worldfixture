@@ -10,13 +10,15 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import tempfile
+import time
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
 
 from worldfixture_compiler import PROFILES, WorldError, build_world, validate_world
-from worldfixture_compiler.compiler import _rebase_text, compile_world
+from worldfixture_compiler.compiler import _rebase_text, _slack_ts, compile_world
 
 MINIMAL_WORLD = {
     "api_version": "worldfixture.world-source/v1",
@@ -486,3 +488,31 @@ class ProseRebaseTest(unittest.TestCase):
         for text in ("due 31 February", "we shipped 62 June units", "logged 2026-02-30 in the audit"):
             with self.subTest(text=text):
                 self.assertEqual(text, _rebase_text(text, date(2026, 2, 20), self.WEEK))
+
+
+@unittest.skipUnless(hasattr(time, "tzset"), "the host cannot change its zone in-process")
+class SlackTimestampTest(unittest.TestCase):
+    """One world source compiles to one artifact, on any machine."""
+
+    def test_an_authored_time_without_an_offset_is_read_as_utc(self) -> None:
+        # `_slack_ts` parsed a `Z`-less authored time into a naive datetime and
+        # called `.timestamp()`, which reads the HOST's zone. Building the v2
+        # world with the `Z` removed from one channel message gave
+        # artifact_sha256 c5c554ef under TZ=UTC, cde8b503 under TZ=Asia/Tokyo
+        # and 377d0209 under TZ=US/Pacific: three artifacts from one source, on
+        # a compiler whose whole contract is one world, one digest.
+        original = os.environ.get("TZ")
+        stamps = set()
+        try:
+            for zone in ("UTC", "Asia/Tokyo", "US/Pacific"):
+                os.environ["TZ"] = zone
+                time.tzset()
+                stamps.add(_slack_ts("2026-08-20T09:00:00", 1))
+        finally:
+            if original is None:
+                os.environ.pop("TZ", None)
+            else:
+                os.environ["TZ"] = original
+            time.tzset()
+
+        self.assertEqual({_slack_ts("2026-08-20T09:00:00Z", 1)}, stamps)
