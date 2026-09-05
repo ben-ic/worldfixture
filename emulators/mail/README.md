@@ -1,13 +1,16 @@
-# WorldFixture mail emulator
+# WorldFixture Local Mail service
 
-This unlisted fixture turns one verified world mail projection into a working
-mail service. Cyrus IMAP is the only mailbox authority. A loopback SMTP bridge
-sends accepted messages to Cyrus through LMTP. The fixture has no relay action.
+This document is for contributors who run Local Mail by itself. For product
+use, start with the [five-minute quick start](../../docs/getting-started/quick-start.md).
+
+Local Mail turns one world mail projection into local SMTP and IMAP. Cyrus IMAP
+is the mailbox authority. The SMTP bridge delivers accepted messages to Cyrus
+through LMTP. It does not relay mail to a network.
 All message state is under `/tmp/worldfixture-mail`, and the fixture has no
 persistent volume. The state ends with the session.
 
-Nothing about the mail service is compiled into the image. The accounts, their
-folders, the realm and every seeded message come from
+The image contains no world-specific mail data. The accounts, their folders,
+the realm, and every seeded message come from
 `$WORLDFIXTURE_WORLD_PATH/projections/mail.json` at startup. Startup fails if
 that projection is not there.
 
@@ -24,11 +27,9 @@ that projection is not there.
 
 Each message reaches its recipient's `INBOX`, and a message labelled `SENT` also
 reaches the sender's `Sent` folder, so the delivery count is larger than the
-message count. In the default world, `business.saas-company:v3`, 161 people and
-3,069 messages produce 805 mailboxes and 4,528 deliveries; in the smaller
-`business.saas-company:v2`, 16 people and 74 messages produce 80 mailboxes and
-129 deliveries. Seeding those deliveries over LMTP is most of the time a full
-start takes.
+message count. The number of accounts, folders, messages, and deliveries comes
+from the active projection. SMTP-to-LMTP seeding is usually most of the Local
+Mail start time.
 
 `Date` comes from the record's `sent_at`, never from the wall clock.
 `Message-ID` is derived from the record id. A message that is not the first in
@@ -55,10 +56,12 @@ secret. That reference is resolved at startup:
 
 **The second rule is a local fixture convention, not a security mechanism.** It
 exists so a first run needs no setup. Every address in this world is inside
-`.test`, which RFC 2606 reserves and which cannot be routed; IMAP and SMTP bind
-only the container's loopback address; and the passwords are derived from public
-identifiers that are in the artifact. Nothing here hashes, stores, or protects a
-credential, and nothing here should be pointed at a real mailbox.
+`.test`, which RFC 2606 reserves and which cannot be routed. A standalone
+service binds SMTP and IMAP to container loopback by default. The WorldFixture
+runtime sets `WORLDFIXTURE_MAIL_PUBLISH=1` and publishes both protocols on
+dynamic loopback host ports. The passwords come from public identifiers in the
+artifact. Nothing here hashes, stores, or protects a credential. Do not point
+this service at a real mailbox.
 
 One admin account, `cyrus`, exists so seeding can create another person's
 mailbox. It is not a world person. It is created at startup rather than in the
@@ -67,16 +70,16 @@ until a world is mounted.
 
 ## Ports
 
-| Container port | Name | Reachable from |
-| --- | --- | --- |
-| 1025 | SMTP submission | container loopback only |
-| 1143 | IMAP | container loopback only |
-| 8080 | mailbox page | published |
-| 8025 | readiness (`/readyz`) | published |
+Local Mail uses fixed ports inside the container and dynamic ports on the host.
 
-SMTP and IMAP stay on loopback by design; the entry point refuses to start if
-either is asked to bind anything else. Protocol checks therefore run inside the
-container.
+| Service | Container port | Product access |
+| --- | --- | --- |
+| SMTP | 1025 | Dynamic host port in `SMTP_HOST`, `SMTP_PORT`, and `SMTP_HOST_PORT` |
+| IMAP | 1143 | Dynamic host port in `IMAP_HOST_PORT` |
+| Mailbox page | 8080 | Internal container URL only |
+| Readiness | 8025 | Internal container URL only |
+
+Run `worldfixture env` after each start. Do not assume a host port.
 
 ## Run it
 
@@ -93,8 +96,9 @@ docker exec worldfixture-mail-test /usr/share/worldfixture-mail/protocol-test.sh
 ```
 
 The mailbox page is then on `http://127.0.0.1:4980/` and readiness on
-`http://127.0.0.1:4981/readyz`. Host ports for this repository come from the
-4980-4989 range.
+`http://127.0.0.1:4981/readyz`. These URLs use standalone test ports. A normal
+WorldFixture run publishes SMTP and IMAP on dynamic host ports. Read them from
+`worldfixture env`. The mailbox and readiness URLs stay internal.
 
 `test/protocol-test.sh` reads the mounted projection itself and asserts the
 world's own numbers: every person logs in over IMAP, each `INBOX`, `Sent` and
@@ -151,7 +155,8 @@ Direct package file SHA-256 values:
 
 ## Security boundary
 
-- SMTP and IMAP listen only on the container loopback address.
+- SMTP and IMAP bind to container loopback by default. The runtime enables the
+  declared host publications for a normal product run.
 - The mailbox page is the only public listener besides readiness. It is a
   server-side IMAP and SMTP client and has no second message store.
 - The SMTP bridge accepts any recipient from the loopback listener, sends it

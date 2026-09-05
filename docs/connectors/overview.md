@@ -14,7 +14,10 @@ Use a connector for two operations:
 The Workbench and CLI are equal clients of the same protocol. A coding-agent
 skill can inspect an application and implement its connector from these docs.
 
-## User flow
+## Connector flow
+
+Complete the [five-minute quick start](../getting-started/quick-start.md). Then
+start your application and connect its development-only connector.
 
 1. From the application root, start WorldFixture:
 
@@ -31,7 +34,7 @@ skill can inspect an application and implement its connector from these docs.
 5. Review the seed plan.
 6. Choose how much of the world to seed.
 7. Seed baseline records.
-8. Start, pause, accelerate, or manually deliver live events.
+8. Seed the baseline or deliver one event that the runtime already observed.
 
 ## How much of the world to seed
 
@@ -60,9 +63,14 @@ Each slice is its own seeding operation and carries its own `idempotency_key`,
 so seeding a small slice and then a larger one is two operations rather than a
 repeat.
 
-Read [protocol-v1.md](protocol-v1.md) before implementing a connector. Read
-[security.md](security.md) for every implementation. Read [mapping-guide.md](mapping-guide.md)
-when choosing application entities and services.
+Use these references when you implement a connector:
+
+- [Protocol](protocol-v1.md): request, response, authentication, and reset rules.
+- [Pack reference](packs.md): the exact world data that a connector receives.
+- [Project configuration](project.md): files, services, and active bindings.
+- [Coding-agent guide](agent-guide.md): the required implementation workflow.
+- [Mapping guide](mapping-guide.md): application entities and service choices.
+- [Security](security.md): required trust boundaries and secret handling.
 
 The browser extension is not part of Connector v1.
 
@@ -87,8 +95,8 @@ target application does not give database credentials to the browser.
 ## Application services
 
 The app keeps its own development command and service lifecycle. Optional
-WorldFixture services can include PostgreSQL, a MySQL-compatible MariaDB 10.11
-database, S3 object storage, and SMTP. The project
+WorldFixture services can include PostgreSQL, MariaDB 10.11 through the MySQL
+protocol, S3 object storage, and SMTP. The project
 requests available services in `.worldfixture/project.json`. The connector
 setup maps their bindings into the app only when the user selects them. It does
 not replace an app-owned service by default.
@@ -112,13 +120,13 @@ token file. The environment value is useful when the app runs in a container.
 
 ## Why Connector v1 is application-level
 
-PostgreSQL and MySQL are storage systems, not application domain models. A
+PostgreSQL and MariaDB are storage systems, not application domain models. A
 generic database writer can find tables, but it cannot reliably know which
 table is a user, which service creates a task, or which writes must send a
 notification. Connector v1 therefore runs inside the target application and
 uses its ORM or service layer. This design supports PostgreSQL, MySQL, SQLite,
 and other storage systems without making database structure the public
-contract.
+contract. MariaDB clients use the MySQL protocol.
 
 A later database adapter can help an agent inspect schemas or generate mapping
 code. It must still produce an application-owned connector and mapping plan. It

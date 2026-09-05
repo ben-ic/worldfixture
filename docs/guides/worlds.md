@@ -4,7 +4,8 @@ A world is a versioned source dataset for one synthetic organization and its
 related organizations. It includes people, provider identities, communication,
 software, work, finance, support, stories, and scheduled arrivals.
 
-`worldfixture build` validates the source and prepares an immutable artifact.
+`worldfixture build` validates the source and creates a prepared,
+content-addressed artifact.
 The artifact contains the normalized world and one JSON projection for each
 service. The runtime selects service implementations, assigns host ports,
 supplies the projections, and waits for declared readiness checks.

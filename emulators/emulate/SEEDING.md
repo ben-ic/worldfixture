@@ -17,7 +17,7 @@ manifest must list the emulator overlay with the correct byte size and SHA-256
 digest. A missing, changed, or invalid overlay stops startup before a provider
 listener opens.
 
-The compiled world owns provider users, identities, messages, repositories,
+The prepared world artifact owns provider users, identities, messages, repositories,
 customers, and other provider records. The base seed is only a standalone
 development fallback.
 

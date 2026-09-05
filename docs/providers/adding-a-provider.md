@@ -43,10 +43,10 @@ A new HTTP API that uses an existing transport should usually need a manifest
 entry, a fixture compiler, a provider module, contract tests, documentation,
 and Workbench descriptors. It should not need a resolver or supervisor branch.
 
-## 3. Compile one world projection
+## 3. Generate one world projection
 
-Build one complete vendor projection for each selected world. Never merge it
-with demo records or records from another world.
+Generate one complete provider projection for each selected world. Never merge
+it with fallback records or records from another world.
 
 - Derive stable vendor IDs from the world ID and source record ID.
 - Reuse the world's people, teams, projects, messages, files, and dates.
@@ -54,13 +54,13 @@ with demo records or records from another world.
 - Keep organization credentials separate from person credentials.
 - Use the world's shared object store for file bytes. Keep storage keys out of
   vendor responses.
-- Compile an empty projection when the world does not select the provider.
+- Generate an empty projection when the world does not select the provider.
 
 Fixtures must tell one consistent story across APIs. Add cases for allowed and
 hidden data, pagination, invalid input, conflicts, deleted records, expired
 credentials, async work, and rate limits.
 
-## 4. Build one domain model
+## 4. Implement one shared domain model
 
 REST, MCP, webhooks, SDK adapters, and the Workbench must use the same domain
 state and permission checks. Do not make a second MCP-only or UI-only store.
@@ -116,8 +116,8 @@ Show public vendor IDs and responses. Keep credentials out of general overview
 responses. A dedicated developer workflow can return a selected protocol
 secret when the vendor workflow requires it, but it must use an explicit
 action, a narrow response, and `Cache-Control: no-store`. An explicit
-environment variable must enable the action. Keep it disabled in demo images
-and other untrusted runs. Do not expose
+environment variable must enable the action. Keep it disabled in shared or
+untrusted runs. Do not expose
 object-store keys or internal collection IDs because they are emulator
 implementation details. Workbench mutations must call a supported API surface
 and must not write provider state directly.
@@ -135,9 +135,17 @@ Each provider document must contain:
 - known differences and named unsupported behavior;
 - official source links and verification date.
 
-Use `Supported` only when a passing contract test proves the row. Use `Partial`
-when a documented branch or shape is missing. Use `Implemented, unverified`
-when behavior exists but the required hosted capture is not available.
+Use only these labels:
+
+- **Supported and contract-tested**
+- **Supported but partial**
+- **Workbench-only**
+- **Not supported**
+- **Not verified against the production provider**
+
+For a partial row, name the working branch, the missing branch, and the test
+that proves the working branch. Use **Not verified against the production
+provider** when the implementation has no production recording.
 
 ## 8. Release gate
 

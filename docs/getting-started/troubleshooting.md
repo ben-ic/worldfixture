@@ -45,5 +45,5 @@ provider state.
 
 ## Reset did not remove database records
 
-This is the specified behavior. Normal reset preserves PostgreSQL and MySQL
+This is the specified behavior. Normal reset preserves PostgreSQL and MariaDB
 application data. See [Reset and persistence](../guides/reset-and-persistence.md).

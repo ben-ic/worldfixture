@@ -4,12 +4,12 @@
 runtime, clock, timeline, and event state to the accepted start. It then checks
 readiness and returns proof of the accepted state.
 
-The provider composer restores its accepted in-memory store snapshot. Local
-Mail, S3, and HTTP targets restart from their immutable projections. HTTP
+Provider APIs restore their accepted service snapshots. Local Mail, S3, and
+HTTP targets restart from their prepared projections. HTTP
 request counters, page variants, and flapping probe positions return to their
 start values.
 
-PostgreSQL and MySQL are different. A normal reset preserves their data. The
+PostgreSQL and MariaDB are different. A normal reset preserves their data. The
 application connector also declares database reset unavailable. WorldFixture
 does not truncate an application database.
 

@@ -33,7 +33,7 @@ them:
     "seed": true,
     "event": true,
     "status": true,
-    "reset": true
+    "reset": false
   },
   "accepts": ["identity", "work", "support"]
 }
@@ -196,7 +196,7 @@ unexpected connector failure.
 Run:
 
 ```sh
-worldfixture connector check http://localhost:3000
+npx worldfixture connector check http://localhost:3000
 ```
 
 The default check is read-only. It verifies discovery, authentication refusal,

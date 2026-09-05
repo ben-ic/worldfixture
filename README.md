@@ -25,7 +25,8 @@ provider operations and does not claim full provider parity.
 
 ## First run
 
-Start only Slack for the shortest first run:
+Run all WorldFixture commands from the same project directory. Start only Slack
+for the shortest first run:
 
 ```sh
 npx worldfixture up --only slack
@@ -53,7 +54,7 @@ complete path. If a start fails, run `npx worldfixture doctor`.
 Run the documentation website locally with:
 
 ```sh
-npm --prefix docs install
+npm --prefix docs ci
 npm run docs:dev
 ```
 
@@ -73,10 +74,11 @@ npx worldfixture run -- npm run dev
 For an application connector:
 
 ```sh
-npx worldfixture connector prompt http://localhost:3000
-npx worldfixture connector check http://localhost:3000
-npx worldfixture connector plan http://localhost:3000 --scale smoke
-npx worldfixture connector seed http://localhost:3000 --scale smoke
+APP_URL=http://localhost:3000 # Replace this with the URL your app prints.
+npx worldfixture connector prompt "$APP_URL"
+npx worldfixture connector check "$APP_URL"
+npx worldfixture connector plan "$APP_URL" --scale smoke
+npx worldfixture connector seed "$APP_URL" --scale smoke
 ```
 
 See [Connect an application](docs/getting-started/connect-an-app.md),
@@ -122,20 +124,25 @@ See [How worlds work](docs/guides/worlds.md) and
 
 ## Development
 
-Run the documented checks:
+Run the documented checks from the repository root:
 
 ```sh
 PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
+npm run docs:check
+npm run docs:diagrams:check
+npm run docs:build
+npm --prefix runtime/workbench-ui ci
+npm --prefix runtime/workbench-ui run build
 npm --prefix emulators/emulate ci
 node scripts/prepare-service-images.mjs
 (cd runtime && node --test)
 (cd emulators/emulate && node --test)
-node --test emulators/http-targets/test/*.test.mjs
-npm --prefix docs ci && npm run docs:check && npm run docs:build
+node --test emulators/http-targets/test/feed-clock.test.mjs
+node emulators/http-targets/test/protocol-test.mjs
 ```
 
-The first line is the compiler, schema and world-parity gate, and it needs
-nothing but Python 3.11.
+The Python command tests the compiler, schemas, and world parity. `build` is the
+CLI command that runs the compiler.
 
 The next two are prerequisites of the **runtime** suite, not only the emulator
 one, and both are no-ops once they have run. `emulate` starts as a child process

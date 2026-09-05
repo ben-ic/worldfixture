@@ -15,7 +15,7 @@ hero:
 
 features:
   - title: Start here
-    details: Use the five-minute path to start a world, send one Slack message, see it in the Workbench, and reset.
+    details: Start one provider, open the Workbench, and get the active API endpoint in five minutes.
     link: /getting-started/quick-start
   - title: Connect your application
     details: Use the generated bindings with an SDK, an HTTP client, or a native protocol. Ports are assigned for each run.
@@ -39,10 +39,3 @@ contact real people or real customer systems. All included domains end in
 WorldFixture implements selected provider API operations. It does not implement
 each complete provider API. Use the [API support index](/providers/) to check a
 read or write before you use it.
-
-## What to do first
-
-1. [Start a world in five minutes](/getting-started/quick-start).
-2. Use the Workbench to see service readiness and world state.
-3. Copy the generated connection values into your application.
-4. Check the exact API support for your provider.

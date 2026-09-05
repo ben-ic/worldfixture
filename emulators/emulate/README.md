@@ -1,9 +1,12 @@
-# WorldFixture provider emulator
+# WorldFixture provider API service
+
+This document is for contributors who run the provider service by itself. For
+product use, start with the [five-minute quick start](../../docs/getting-started/quick-start.md).
 
 This service composes the pinned `emulate` 0.10.0 packages into provider-shaped
 local APIs. The default WorldFixture image uses it for Slack, GitHub, Google,
 Stripe, Resend, Clerk, Okta, Microsoft, Vercel, MongoDB Atlas, Apple, Linear
-and Twilio. Notion is WorldFixture's own vendor, written here rather than taken
+and Twilio. Notion is WorldFixture's own implementation, written here rather than taken
 from upstream, and is loaded the same way: a directory under `src/vendors/`
 exporting a plugin is discovered by its name, and a local directory shadows an
 upstream vendor of the same name.
@@ -22,6 +25,7 @@ standalone Slack development run, first build the v3 artifact from the
 repository root, then run:
 
 ```sh
+npm run build:worlds
 cd emulators/emulate
 npm ci
 WORLDFIXTURE_WORLD_PATH=../../dist/business.saas-company.v3 \
@@ -29,13 +33,16 @@ WORLDFIXTURE_PORT_SLACK=4703 \
 node src/main.mjs
 ```
 
+Port `4703` is a fixed standalone test port. A normal `worldfixture up` run uses
+a dynamic host port. Read it from `SLACK_BASE_URL`.
+
 The service reads and verifies
 `projections/emulator-overlay.json` against the artifact manifest before it
 starts a listener.
 
 ## Configuration
 
-- `WORLDFIXTURE_WORLD_PATH` selects a compiled world artifact.
+- `WORLDFIXTURE_WORLD_PATH` selects a prepared world artifact.
 - `WORLDFIXTURE_SEED` selects the base YAML seed. The default is `seed.yaml`.
 - `WORLDFIXTURE_SEED_OVERLAY` adds one JSON object after the world projection.
 - `WORLDFIXTURE_PORT_<VENDOR>` enables a vendor on that port.
@@ -58,9 +65,10 @@ bindings, and capabilities.
 
 ## Authentication and reset
 
-Tokens identify one seeded provider user. An unknown bearer token is refused;
-it does not become the default user. OAuth access tokens minted by a provider
-are added to the same token map.
+Authentication behavior is provider-specific. Some tested routes map a token
+to a seeded user, and some routes do not enforce production authentication.
+Read the provider support page before you depend on an authentication branch.
+OAuth access tokens minted by a provider are added to its token map.
 
 On first start, the service records the accepted stores and token map. Reset
 restores that snapshot. It does not seed a second copy over changed state.

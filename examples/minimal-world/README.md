@@ -16,8 +16,8 @@ npx worldfixture up ./dist/demo.minimal.v1
 The copy keeps this world's id and version until you change them in
 `world.json`, which is why `build` writes `dist/demo.minimal.v1`.
 
-`validate` compiles the world and throws the result away, so anything it accepts
-will build.
+`validate` prepares the artifact in a temporary directory and then discards it,
+so anything it accepts will build.
 
 ## What each file is
 
@@ -31,7 +31,7 @@ the larger worlds in `worlds/` are split into a backbone and a story.
 
 ## The empty domains, and why they are there
 
-The `business.operations/v1` profile compiles `communication`, `finance`,
+The `business.operations/v1` profile projects `communication`, `finance`,
 `software`, `support`, `work`, `agentic` and `stories`, and it indexes them
 rather than defaulting them. A world that leaves one out is refused by
 `validate`, by name, so declare the ones you have no records for as empty. That
@@ -40,17 +40,17 @@ is what most of `core.json` is.
 `site` is genuinely optional; this world has one anyway, because a public site is
 one of the surfaces an instance serves.
 
-## Rules the compiler enforces
+## Rules the build enforces
 
 - Every person needs a unique `id`, `email`, `github_login` and `slack_id`, and a
   `slack_id` starts with `U`.
 - Exactly one person is `primary`. The CLI acts as that person by default and
   their credentials are the ones `worldfixture env` prints.
-- Every email and organization domain ends in `.worldfixture.test`. The compiler
-  refuses anything else, so a world can never address a real inbox.
+- Every email and organization domain ends in `.test`. The build refuses
+  anything else, so a world can never address a real inbox.
 - `agentic.actor_id` names a person in this world.
 - Nothing in a world may depend on the clock, the filesystem, or randomness. The
-  same source always compiles to the same bytes.
+  same source always produces the same artifact bytes.
 
 ## What it does not do
 

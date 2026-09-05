@@ -13,7 +13,7 @@ and preserves the application's normal start path. It proposes a mapping,
 implements the local connector, adds application tests, and runs the
 WorldFixture conformance check.
 
-The agent can request optional WorldFixture database, object storage, and mail
+The agent can request optional WorldFixture database, object storage, and Local Mail
 services in `.worldfixture/project.json` when the user wants them. It must not
 replace working app-owned services by default. The user starts the app through
 its normal development command and does not copy connector secrets.

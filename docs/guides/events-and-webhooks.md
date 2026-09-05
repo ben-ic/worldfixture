@@ -4,6 +4,9 @@ WorldFixture records a fact only after a provider accepts an operation. The
 event contains the actor, source, time, and provider evidence such as a Slack
 message timestamp or GitHub issue number.
 
+A direct provider API write that the runtime did not originate changes provider
+state but does not create a runtime ledger event.
+
 ```sh
 npx worldfixture events
 npx worldfixture events --follow

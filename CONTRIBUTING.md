@@ -1,13 +1,14 @@
 # Contributing to WorldFixture
 
 WorldFixture is in pre-release development. Before you prepare a change, read
-the public README and the relevant service README.
+the public README, the applicable documentation-site page, and the
+[contract-testing policy](docs/contract-testing.md).
 
 ## Change rules
 
 - Keep all fixture people, organizations, messages, domains, and credentials
   synthetic.
-- Keep world compilation deterministic. Do not add current time, random data,
+- Keep world artifact builds deterministic. Do not add current time, random data,
   file-system order, or host-specific values to an artifact.
 - Use provider APIs and real protocols for runtime actions. Do not write
   directly to an emulator store.
@@ -25,15 +26,18 @@ Run compiler, schema, and parity tests:
 PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 ```
 
-Run Node.js component tests. Install the provider emulator's pinned
-dependencies first, and build the service images the runtime suite starts:
+Run Node.js component tests. Install pinned dependencies, build the Workbench,
+and prepare the service images first:
 
 ```sh
 npm --prefix emulators/emulate ci
+npm --prefix runtime/workbench-ui ci
+npm --prefix runtime/workbench-ui run build
 node scripts/prepare-service-images.mjs
 (cd runtime && npm test)
 (cd emulators/emulate && npm test)
-node --test emulators/http-targets/test/*.test.mjs
+node --test emulators/http-targets/test/feed-clock.test.mjs
+node emulators/http-targets/test/protocol-test.mjs
 ```
 
 Both preparation steps are for the runtime suite, not only the emulator one.
@@ -54,9 +58,11 @@ node tests/image/protocol-test.mjs
 node --test examples/real-container.test.mjs
 ```
 
-`npm run build:worlds` compiles all three worlds into `dist/`, which is what the
-image build and the checkout CLI read. The export is what makes the example test
-use the image you just built rather than the published one; see below.
+`npm run build:worlds` builds all three worlds into `dist/` for checkout tests
+and the checkout CLI. The Dockerfile does not copy this `dist/` directory. Its
+compiler stage builds the same world sources again for the product image. The
+export makes the example test use the image you built instead of the published
+image.
 
 ## Which image the CLI runs
 
@@ -70,9 +76,9 @@ node runtime/bin/worldfixture.mjs up --image worldfixture:local
 export WORLDFIXTURE_IMAGE=worldfixture:local
 ```
 
-This matters whenever you change anything the image carries -- an emulator, the
-supervisor, the Workbench build, or a world -- because otherwise the published
-image serves the old behaviour and the change appears to have done nothing.
+This matters when you change content that the image carries: an emulator, the
+supervisor, the Workbench, the documentation site, or a world. Without the
+override, the published image serves the old content.
 
 The S3 protocol test builds its own service image:
 
@@ -93,8 +99,21 @@ node emulators/s3/test/protocol-test.mjs
   default world changes.
 - Update the public README when a default world, command, requirement, or
   release limitation changes.
-- `docs/connectors/packs.md` is generated from the built artifact and verified by
+- `docs/connectors/packs.md` is generated from the prepared artifact and verified by
   a test. Do not hand-edit it.
+
+Run the documentation checks from the repository root:
+
+```sh
+npm --prefix docs ci
+npm run docs:check
+npm run docs:diagrams:check
+npm run docs:build
+```
+
+`docs:check` checks internal links, provider support references, allowed support
+labels, and required architecture assets. `docs:diagrams:check` proves that the
+committed SVG files match their D2 sources.
 
 ## Publication
 

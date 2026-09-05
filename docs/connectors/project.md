@@ -69,7 +69,7 @@ local database. It does not give the connector permission to reset database
 data. Normal `worldfixture reset` preserves application records. A future
 destructive database rebuild must use a separate, explicit command.
 
-Adding `mysql` supplies a MySQL-compatible MariaDB 10.11 database. It provides
+Adding `mysql` supplies MariaDB 10.11 through the MySQL protocol. It provides
 `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USERNAME`, `MYSQL_PASSWORD`,
 `MYSQL_DATABASE`, and `MYSQL_URL`. Run the application with
 `npx worldfixture run -- <normal-development-command>` so it receives the

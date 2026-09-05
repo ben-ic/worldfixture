@@ -2,10 +2,9 @@
 
 ## 0.2.3
 
-Everything below was found by reading the code that was already there and
-checking it against a running world, rather than by adding features. Two of the
-findings are credentials a world never declared, which is why this release
-should be taken rather than skipped.
+This release combines an audit of existing behavior with documentation,
+verification, security fixes, and Workbench improvements. The support claims
+below come from code inspection, tests, and checks against a running world.
 
 ### Added
 
@@ -16,13 +15,14 @@ should be taken rather than skipped.
   file carries its source, API version, retrieval date and digest, and has the
   third-party notice and trademark disclaimer the Notion contracts already had.
   Documented in `docs/providers/stripe.md`.
-- **A documentation site**, built with VitePress and served by the Workbench at
-  `/docs` as well as published from the repository. It carries a five-minute
+- **A documentation site**, stored in this repository, built with VitePress,
+  and served by the Workbench at `/docs`. It carries a five-minute
   start, a connect-an-application page, troubleshooting, guides for bindings,
   worlds, the Workbench, HTTP targets, events and webhooks, and reset, plus one
   page per provider stating exactly which operations are supported, which are
-  partial and which are not. `scripts/check-docs.mjs` verifies every internal
-  link, every support label and both architecture diagrams, and runs in CI.
+  partial and which are not. `scripts/check-docs.mjs` verifies internal links,
+  support labels, support references, and architecture diagram references. It
+  runs in CI.
 - **`docs/architecture.md`** as two C4 diagrams written in D2 and rendered to
   SVG by a pinned container, with `--check` failing a committed SVG that no
   longer matches its source.

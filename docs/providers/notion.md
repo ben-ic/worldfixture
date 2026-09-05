@@ -81,16 +81,17 @@ comment only when its world entity reference identifies a Notion page.
 
 ### Multiworld isolation
 
-Each prepared world artifact owns one complete Notion projection. When a runtime selects
-a world, it replaces the demo `notion` fixture as one unit. It does not deep
-merge pages, users, databases, data sources, or views from another world.
+Each prepared world artifact owns one complete Notion projection. When a
+runtime selects a world, it replaces the fallback `notion` seed as one unit.
+It does not deep merge pages, users, databases, data sources, or views from
+another world.
 
 Notion IDs are stable for repeated builds of one world. The world ID is part of
 each generated Notion ID, so two worlds that use the same local record ID still
 get different Notion IDs. Each world member also gets
 `notion_token_<person-id>`. The shared `notion_token` remains for consumers that
 do not select an actor. If a world has no Notion projection, the provider gets
-an empty Notion fixture and no demo Notion credentials.
+an empty Notion fixture and no fallback Notion credentials.
 
 </details>
 
@@ -425,8 +426,8 @@ past or future SDK versions.
   signatures. Set `WORLDFIXTURE_WORKBENCH_REVEAL_WEBHOOK_SECRETS=1` only in a
   trusted development run to enable explicit Reveal controls. The reveal
   response contains one selected verification token or one selected captured
-  request, and it uses `Cache-Control: no-store`. The demo image sets the value
-  to `0`.
+  request, and it uses `Cache-Control: no-store`. The default product image
+  sets the value to `0`.
 - Webhook delivery is signed and captured locally. External delivery is
   disabled so world data cannot leave the local system.
 - Link preview blocks can be returned when present in fixture content. Notion

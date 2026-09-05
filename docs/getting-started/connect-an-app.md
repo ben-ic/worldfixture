@@ -69,14 +69,6 @@ A provider SDK connects your code to provider state. An application connector
 does a different job: it maps neutral world packs to your own database and
 domain model.
 
-From the application root:
-
-```sh
-npx worldfixture connector prompt http://localhost:3000
-npx worldfixture connector check http://localhost:3000
-npx worldfixture connector plan http://localhost:3000 --scale smoke
-npx worldfixture connector seed http://localhost:3000 --scale smoke
-```
-
-See the [connector overview](../connectors/overview.md) before you add this
-development-only control surface to an application.
+To map world packs into your application database, use an
+[application connector](../connectors/overview.md). You do not need a connector
+to use a provider SDK or API.

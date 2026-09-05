@@ -15,7 +15,8 @@ For each operation:
 4. Run the applicable official SDK against the local base URL and pin its exact
    tested version.
 5. Add the test file to `docs/providers/support-matrix.json`.
-6. Use one required support label. State production verification separately.
+6. Use one local support label. Add **Not verified against the production
+   provider** when no production recording exists.
 
 Production recordings are the strongest evidence. Remove credentials, personal
 data, and tenant identifiers before a recording enters the repository. Store

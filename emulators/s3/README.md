@@ -1,11 +1,14 @@
-# WorldFixture S3 emulator
+# WorldFixture S3 service
 
-This unlisted fixture turns one world's AWS projection into a working S3 service.
+This document is for contributors who run S3 by itself. For product use, start
+with the [five-minute quick start](../../docs/getting-started/quick-start.md).
+
+This service turns one world's AWS projection into a working S3 service.
 SeaweedFS is the only object store. All state is under `/tmp/seaweedfs`, the
 fixture has no persistent volume, and every object dies with the session.
 
-Nothing about the object store is compiled into the image. Every bucket and every
-object comes from `$WORLDFIXTURE_WORLD_PATH/projections/aws.json` at startup.
+The image contains no world-specific object data. Every bucket and every object
+comes from `$WORLDFIXTURE_WORLD_PATH/projections/aws.json` at startup.
 Startup fails if that projection is not there.
 
 ## What the world decides
@@ -71,10 +74,10 @@ protocol test asserts this too, so it becomes visible if it ever changes.
 
 ## Ports
 
-| Container port | Name | Published |
+| Container port | Name | Product access |
 | --- | --- | --- |
-| 61006 | S3 API | yes |
-| 61004 | filer UI and readiness | yes |
+| 61006 | S3 API | Dynamic host port in `S3_BASE_URL` |
+| 61004 | filer UI and readiness | Internal container URL only |
 
 All eight listeners — master, volume, filer and S3, HTTP and gRPC — take their
 ports from the session. The image's `ENV` values exist so the image can be
@@ -112,8 +115,9 @@ docker run -d --name worldfixture-s3-test \
 ```
 
 The S3 API is then on `http://127.0.0.1:4990/` and readiness on
-`http://127.0.0.1:4991/worldfixture/ready`. Host ports for this service come from
-the 4990-4999 range.
+`http://127.0.0.1:4991/worldfixture/ready`. These URLs use standalone protocol-test
+ports. A normal WorldFixture run assigns a dynamic S3 host port. Read it from
+`S3_BASE_URL`. Filer readiness stays internal.
 
 ## The protocol test
 
@@ -199,7 +203,8 @@ grow on demand up to `-volume.max`, which stays at upstream's default.
 - Official multi-platform image index:
   `sha256:43b768cd62b00d132439cda881b93fd1adebf1b315e996e794087743821d771d`
 
-The image is amd64 only, so it runs under emulation on an arm64 host.
+This service image is amd64-only. WorldFixture supports arm64 hosts by running
+this service under emulation.
 
 `emulator.json` records the upstream repositories, versions, licences and the
 runtime contract. `THIRD_PARTY_NOTICES.md` records the Apache-2.0 attribution and

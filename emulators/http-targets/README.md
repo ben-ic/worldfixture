@@ -1,6 +1,9 @@
-# WorldFixture HTTP target emulator
+# WorldFixture HTTP targets
 
-This unlisted fixture turns one verified world projection into useful local HTTP
+This document is for contributors who run HTTP targets by themselves. For
+product use, start with the [five-minute quick start](../../docs/getting-started/quick-start.md).
+
+This service turns one verified world projection into useful local HTTP
 targets. It does not invent another company. It reads
 `$WORLDFIXTURE_WORLD_PATH/projections/http-targets.json` and serves the same stories
 as:
@@ -12,10 +15,10 @@ as:
 - JSON API responses; and
 - one OpenAPI 3 document.
 
-FreshRSS, Miniflux, and Fusion can subscribe to the feed. changedetection.io and
-archive applications can watch the pages. Uptime Kuma and Gatus can monitor the
-health endpoints. Grafana and Prometheus can read the metrics. Swagger UI can load
-the OpenAPI document. Dashboard applications can link to all of them.
+RSS readers can subscribe to the feed. Page-change and archive tools can watch
+the pages. Health monitors can call the stable, failing, and flapping endpoints.
+Prometheus clients can read the metrics. OpenAPI tools can load the schema.
+Dashboard applications can link to all of them.
 
 The fixture keeps only request counters in memory. A restart resets page variants
 and flapping probes. The verified world stays read-only and is never changed.

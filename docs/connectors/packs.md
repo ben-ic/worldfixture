@@ -4,8 +4,8 @@ This is the `packs` object in a seed or plan request, described from the world
 it documents: `business.saas-company:v3`, artifact
 `5b24c396d60d…`.
 
-It is generated from the built artifact and checked by a test, so it cannot
-drift from what is actually sent. Run `worldfixture connector docs` to read the
+It is generated from the prepared artifact and checked by a test, so it cannot
+drift from what is actually sent. Run `npx worldfixture connector docs` to read the
 version installed alongside your build.
 
 ## The shape
