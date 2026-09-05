@@ -6,10 +6,11 @@
 // services actually overlap. A fixture would pass whatever the services did.
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 
 import { loadManifests } from "./manifests.mjs";
 import { defaultEnvironment } from "./environments.mjs";
@@ -20,6 +21,7 @@ import { validate } from "./schema.mjs";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
 const MANIFESTS = loadManifests(join(ROOT, "emulators"));
+const GENERATED_SECRETS = join(mkdtempSync(join(tmpdir(), "worldfixture-secrets-")), "generated-secrets.json");
 
 const schema = (name) => JSON.parse(readFileSync(join(ROOT, "schemas", `${name}.schema.json`), "utf8"));
 
@@ -127,17 +129,26 @@ test("PostgreSQL supplies a complete application connection", () => {
   const result = resolveBindings(lock, {
     artifactPath: ARTIFACT,
     addressOf: () => ({ host: "127.0.0.1", port: 55432 }),
+    generatedSecretsPath: GENERATED_SECRETS,
   });
 
   assert.deepEqual(result.unresolved, []);
+  assert.equal(lock.bindings.POSTGRES_PASSWORD.key, "postgres.password");
+  assert.equal(lock.bindings.POSTGRES_PASSWORD.value, undefined);
+  assert.equal(
+    lock.services.find((service) => service.name === "postgres").environment
+      .find((entry) => entry.name === "POSTGRES_PASSWORD").key,
+    "postgres.password",
+  );
   assert.equal(result.resolved.POSTGRES_HOST.value, "127.0.0.1");
   assert.equal(result.resolved.POSTGRES_PORT.value, "55432");
   assert.equal(result.resolved.POSTGRES_USERNAME.value, "worldfixture");
-  assert.equal(result.resolved.POSTGRES_PASSWORD.value, "worldfixture-local");
+  assert.match(result.resolved.POSTGRES_PASSWORD.value, /^[0-9a-f]{48}$/);
+  assert.equal(result.resolved.POSTGRES_PASSWORD.scope, "project");
   assert.equal(result.resolved.POSTGRES_DATABASE.value, "postgres");
   assert.equal(
     result.resolved.POSTGRES_URL.value,
-    "postgresql://worldfixture:worldfixture-local@127.0.0.1:55432/postgres",
+    `postgresql://worldfixture:${result.resolved.POSTGRES_PASSWORD.value}@127.0.0.1:55432/postgres`,
   );
 });
 
@@ -155,17 +166,19 @@ test("MySQL supplies a complete application connection", () => {
   const result = resolveBindings(lock, {
     artifactPath: ARTIFACT,
     addressOf: () => ({ host: "127.0.0.1", port: 33306 }),
+    generatedSecretsPath: GENERATED_SECRETS,
   });
 
   assert.deepEqual(result.unresolved, []);
   assert.equal(result.resolved.MYSQL_HOST.value, "127.0.0.1");
   assert.equal(result.resolved.MYSQL_PORT.value, "33306");
   assert.equal(result.resolved.MYSQL_USERNAME.value, "worldfixture");
-  assert.equal(result.resolved.MYSQL_PASSWORD.value, "worldfixture-local");
+  assert.match(result.resolved.MYSQL_PASSWORD.value, /^[0-9a-f]{48}$/);
+  assert.equal(result.resolved.MYSQL_PASSWORD.scope, "project");
   assert.equal(result.resolved.MYSQL_DATABASE.value, "worldfixture");
   assert.equal(
     result.resolved.MYSQL_URL.value,
-    "mysql://worldfixture:worldfixture-local@127.0.0.1:33306/worldfixture",
+    `mysql://worldfixture:${result.resolved.MYSQL_PASSWORD.value}@127.0.0.1:33306/worldfixture`,
   );
 });
 
@@ -228,9 +241,11 @@ test("the product image default includes providers and SeaweedFS but closes comp
   const s3 = resolveBindings(lock, {
     artifactPath: ARTIFACT,
     addressOf: () => ({ host: "127.0.0.1", port: 61006 }),
+    generatedSecretsPath: GENERATED_SECRETS,
   }).resolved;
-  assert.equal(s3.S3_ACCESS_KEY_ID.value, "worldfixture-local");
-  assert.equal(s3.S3_SECRET_ACCESS_KEY.value, "worldfixture-local-secret");
+  assert.match(s3.S3_ACCESS_KEY_ID.value, /^[0-9a-f]{48}$/);
+  assert.match(s3.S3_SECRET_ACCESS_KEY.value, /^[0-9a-f]{48}$/);
+  assert.notEqual(s3.S3_ACCESS_KEY_ID.value, s3.S3_SECRET_ACCESS_KEY.value);
   assert.equal(s3.S3_REGION.value, "eu-west-2");
   assert.equal(s3.S3_BUCKET.value, "northstar-relay-documents");
   assert.equal(s3.S3_PATH_STYLE.value, "true");

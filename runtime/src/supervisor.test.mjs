@@ -23,6 +23,7 @@ import { allocate, environmentFor, SINGLE_CONTAINER_PORTS } from "./ports.mjs";
 import { appendEvent, openState } from "./state.mjs";
 import { history, send, tokenFor } from "./slack.mjs";
 import { StartupError, start, verifyArtifact, worldPathFor } from "./supervisor.mjs";
+import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
@@ -219,6 +220,20 @@ test("a required environment value with no source fails before anything starts",
   await release();
 
   assert.throws(() => environmentFor(service, allocation, {}), /requires WORLDFIXTURE_WORLD_PATH/);
+});
+
+test("a generated service environment reuses its project credential", () => {
+  const generatedSecretsPath = join(stateDir(), "generated-secrets.json");
+  const service = {
+    name: "postgres",
+    ports: [],
+    environment: [{ name: "POSTGRES_PASSWORD", from: "generated", key: "postgres.password", required: true }],
+  };
+
+  const first = environmentFor(service, new Map(), { generatedSecretsPath });
+  const second = environmentFor(service, new Map(), { generatedSecretsPath });
+  assert.match(first.POSTGRES_PASSWORD, /^[0-9a-f]{48}$/);
+  assert.equal(second.POSTGRES_PASSWORD, first.POSTGRES_PASSWORD);
 });
 
 // ---- readiness -----------------------------------------------------------
@@ -507,21 +522,24 @@ test("S3 starts as a container and answers its own protocol", async () => {
 });
 
 test("world reset restarts resettable services and preserves MySQL data", async () => {
+  const generatedSecretsPath = join(stateDir(), "generated-secrets.json");
+  const mysqlPassword = readOrCreateGeneratedSecret(generatedSecretsPath, "mysql.password");
   const instance = await start(lockFor(["mysql.wire.v1", "http.public-site.v1"]), {
     artifactPath: ARTIFACT,
     stateDir: stateDir(),
     serviceRoot: SERVICES,
     readyTimeoutMs: 180_000,
+    generatedSecretsPath,
   });
   const mysqlRecord = instance.children.find((record) => record.service === "mysql");
   const httpRecord = instance.children.find((record) => record.service === "http-targets");
   const containerName = mysqlRecord.container;
   const query = async (sql) => {
     const { stdout } = await run("docker", [
-      "exec", "-e", "MYSQL_PWD=worldfixture-local", containerName,
+      "exec", "-e", "MYSQL_PWD", containerName,
       "mariadb", "--batch", "--skip-column-names", "--host=127.0.0.1",
       "--user=worldfixture", "worldfixture", "--execute", sql,
-    ]);
+    ], { env: { ...process.env, MYSQL_PWD: mysqlPassword } });
     return stdout.trim();
   };
 

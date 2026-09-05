@@ -7,7 +7,7 @@ bind=${WORLDFIXTURE_POSTGRES_BIND:-127.0.0.1}
 port=${WORLDFIXTURE_POSTGRES_PORT:-5432}
 database=${POSTGRES_DB:-postgres}
 username=${POSTGRES_USER:-worldfixture}
-password=${POSTGRES_PASSWORD:-worldfixture-local}
+password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
 postgres_bin=/usr/lib/postgresql/15/bin
 
 if [ ! -s "$data/PG_VERSION" ]; then

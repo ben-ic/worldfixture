@@ -119,13 +119,13 @@
         },
         {
           "name": "access_key_id",
-          "from": "constant",
-          "value": "worldfixture-local"
+          "from": "generated",
+          "key": "s3.access_key_id"
         },
         {
           "name": "secret_access_key",
-          "from": "constant",
-          "value": "worldfixture-local-secret"
+          "from": "generated",
+          "key": "s3.secret_access_key"
         },
         {
           "name": "region",
@@ -156,13 +156,13 @@
         },
         {
           "name": "access_key_id",
-          "from": "constant",
-          "value": "worldfixture-local"
+          "from": "generated",
+          "key": "s3.access_key_id"
         },
         {
           "name": "secret_access_key",
-          "from": "constant",
-          "value": "worldfixture-local-secret"
+          "from": "generated",
+          "key": "s3.secret_access_key"
         },
         {
           "name": "region",

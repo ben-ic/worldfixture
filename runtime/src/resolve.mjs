@@ -338,9 +338,12 @@ function resolveBindings(spec, chosen) {
       pointer: bind.pointer,
       file: bind.file,
       value: bind.value,
+      key: bind.key,
       scheme: bind.scheme,
       username: bind.username,
       password: bind.password,
+      password_from: bind.password_from,
+      password_key: bind.password_key,
       database: bind.database,
       person: bind.per_person ? spec.target.identity : undefined,
     };

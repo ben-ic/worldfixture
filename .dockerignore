@@ -28,3 +28,6 @@ docs/product-experience.md
 docs/service-manifest-fit.md
 docs/system-design.md
 docs/connectors/dogfood-*.md
+
+# WorldFixture local secrets
+/.worldfixture/generated-secrets.json

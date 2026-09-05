@@ -41,8 +41,8 @@
       },
       {
         "name": "POSTGRES_PASSWORD",
-        "from": "constant",
-        "value": "worldfixture-local",
+        "from": "generated",
+        "key": "postgres.password",
         "required": true
       },
       {
@@ -77,8 +77,8 @@
         },
         {
           "name": "password",
-          "from": "constant",
-          "value": "worldfixture-local"
+          "from": "generated",
+          "key": "postgres.password"
         },
         {
           "name": "database",
@@ -90,7 +90,8 @@
           "from": "port.connection_url",
           "scheme": "postgresql",
           "username": "worldfixture",
-          "password": "worldfixture-local",
+          "password_from": "generated",
+          "password_key": "postgres.password",
           "database": "postgres"
         }
       ]

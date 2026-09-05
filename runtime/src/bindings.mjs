@@ -8,6 +8,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
+
 // A per-person credential is named after the person, which is what lets a world
 // person act as themselves. The compiler writes `<vendor>_token_<person-id>`
 // into the overlay's token map. Slack and Notion have one token per person;
@@ -62,7 +64,7 @@ function resolveProjection(artifactPath, source) {
 
 // Every binding, resolved. `unresolved` names the ones nothing could compute,
 // so a caller reports them rather than exporting an empty string.
-export function resolveBindings(lock, { addressOf, artifactPath }) {
+export function resolveBindings(lock, { addressOf, artifactPath, generatedSecretsPath }) {
   const resolved = {};
   const unresolved = [];
 
@@ -80,11 +82,18 @@ export function resolveBindings(lock, { addressOf, artifactPath }) {
     } else if (source.from === "port.connection_url") {
       const url = new URL(`${source.scheme}://${address.host}:${address.port}`);
       url.username = source.username;
-      url.password = source.password;
+      url.password = source.password_from === "generated"
+        ? readOrCreateGeneratedSecret(generatedSecretsPath, source.password_key)
+        : source.password;
       url.pathname = `/${source.database}`;
       resolved[name] = { value: url.toString(), scope: "run" };
     } else if (source.from === "constant") {
       resolved[name] = { value: source.value, scope: "constant" };
+    } else if (source.from === "generated") {
+      resolved[name] = {
+        value: readOrCreateGeneratedSecret(generatedSecretsPath, source.key),
+        scope: "project",
+      };
     } else if (source.from === "projection") {
       const projected = source.file ? resolveProjection(artifactPath, source) : undefined;
       const mail = projected === undefined && source.profile.startsWith("mail.") ? resolveMail(artifactPath, source) : undefined;

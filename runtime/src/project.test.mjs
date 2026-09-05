@@ -6,6 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { connectorTarget, ensureProject, readProject, readProjectToken } from "./project.mjs";
+import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
 
 test("up can create a project-local config, ignored state, and stable token", () => {
   const directory = mkdtempSync(join(tmpdir(), "worldfixture-project-"));
@@ -19,9 +20,21 @@ test("up can create a project-local config, ignored state, and stable token", ()
   assert.equal(readProjectToken(directory), first.token);
   assert.equal(second.token, first.token);
   assert.equal(statSync(join(directory, ".worldfixture/token")).mode & 0o777, 0o600);
+  assert.equal(statSync(join(directory, ".worldfixture/generated-secrets.json")).mode & 0o777, 0o600);
   assert.match(readFileSync(join(directory, ".worldfixture/.gitignore"), "utf8"), /^\*$/m);
   assert.match(readFileSync(join(directory, ".worldfixture/.gitignore"), "utf8"), /^!project\.json$/m);
   assert.match(readFileSync(join(directory, ".dockerignore"), "utf8"), /^\/\.worldfixture\/token$/m);
+  assert.match(readFileSync(join(directory, ".dockerignore"), "utf8"), /^\/\.worldfixture\/generated-secrets\.json$/m);
+});
+
+test("generated credentials are stable in one project and different in another", () => {
+  const firstProject = ensureProject(mkdtempSync(join(tmpdir(), "worldfixture-secrets-a-")));
+  const secondProject = ensureProject(mkdtempSync(join(tmpdir(), "worldfixture-secrets-b-")));
+
+  const first = readOrCreateGeneratedSecret(firstProject.generatedSecretsPath, "postgres.password");
+  assert.equal(readOrCreateGeneratedSecret(firstProject.generatedSecretsPath, "postgres.password"), first);
+  assert.notEqual(readOrCreateGeneratedSecret(secondProject.generatedSecretsPath, "postgres.password"), first);
+  assert.match(first, /^[0-9a-f]{48}$/);
 });
 
 test("a container Workbench uses the host transport address", () => {
@@ -61,6 +74,7 @@ test("Git can track project config but ignores tokens and run data", () => {
   const ignored = execFileSync("git", [
     "check-ignore",
     ".worldfixture/token",
+    ".worldfixture/generated-secrets.json",
     ".worldfixture/runs/latest.json",
   ], { cwd: directory, encoding: "utf8" }).trim().split("\n");
   const visible = execFileSync("git", ["status", "--short", "--untracked-files=all"], {
@@ -68,9 +82,14 @@ test("Git can track project config but ignores tokens and run data", () => {
     encoding: "utf8",
   });
 
-  assert.deepEqual(ignored, [".worldfixture/token", ".worldfixture/runs/latest.json"]);
+  assert.deepEqual(ignored, [
+    ".worldfixture/token",
+    ".worldfixture/generated-secrets.json",
+    ".worldfixture/runs/latest.json",
+  ]);
   assert.match(visible, /\.worldfixture\/project\.json/);
   assert.doesNotMatch(visible, /\.worldfixture\/token/);
+  assert.doesNotMatch(visible, /\.worldfixture\/generated-secrets\.json/);
   assert.doesNotMatch(visible, /\.worldfixture\/runs/);
 });
 

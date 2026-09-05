@@ -7,6 +7,8 @@ bind=${WORLDFIXTURE_MYSQL_BIND:-127.0.0.1}
 port=${WORLDFIXTURE_MYSQL_PORT:-3306}
 socket=$state/mysql.sock
 init_file=$state/init.sql
+password=${MARIADB_PASSWORD:?MARIADB_PASSWORD is required}
+escaped_password=$(printf '%s' "$password" | sed "s/'/''/g")
 
 install -d -m 0750 -o mysql -g mysql "$state" "$data"
 
@@ -18,11 +20,11 @@ if [ ! -d "$data/mysql" ]; then
     --skip-test-db
 fi
 
-cat > "$init_file" <<'SQL'
-CREATE DATABASE IF NOT EXISTS `worldfixture`;
-CREATE USER IF NOT EXISTS 'worldfixture'@'%' IDENTIFIED BY 'worldfixture-local';
-ALTER USER 'worldfixture'@'%' IDENTIFIED BY 'worldfixture-local';
-GRANT ALL PRIVILEGES ON `worldfixture`.* TO 'worldfixture'@'%';
+cat > "$init_file" <<SQL
+CREATE DATABASE IF NOT EXISTS \`worldfixture\`;
+CREATE USER IF NOT EXISTS 'worldfixture'@'%' IDENTIFIED BY '$escaped_password';
+ALTER USER 'worldfixture'@'%' IDENTIFIED BY '$escaped_password';
+GRANT ALL PRIVILEGES ON \`worldfixture\`.* TO 'worldfixture'@'%';
 FLUSH PRIVILEGES;
 SQL
 chown mysql:mysql "$init_file"

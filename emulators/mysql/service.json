@@ -45,8 +45,8 @@
       },
       {
         "name": "MARIADB_PASSWORD",
-        "from": "constant",
-        "value": "worldfixture-local",
+        "from": "generated",
+        "key": "mysql.password",
         "required": true
       },
       {
@@ -81,8 +81,8 @@
         },
         {
           "name": "password",
-          "from": "constant",
-          "value": "worldfixture-local"
+          "from": "generated",
+          "key": "mysql.password"
         },
         {
           "name": "database",
@@ -94,7 +94,8 @@
           "from": "port.connection_url",
           "scheme": "mysql",
           "username": "worldfixture",
-          "password": "worldfixture-local",
+          "password_from": "generated",
+          "password_key": "mysql.password",
           "database": "worldfixture"
         }
       ]

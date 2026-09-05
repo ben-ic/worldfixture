@@ -242,6 +242,9 @@ function paths(flags) {
   return {
     artifactPath: useSession ? sessionPath : builtPath,
     builtPath,
+    projectDir,
+    generatedSecretsPath: process.env.WORLDFIXTURE_GENERATED_SECRETS_PATH
+      ?? join(projectDir, ".worldfixture/generated-secrets.json"),
     stateDir,
     serviceRoot: flags["service-root"] ? resolve(flags["service-root"]) : resolve(PACKAGE_ROOT, "emulators"),
   };
@@ -529,6 +532,7 @@ async function runApplication(argv) {
   const { resolved } = resolveBindings(found.lock, {
     addressOf: addressReader(found.lock, found.bindings, stateDir),
     artifactPath,
+    generatedSecretsPath: paths(parsed.flags).generatedSecretsPath,
   });
   const environment = Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]));
   if (!found.bindings.WORLDFIXTURE_TOKEN) {
@@ -599,7 +603,8 @@ export function rebaseForSession(artifactPath, stateDir, { quiet = false } = {})
 }
 
 async function directUp({ flags, positional }, { applicationEnvironment, project } = {}) {
-  const { builtPath, stateDir, serviceRoot } = paths(flags);
+  const { builtPath, stateDir, serviceRoot, generatedSecretsPath: defaultGeneratedSecretsPath } = paths(flags);
+  const generatedSecretsPath = project?.generatedSecretsPath ?? defaultGeneratedSecretsPath;
   mkdirSync(stateDir, { recursive: true });
   const session = flags["no-rebase"]
     ? { artifactPath: builtPath, rebased: false }
@@ -674,6 +679,7 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
       runner: inOneContainer ? "process" : "container",
       fixedPorts: inOneContainer ? SINGLE_CONTAINER_PORTS : undefined,
       runtimeToken: applicationEnvironment?.token ?? process.env.WORLDFIXTURE_TOKEN,
+      generatedSecretsPath,
       onSpawned: openEarly,
       // The image build inside `start` takes minutes on a first checkout run.
       // Its "this happens once" line had no way out of the supervisor until
@@ -693,6 +699,7 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
   const application = resolveBindings(lock, {
     addressOf: (service, port) => instance.addressOf(service, port),
     artifactPath,
+    generatedSecretsPath,
   });
   if (application.unresolved.length > 0) {
     await workbench.close();
@@ -786,6 +793,7 @@ async function up(parsed) {
     ? {
       config: JSON.parse(process.env.WORLDFIXTURE_PROJECT_CONFIG ?? '{"api_version":"worldfixture.project/v1","application_url":"http://localhost:3000","services":[]}'),
       token: process.env.WORLDFIXTURE_TOKEN,
+      generatedSecretsPath: process.env.WORLDFIXTURE_GENERATED_SECRETS_PATH,
     }
     : ensureProject(projectDir, {
       token: process.env.WORLDFIXTURE_TOKEN,
@@ -817,6 +825,7 @@ async function up(parsed) {
     image: parsed.flags.image ?? process.env.WORLDFIXTURE_IMAGE ?? defaultImage(),
     connectorToken: project.token,
     projectConfig: project.config,
+    generatedSecretsPath: project.generatedSecretsPath,
     containerArgs,
     // A first run on a new machine has no image. Say what is happening: this is
     // a few hundred megabytes and a silent minute reads as a hang.
@@ -1552,6 +1561,7 @@ async function env({ flags }) {
   const { resolved, unresolved } = resolveBindings(lock, {
     addressOf: addressReader(lock, bindings, stateDir),
     artifactPath,
+    generatedSecretsPath: paths(flags).generatedSecretsPath,
   });
   if (flags.json) {
     say(JSON.stringify(Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]))));

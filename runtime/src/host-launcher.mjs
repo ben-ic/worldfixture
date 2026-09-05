@@ -343,6 +343,7 @@ export async function launchHostInstance({
   timeoutMs = 300_000,
   connectorToken,
   projectConfig,
+  generatedSecretsPath,
   runner = run,
   selectPorts = selectHostPorts,
   onWorkbench,
@@ -397,6 +398,10 @@ export async function launchHostInstance({
     const args = ["run", "--detach", "--rm", "--name", name,
       "--label", "org.worldfixture.instance=local",
       "--mount", `type=bind,source=${stateDir},target=/state`];
+    if (generatedSecretsPath) {
+      args.push("--mount", `type=bind,source=${generatedSecretsPath},target=/state/project-generated-secrets.json`);
+      args.push("--env", "WORLDFIXTURE_GENERATED_SECRETS_PATH=/state/project-generated-secrets.json");
+    }
     // The token is passed by NAME, and its value is handed to Docker through the
     // child's environment instead of its argument list.
     //

@@ -427,6 +427,7 @@ export async function start(lock, {
   runner = "container",
   fixedPorts,
   runtimeToken = process.env.WORLDFIXTURE_TOKEN || randomUUID(),
+  generatedSecretsPath,
   onSpawned,
   // Where a startup step that takes minutes says so. `ensureImage` has written
   // its "this happens once" line since it was added, and nothing ever carried
@@ -500,6 +501,7 @@ export async function start(lock, {
         worldSha256,
         runtimeToken,
         statePath: stateDir,
+        generatedSecretsPath,
       });
       children.push(
         startChild(service, environment, {

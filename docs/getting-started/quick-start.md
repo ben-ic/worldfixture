@@ -27,6 +27,8 @@ npx worldfixture open
 The Workbench opens in your browser. It shows the people, conversations, and
 messages in the running world.
 
+[See where to find each control in the Workbench screenshot guide](../guides/workbench.md).
+
 ## 3. Get the API endpoint
 
 ```sh

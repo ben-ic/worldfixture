@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -152,6 +152,8 @@ test("down reports no instance when no record or deterministic container exists"
 // into CI logs, which `security.md` promises never happens.
 test("the connector token is passed to Docker by name, never on the command line", async () => {
   const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-token-argv-"));
+  const generatedSecretsPath = join(stateDir, "generated-secrets.json");
+  writeFileSync(generatedSecretsPath, "{}\n", { mode: 0o600 });
   const token = "wf_local_notarealtokenjustatest";
   let runArgs = null;
   let runEnvironment = null;
@@ -169,7 +171,7 @@ test("the connector token is passed to Docker by name, never on the command line
 
   try {
     await assert.rejects(() => launchHostInstance({
-      stateDir, image: "worldfixture:test", connectorToken: token, runner,
+      stateDir, image: "worldfixture:test", connectorToken: token, generatedSecretsPath, runner,
       selectPorts: async () => [{ name: "slack", containerPort: 4703, hostPort: 4703, release: async () => {} }],
     }));
 
@@ -179,6 +181,11 @@ test("the connector token is passed to Docker by name, never on the command line
     // `ps`, and nowhere in the message any failure throws.
     assert.equal(runArgs.some((argument) => argument.includes(token)), false);
     assert.equal(runEnvironment.WORLDFIXTURE_TOKEN, token);
+    assert.equal(
+      runArgs.includes(`type=bind,source=${generatedSecretsPath},target=/state/project-generated-secrets.json`),
+      true,
+    );
+    assert.equal(runArgs.includes("WORLDFIXTURE_GENERATED_SECRETS_PATH=/state/project-generated-secrets.json"), true);
   } finally {
     rmSync(stateDir, { recursive: true, force: true });
   }

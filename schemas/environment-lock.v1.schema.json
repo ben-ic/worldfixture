@@ -100,6 +100,13 @@
           "port": {"type": "string"},
           "pointer": {"type": "string"},
           "value": {"type": "string"},
+          "key": {"type": "string"},
+          "scheme": {"type": "string"},
+          "username": {"type": "string"},
+          "password": {"type": "string"},
+          "password_from": {"type": "string"},
+          "password_key": {"type": "string"},
+          "database": {"type": "string"},
           "person": {"type": "string"}
         }
       }

@@ -158,6 +158,20 @@ class ServiceManifestTest(unittest.TestCase):
             with self.subTest(service=service):
                 self.assertEqual([], validate(load_manifest(service), schema))
 
+    def test_generated_credentials_name_a_store_key_and_contain_no_value(self) -> None:
+        for service in SERVICES:
+            manifest = load_manifest(service)
+            sources = list(manifest["runtime"].get("environment", []))
+            sources += [binding for provided in manifest["provides"] for binding in provided.get("binds", [])]
+            for source in sources:
+                with self.subTest(service=service, source=source.get("name")):
+                    if source.get("from") == "generated":
+                        self.assertRegex(source.get("key", ""), r"^[a-z][a-z0-9._-]+$")
+                        self.assertNotIn("value", source)
+                    if source.get("password_from") == "generated":
+                        self.assertRegex(source.get("password_key", ""), r"^[a-z][a-z0-9._-]+$")
+                        self.assertNotIn("password", source)
+
     def test_each_manifest_names_the_service_it_sits_beside(self) -> None:
         for service in SERVICES:
             with self.subTest(service=service):

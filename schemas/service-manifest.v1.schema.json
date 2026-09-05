@@ -84,10 +84,11 @@
             "properties": {
               "name": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
               "from": {
-                "description": "`world.path` is the mounted artifact directory; `world.sha256` its content digest; `runtime.token` the private token the service uses to reach the runtime; `runtime.state` is the private per-instance state directory; `constant` takes `value`.",
-                "enum": ["world.path", "world.sha256", "runtime.token", "runtime.state", "constant"]
+                "description": "`world.path` is the mounted artifact directory; `world.sha256` its content digest; `runtime.token` the private token the service uses to reach the runtime; `runtime.state` is the private per-instance state directory; `constant` takes `value`; `generated` takes a stable project-local value named by `key`.",
+                "enum": ["world.path", "world.sha256", "runtime.token", "runtime.state", "constant", "generated"]
               },
               "value": {"type": "string"},
+              "key": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
               "required": {"type": "boolean"}
             }
           }
@@ -123,15 +124,18 @@
               "properties": {
                 "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
                 "from": {
-                  "description": "Port bindings are computed from the profile's port. `port.connection_url` also uses the declared scheme and local service credentials. `projection` reads `pointer` out of this service's projection, which is how a per-person credential is resolved without putting one in the manifest.",
-                  "enum": ["port.url", "port.host", "port.port", "port.host_port", "port.connection_url", "projection", "constant"]
+                  "description": "Port bindings are computed from the profile's port. `port.connection_url` also uses the declared scheme and local service credentials. `projection` reads `pointer` out of this service's projection, which is how a per-person credential is resolved without putting one in the manifest. `generated` takes a stable project-local value named by `key`.",
+                  "enum": ["port.url", "port.host", "port.port", "port.host_port", "port.connection_url", "projection", "constant", "generated"]
                 },
                 "pointer": {"type": "string"},
                 "file": {"type": "string"},
                 "value": {"type": "string"},
+                "key": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
                 "scheme": {"type": "string", "pattern": "^[a-z][a-z0-9+.-]*$"},
                 "username": {"type": "string"},
                 "password": {"type": "string"},
+                "password_from": {"enum": ["generated"]},
+                "password_key": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
                 "database": {"type": "string"},
                 "per_person": {
                   "description": "True when the attribute resolves differently for each world person, such as a Slack token.",

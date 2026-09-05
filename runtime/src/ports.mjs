@@ -11,6 +11,8 @@
 
 import { createServer } from "node:net";
 
+import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
+
 // A port the kernel says is free right now. There is an unavoidable race between
 // releasing it and a child binding it; holding the listener until the moment of
 // spawn is what keeps that window to microseconds instead of seconds.
@@ -138,7 +140,13 @@ export const SINGLE_CONTAINER_PORTS = {
 // separate bind variable, a combined `host:port`, a bare number with no bind at
 // all. The manifest carries which, so this function is the whole of the
 // supervisor's per-service knowledge, and a fifth service needs no change here.
-export function environmentFor(service, allocation, { worldPath, worldSha256, runtimeToken, statePath }) {
+export function environmentFor(service, allocation, {
+  worldPath,
+  worldSha256,
+  runtimeToken,
+  statePath,
+  generatedSecretsPath,
+}) {
   // WHO PLAYS THE WORLD'S TIMELINE. The composer inherited a `setTimeout` that
   // inserted the world's scheduled Gmail arrival directly, from outside the
   // runtime, with no ledger row and no reset. `runtime/src/scheduler.mjs` now
@@ -170,7 +178,11 @@ export function environmentFor(service, allocation, { worldPath, worldSha256, ru
   };
 
   for (const value of service.environment ?? []) {
-    let resolved = value.from === "constant" ? value.value : sources[value.from];
+    let resolved = value.from === "constant"
+      ? value.value
+      : value.from === "generated"
+        ? readOrCreateGeneratedSecret(generatedSecretsPath, value.key)
+        : sources[value.from];
     if (value.from === "capability.port.url" || value.from === "capability.port.host_port") {
       const assigned = allocation.get(`${value.service}/${value.port}`);
       if (assigned) {

@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assertValid } from "./schema.mjs";
+import { GENERATED_SECRETS_FILE, ensureGeneratedSecretStore } from "./generated-secrets.mjs";
 
 export const PROJECT_VERSION = "worldfixture.project/v1";
 export const PROJECT_DIRECTORY = ".worldfixture";
@@ -24,6 +25,7 @@ function projectPaths(projectDirectory) {
     worldfixtureDir,
     configPath: join(worldfixtureDir, PROJECT_FILE),
     tokenPath: join(worldfixtureDir, TOKEN_FILE),
+    generatedSecretsPath: join(worldfixtureDir, GENERATED_SECRETS_FILE),
     stateDir: join(worldfixtureDir, "runs/local"),
     ignorePath: join(worldfixtureDir, ".gitignore"),
   };
@@ -40,11 +42,13 @@ function writeIgnoreFile(path) {
 
 function ensureDockerIgnored(projectDir) {
   const path = join(projectDir, ".dockerignore");
-  const entry = "/.worldfixture/token";
+  const entries = ["/.worldfixture/token", `/.worldfixture/${GENERATED_SECRETS_FILE}`];
   const contents = existsSync(path) ? readFileSync(path, "utf8") : "";
-  if (contents.split(/\r?\n/).includes(entry)) return;
+  const current = contents.split(/\r?\n/);
+  const missing = entries.filter((entry) => !current.includes(entry));
+  if (missing.length === 0) return;
   const prefix = contents && !contents.endsWith("\n") ? "\n" : "";
-  writeFileSync(path, `${contents}${prefix}\n# WorldFixture local secret\n${entry}\n`);
+  writeFileSync(path, `${contents}${prefix}\n# WorldFixture local secrets\n${missing.join("\n")}\n`);
 }
 
 export function readProject(projectDirectory = process.cwd()) {
@@ -67,6 +71,7 @@ export function ensureProject(projectDirectory = process.cwd(), { token, applica
   mkdirSync(paths.worldfixtureDir, { recursive: true, mode: 0o700 });
   writeIgnoreFile(paths.ignorePath);
   ensureDockerIgnored(paths.projectDir);
+  ensureGeneratedSecretStore(paths.generatedSecretsPath);
 
   let created = false;
   if (!existsSync(paths.configPath)) {
