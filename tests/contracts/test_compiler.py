@@ -698,6 +698,17 @@ class CloudVocabularyTest(unittest.TestCase):
         self.assertEqual(["order-events"], [queue["name"] for queue in aws["sqs"]["queues"]])
         self.assertEqual(["fulfilment"], [role["role_name"] for role in aws["iam"]["roles"]])
 
+    def test_a_world_without_a_site_is_told_to_declare_one(self) -> None:
+        # The fallback HTTP targets are built from record ids only v2 has. Any
+        # other world that declared no `site` died on a bare `KeyError:
+        # 'story-lumen-renewal'` raised out of a projection, which the command
+        # line does not catch, so the author got a traceback naming no remedy.
+        world = copy.deepcopy(source_world())
+        world["stories"] = []
+
+        with self.assertRaisesRegex(WorldError, "declares no `site`"):
+            compile_world(world)
+
 
 if __name__ == "__main__":
     unittest.main()

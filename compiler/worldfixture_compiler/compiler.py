@@ -2179,20 +2179,35 @@ def _http_targets_projection(
     organization = next(item for item in world["organizations"] if item.get("primary"))
     stories = {item["id"]: item for item in world["stories"]}
     support_cases = world["support"]["cases"]
-    release_issues = [
-        issue
-        for repository in world["software"]["repositories"]
-        for issue in repository["issues"]
-        if "release-2.8" in issue["labels"] and issue["state"] == "open"
-    ]
-    invoice = next(item for item in finance["invoices"] if item["id"] == "inv-4471")
-    lumen = stories["story-lumen-renewal"]
-    release = stories["story-release-28"]
-    onboarding = stories["story-theo-onboarding"]
-    timeline = {item["id"]: item for item in world["timeline"]}
-    priya_arrival = timeline["arrival-priya-sample-result"]
-    lucas_arrival = timeline["arrival-lucas-load-test"]
-    payment_arrival = timeline["arrival-lumen-payment"]
+    # Every id below belongs to the reviewed v2 world. A world that declares no
+    # `site` and is not that world used to die here on a bare `KeyError:
+    # 'story-lumen-renewal'` or a bare `StopIteration` -- an unhandled Python
+    # exception raised from a projection, which the CLI does not catch, for world
+    # data the schema allows. The reader of that traceback had no way to know the
+    # answer was to declare a `site`. Naming that is free: the bytes below are
+    # unchanged for the one world that reaches them.
+    try:
+        release_issues = [
+            issue
+            for repository in world["software"]["repositories"]
+            for issue in repository["issues"]
+            if "release-2.8" in issue["labels"] and issue["state"] == "open"
+        ]
+        invoice = next(item for item in finance["invoices"] if item["id"] == "inv-4471")
+        lumen = stories["story-lumen-renewal"]
+        release = stories["story-release-28"]
+        onboarding = stories["story-theo-onboarding"]
+        timeline = {item["id"]: item for item in world["timeline"]}
+        priya_arrival = timeline["arrival-priya-sample-result"]
+        lucas_arrival = timeline["arrival-lucas-load-test"]
+        payment_arrival = timeline["arrival-lumen-payment"]
+    except (KeyError, StopIteration) as error:
+        raise WorldError(
+            f"world {world['id']}:{world['version']} declares no `site`, and the fallback HTTP "
+            f"targets are built from records only `business.saas-company:v2` has "
+            f"({error!r} is missing). Declare a `site` block to serve this world's own pages, "
+            "feed, probes and metrics."
+        ) from error
     priya_update = priya_arrival["payload"]
     lucas_update = lucas_arrival["payload"]
 
