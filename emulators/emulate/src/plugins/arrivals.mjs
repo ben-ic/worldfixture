@@ -25,6 +25,15 @@
 //
 // Times are relative to process start, which is close enough to session start: the
 // artifact is launched with the session and the µVM dies with it.
+//
+// SO THIS MODULE LOOKS DEAD AND IS NOT. `scheduleArrivals` returns immediately
+// unless a seed declares `worldfixture.arrivals`, and `main.mjs` skips it entirely
+// when `WORLDFIXTURE_TIMELINE_OWNER=runtime`, which is how it is started under the
+// runtime scheduler. Neither gate is satisfied by anything in this repository, so
+// a sweep for unreachable code finds nothing calling the timer path. Do not remove
+// it on that evidence: the seed block and the environment variable ARE the
+// callers, and this is the only way a demo mailbox ever receives a message
+// somebody is watching for.
 
 function encodeMessage(message) {
   const { label_ids, labelIds, ...rest } = message;

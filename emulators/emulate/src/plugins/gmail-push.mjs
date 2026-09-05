@@ -24,6 +24,13 @@
 // supplies it instead, composed from the app's own public origin and the verification
 // token minted for that session. An app that creates its own subscription would need
 // the Pub/Sub admin API, which is a separate surface and not this file.
+//
+// SO THIS MODULE LOOKS DEAD AND IS NOT. `main.mjs` calls `startGmailPush` only
+// when `WORLDFIXTURE_PUBSUB_PUSH_URL` is set, and nothing in this repository sets
+// it -- the launch does, per session, with the app's own origin. A sweep for
+// unreachable code will find no in-repo caller for the delivery path. Do not
+// remove it on that evidence: the environment variable IS the caller, and
+// `gmail-push.test.mjs` beside this file exercises the module directly.
 
 const WATCH_STATE_KEY = "google.gmail.watchStates";
 
