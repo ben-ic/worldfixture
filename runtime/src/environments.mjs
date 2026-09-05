@@ -86,6 +86,8 @@ const PROVIDER_BINDINGS = {
   STRIPE_TOKEN: "stripe.customers.v1/token",
   TWILIO_BASE_URL: "twilio.messaging.v1/base_url",
   TWILIO_TOKEN: "twilio.messaging.v1/token",
+  TWILIO_ACCOUNT_SID: "twilio.messaging.v1/account_sid",
+  TWILIO_AUTH_TOKEN: "twilio.messaging.v1/auth_token",
   VERCEL_BASE_URL: "vercel.projects.v1/base_url",
   VERCEL_TOKEN: "vercel.projects.v1/token",
 };

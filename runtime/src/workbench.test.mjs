@@ -8,7 +8,10 @@ import {
   sanitizeNotionInspection,
   sanitizePublicBindings,
   providerBrowserUrl,
+  providerOverview,
   publicTwilioProjection,
+  linearOverview,
+  twilioOverview,
   selectNotionWebhookReveal,
   slackChannelTopic,
   startWorkbench,
@@ -17,6 +20,16 @@ import {
 } from "./workbench.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
+
+test("a reduced world does not report omitted services as failures", async () => {
+  const result = await providerOverview({}, join(ROOT, "dist/business.saas-company.v3"), {
+    organizations: [], people: [], communication: {}, software: {},
+  });
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.slack.channels, []);
+  assert.deepEqual(result.github.repositories, []);
+  assert.deepEqual(result.notion.pages, []);
+});
 
 test("Workbench browser bindings contain addresses but no credentials", () => {
   assert.deepEqual(sanitizePublicBindings({
@@ -55,6 +68,63 @@ test("Twilio browser data does not contain account, API key, or verification sec
   assert.equal(result.api_keys, undefined);
   assert.equal(result.verify_services[0].code, undefined);
   assert.doesNotMatch(JSON.stringify(result), /secret|123456/);
+});
+
+test("Linear Workbench data comes from the live GraphQL API", async () => {
+  const provider = createServer(async (request, response) => {
+    let requestBody = "";
+    for await (const chunk of request) requestBody += chunk;
+    assert.equal(request.url, "/graphql");
+    assert.equal(request.method, "POST");
+    assert.equal(request.headers.authorization, "Bearer linear-token");
+    assert.match(JSON.parse(requestBody).query, /issues\(first: 100\)/);
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ data: {
+      organization: { id: "org-1", name: "Example" },
+      teams: { nodes: [{ id: "team-1", name: "Engineering", key: "ENG" }] },
+      issues: { nodes: [{ id: "issue-1", identifier: "ENG-1", title: "Live issue",
+        state: { name: "In Progress" }, assignee: { name: "Maya", email: "maya@example.test" },
+        labels: { nodes: [{ name: "release" }] } }] },
+    } }));
+  });
+  await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
+  try {
+    const result = await linearOverview({
+      LINEAR_BASE_URL: `http://127.0.0.1:${provider.address().port}`, LINEAR_TOKEN: "linear-token",
+    });
+    assert.equal(result.teams[0].key, "ENG");
+    assert.deepEqual(result.issues[0], {
+      id: "issue-1", identifier: "ENG-1", title: "Live issue", state: "In Progress",
+      assignee: "maya@example.test", labels: ["release"],
+    });
+  } finally {
+    await new Promise((resolve) => provider.close(resolve));
+  }
+});
+
+test("Twilio Workbench data uses Basic auth and live REST lists", async () => {
+  const provider = createServer((request, response) => {
+    assert.equal(request.headers.authorization, `Basic ${Buffer.from("AC123:auth-secret").toString("base64")}`);
+    const bodies = {
+      "/2010-04-01/Accounts/AC123.json": { sid: "AC123", friendly_name: "Example" },
+      "/2010-04-01/Accounts/AC123/IncomingPhoneNumbers.json": { incoming_phone_numbers: [{ sid: "PN1" }] },
+      "/messaging/v1/Services": { services: [{ sid: "MG1" }] },
+      "/verify/v2/Services": { services: [{ sid: "VA1" }] },
+    };
+    response.writeHead(bodies[request.url] ? 200 : 404, { "content-type": "application/json" });
+    response.end(JSON.stringify(bodies[request.url] ?? { message: "missing" }));
+  });
+  await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
+  try {
+    const result = await twilioOverview({ TWILIO_BASE_URL: `http://127.0.0.1:${provider.address().port}`,
+      TWILIO_ACCOUNT_SID: "AC123", TWILIO_AUTH_TOKEN: "auth-secret" });
+    assert.equal(result.account.sid, "AC123");
+    assert.equal(result.phone_numbers[0].sid, "PN1");
+    assert.equal(result.messaging_services[0].sid, "MG1");
+    assert.equal(result.verify_services[0].sid, "VA1");
+  } finally {
+    await new Promise((resolve) => provider.close(resolve));
+  }
 });
 
 test("Notion inspection state hides webhook secrets and full signatures", () => {

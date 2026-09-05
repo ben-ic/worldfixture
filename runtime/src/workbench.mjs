@@ -444,37 +444,69 @@ export function publicTwilioProjection(twilio = {}) {
   };
 }
 
+export async function linearOverview(bindings) {
+  const query = `query WorldFixtureWorkbench {
+    organization { id name }
+    teams { nodes { id name key } }
+    issues(first: 100) { nodes { id identifier title description priority state { name } assignee { name email } labels { nodes { name } } } }
+  }`;
+  const result = await providerJson(`${bindings.LINEAR_BASE_URL}/graphql`, bindings.LINEAR_TOKEN, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query }),
+  });
+  if (result.errors?.length) throw new Error(result.errors.map((entry) => entry.message).join("; "));
+  const data = result.data ?? {};
+  return { organization: data.organization, teams: resultList(data.teams, "nodes"), issues: resultList(data.issues, "nodes").map((issue) => ({
+    ...issue, state: issue.state?.name ?? issue.state, assignee: issue.assignee?.email ?? issue.assignee?.name,
+    labels: resultList(issue.labels, "nodes").map((label) => label.name ?? label),
+  })) };
+}
+
+export async function twilioOverview(bindings) {
+  const sid = bindings.TWILIO_ACCOUNT_SID;
+  const auth = Buffer.from(`${sid}:${bindings.TWILIO_AUTH_TOKEN}`).toString("base64");
+  const read = (path) => providerJson(`${bindings.TWILIO_BASE_URL}${path}`, null, {
+    headers: { authorization: `Basic ${auth}` },
+  });
+  const [account, numbers, messaging, verify] = await Promise.all([
+    read(`/2010-04-01/Accounts/${encodeURIComponent(sid)}.json`),
+    read(`/2010-04-01/Accounts/${encodeURIComponent(sid)}/IncomingPhoneNumbers.json`),
+    read("/messaging/v1/Services"), read("/verify/v2/Services"),
+  ]);
+  return { account, phone_numbers: resultList(numbers, "incoming_phone_numbers"),
+    messaging_services: resultList(messaging, "services"), verify_services: resultList(verify, "services") };
+}
+
 async function projectedProviderOverview(bindings, artifactPath) {
   const result = {};
-  if (bindings.LINEAR_BASE_URL) result.linear = projection(artifactPath, "linear", {});
-  if (bindings.TWILIO_BASE_URL) {
-    const twilio = projection(artifactPath, "twilio", {});
-    result.twilio = publicTwilioProjection(twilio);
-  }
   if (bindings.MICROSOFT_BASE_URL) result.microsoft = projection(artifactPath, "microsoft", {});
   return result;
 }
 
-async function providerOverview(bindings, artifactPath, world, activity = [], browserBindings = bindings) {
+export async function providerOverview(bindings, artifactPath, world, browserBindings = bindings) {
+  const selected = (value, task, fallback) => value ? task() : Promise.resolve(fallback);
+  const emptyNotion = { users: [], pages: [], databases: [], dataSources: [], views: [], comments: [], fileUploads: [], agents: [], agentSessions: [], asyncTasks: [], changes: [],
+    mcpUrl: bindings.NOTION_BASE_URL ? `${bindings.NOTION_BASE_URL}/mcp` : null, mcpSessions: [], mcpCalls: [], connections: [], connectionTokens: [], webhookSubscriptions: [], webhookDeliveries: [], liveWebhookDelivery: false, available: false };
   const requests = await Promise.allSettled([
-    slackOverview(bindings, world),
-    githubOverview(bindings, world),
-    gmailOverview(bindings),
-    inbox(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, limit: 20 }),
-    inbox(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, mailbox: "Sent", limit: 20 }),
-    s3Overview(bindings, artifactPath),
-    notionOverview(bindings, artifactPath, browserBindings.NOTION_BASE_URL),
-    fetch(`${bindings.SITE_BASE_URL}/`).then(async (response) => {
+    selected(bindings.SLACK_BASE_URL, () => slackOverview(bindings, world), { channels: [] }),
+    selected(bindings.GITHUB_BASE_URL, () => githubOverview(bindings, world), { repositories: [], issues: [] }),
+    selected(bindings.GOOGLE_BASE_URL, () => gmailOverview(bindings), { messages: [], resultSizeEstimate: 0 }),
+    selected(bindings.IMAP_HOST_PORT, () => inbox(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, limit: 20 }), { mailbox: "INBOX", exists: 0, messages: [] }),
+    selected(bindings.IMAP_HOST_PORT, () => inbox(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, mailbox: "Sent", limit: 20 }), { mailbox: "Sent", exists: 0, messages: [] }),
+    selected(bindings.S3_BASE_URL, () => s3Overview(bindings, artifactPath), []),
+    selected(bindings.NOTION_BASE_URL, () => notionOverview(bindings, artifactPath, browserBindings.NOTION_BASE_URL), emptyNotion),
+    selected(bindings.SITE_BASE_URL, () => fetch(`${bindings.SITE_BASE_URL}/`).then(async (response) => {
       const text = await response.text();
       if (!response.ok) throw new Error(`HTTP target returned ${response.status}`);
       return text;
-    }),
-    stripeOverview(bindings, world, activity),
-    oktaOverview(bindings),
-    clerkOverview(bindings),
-    vercelOverview(bindings),
-    resendOverview(bindings),
-    mongoAtlasOverview(bindings),
+    }), "Unavailable"),
+    selected(bindings.STRIPE_BASE_URL, () => stripeOverview(bindings), {}),
+    selected(bindings.OKTA_BASE_URL, () => oktaOverview(bindings), {}),
+    selected(bindings.CLERK_BASE_URL, () => clerkOverview(bindings), {}),
+    selected(bindings.VERCEL_BASE_URL, () => vercelOverview(bindings), {}),
+    selected(bindings.RESEND_BASE_URL, () => resendOverview(bindings), {}),
+    selected(bindings.MONGOATLAS_BASE_URL, () => mongoAtlasOverview(bindings), {}),
+    selected(bindings.LINEAR_BASE_URL, () => linearOverview(bindings), {}),
+    selected(bindings.TWILIO_BASE_URL, () => twilioOverview(bindings), {}),
   ]);
   const slack = safe(requests[0], { channels: [] });
   const github = safe(requests[1], { repositories: [], issues: [] });
@@ -484,8 +516,7 @@ async function providerOverview(bindings, artifactPath, world, activity = [], br
   const orderMail = (mailbox) => ({ ...mailbox, messages: [...(mailbox.messages ?? [])].sort((left, right) => right.seq - left.seq) });
   const mail = { ...orderMail(mailInbox), inbox: orderMail(mailInbox), sent: orderMail(mailSent) };
   const s3 = safe(requests[5], []);
-  const notion = safe(requests[6], { users: [], pages: [], databases: [], dataSources: [], views: [], comments: [], fileUploads: [], agents: [], agentSessions: [], asyncTasks: [], changes: [],
-    mcpUrl: bindings.NOTION_BASE_URL ? `${bindings.NOTION_BASE_URL}/mcp` : null, mcpSessions: [], mcpCalls: [], connections: [], connectionTokens: [], webhookSubscriptions: [], webhookDeliveries: [], liveWebhookDelivery: false, available: false });
+  const notion = safe(requests[6], emptyNotion);
   const projected = await projectedProviderOverview(bindings, artifactPath);
   return {
     slack: { channels: slack.channels ?? [], messageCount: slack.messageCount ?? 0 }, github, gmail, mail,
@@ -496,9 +527,11 @@ async function providerOverview(bindings, artifactPath, world, activity = [], br
     vercel: safe(requests[11], { projects: [], teams: [], deployments: [] }),
     resend: safe(requests[12], { emails: [], domains: [], audiences: [], contactGroups: [] }),
     mongoatlas: safe(requests[13], { projects: [], projectDetails: [] }),
+    linear: safe(requests[14], { organization: null, teams: [], issues: [] }),
+    twilio: safe(requests[15], { account: null, phone_numbers: [], messaging_services: [], verify_services: [] }),
     ...projected,
     errors: requests.map((result, index) => result.status === "rejected"
-      ? { provider: ["Slack", "GitHub", "Gmail", "Mail inbox", "Mail sent", "S3", "Notion", "Website", "Stripe", "Okta", "Clerk", "Vercel", "Resend", "MongoDB Atlas"][index], message: result.reason.message }
+      ? { provider: ["Slack", "GitHub", "Gmail", "Mail inbox", "Mail sent", "S3", "Notion", "Website", "Stripe", "Okta", "Clerk", "Vercel", "Resend", "MongoDB Atlas", "Linear", "Twilio"][index], message: result.reason.message }
       : null).filter(Boolean),
   };
 }
@@ -514,7 +547,7 @@ function readiness(instance) {
 
 const SURFACE_NAMES = { apple: "Apple", clerk: "Clerk", github: "GitHub", google: "Google", linear: "Linear",
   microsoft: "Microsoft Teams", mongoatlas: "MongoDB Atlas", notion: "Notion", okta: "Okta", resend: "Resend", slack: "Slack",
-  stripe: "Stripe", twilio: "Twilio", vercel: "Vercel", mail: "Mail", s3: "Object storage", http: "HTTP targets" };
+  stripe: "Stripe", twilio: "Twilio", vercel: "Vercel", mail: "Local Mail", s3: "Object storage", http: "HTTP targets" };
 
 function surfaceReadiness(instance) {
   const surfaces = [];
@@ -839,7 +872,11 @@ export async function startWorkbench(instance, {
       }
       if (request.method === "GET" && url.pathname === "/api/overview") {
         const browserBindings = publicBindings(stateDir, bindings);
-        const providers = await providerOverview(asInspector(bindings), artifactPath, world, latestEvents(instance.state, 500), browserBindings);
+        // The 500-event read that used to be passed here went to a parameter
+        // nothing read, so every overview poll paid for a query and a JSON parse
+        // per event and then threw the result away. The activity the screen
+        // shows is read once, below.
+        const providers = await providerOverview(asInspector(bindings), artifactPath, world, browserBindings);
         providers.notion.webhookSecretRevealEnabled = allowWebhookSecretReveal;
         const organizations = new Map(world.organizations.map((entry) => [entry.id, entry.name]));
         return json(response, 200, {

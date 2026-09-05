@@ -968,6 +968,18 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "account_sid",
+          "from": "projection",
+          "file": "projections/twilio.json",
+          "pointer": "/account/sid"
+        },
+        {
+          "name": "auth_token",
+          "from": "projection",
+          "file": "projections/twilio.json",
+          "pointer": "/account/auth_token"
         }
       ]
     },
