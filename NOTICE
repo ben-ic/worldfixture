@@ -25,8 +25,16 @@ images are kept beside the material they describe:
       The vendored Notion OpenAPI descriptions and the recorded hosted MCP
       tools capture the Notion emulator's contract tests assert against.
 
+  emulators/emulate/contracts/stripe/THIRD_PARTY_NOTICES.md
+      The vendored subset of Stripe's published OpenAPI description the Stripe
+      billing emulator's contract tests assert against.
+
+The published npm package carries the CLI and the compiled worlds, not the
+emulators, so those three files are not in it. They are in this repository and
+in the container image, beside the material they describe.
+
 Trademarks named in this repository belong to their respective owners. Slack,
-Gmail, GitHub, Notion, Amazon S3, and the other services WorldFixture emulates
-are trademarks of their respective owners. WorldFixture is an independent
+Gmail, GitHub, Notion, Stripe, Amazon S3, and the other services WorldFixture
+emulates are trademarks of their respective owners. WorldFixture is an independent
 project and is not affiliated with, sponsored by, or endorsed by any of them.
 The names are used only to say which interface a given emulator reproduces.

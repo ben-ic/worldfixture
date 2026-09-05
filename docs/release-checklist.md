@@ -8,126 +8,69 @@ surface to complete this checklist.
 - [x] License the project under Apache License 2.0.
 - [x] Build `worldfixture:local` from a clean checkout.
 - [x] Run the test commands in `CONTRIBUTING.md`.
-- [ ] Resolve the v3 mail readiness timeout. The current direct-runtime test
-  reaches 90 seconds while mail creates and seeds its mailboxes.
-- [ ] Give the README to one developer who did not build WorldFixture.
-- [ ] Confirm that the developer can start v3, use the Workbench or an example,
-  reset the world, and stop it without private instructions.
-- [ ] Fix only the problems that block that run.
-- [ ] Review the source and included assets for credentials and material that
+- [x] Resolve the v3 mail readiness timeout. The `--direct` route runs mail as
+  its own `linux/amd64` service container, which on an arm64 machine runs under
+  Rosetta and takes the default world past a 300-second budget. The CLI tests
+  now start the smaller v2 world, because they test what the CLI prints rather
+  than how fast Cyrus seeds; `tests/image/protocol-test.mjs` covers the default
+  world on the real image, which loads it natively in about 90 seconds.
+- [x] Review the source and included assets for credentials and material that
   cannot be published.
-- [ ] Publish the source and the `arm64` and `amd64` container image from the
-  same commit.
-- [ ] Record the commit and image digest in the release notes.
+- [x] Publish the container image for `linux/amd64` and `linux/arm64`, and the
+  CLI to npm, from one commit.
+- [x] Record the commit and image digest in the release notes. See the release
+  record at the end of each `CHANGELOG.md` entry.
+- [ ] Give the README to one developer who did not build WorldFixture.
+- [ ] Confirm that the developer can start the default world, use the Workbench
+  or an example, reset the world, and stop it without private instructions.
+- [ ] Fix only the problems that block that run.
 
-## Before the first push
+## Before a push to a new remote
 
-Publishing a repository publishes its history, not its working tree. This
-repository's history still carries four design documents that were tracked from
-the first commit and only removed in `a1e7d22`. They are git-ignored now, so
-they are invisible in a `git status` and in a fresh checkout, and they are still
-in every object a clone would receive.
+Publishing a repository publishes its history, not its working tree.
 
-**What is actually there.** Verified on the 50 commits reachable from all refs:
+This history was squashed to a single initial commit before the first push, and
+the commits that preceded it were bundled outside the repository. Nothing that
+was ever tracked and later removed survives in any reachable object, no commit
+message names a private path, and every commit is authored under a real address.
 
-| Path | Commits containing it | Added | Removed |
-| --- | --- | --- | --- |
-| `docs/extraction-status.md` | 35 | `2ccee03` | `a1e7d22` |
-| `docs/product-experience.md` | 35 | `2ccee03` | `a1e7d22` |
-| `docs/system-design.md` | 35 | `2ccee03` | `a1e7d22` |
-| `docs/service-manifest-fit.md` | 21 | `bd77d25` | `a1e7d22` |
-
-`docs/extraction-status.md` line 10 reads "The repository is private and has no
-licence, so nothing here is ready for public distribution", and the same file
-carries 421 occurrences of the old product name. No other path has ever been
-added and later removed, and no credential, key, personal email address, or
-local filesystem path appears anywhere in the history.
-
-Separately, and not fixed by removing those four paths: five commit **messages**
-name the old product, two name `.private/design/`, and all 50 commits are
-authored as `Benjamin Cates <benjamincates@Benjamins-MacBook-Pro.local>`, which
-is a hostname, not an address. Commit messages and author identities are
-published with the history too.
-
-**No remote is configured.** `git remote -v` is empty, so nothing has been
-pushed and either option below is safe to run locally and verify before a remote
-is added.
-
-Reconcile before either option:
-
-- [ ] Commit or stash the working tree. Both options require a clean tree.
-- [ ] `git worktree list` shows two prunable worktrees under `/private/tmp` on
-  branches `codex/application-connector` and `codex/notion-api-plan`. Both
-  branches carry the same four documents. Run `git worktree prune`, then delete
-  the branches you do not intend to publish — otherwise a `git push --all`
-  publishes exactly what the rewrite removed.
-
-Then pick one.
-
-### Option A — squash to a single initial commit
+That is a property of the history as it stands, not a guarantee about the next
+one. Check it again before pushing to any remote that has not seen this history
+before:
 
 ```sh
-git checkout --orphan release
-git add -A
-git commit -m "WorldFixture 0.1.0"
-git branch -D main
-git branch -m main
-git reflog expire --expire=now --all && git gc --prune=now --aggressive
+git log --all --oneline                              # the commits a clone gets
+git log --all --format='%an <%ae>' | sort -u         # the identities it gets
+git worktree list                                    # branches you forgot
+git remote -v                                        # where it would go
+
+# Every path that has ever been in the history, which is not the same set as
+# `git ls-files`. Read it, and check that everything in it is meant to be public.
+git rev-list --all | while read -r c; do git ls-tree -r --name-only "$c"; done | sort -u
 ```
 
-Costs: every commit message is lost, including the engineering record of why
-each service was extracted the way it was. Authorship dates collapse to one day.
-Nothing that was ever in the history survives, so this also removes the old
-product name and `.private/design/` from the commit messages, and lets the
-single commit be authored with a real email address. Requires no new tooling.
+The rules that keep it that way:
 
-### Option B — remove only those four paths
-
-```sh
-pipx install git-filter-repo     # or: brew install git-filter-repo
-git filter-repo --force --invert-paths \
-  --path docs/extraction-status.md \
-  --path docs/product-experience.md \
-  --path docs/service-manifest-fit.md \
-  --path docs/system-design.md
-git reflog expire --expire=now --all && git gc --prune=now --aggressive
-```
-
-Costs: installs a tool. Every commit SHA changes, so any SHA quoted in a
-document or a release note has to be requoted — including the four in the table
-above and any in `CHANGELOG` or `docs/`. Commits that only ever touched those
-four files become empty and are dropped, which shortens the history. The commit
-messages that name the old product and `.private/design/` are **not** touched;
-add `--replace-message <file>` in the same run if you want them rewritten too.
-The author identity is not touched either; add `--mailmap <file>` for that. What
-you keep is the real history: 50 messages, dates, and the order things were
-built in.
-
-Recommended: Option B if the commit history is worth publishing as a record of
-how the project was built, plus `--replace-message` and `--mailmap` in the same
-invocation. Option A if it is not.
-
-After either:
-
-- [ ] `git log --all --oneline` and confirm the count is what you expect.
-- [ ] `git rev-list --all | while read c; do git ls-tree -r --name-only "$c"; done | sort -u | grep -E 'extraction-status|product-experience|service-manifest-fit|system-design'`
-  returns nothing.
-- [ ] `git log --all --format='%an <%ae>' | sort -u` shows the identity you mean
-  to publish.
-- [ ] Only then add the remote and push.
+- Nothing that is git-ignored may ever be committed. The ignore file names the
+  design working directories and the private notes directory for that reason.
+- `tests/contracts/test_schemas.py` refuses any tracked file that cites a path
+  under the ignored notes directory, so a comment can never send a reader to a
+  document they cannot have.
+- A branch that is not meant to be published must be deleted before
+  `git push --all`, not after.
 
 ## Connector conformance
 
 Connector v1 is the part of the product an outside developer has to implement
 themselves, so it is proven against applications this project did not write.
-Each one runs the whole flow — discovery, conformance check, plan, seed, repeat
-seed, live event — from both the CLI and the Workbench.
+Each one runs the whole flow -- discovery, conformance check, plan, seed, repeat
+seed, live event -- from both the CLI and the Workbench.
 
-- [ ] Vikunja (Go, SQLite)
-- [ ] Ghost (Node.js, WorldFixture-supplied MySQL)
-- [ ] Rocket.Chat (Node.js, MongoDB)
-- [ ] Chatwoot (Ruby on Rails, PostgreSQL)
-- [ ] Plane (Python/Django, PostgreSQL)
+- [x] Vikunja (Go, SQLite)
+- [x] Ghost (Node.js, WorldFixture-supplied MySQL)
+- [x] Rocket.Chat (Node.js, MongoDB)
+- [x] Chatwoot (Ruby on Rails, PostgreSQL)
+- [x] Plane (Python/Django, PostgreSQL)
 
 ## Fixed while proving it
 
@@ -155,3 +98,9 @@ would have reached the first outside developer.
   CONTRIBUTING tell a new person to do in that order, failed with
   `EADDRINUSE 127.0.0.1:4703`: a test asserting the fixed single-container ports
   cannot run while an instance is holding them. It now says so and skips.
+- [x] Installing the published package in an empty directory left the reader
+  with nothing to copy: the README told them to `cp -r examples/minimal-world`,
+  which only exists in a checkout. `worldfixture new <dir>` does it either way.
+- [x] The first screen ended with a bare `worldfixture slack send ...`, and
+  somebody who installed the documented way has no `worldfixture` on their PATH.
+  Every suggested command is now written the way the reader invoked the CLI.
