@@ -27,12 +27,34 @@ function conversation(host, port, timeoutMs) {
       }
     };
 
+    // A FAILURE HAS TO REACH WHOEVER IS WAITING FOR A REPLY.
+    //
+    // The timeout used to call `reject` alone, and `reject` is the promise this
+    // function returned -- which has already resolved the moment the socket
+    // connected. So a server that answered 220 and then went silent destroyed
+    // the socket, resolved nothing, and left `send` pending forever: no error,
+    // no timeout, no return. That blocks a scheduler tick, and a blocked tick
+    // blocks `reset` and shutdown, both of which wait for the tick to settle.
+    //
+    // Every pending waiter is failed as well, so the error the timeout already
+    // writes is the one the caller actually receives.
+    let failure = null;
+    const fail = (error) => {
+      if (failure) return;
+      failure = error;
+      reject(error);
+      while (waiters.length > 0) waiters.shift().reject(error);
+      socket.destroy();
+    };
+
     socket.setEncoding("utf8");
     socket.setTimeout(timeoutMs, () => {
-      socket.destroy();
-      reject(new Error(`SMTP at ${host}:${port} did not answer within ${timeoutMs}ms`));
+      fail(new Error(`SMTP at ${host}:${port} did not answer within ${timeoutMs}ms`));
     });
-    socket.on("error", reject);
+    socket.on("error", fail);
+    // A server that hangs up mid-conversation is the same shape of failure as
+    // one that stops answering, and leaves the same waiter pending.
+    socket.on("close", () => fail(new Error(`SMTP at ${host}:${port} closed the connection`)));
     socket.on("data", (chunk) => {
       buffer += chunk;
       drain();
@@ -40,6 +62,10 @@ function conversation(host, port, timeoutMs) {
 
     const expect = (...codes) =>
       new Promise((ok, no) => {
+        // A reply asked for after the connection has already failed can never
+        // arrive. `send` asks for one in its `finally` -- the QUIT -- so
+        // queueing it would put the hang back in the cleanup path.
+        if (failure) return no(failure);
         waiters.push({ expect: codes, resolve: ok, reject: no });
         drain();
       });
@@ -72,8 +98,14 @@ export async function send(address, { from, to, subject, body, date, headers = {
       ...Object.entries(headers).map(([name, value]) => `${name}: ${value}`),
       "Content-Type: text/plain; charset=utf-8",
       "",
-      // A lone dot would end DATA early; escaping it is part of the protocol.
-      ...body.split("\n").map((line) => (line === "." ? ".." : line)),
+      // DOT-STUFFING IS PER LINE THAT BEGINS WITH A DOT, NOT PER LINE THAT IS
+      // ONE. RFC 5321 section 4.5.2 has the sender insert a period before every
+      // line whose first character is a period, and the receiver strip one back
+      // off. Escaping only the lone `.` meant the receiver stripped a period
+      // that was never doubled: measured over a real DATA conversation, a body
+      // line `.hidden` was delivered as `hidden` and `..double` as `.double`.
+      // The lone dot is covered by the same rule, since it also begins with one.
+      ...body.split("\n").map((line) => (line.startsWith(".") ? `.${line}` : line)),
       ".",
     ].join("\r\n");
 
