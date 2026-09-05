@@ -1,0 +1,42 @@
+# High-level system view. Show only the parts a user or contributor must know.
+
+direction: down
+
+source: "World source\nJSON and fragments"
+artifact: "Prepared artifact\nbaseline, projections,\ntimeline, and digests"
+artifact.shape: stored_data
+runtime: "Runtime\nreadiness, clock, scheduler,\nevents, and reset"
+services: "Local services\nprovider APIs, Local Mail, S3,\nHTTP targets, and databases"
+application: "Application under test"
+workbench: "Workbench"
+
+source -> artifact: "validate and project"
+artifact -> runtime: "baseline and timeline"
+runtime -> services: "start, schedule, and reset"
+services -> runtime: "observed actions become events"
+application -> services: "generated bindings\nSDKs and protocols"
+workbench -> runtime: "read and control"
+
+source.style.fill: "#f1f5f9"
+source.style.font-color: "#172033"
+source.style.stroke: "#64748b"
+source.style.border-radius: 10
+artifact.style.fill: "#f1f5f9"
+artifact.style.font-color: "#172033"
+artifact.style.stroke: "#64748b"
+runtime.style.fill: "#2563eb"
+runtime.style.font-color: "#ffffff"
+runtime.style.stroke: "#1d4ed8"
+runtime.style.border-radius: 10
+services.style.fill: "#e0f2fe"
+services.style.font-color: "#172033"
+services.style.stroke: "#0284c7"
+services.style.border-radius: 10
+application.style.fill: "#f1f5f9"
+application.style.font-color: "#172033"
+application.style.stroke: "#64748b"
+application.style.border-radius: 10
+workbench.style.fill: "#e0f2fe"
+workbench.style.font-color: "#172033"
+workbench.style.stroke: "#0284c7"
+workbench.style.border-radius: 10

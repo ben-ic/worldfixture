@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 const root = resolve(import.meta.dirname, "..");
 const check = process.argv.includes("--check");
 const image = "d2lang/d2:v0.7.1";
-const diagrams = ["containers"];
+const diagrams = ["containers", "system"];
 const temporary = check ? mkdtempSync(join(tmpdir(), "worldfixture-d2-")) : null;
 const outputDirectory = temporary ?? join(root, "docs/public/architecture");
 
