@@ -4,6 +4,7 @@ import test from "node:test";
 import { join } from "node:path";
 
 import {
+  atlasDatabaseView,
   sanitizeNotionInspection,
   sanitizePublicBindings,
   providerBrowserUrl,
@@ -175,6 +176,25 @@ test("a listed Stripe price takes its billing interval from the provider's expan
   assert.equal(unsubscribed.recurring, undefined);
   assert.equal(setup.recurring, undefined);
   assert.equal(stripePricesWithInterval(undefined, undefined).length, 0);
+});
+
+// Closes: the Atlas data explorer rendered blank card titles and "No
+// collections" for a database that really holds four. The databases route
+// answers `{databaseName}` with no `name` and no `collections`; the collections
+// live on their own route and arrive as `{collectionName, databaseName}`.
+test("an Atlas database carries the name and collections the data explorer reads", () => {
+  const view = atlasDatabaseView({ databaseName: "northstar" }, { name: "northstar-production" }, [
+    { collectionName: "customers", databaseName: "northstar" },
+    { collectionName: "invoices", databaseName: "northstar" },
+  ]);
+  assert.equal(view.name, "northstar");
+  assert.equal(view.cluster, "northstar-production");
+  assert.deepEqual(view.collections, ["customers", "invoices"]);
+  // What Atlas really sent stays on the record so the drawer does not lie.
+  assert.equal(view.databaseName, "northstar");
+  // The React key used to degrade to "northstar-production-undefined".
+  assert.equal(`${view.cluster}-${view.name}`, "northstar-production-northstar");
+  assert.deepEqual(atlasDatabaseView({ databaseName: "northstar" }, { name: "c" }).collections, []);
 });
 
 // Closes: every Slack message was attributed to a raw member id. History

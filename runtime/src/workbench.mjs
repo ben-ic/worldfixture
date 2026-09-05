@@ -384,6 +384,31 @@ async function resendOverview(bindings) {
   return { emails, domains, audiences, contactGroups };
 }
 
+// ATLAS NAMES A DATABASE `databaseName`, AND DOES NOT LIST ITS COLLECTIONS.
+//
+// `GET .../clusters/{c}/databases` answers `{"results":[{"databaseName":
+// "northstar"}]}` -- no `name`, no `collections`. The data explorer read
+// `database.name` and `database.collections`, so every card had a blank title
+// and said "No collections" for a database that really holds four, and its
+// React key degraded to "northstar-production-undefined".
+//
+// The collections are a separate route, `.../databases/{db}/collections`,
+// answering `{"results":[{"collectionName":"customers","databaseName":
+// "northstar"}, ...],"totalCount":4}`.
+//
+// Normalised here rather than in the browser because reading the collections
+// costs one provider request per database and the browser holds no provider
+// credential. `name` is added beside `databaseName` rather than replacing it,
+// so the record drawer still shows what Atlas really sent.
+export function atlasDatabaseView(database, cluster, collections = []) {
+  return {
+    ...database,
+    name: database.databaseName ?? database.name,
+    cluster: cluster?.name,
+    collections: collections.map((entry) => entry.collectionName ?? entry.name ?? entry),
+  };
+}
+
 async function mongoAtlasOverview(bindings) {
   const read = (path, ...keys) => optionalProviderList(bindings.MONGOATLAS_BASE_URL, bindings.MONGOATLAS_TOKEN, path, ...keys);
   const projects = await read("/api/atlas/v2/groups", "results");
@@ -394,8 +419,17 @@ async function mongoAtlasOverview(bindings) {
       read(`/api/atlas/v2/groups/${encodeURIComponent(id)}/databaseUsers`, "results"),
     ]);
     const databases = (await Promise.all(clusters.map(async (cluster) => {
-      const rows = await read(`/api/atlas/v2/groups/${encodeURIComponent(id)}/clusters/${encodeURIComponent(cluster.name)}/databases`, "results", "databases");
-      return rows.map((database) => ({ ...database, cluster: cluster.name }));
+      const base = `/api/atlas/v2/groups/${encodeURIComponent(id)}/clusters/${encodeURIComponent(cluster.name)}/databases`;
+      const rows = await read(base, "results", "databases");
+      return Promise.all(rows.map(async (database) => {
+        const name = database.databaseName ?? database.name;
+        // A deployment without the collections route must still list its
+        // databases, so a refused read leaves the card without a collection
+        // line rather than removing the whole Atlas overview.
+        const collections = await read(`${base}/${encodeURIComponent(name)}/collections`, "results", "collections")
+          .catch(() => []);
+        return atlasDatabaseView(database, cluster, collections);
+      }));
     }))).flat();
     return { project, clusters, databaseUsers, databases };
   }));

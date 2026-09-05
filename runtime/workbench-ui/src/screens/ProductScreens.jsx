@@ -199,6 +199,25 @@ export function Vercel({ data }) {
   </>;
 }
 
+// IDLE IS ATLAS' HEALTHY STATE, NOT A WARNING. The badge was
+// `stateName === "IDLE" ? "yellow" : "green"`, which is the comparison the
+// wrong way round: IDLE means the cluster is up and doing no maintenance, and
+// the live emulator reports it for every cluster it serves. So a healthy
+// cluster wore a warning badge forever, and CREATING or UPDATING -- the states
+// that are actually worth a second look -- wore the healthy one.
+const CLUSTER_HEALTHY = ["IDLE", "AVAILABLE"];
+
+function clusterHealthy(cluster) {
+  return CLUSTER_HEALTHY.includes(cluster.stateName ?? "AVAILABLE");
+}
+
+// A collection arrives from Atlas as `{collectionName, databaseName}`, and
+// `mongoAtlasOverview` normalises it to a plain name. Both shapes are read here
+// so a record that reached the browser unnormalised still names itself.
+function collectionName(entry) {
+  return typeof entry === "string" ? entry : (entry.collectionName ?? entry.name);
+}
+
 export function MongoAtlas({ data }) {
   const atlas = data.providers.mongoatlas ?? {};
   const details = list(atlas.projectDetails);
@@ -208,8 +227,8 @@ export function MongoAtlas({ data }) {
   const [selected, setSelected] = useState(null);
   return <><PageHead title="MongoDB Atlas" subtitle="Projects, clusters, data, and database access." command="Atlas Admin API v2"/><ProviderError data={data} name="MongoDB Atlas"/>
     <Metrics items={[["Projects", list(atlas.projects).length], ["Clusters", clusters.length], ["Databases", databases.length], ["Database users", users.length]]}/>
-    {clusters.length ? <div className="section"><Panel title="Clusters"><div className="data-row atlas-columns table-head"><span>CLUSTER</span><span>VERSION</span><span>REGION</span><span>SIZE</span><span>STATE</span></div>{clusters.map((cluster) => <button className="data-row atlas-columns clickable-row" key={cluster.id ?? cluster.name} onClick={() => setSelected(cluster)}><span><strong>{cluster.name}</strong><small>{text(cluster.clusterType, cluster.providerSettings?.providerName)}</small></span><code>{text(cluster.mongoDBMajorVersion, cluster.mongodb_version)}</code><code className="muted">{text(cluster.providerSettings?.regionName, cluster.region)}</code><span>{text(cluster.providerSettings?.instanceSizeName, cluster.instance_size)}</span><code className={cluster.stateName === "IDLE" ? "yellow" : "green"}>{text(cluster.stateName, "AVAILABLE")}</code></button>)}</Panel></div> : <EmptyProduct>No Atlas clusters are present.</EmptyProduct>}
-    {databases.length > 0 && <div className="section"><Panel title="Data explorer"><div className="card-grid">{databases.map((database) => <button className="product-card" key={`${database.cluster}-${database.name}`} onClick={() => setSelected(database)}><span className="eyebrow">{database.cluster}</span><strong>{database.name}</strong><p>{list(database.collections).map((item) => typeof item === "string" ? item : item.name).join(" · ") || "No collections"}</p></button>)}</div></Panel></div>}
+    {clusters.length ? <div className="section"><Panel title="Clusters"><div className="data-row atlas-columns table-head"><span>CLUSTER</span><span>VERSION</span><span>REGION</span><span>SIZE</span><span>STATE</span></div>{clusters.map((cluster) => <button className="data-row atlas-columns clickable-row" key={cluster.id ?? cluster.name} onClick={() => setSelected(cluster)}><span><strong>{cluster.name}</strong><small>{text(cluster.clusterType, cluster.providerSettings?.providerName)}</small></span><code>{text(cluster.mongoDBVersion, cluster.mongoDBMajorVersion, cluster.mongodb_version)}</code><code className="muted">{text(cluster.providerSettings?.regionName, cluster.region)}</code><span>{text(cluster.providerSettings?.instanceSizeName, cluster.instance_size)}</span><code className={clusterHealthy(cluster) ? "green" : "yellow"}>{text(cluster.stateName, "AVAILABLE")}</code></button>)}</Panel></div> : <EmptyProduct>No Atlas clusters are present.</EmptyProduct>}
+    {databases.length > 0 && <div className="section"><Panel title="Data explorer"><div className="card-grid">{databases.map((database) => <button className="product-card" key={`${database.cluster}-${database.name ?? database.databaseName}`} onClick={() => setSelected(database)}><span className="eyebrow">{database.cluster}</span><strong>{text(database.name, database.databaseName)}</strong><p>{list(database.collections).map(collectionName).filter(Boolean).join(" · ") || "No collections"}</p></button>)}</div></Panel></div>}
     <RecordDrawer title="MongoDB Atlas resource" value={selected} onClose={() => setSelected(null)}/>
   </>;
 }
