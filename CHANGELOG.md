@@ -27,7 +27,7 @@ should be taken rather than skipped.
   SVG by a pinned container, with `--check` failing a committed SVG that no
   longer matches its source.
 - **Continuous integration**: both linters, all three test suites and a
-  determinism job that compiles every world twice under different
+  determinism job that builds every world twice under different
   `PYTHONHASHSEED` values and diffs the output.
 - **A lint configuration for both languages**, chosen for the mistakes it
   catches rather than for style, with the rules that were measured wrong here
@@ -37,7 +37,7 @@ should be taken rather than skipped.
 - **Onboarding examples** in curl, JavaScript and Python that read this run's
   bindings, send one message and read it back.
 - **Live Linear and Twilio surfaces in the Workbench**, read from the running
-  services rather than from the compiled projection, so a write through either
+  services rather than from the prepared projection, so a write through either
   API appears on its own screen.
 - **The world's HTTP targets** are listed on the Website screen: the RSS feed,
   the changing pages, each probe with its configured status sequence, the
@@ -136,6 +136,13 @@ should be taken rather than skipped.
   databases holding four, and marked every healthy cluster with a warning badge.
 - **The Stripe product catalogue printed "recurring" in its interval column** on
   every row, which says a price repeats without saying how often.
+
+### Release record
+
+- Package: `worldfixture@0.2.3` on npm, also tagged `latest`.
+- Image: `ghcr.io/ben-ic/worldfixture:0.2.3`, `linux/amd64` and `linux/arm64`,
+  also tagged `latest`.
+- Digest: `sha256:e739c5e41e95ce0b9f07990b7f3ab6ff164b58f6a5f630e523f4a607c29b0a5c`
 
 ## 0.2.2
 
@@ -269,7 +276,7 @@ Rocket.Chat (Node, MongoDB), Chatwoot (Rails, PostgreSQL) and Plane
   container of that name is not ours — and nothing caught it, so the most likely
   first-use failure of all buried the sentence that says what to do.
 - **`validate` accepted worlds that `build` refused**, sometimes with a bare
-  Python traceback. It now compiles the world and discards the result, so
+  Python traceback. It now prepares the world artifact and discards it, so
   anything it accepts will build.
 - **`worldfixture connector` with no action** answered "an application URL is
   required", which is true of the action it was not given.
