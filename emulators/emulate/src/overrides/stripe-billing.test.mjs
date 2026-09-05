@@ -165,3 +165,97 @@ test("Stripe billing returns a Stripe error envelope for an unknown resource", a
   assert.equal(missing.value.error.type, "invalid_request_error");
   assert.equal(missing.value.error.code, "resource_missing");
 });
+
+// Closes: `Number(query("limit") ?? 10) || 10` made `limit=0` and `limit=abc`
+// both mean ten. Measured on the live listener before the fix --
+// `GET /v1/invoices?limit=0` answered 200 with ten invoices.
+test("an out-of-range or non-integer limit is refused rather than silently made 10", async () => {
+  const { app } = fixture();
+  for (let index = 0; index < 3; index += 1) {
+    await request(app, "/v1/invoices", "POST", { customer: "cus_example" });
+  }
+
+  for (const [query, message] of [
+    ["limit=0", "This value must be greater than or equal to 1."],
+    ["limit=abc", "Invalid integer: abc"],
+    ["limit=101", "This value must be less than or equal to 100."],
+  ]) {
+    const refused = await request(app, `/v1/invoices?${query}`);
+    assert.equal(refused.response.status, 400, query);
+    assert.equal(refused.value.error.type, "invalid_request_error");
+    assert.equal(refused.value.error.message, message);
+  }
+
+  // The valid range still works, including the `limit=100` the Stripe Workbench
+  // sends, and an absent limit still defaults to ten.
+  assert.equal((await request(app, "/v1/invoices?limit=1")).value.data.length, 1);
+  assert.equal((await request(app, "/v1/invoices?limit=100")).value.data.length, 3);
+  assert.equal((await request(app, "/v1/invoices")).response.status, 200);
+});
+
+// Closes: an unknown `starting_after` resolved to index 0 through
+// `Math.max(0, findIndex(...) + 1)`, so the emulator re-served page one with
+// `has_more: true` and a client paging until `has_more` went false never
+// terminated. Measured: `?limit=2&starting_after=in_doesnotexist` returned 200
+// and the same rows as `?limit=2`.
+test("an unknown starting_after cursor is refused rather than re-serving page one", async () => {
+  const { app } = fixture();
+  for (let index = 0; index < 5; index += 1) {
+    await request(app, "/v1/invoices", "POST", { customer: "cus_example" });
+  }
+
+  const page1 = await request(app, "/v1/invoices?limit=2");
+  assert.equal(page1.value.data.length, 2);
+  assert.equal(page1.value.has_more, true);
+
+  const bogus = await request(app, "/v1/invoices?limit=2&starting_after=in_doesnotexist");
+  assert.equal(bogus.response.status, 400);
+  assert.equal(bogus.value.error.code, "resource_missing");
+  assert.equal(bogus.value.error.message, "No such object: 'in_doesnotexist'");
+
+  // A real cursor still advances, and paging to exhaustion terminates.
+  const page2 = await request(app, `/v1/invoices?limit=2&starting_after=${page1.value.data.at(-1).id}`);
+  assert.equal(page2.response.status, 200);
+  const page1Ids = page1.value.data.map((row) => row.id);
+  assert.ok(page2.value.data.every((row) => !page1Ids.includes(row.id)), "page two repeated page one");
+
+  const seen = [];
+  let after;
+  for (let page = 0; page < 10; page += 1) {
+    const listed = await request(app, `/v1/invoices?limit=2${after ? `&starting_after=${after}` : ""}`);
+    seen.push(...listed.value.data.map((row) => row.id));
+    if (!listed.value.has_more) break;
+    after = listed.value.data.at(-1).id;
+  }
+  assert.equal(new Set(seen).size, 5);
+});
+
+// Closes: the "due_date and days_until_due are only valid for send_invoice"
+// guard tested truthiness, so a JSON body saying `"days_until_due": 0` -- due
+// today -- put a `0` on the right of the `||`, the guard did not fire, and a
+// `charge_automatically` invoice was created instead of the 400 Stripe answers.
+// A form-encoded body was unaffected, because `"0"` is truthy, so the same
+// request meant two different things depending on how it was encoded.
+test("days_until_due zero is refused on a charge_automatically invoice, in either encoding", async () => {
+  const { app } = fixture();
+
+  const json = await app.request("/v1/invoices", {
+    method: "POST",
+    headers: { authorization: "Bearer sk_test_worldfixture", "content-type": "application/json" },
+    body: JSON.stringify({ customer: "cus_example", collection_method: "charge_automatically", days_until_due: 0 }),
+  });
+  assert.equal(json.status, 400);
+  assert.match((await json.json()).error.message, /only valid for send_invoice/);
+
+  const form = await request(app, "/v1/invoices", "POST", {
+    customer: "cus_example", collection_method: "charge_automatically", days_until_due: "0",
+  });
+  assert.equal(form.response.status, 400);
+
+  // And `days_until_due: 0` on a send_invoice invoice still means due today.
+  const dueToday = await request(app, "/v1/invoices", "POST", {
+    customer: "cus_example", collection_method: "send_invoice", days_until_due: "0",
+  });
+  assert.equal(dueToday.response.status, 200);
+  assert.equal(dueToday.value.due_date, dueToday.value.created);
+});

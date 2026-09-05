@@ -27,10 +27,40 @@ function error(c, status, message, code = "resource_missing") {
   return c.json({ error: { type: "invalid_request_error", message, code } }, status);
 }
 
+// PAGINATION IS VALIDATED, NOT COERCED. Both parameters used to be guessed at,
+// and both guesses were wrong in a way the caller could not see.
+//
+// `Number(query("limit") ?? 10) || 10` reads as "default to 10". It is also what
+// happens for `limit=0` and for `limit=abc`, because `0 || 10` and `NaN || 10`
+// are both 10. Measured against the live listener before this was written:
+// `GET /v1/invoices?limit=0` answered with ten invoices and `has_more: true`,
+// and so did `?limit=abc`. Stripe refuses both. `??` alone would not have fixed
+// it either -- it would have turned `limit=0` into a silent one-row page.
+//
+// `starting_after` was the worse half. An id the collection does not contain
+// gives `findIndex` -1, `-1 + 1` is 0, and `Math.max(0, 0)` is 0, so an unknown
+// or expired cursor silently re-served page one. Measured:
+// `?limit=2&starting_after=in_doesnotexist` returned 200 with the same two
+// invoices as `?limit=2` and `has_more: true`, so a client paging until
+// `has_more` goes false walks the first page forever and never terminates.
+// Stripe answers 400 `resource_missing` for a cursor it cannot resolve.
 function list(c, values, path, formatter) {
-  const limit = Math.min(100, Math.max(1, Number(c.req.query("limit") ?? 10) || 10));
+  const rawLimit = c.req.query("limit");
+  let limit = 10;
+  if (rawLimit !== undefined) {
+    limit = Number(rawLimit);
+    if (!Number.isInteger(limit)) return error(c, 400, `Invalid integer: ${rawLimit}`, "parameter_invalid_integer");
+    if (limit < 1) return error(c, 400, "This value must be greater than or equal to 1.", "parameter_invalid_integer");
+    if (limit > 100) return error(c, 400, "This value must be less than or equal to 100.", "parameter_invalid_integer");
+  }
+
   const startingAfter = c.req.query("starting_after");
-  const start = startingAfter ? Math.max(0, values.findIndex((item) => item.stripe_id === startingAfter) + 1) : 0;
+  let start = 0;
+  if (startingAfter !== undefined) {
+    start = values.findIndex((item) => item.stripe_id === startingAfter) + 1;
+    if (start === 0) return error(c, 400, `No such object: '${startingAfter}'`);
+  }
+
   const data = values.slice(start, start + limit).map(formatter);
   return c.json({ object: "list", url: path, has_more: start + limit < values.length, data });
 }
@@ -200,10 +230,19 @@ export function registerStripeBilling(app, store, webhooks) {
     if (!stripe.customers.findOneBy("stripe_id", body.customer)) return error(c, 404, `No such customer: '${body.customer}'`);
     const created = now();
     const collectionMethod = body.collection_method ?? "charge_automatically";
-    if (collectionMethod === "charge_automatically" && (body.due_date || body.days_until_due)) {
+    // PRESENCE, not truthiness. `stripeBody` also parses JSON, and a JSON body
+    // saying `"days_until_due": 0` -- due today -- put a `0` on the right of the
+    // old `||`, so the guard did not fire and a `charge_automatically` invoice was
+    // created with `due_date: null` instead of the 400 Stripe answers. A
+    // form-encoded body was unaffected, because `"0"` is truthy, which is exactly
+    // the kind of difference between two encodings of the same request that a
+    // fixture must not have.
+    if (collectionMethod === "charge_automatically" && (body.due_date !== undefined || body.days_until_due !== undefined)) {
       return error(c, 400, "The due_date and days_until_due fields are only valid for send_invoice invoices.", "parameter_invalid_integer");
     }
-    const dueDate = collectionMethod === "send_invoice" ? (body.due_date ? Number(body.due_date) : created + Number(body.days_until_due ?? 30) * 86400) : null;
+    const dueDate = collectionMethod === "send_invoice"
+      ? (body.due_date !== undefined ? Number(body.due_date) : created + Number(body.days_until_due ?? 30) * 86400)
+      : null;
     const invoice = billing.invoices.insert({ stripe_id: stripeId("in"), number: null, customer_id: body.customer,
       description: body.description ?? null, currency: String(body.currency ?? "usd").toLowerCase(), status: "draft",
       collection_method: collectionMethod, created, due_date: dueDate, auto_advance: asBoolean(body.auto_advance),
