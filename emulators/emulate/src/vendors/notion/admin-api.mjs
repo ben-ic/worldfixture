@@ -33,6 +33,23 @@ function list(c, records, type, map = (item) => item) {
   const selected = page(records, c.req.query("start_cursor"), limit); if (selected.invalid) return error(c, 400, "validation_error", "start_cursor is not valid.");
   return c.json({ object: "list", type, results: selected.results.map(map), has_more: selected.has_more, next_cursor: selected.next_cursor });
 }
+// The same two guards `list` and `plainList` apply, for the two routes whose
+// response envelope is neither of theirs.
+//
+// `size(c)` returns `null` to mean "page_size is invalid", and both of those
+// routes wrote `size(c) ?? 100` -- turning the refusal into a silent hundred. And
+// neither checked `page`'s `invalid` flag, so an unknown `start_cursor` reached
+// `.map()` on an undefined `results`. Both measured against a running fixture:
+// `GET /admin/v1/legal_holds?page_size=0` answered 200, and
+// `?start_cursor=totally-bogus` answered 500 `Cannot read properties of
+// undefined (reading 'map')`. Every sibling admin list answers 400 for both.
+function paged(c, records) {
+  const limit = size(c);
+  if (limit === null) return { response: error(c, 400, "validation_error", "page_size must be from 1 through 100.") };
+  const selected = page(records, c.req.query("start_cursor"), limit);
+  if (selected.invalid) return { response: error(c, 400, "validation_error", "start_cursor is not valid.") };
+  return { selected };
+}
 function plainList(c, records, map = (item) => item) {
   const limit = size(c); if (limit === null) return error(c, 400, "validation_error", "page_size must be from 1 through 100.");
   const selected = page(records, c.req.query("start_cursor"), limit); if (selected.invalid) return error(c, 400, "validation_error", "start_cursor is not valid.");
@@ -70,7 +87,7 @@ export function registerAdminApiRoutes(app, store) {
   const findGroup = (id, space) => { const result = groups.findOneBy("notion_id", id); return result?.space_id === space ? result : null; };
   const findAgent = (id) => agents.findOneBy("notion_id", normalizeId(id));
 
-  app.get("/admin/v1/legal_holds", (c) => { const auth = guard(c, store, "legal-hold:read"); if (auth.response) return auth.response; const selected = page(holds.all(), c.req.query("start_cursor"), size(c) ?? 100); return c.json({ legal_holds: selected.results.map(legalHold), ...(selected.next_cursor ? { next_cursor: selected.next_cursor } : {}) }); });
+  app.get("/admin/v1/legal_holds", (c) => { const auth = guard(c, store, "legal-hold:read"); if (auth.response) return auth.response; const { response, selected } = paged(c, holds.all()); if (response) return response; return c.json({ legal_holds: selected.results.map(legalHold), ...(selected.next_cursor ? { next_cursor: selected.next_cursor } : {}) }); });
   app.post("/admin/v1/legal_holds", async (c) => {
     const auth = guard(c, store, "legal-hold:write"); if (auth.response) return auth.response; const input = await json(c);
     if (!input?.name || typeof input.start_date !== "number" || !Array.isArray(input.user_ids) || !Array.isArray(input.user_interaction_type) || input.user_interaction_type.some((value) => !["page.created", "page.edited", "page.viewed"].includes(value))) return error(c, 400, "validation_error", "The request body is invalid.");
@@ -82,7 +99,7 @@ export function registerAdminApiRoutes(app, store) {
   app.patch("/admin/v1/legal_holds/:id", async (c) => { const auth = guard(c, store, "legal-hold:write"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); const input = await json(c); if (!record) return error(c, 404, "object_not_found", "Legal hold not found."); if (!input || !["name", "description", "icon"].some((key) => input[key] !== undefined)) return error(c, 400, "validation_error", "The request body is invalid."); return c.json(legalHold(holds.update(record.id, { ...(input.name !== undefined ? { name: input.name } : {}), ...(input.description !== undefined ? { description: input.description } : {}), ...(input.icon !== undefined ? { icon: input.icon } : {}) }))); });
   app.post("/admin/v1/legal_holds/:id/export", (c) => { const auth = guard(c, store, "legal-hold:export"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); return record ? c.json({ legal_hold_export_id: nextId(store, "legal_hold_export", "d2000000") }) : error(c, 404, "object_not_found", "Legal hold not found."); });
   app.post("/admin/v1/legal_holds/:id/release", (c) => { const auth = guard(c, store, "legal-hold:write-high-impact"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); if (!record) return error(c, 404, "object_not_found", "Legal hold not found."); return c.json(legalHold(holds.update(record.id, { status: "released", end_date: currentTime(store) }))); });
-  app.get("/admin/v1/legal_holds/:id/users", (c) => { const auth = guard(c, store, "legal-hold:read"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); if (!record) return error(c, 404, "object_not_found", "Legal hold not found."); const selected = page(record.user_ids.map((id) => ({ id })), c.req.query("start_cursor"), size(c) ?? 100); return c.json({ user_ids: selected.results.map((item) => item.id), ...(selected.next_cursor ? { next_cursor: selected.next_cursor } : {}) }); });
+  app.get("/admin/v1/legal_holds/:id/users", (c) => { const auth = guard(c, store, "legal-hold:read"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); if (!record) return error(c, 404, "object_not_found", "Legal hold not found."); const { response, selected } = paged(c, record.user_ids.map((id) => ({ id }))); if (response) return response; return c.json({ user_ids: selected.results.map((item) => item.id), ...(selected.next_cursor ? { next_cursor: selected.next_cursor } : {}) }); });
   app.post("/admin/v1/legal_holds/:id/users", async (c) => { const auth = guard(c, store, "legal-hold:write"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); const input = await json(c); if (!record) return error(c, 404, "object_not_found", "Legal hold not found."); if (!Array.isArray(input?.user_ids) || input.user_ids.some((id) => !users.findOneBy("notion_id", normalizeId(id)))) return error(c, 400, "validation_error", "user_ids is invalid."); return c.json(legalHold(holds.update(record.id, { user_ids: [...new Set([...record.user_ids, ...input.user_ids.map(normalizeId)])] }))); });
   app.delete("/admin/v1/legal_holds/:id/users/:user_id", (c) => { const auth = guard(c, store, "legal-hold:write"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); if (!record) return error(c, 404, "object_not_found", "Legal hold not found."); return c.json(legalHold(holds.update(record.id, { user_ids: record.user_ids.filter((id) => id !== normalizeId(c.req.param("user_id"))) }))); });
   app.get("/admin/v1/legal_holds/:id/workspaces", (c) => { const auth = guard(c, store, "legal-hold:read"); if (auth.response) return auth.response; const record = findHold(c.req.param("id")); return record ? c.json({ workspace_ids: [...record.workspace_ids] }) : error(c, 404, "object_not_found", "Legal hold not found."); });

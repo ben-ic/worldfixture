@@ -159,3 +159,39 @@ test("Admin API requires its exact version and operation-specific organization s
   assert.equal(ordinary.status, 403);
   assert.equal((await ordinary.json()).code, "restricted_resource");
 });
+
+// Closes: `/admin/v1/legal_holds` and `/admin/v1/legal_holds/:id/users` wrote
+// `size(c) ?? 100`, and `size` returns `null` to mean "page_size is invalid" --
+// so the refusal became a silent hundred. Neither checked the paginator's
+// `invalid` flag either, so an unknown `start_cursor` reached `.map()` on an
+// undefined `results`. Measured against the running fixture before the fix:
+// `?page_size=0` answered 200, and `?start_cursor=totally-bogus` answered 500
+// `Cannot read properties of undefined (reading 'map')`. Every sibling admin list
+// answered 400 for both.
+test("the two legal-hold lists validate page_size and start_cursor like every other admin list", async () => {
+  const { app } = fixture();
+  const hold = await (await app.request("/admin/v1/legal_holds", {
+    method: "POST", headers,
+    body: JSON.stringify({ name: "Northstar preservation", start_date: 1778061600000, user_ids: [USER_ID], user_interaction_type: ["page.created"] }),
+  })).json();
+
+  for (const path of ["/admin/v1/legal_holds", `/admin/v1/legal_holds/${hold.id}/users`]) {
+    for (const [query, message] of [
+      ["page_size=0", "page_size must be from 1 through 100."],
+      ["page_size=abc", "page_size must be from 1 through 100."],
+      ["page_size=500", "page_size must be from 1 through 100."],
+      ["start_cursor=totally-bogus", "start_cursor is not valid."],
+    ]) {
+      const response = await app.request(`${path}?${query}`, { headers });
+      assert.equal(response.status, 400, `${path}?${query}`);
+      assert.equal((await response.json()).message, message, `${path}?${query}`);
+    }
+
+    // A valid request still answers, and a page size the caller asks for is honoured.
+    const ok = await app.request(`${path}?page_size=1`, { headers });
+    assert.equal(ok.status, 200, path);
+  }
+
+  const listed = await (await app.request("/admin/v1/legal_holds?page_size=1", { headers })).json();
+  assert.equal(listed.legal_holds.length, 1);
+});
