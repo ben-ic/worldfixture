@@ -246,7 +246,7 @@ function unknownLimits(collections, limits) {
 // records that pruning did not object to; it is bounded here anyway, because a
 // scaling tool that hangs on somebody's world is worse than one that gives them
 // a slightly smaller slice.
-function chooseSlice(collections, owners, targets) {
+function chooseSlice(collections, owners, targets, hardCapped = new Set()) {
   const keptIds = new Set();
   const kept = new Map();
 
@@ -388,9 +388,17 @@ function chooseSlice(collections, owners, targets) {
   //
   // So a collection that would come out empty gets one record put back, together
   // with everyone that record needs. That overshoots the cap on the collections
-  // the dependencies come from, which is the right trade: the cap exists to keep
-  // a slice small, and a handful of extra people is a much smaller price than a
-  // missing quarter of the world.
+  // the dependencies come from, which is the right trade: a preset cap exists to
+  // keep a slice small, and a handful of extra people is a much smaller price
+  // than a missing quarter of the world.
+  //
+  // BUT IT NEVER OVERSHOOTS A NUMBER THE CALLER TYPED. A preset cap is this
+  // code's opinion about a reasonable size; `--limit people=2` is an
+  // instruction. The first version of this pass did not tell them apart, so
+  // `--limit people=0` sent sixteen people -- their names, emails, Slack ids and
+  // GitHub logins -- to somebody's application after they had asked for none.
+  // A rescue that cannot be paid for out of the caller's own limits is not
+  // performed, and the collection stays empty and is reported as empty.
   const recordFor = (identifier) => owners.get(identifier)?.record ?? null;
   const collectionFor = (record) => collections.find((entry) => entry.records.includes(record)) ?? null;
 
@@ -423,10 +431,22 @@ function chooseSlice(collections, owners, targets) {
     );
     if (starved.length === 0) break;
     for (const collection of starved) {
-      for (const record of closureFor(collection.records[0])) {
-        const home = collectionFor(record);
-        if (home) add(home, record);
+      const closure = [...closureFor(collection.records[0])]
+        .map((record) => [collectionFor(record), record])
+        .filter(([home]) => home);
+
+      // Priced before anything is added, so a rescue is all or nothing.
+      const overspend = new Map();
+      let affordable = true;
+      for (const [home] of closure) {
+        if (!hardCapped.has(home.address)) continue;
+        const already = kept.get(home.address).size + (overspend.get(home.address) ?? 0);
+        if (already + 1 > targets.get(home.address)) { affordable = false; break; }
+        overspend.set(home.address, (overspend.get(home.address) ?? 0) + 1);
       }
+      if (!affordable) continue;
+
+      for (const [home, record] of closure) add(home, record);
     }
     // The people a starved collection needed are new parents, and records that
     // could not be kept before may be keepable now.
@@ -526,7 +546,16 @@ export function scaleWorld(source, { scale = DEFAULT_SCALE, limits = {} } = {}) 
   const targets = new Map(
     collections.map((collection) => [collection.address, limitFor(collection, { preset, limits })]),
   );
-  const slice = chooseSlice(collections, owners, targets);
+  // Which targets came from the caller rather than from a preset.
+  const hardCapped = new Set(
+    collections
+      .filter((collection) =>
+        limits[collection.address] !== undefined ||
+        limits[collection.path.join(".")] !== undefined ||
+        limits[collection.path.at(-1)] !== undefined)
+      .map((collection) => collection.address),
+  );
+  const slice = chooseSlice(collections, owners, targets, hardCapped);
 
   return {
     ...source,

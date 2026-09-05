@@ -109,9 +109,6 @@ function danglingReferences(packs) {
   return dangling;
 }
 
-function countOf(packs, pack, collection) {
-  return packs[pack][collection].length;
-}
 
 test("scale names and limits are read, and bad ones are refused by name", () => {
   assert.equal(parseScale(undefined), DEFAULT_SCALE);
@@ -145,10 +142,10 @@ test("full scale sends the artifact through unchanged", () => {
 test("a limit takes the first records and keeps the slice referentially whole", () => {
   const sliced = scaleWorld(fixture(), { limits: { people: 2 } });
   assert.deepEqual(danglingReferences(sliced.packs), []);
-  // The first two people, in artifact order. `dee` is over the limit and is here
-  // anyway, because the only support case in the world is hers and a slice does
-  // not empty a collection; that overshoot is reported rather than hidden.
-  assert.deepEqual(sliced.packs.identity.people.map((person) => person.id), ["ann", "bo", "dee"]);
+  // Exactly the first two people, in artifact order. `dee` would rescue the only
+  // support case in the world, and a number the caller typed is not overspent to
+  // do it -- see the hard-cap case below.
+  assert.deepEqual(sliced.packs.identity.people.map((person) => person.id), ["ann", "bo"]);
   // t3 is assigned to cy, who is gone, so it cannot be kept.
   assert.deepEqual(sliced.packs.work.tasks.map((task) => task.id), ["t1", "t2"]);
 });
@@ -171,12 +168,34 @@ test("a nested list is capped per parent, not across the world", () => {
   assert.equal(sliced.packs.communication.channels[0].messages.length, 2);
 });
 
-test("no collection the world has records in comes out empty", () => {
-  // Nothing but `ann` fits under a cap of one, and `case1` needs `dee`.
-  const sliced = scaleWorld(fixture(), { limits: { people: 1 } });
-  assert.equal(countOf(sliced.packs, "support", "cases"), 1);
-  assert.equal(sliced.packs.identity.people.some((person) => person.id === "dee"), true);
+test("a preset never empties a collection the world has records in", () => {
+  // `case1` belongs to `dee`, the last person in the artifact, so a cap alone
+  // starves support to nothing. A preset cap is this code's opinion about a
+  // reasonable size, so it may be overspent to keep the collection alive.
+  const sliced = scaleWorld(fixture(), { scale: "smoke" });
+  for (const entry of sliced.scale.collections) {
+    if (entry.total > 0) assert.ok(entry.kept > 0, `smoke emptied ${entry.collection}`);
+  }
   assert.deepEqual(danglingReferences(sliced.packs), []);
+});
+
+// The bug this closes: the rescue above did not tell a preset cap from a number
+// the caller typed, so `--limit people=0` sent sixteen people -- their names,
+// emails, Slack ids and GitHub logins -- to somebody's application after they
+// had asked for none. `--limit people=5` sent sixteen as well.
+test("a limit the caller typed is never exceeded, even to rescue a collection", () => {
+  for (const people of [0, 1, 2]) {
+    const sliced = scaleWorld(fixture(), { limits: { people } });
+    assert.equal(sliced.packs.identity.people.length, people, `--limit people=${people}`);
+    assert.deepEqual(danglingReferences(sliced.packs), []);
+  }
+
+  // The collection it could not rescue stays empty, and is reported as empty
+  // rather than quietly filled.
+  const capped = scaleWorld(fixture(), { limits: { people: 1 } });
+  const cases = capped.scale.collections.find((entry) => entry.collection === "cases");
+  assert.equal(cases.kept, 0);
+  assert.equal(cases.total, 1);
 });
 
 test("the same artifact and the same request produce the same slice", () => {
@@ -195,8 +214,8 @@ test("slicing does not change the artifact it was given", () => {
 test("the account of a slice is counted from the slice", () => {
   const sliced = scaleWorld(fixture(), { limits: { people: 2 } });
   const people = sliced.scale.collections.find((entry) => entry.collection === "people");
-  assert.deepEqual(people, { collection: "people", total: 4, kept: 3, limit: 2 });
-  assert.equal(describeScale(sliced.scale).includes("people 3 of 4"), true);
+  assert.deepEqual(people, { collection: "people", total: 4, kept: 2, limit: 2 });
+  assert.equal(describeScale(sliced.scale).includes("people 2 of 4"), true);
 
   const tasks = scaleWorld(fixture(), { limits: { tasks: 1 } }).scale.collections
     .find((entry) => entry.collection === "tasks");
