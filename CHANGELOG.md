@@ -1,5 +1,139 @@
 # Changelog
 
+## Unreleased
+
+Landed since 0.2.2 was published and not yet in a release.
+
+### Added
+
+- **A Stripe billing surface**, with 18 routes and 11 webhook events, pinned
+  against a recorded subset of Stripe's published OpenAPI description. Billing
+  integration code is mostly failure handling, and a Stripe world that cannot
+  decline a card leaves the half nobody worries about untested. The contract
+  file carries its source, API version, retrieval date and digest, and has the
+  third-party notice and trademark disclaimer the Notion contracts already had.
+  Documented in `docs/providers/stripe.md`.
+- **A documentation site**, built with VitePress and served by the Workbench at
+  `/docs` as well as published from the repository. It carries a five-minute
+  start, a connect-an-application page, troubleshooting, guides for bindings,
+  worlds, the Workbench, HTTP targets, events and webhooks, and reset, plus one
+  page per provider stating exactly which operations are supported, which are
+  partial and which are not. `scripts/check-docs.mjs` verifies every internal
+  link, every support label and both architecture diagrams, and runs in CI.
+- **`docs/architecture.md`** as two C4 diagrams written in D2 and rendered to
+  SVG by a pinned container, with `--check` failing a committed SVG that no
+  longer matches its source.
+- **Continuous integration**: both linters, all three test suites and a
+  determinism job that compiles every world twice under different
+  `PYTHONHASHSEED` values and diffs the output.
+- **A lint configuration for both languages**, chosen for the mistakes it
+  catches rather than for style, with the rules that were measured wrong here
+  named and excluded.
+- **`SECURITY.md`**, which says where to report privately and what is not a
+  vulnerability.
+- **Onboarding examples** in curl, JavaScript and Python that read this run's
+  bindings, send one message and read it back.
+- **Live Linear and Twilio surfaces in the Workbench**, read from the running
+  services rather than from the compiled projection, so a write through either
+  API appears on its own screen.
+- **The world's HTTP targets** are listed on the Website screen: the RSS feed,
+  the changing pages, each probe with its configured status sequence, the
+  OpenAPI document, the JSON routes and the metrics endpoint.
+
+### Security
+
+- **Sample credentials from the upstream seed authenticated in every world.**
+  `seed.yaml` ships `lin_test_admin`, a Linear token with admin scope belonging
+  to a person no world declares, and Okta, Clerk, Vercel, Apple and Twilio each
+  carried a sample client secret or API key the same way. Only slack, github and
+  google were being swept, and the sweep ran over the world's overlay rather than
+  over the seed -- so a vendor the world says nothing about, which is every
+  vendor whose credentials leaked, was never visited.
+- **Six more vendors served an account no world declares.** apple, github,
+  linear, okta, slack and vercel each inserted a convenience user that an
+  application enumerating people was handed: Vercel's owned the world's team,
+  GitHub's was `site_admin`, Slack's was the first member of `users.list`. The
+  sweep also runs before the world is seeded, because upstream attributes the
+  world's own content to whichever user is first -- all 28 Slack channels and all
+  404 Linear issues were created by an injected admin.
+- **`--limit people=0` sent sixteen people.** A slice that would empty a
+  collection puts one record back with everything it needs, which is right for a
+  preset cap and wrong for a number the caller typed.
+
+### Fixed
+
+- **A quarter of the world's task titles read "the the".** A template carrying
+  its own article filled with a subject that also had one, so 119 of 514 titles
+  came out as "Write the the lease heartbeat design note". A task tracker seeded
+  from this world showed the error on nearly a quarter of its rows.
+- **Stripe objects had no ids**, so nothing could address a Stripe customer,
+  price or subscription and a client had to match on name. Every object now
+  carries a deterministic id derived from the world record it projects, so an
+  invoice in finance and a customer in Stripe are the same thing seen twice. The
+  projection also gained the subscriptions and invoices a subscription business
+  obviously has and this one did not. Declared as a parity migration.
+- **Three Workbench sidebar counts were wrong in every world.** Code summed a
+  field the GitHub projection has never carried, so it read 0 however much code
+  the world held. The nav badge fell back to a surface's subtitle when there was
+  no count, so the Website row displayed the word "http". Gmail and Mail were two
+  indistinguishable entries with two different numbers.
+- **The mail service could restart for ever.** Its entrypoint installed the
+  cleanup trap 84 lines after Cyrus was already running, so any failure in
+  between left this shell dead and Cyrus holding the IMAP port. The supervisor
+  restarted the service, the new Cyrus could not bind, and the loop repeated. A
+  test now asks the ordering question of every entrypoint.
+- **A world compiled to a different artifact on a different machine** if any
+  authored Slack time omitted its `Z`. Measured: three digests from one source
+  under three time zones. No shipped world trips it.
+- **Prose dates on the far side of a year boundary never rebased**, ordinals
+  lost their suffix -- `the 3rd March` became `the 10 March` -- and a number that
+  is not a day, such as `62 June`, failed the whole build with a bare
+  `ValueError` naming no world or field.
+- **A projection selected on one world's team names.** The AWS projection
+  filtered operators on `team == "engineering"`, which v3 does not have, so its
+  IAM users collapsed from four to one out of 99 members. A world can declare
+  its own operator teams, queues and service roles now.
+- **A world with no `site` died on a bare `KeyError`** out of a projection,
+  because the fallback HTTP targets are built from records only v2 has.
+- **`--as maya` acted as the wrong Maya.** v3 has 161 people and four shared
+  first segments, and a single `.find` returned whichever came first in the
+  array. An ambiguous reference is now reported, and the `slack send` line the
+  first screen offers uses a handle that command will accept.
+- **A stalled SMTP server hung the scheduler for ever.** The timeout rejected a
+  promise that had already resolved, so no waiter was ever failed. Body lines
+  beginning with a dot were also under-escaped, so `.hidden` was delivered as
+  `hidden`.
+- **One stray directory under `src/vendors/` stopped all thirteen vendors**
+  before a listener bound, with no prefix on the error because the handler is
+  installed on the last line of the module that was still importing.
+- **Every Slack message in the Workbench was attributed to a raw member id** --
+  all 1,517 of them in v3 -- because history carries `user` and no `user_name`
+  and the world's own `slack_id` values are in an id space the emulator never
+  issues.
+- **`open_issues_count` was 0 for every repository in every world**, in the API
+  and on the Code screen, beside issues the same request could fetch.
+- **Stripe list endpoints accepted `limit=0`, `limit=abc` and an unknown
+  `starting_after`**, the last of which re-served page one -- so a client paging
+  until `has_more` goes false never terminates.
+- **A Google batch sub-response said `HTTP/1.1 404 OK`.** Hono leaves
+  `statusText` empty, and `|| "OK"` fired on every part.
+- **Notion pagination**: `/v1/users`, the two legal-hold admin lists and three
+  MCP readers each turned an empty or invalid request into a full one, and two
+  admin routes answered 500 on an unknown cursor.
+- **The Workbench reported every service a reduced world does not run as a
+  failure**, so `up --only slack` opened on a wall of errors.
+- **Thirty-four Workbench buttons submitted the form they sat in**, because a
+  `<button>` with no `type` is a submit button.
+- **A container that mounts no world was given the host path to `dist/`**, which
+  does not exist inside it.
+- **A long first start printed nothing while it built an image**, and a port
+  Docker refused printed `Fetching    [object Object]`.
+- **`status --verbose` said "next arrival at t+0s"** under "0 pending".
+- **The Atlas data explorer showed blank titles and "No collections"** for
+  databases holding four, and marked every healthy cluster with a warning badge.
+- **The Stripe product catalogue printed "recurring" in its interval column** on
+  every row, which says a price repeats without saying how often.
+
 ## 0.2.2
 
 Both of these were found by installing 0.2.1 from npm in an empty directory and
@@ -34,6 +168,13 @@ using it as a stranger would, with no checkout and no local image.
   a global one, and the file itself from a checkout.
 - One repair message told the reader to rebuild with
   `python3 -m worldfixture_compiler`, which an npm install does not have.
+
+### Release record
+
+- Package: `worldfixture@0.2.2` on npm, also tagged `latest`.
+- Image: `ghcr.io/ben-ic/worldfixture:0.2.2`, `linux/amd64` and `linux/arm64`,
+  also tagged `latest`.
+- Digest: `sha256:98e1c990f86364df37a9eaf10f278201e995b7bc8bae678fa18744c924d4a09d`
 
 ## 0.2.1
 
