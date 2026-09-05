@@ -22,7 +22,7 @@ import { aggregate, probe } from "./readiness.mjs";
 import { allocate, environmentFor, SINGLE_CONTAINER_PORTS } from "./ports.mjs";
 import { appendEvent, openState } from "./state.mjs";
 import { history, send, tokenFor } from "./slack.mjs";
-import { StartupError, start, verifyArtifact } from "./supervisor.mjs";
+import { StartupError, start, verifyArtifact, worldPathFor } from "./supervisor.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
@@ -644,4 +644,43 @@ test("a service whose image must be built says so before the build starts", asyn
     true,
     `the build notice never reached the caller: ${JSON.stringify(notices)}`,
   );
+});
+
+// The bug this closes: the world path for a container was
+// `mounts.find(world.path)?.target ?? artifactPath`, and the fallback is the
+// HOST path -- which the comment above the line says must never go into a
+// container. mysql and postgres are container services with no `world.path`
+// mount and both declare `WORLDFIXTURE_WORLD_PATH` from `world.path`, so both
+// were started with a host directory that does not exist inside them. Measured:
+// WORLDFIXTURE_WORLD_PATH=/…/dist/business.saas-company.v3 inside a MariaDB
+// container. Absent is the honest answer, and `environmentFor` leaves an
+// optional value unset rather than setting it to a lie.
+test("a container that mounts no world is given no world path, not the host one", async () => {
+  const mounted = { name: "mail", container: { tag: "t", mounts: [{ source: "world.path", target: "/world", mode: "ro" }] } };
+  const unmounted = { name: "mysql", container: { tag: "mariadb" } };
+
+  assert.equal(worldPathFor(mounted, ARTIFACT, true), "/world");
+  assert.equal(worldPathFor(unmounted, ARTIFACT, true), undefined);
+  // A child process still reads the world where it lies.
+  assert.equal(worldPathFor(unmounted, ARTIFACT, false), ARTIFACT);
+
+  // And the optional variable is left out rather than set to the host path.
+  const service = { name: "mysql", ports: [], environment: [{ name: "WORLDFIXTURE_WORLD_PATH", from: "world.path", required: false }] };
+  const environment = environmentFor(service, new Map(), { worldPath: worldPathFor(unmounted, ARTIFACT, true) });
+  assert.equal("WORLDFIXTURE_WORLD_PATH" in environment, false);
+});
+
+// Every container service the repo ships either mounts the world or does not ask
+// for it, so no real service loses a path it was using.
+test("no shipped container service is left needing a world path it cannot reach", async () => {
+  for (const manifest of MANIFESTS) {
+    const container = manifest.runtime.container;
+    if (!container) continue;
+    const path = worldPathFor({ name: manifest.name, container }, ARTIFACT, true);
+    if (path !== undefined) continue;
+    const needs = (manifest.runtime.environment ?? []).filter(
+      (entry) => entry.from === "world.path" && entry.required,
+    );
+    assert.deepEqual(needs, [], `${manifest.name} requires the world path and mounts no world`);
+  }
 });

@@ -384,6 +384,28 @@ export class Instance {
 
 // ---- startup -------------------------------------------------------------
 
+// Where a service reads the world.
+//
+// A container reads it at its mount point; a child process reads it where it
+// lies. Handing a container the host path would name a directory that does not
+// exist inside it.
+//
+// WHICH IS WHAT THE OLD `?? artifactPath` DID for a container that mounts no
+// world. mysql and postgres are both container services with no `world.path`
+// mount, and both declare `WORLDFIXTURE_WORLD_PATH` from `world.path` -- so each
+// was started with the host path to dist/ set inside it, the exact thing the
+// paragraph above says must not happen. Nothing in the MariaDB or Postgres
+// images reads that variable, so it never showed; it would have shown the first
+// time one did.
+//
+// `undefined` is the honest answer, and `environmentFor` already handles it:
+// the variable is declared `required: false`, so it is left unset rather than
+// set to a lie.
+export function worldPathFor(service, artifactPath, useContainer) {
+  if (!useContainer) return artifactPath;
+  return (service.container.mounts ?? []).find((mount) => mount.source === "world.path")?.target;
+}
+
 export async function start(lock, {
   artifactPath,
   stateDir,
@@ -471,12 +493,7 @@ export async function start(lock, {
         await ensureImage(service, join(serviceRoot, service.name), { log: onNotice });
       }
 
-      // A container reads the world at its mount point; a child process reads it
-      // where it lies. Handing a container the host path would name a directory
-      // that does not exist inside it.
-      const worldPath = useContainer
-        ? (service.container.mounts ?? []).find((mount) => mount.source === "world.path")?.target ?? artifactPath
-        : artifactPath;
+      const worldPath = worldPathFor(service, artifactPath, useContainer);
 
       const environment = environmentFor(service, allocation, {
         worldPath,
