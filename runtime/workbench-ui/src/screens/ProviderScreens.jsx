@@ -316,5 +316,14 @@ export function Notion({ data, onChanged }) {
 }
 
 export function Website({ data }) {
-  return <><PageHead title="Website" subtitle="The website in this world, shown as a website." command="HTTP"/><Panel title="Live preview" tools={<Button kind="small" onClick={() => window.open(data.bindings.SITE_BASE_URL, "_blank")}>Open in a new tab</Button>}><iframe className="website-preview" src={data.bindings.SITE_BASE_URL} title="World website preview"/><div className="website-fallback"><strong>Current response</strong><p className="muted">{data.providers.website.preview}</p><code>{data.bindings.SITE_BASE_URL}</code></div></Panel></>;
+  const targets = data.providers.website.targets ?? [];
+  const groups = ["RSS", "Changing page", "stable probe", "failing probe", "flapping probe", "OpenAPI", "JSON API", "Metrics"];
+  return <><PageHead title="Website" subtitle="One local site with pages, RSS, JSON, metrics, and predictable failures." command="SITE_BASE_URL"/>
+    <Panel title="Live preview" tools={<Button kind="small" onClick={() => window.open(data.bindings.SITE_BASE_URL, "_blank")}>Open in a new tab</Button>}><iframe className="website-preview" src={data.bindings.SITE_BASE_URL} title="World website preview"/><div className="website-fallback"><strong>Current response</strong><p className="muted">{data.providers.website.preview}</p><code>{data.bindings.SITE_BASE_URL}</code></div></Panel>
+    <div className="section"><Panel title="Targets in this world"><div className="target-groups">{groups.map((group) => {
+      const matches = targets.filter((target) => target.kind === group);
+      if (!matches.length) return null;
+      return <div className="target-group" key={group}><strong>{group}</strong><span>{group.includes("probe") ? "Repeat the request to see its configured status sequence." : group === "RSS" ? "Subscribe with a reader. More items can arrive while this run is active." : "Open the active local target."}</span>{matches.map((target) => <a key={target.url} href={target.url} target="_blank" rel="noreferrer"><span>{target.name}</span><code>{target.path}</code></a>)}</div>;
+    })}</div></Panel></div>
+  </>;
 }

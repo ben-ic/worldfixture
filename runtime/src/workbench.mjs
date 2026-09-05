@@ -482,6 +482,22 @@ async function projectedProviderOverview(bindings, artifactPath) {
   return result;
 }
 
+function httpTargetLinks(artifactPath, baseUrl) {
+  if (!baseUrl) return [];
+  const configured = projection(artifactPath, "http-targets", {});
+  return [
+    ...(configured.feeds ?? []).map((entry) => ({ kind: "RSS", name: entry.title ?? entry.path, path: entry.path })),
+    ...(configured.pages ?? []).filter((entry) => entry.path !== "/").map((entry) => ({
+      kind: Array.isArray(entry.request_variants) && entry.request_variants.length ? "Changing page" : "Page",
+      name: entry.title ?? entry.heading ?? entry.path, path: entry.path,
+    })),
+    ...(configured.probes ?? []).map((entry) => ({ kind: `${entry.mode ?? "probe"} probe`, name: entry.name ?? entry.path, path: entry.path })),
+    ...(configured.api?.openapi_path ? [{ kind: "OpenAPI", name: "OpenAPI document", path: configured.api.openapi_path }] : []),
+    ...Object.keys(configured.api?.responses ?? {}).map((path) => ({ kind: "JSON API", name: path, path })),
+    { kind: "Metrics", name: "Prometheus metrics", path: "/metrics" },
+  ].map((entry) => ({ ...entry, url: `${baseUrl.replace(/\/$/, "")}${entry.path}` }));
+}
+
 export async function providerOverview(bindings, artifactPath, world, browserBindings = bindings) {
   const selected = (value, task, fallback) => value ? task() : Promise.resolve(fallback);
   const emptyNotion = { users: [], pages: [], databases: [], dataSources: [], views: [], comments: [], fileUploads: [], agents: [], agentSessions: [], asyncTasks: [], changes: [],
@@ -520,7 +536,8 @@ export async function providerOverview(bindings, artifactPath, world, browserBin
   const projected = await projectedProviderOverview(bindings, artifactPath);
   return {
     slack: { channels: slack.channels ?? [], messageCount: slack.messageCount ?? 0 }, github, gmail, mail,
-    s3: { details: s3 }, notion, website: { preview: safe(requests[7], "Unavailable").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400) },
+    s3: { details: s3 }, notion, website: { preview: safe(requests[7], "Unavailable").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400),
+      targets: httpTargetLinks(artifactPath, browserBindings.SITE_BASE_URL) },
     stripe: safe(requests[8], { customers: [], products: [], prices: [], paymentIntents: [], charges: [], subscriptions: [], invoices: [] }),
     okta: safe(requests[9], { users: [], groups: [], applications: [] }),
     clerk: safe(requests[10], { users: [], organizations: [], sessions: [] }),
