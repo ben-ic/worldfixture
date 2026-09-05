@@ -229,6 +229,55 @@ test("a port Docker refuses is taken out of the pool and the launch is retried",
   }
 });
 
+// The bug this closes: the port retry reported itself through `onPull`, whose
+// only caller is `cli.mjs` and whose only argument is the image name it prints
+// as `Fetching <name>`. Handing it `{stage, port}` printed
+// `Fetching    [object Object]` and then "about 190 MB, once; later runs reuse
+// it" -- an untrue sentence about an event that fetches nothing. The retry now
+// has its own callback and is called with the port number alone.
+test("a port retry reports the port on its own callback, not through onPull", async () => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-port-retry-notice-"));
+  const pulled = [];
+  const retried = [];
+
+  const runner = async (_command, args) => {
+    if (args[0] === "inspect") throw missing();
+    if (args[0] === "image") return { stdout: "sha256:image\n" };
+    if (args[0] === "run") {
+      const published = args.filter((_argument, index) => args[index - 1] === "--publish");
+      if (published.some((entry) => entry.endsWith(":3306:3306"))) {
+        throw Object.assign(new Error("docker run failed"), {
+          stderr: "docker: Error response from daemon: Bind for 0.0.0.0:3306 failed: port is already allocated",
+        });
+      }
+      throw Object.assign(new Error("stop here"), { stderr: "the retry is what this case is about" });
+    }
+    return { stdout: "" };
+  };
+
+  const selectPorts = async (surfaces, { avoid = new Set() } = {}) =>
+    surfaces.map((surface) => ({
+      ...surface,
+      hostPort: avoid.has(surface.preferredPort) ? 55000 + surface.containerPort : surface.preferredPort,
+      release: async () => {},
+    }));
+
+  try {
+    await assert.rejects(() => launchHostInstance({
+      stateDir, image: "worldfixture:test", runner, selectPorts,
+      onPull: (name) => pulled.push(name),
+      onPortRetry: (port) => retried.push(port),
+      projectConfig: { api_version: "worldfixture.project/v1", application_url: "http://localhost:3000", services: ["mysql"] },
+    }));
+
+    assert.deepEqual(retried, [3306]);
+    // Whatever `onPull` receives has to render as an image name.
+    for (const name of pulled) assert.equal(typeof name, "string", `onPull was handed ${String(name)}`);
+  } finally {
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});
+
 // The bug this closes: `HostLauncherError` carries a written `repair` line for
 // each way a launch can fail -- the image cannot be pulled, a port is taken, a
 // container of that name is not ours -- and the CLI caught `ConnectorError` and

@@ -406,6 +406,12 @@ export async function start(lock, {
   fixedPorts,
   runtimeToken = process.env.WORLDFIXTURE_TOKEN || randomUUID(),
   onSpawned,
+  // Where a startup step that takes minutes says so. `ensureImage` has written
+  // its "this happens once" line since it was added, and nothing ever carried
+  // it: the only call site passed two arguments, so the default no-op `log`
+  // swallowed every message. A checkout run that had to build an image sat
+  // silent for the whole build.
+  onNotice,
 }) {
   verifyArtifact(lock, artifactPath);
 
@@ -462,7 +468,7 @@ export async function start(lock, {
         // One container per service per run, named after the instance so a
         // second `up` cannot adopt or collide with the first one's containers.
         service.container.name = `worldfixture-${id.slice(0, 8)}-${service.name}`;
-        await ensureImage(service, join(serviceRoot, service.name));
+        await ensureImage(service, join(serviceRoot, service.name), { log: onNotice });
       }
 
       // A container reads the world at its mount point; a child process reads it

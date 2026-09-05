@@ -9,7 +9,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -610,4 +610,38 @@ test("selecting S3 leaves the composer's S3 port shut in a real run", async () =
   } finally {
     await instance.stop();
   }
+});
+
+// The bug this closes: `ensureImage` takes `{ log }` and writes
+// "building <tag> for <service>; this happens once" before a build that runs
+// for minutes, and its ONE call site passed two arguments. The default no-op
+// `log` swallowed the line, so a checkout run that had to build an image
+// printed nothing at all while it built. `start` now takes `onNotice` and
+// hands it down.
+test("a service whose image must be built says so before the build starts", async () => {
+  const lock = lockFor(["mail.imap.v1"]);
+  const mail = lock.services.find((service) => service.name === "mail");
+
+  // A tag no machine has, so `ensureImage` cannot take its early return, and a
+  // build context that fails immediately, so the build ends without minutes of
+  // work. The notice is written before the build either way.
+  mail.container.tag = "worldfixture-notice-probe:absent";
+  const root = stateDir();
+  mkdirSync(join(root, "mail"), { recursive: true });
+  writeFileSync(join(root, "mail", "Dockerfile"), "NOT-A-DOCKERFILE-DIRECTIVE\n");
+
+  const notices = [];
+  await assert.rejects(() => start(lock, {
+    artifactPath: ARTIFACT,
+    stateDir: stateDir(),
+    serviceRoot: root,
+    readyTimeoutMs: 5_000,
+    onNotice: (line) => notices.push(line),
+  }));
+
+  assert.equal(
+    notices.some((line) => /building worldfixture-notice-probe:absent for mail; this happens once/.test(line)),
+    true,
+    `the build notice never reached the caller: ${JSON.stringify(notices)}`,
+  );
 });

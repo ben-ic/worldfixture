@@ -346,7 +346,14 @@ export async function launchHostInstance({
   runner = run,
   selectPorts = selectHostPorts,
   onWorkbench,
+  // `onPull` is called with ONE ARGUMENT, THE IMAGE NAME, because that is what
+  // its only caller prints: `cli.mjs` renders it as `Fetching <name>`. A port
+  // retry is a different event with nothing to fetch, so it gets its own
+  // callback. Reusing `onPull` for it printed `Fetching    [object Object]`
+  // followed by "about 190 MB, once" -- reproduced against the port-retry
+  // runner before this was split.
   onPull,
+  onPortRetry,
   onProgress,
   containerArgs = [],
 }) {
@@ -457,7 +464,7 @@ export async function launchHostInstance({
     const refused = refusedPort(error);
     if (refused !== null && !avoid.has(refused) && attempt < surfaces.length) {
       avoid.add(refused);
-      onPull?.({ stage: "port-retry", port: refused });
+      onPortRetry?.(refused);
       continue;
     }
     if (refused !== null) {

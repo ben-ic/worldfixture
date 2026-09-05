@@ -674,6 +674,10 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
       fixedPorts: inOneContainer ? SINGLE_CONTAINER_PORTS : undefined,
       runtimeToken: applicationEnvironment?.token ?? process.env.WORLDFIXTURE_TOKEN,
       onSpawned: openEarly,
+      // The image build inside `start` takes minutes on a first checkout run.
+      // Its "this happens once" line had no way out of the supervisor until
+      // this callback existed, so the build looked like a hang.
+      onNotice: (line) => say(line),
     });
   } catch (error) {
     await workbench?.close();
@@ -819,6 +823,14 @@ async function up(parsed) {
       say();
       say(`Fetching    ${name}`);
       say("            about 190 MB, once; later runs reuse it");
+    },
+    // A port Docker refuses costs a whole second launch attempt. Name the port,
+    // because the user's own other container is holding it and only they can
+    // say which one. This used to be routed through `onPull`, which printed
+    // `Fetching    [object Object]` and a line about 190 MB.
+    onPortRetry: (port) => {
+      say();
+      say(`Port        ${port} is already published by another container; retrying on a free one`);
     },
     // The Workbench is open well before the world has finished seeding. Say so
     // when it happens rather than at the end, so the wait is spent looking at
