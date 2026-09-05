@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { post } from "../api.js";
 import { ActivityTable, Bindings } from "../components/RuntimeViews.jsx";
-import { Button, Panel, SectionTitle } from "../components/Primitives.jsx";
+import { Button, CopyButton, Notice, Panel, SectionTitle } from "../components/Primitives.jsx";
 
 export function Overview({ data, setScreen, onRefresh, onReset }) {
   const [probing, setProbing] = useState(false);
@@ -17,9 +17,16 @@ export function Overview({ data, setScreen, onRefresh, onReset }) {
   const priority = ["slack", "microsoft", "mail", "s3", "github", "http"];
   const surfaces = [...data.surfaces].sort((a, b) => priority.indexOf(a.id) - priority.indexOf(b.id)).filter((surface) => priority.includes(surface.id));
   const probed = new Map((probe?.surfaces ?? []).map((surface) => [surface.id, surface]));
+  const loading = data.surfaces.filter((surface) => surface.state !== "ready");
+  const examples = [
+    ["curl", `eval "$(npx worldfixture env)"\ncurl -sS -X POST "$SLACK_BASE_URL/api/conversations.list" \\\n  -H "Authorization: Bearer $SLACK_TOKEN" \\\n  -H "Content-Type: application/x-www-form-urlencoded" --data 'limit=100'`],
+    ["JavaScript", "npx worldfixture run -- node examples/onboarding/slack.mjs"],
+    ["Python", `eval "$(npx worldfixture env)"\npython3 examples/onboarding/slack.py`],
+  ];
   async function runProbe() { setProbing(true); try { setProbe(await post("/api/probe", {})); } finally { setProbing(false); } }
   return <>
     <SectionTitle number="01" title="What did I get?" detail={data.world.description}/>
+    {loading.length > 0 && <Notice kind="warning"><strong>{loading.length} selected {loading.length === 1 ? "service is" : "services are"} still loading.</strong> You can explore ready services now. Open <button className="link" onClick={() => setScreen("Services")}>Services</button> for the live state.</Notice>}
     <div className="metric-grid">{metrics.map(([title, value, lines]) => <Panel className="metric" key={title}>
       <div className="metric-top"><strong>{title}</strong><span>{value}</span></div><div className="metric-lines">{lines.map((line) => <span key={line}>{line}</span>)}</div>
     </Panel>)}</div>
@@ -30,10 +37,14 @@ export function Overview({ data, setScreen, onRefresh, onReset }) {
         <div className="probe-row"><span>{probe ? "Application bindings reached these service surfaces." : "Readiness is checked by the runtime. Probe to prove the application bindings too."}</span><Button onClick={runProbe} disabled={probing}>{probing ? "Probing…" : probe ? "Probe again" : "Probe from my app"}</Button></div>
       </Panel></div>
     </div>
-    <div className="section"><SectionTitle number="04" title="What happened after my app acted?" detail="Provider acceptance, runtime observation, and consequences."/><ActivityTable data={data} limit={6} onRefresh={onRefresh}/></div>
-    <div className="section"><SectionTitle number="05" title="How do I get back to the start?"/><Panel className="reset-box">
+    <div className="section"><SectionTitle number="04" title="Try one API read" detail="Each example reads this run’s dynamic bindings. The SDK examples then make one safe write and read it back."/>
+      <Panel className="example-grid">{examples.map(([name, command]) => <div className="example-card" key={name}><span>{name}</span><pre>{command}</pre><CopyButton value={command}>Copy</CopyButton></div>)}</Panel>
+      <p className="muted docs-cta"><a href="/docs/getting-started/connect-an-app">Open SDK setup and complete examples</a></p>
+    </div>
+    <div className="section"><SectionTitle number="05" title="What happened after my app acted?" detail="Provider acceptance, runtime observation, and consequences."/><ActivityTable data={data} limit={6} onRefresh={onRefresh}/></div>
+    <div className="section"><SectionTitle number="06" title="How do I get back to the start?"/><Panel className="reset-box">
       <div><strong>Reset is exact and repeatable</strong><p className="muted">Reset restores world and provider state. It preserves all application database data.</p><Button kind="danger" onClick={onReset}>Reset world services</Button></div>
-      <div className="reset-steps"><span>○ Stop application surfaces</span><span>○ Restore provider and protocol state</span><span>○ Clear observed runtime events</span><span>○ Verify the accepted start</span></div>
+      <div className="reset-steps"><span>○ Stop application surfaces</span><span>○ Restore provider and protocol state</span><span>○ Clear observed runtime events</span><span>○ Verify the accepted start</span><span>When finished: <code>npx worldfixture down</code></span></div>
     </Panel></div>
   </>;
 }
