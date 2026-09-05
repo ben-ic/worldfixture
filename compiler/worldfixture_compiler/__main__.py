@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import argparse
 import tempfile
-from pathlib import Path
-
 from datetime import datetime
+from pathlib import Path
 
 from .compiler import WorldError, build_rebased_world, build_world, bundle_world, load_world
 

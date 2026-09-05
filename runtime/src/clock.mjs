@@ -47,7 +47,7 @@ export function startClock(db, { anchor, now = Date.now() }) {
   return { anchor, elapsed_ms: 0, running: true };
 }
 
-export function clockRow(db) {
+function clockRow(db) {
   return db.prepare(ROW).get() ?? null;
 }
 

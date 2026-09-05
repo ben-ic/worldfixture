@@ -38,7 +38,7 @@ from __future__ import annotations
 
 import json
 import random
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent

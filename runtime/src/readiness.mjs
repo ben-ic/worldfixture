@@ -139,7 +139,7 @@ function probePostgres(check, address, timeoutMs) {
 // A MySQL-compatible server sends its handshake before authentication. The
 // protocol version byte and complete packet framing prove the wire protocol
 // without adding a database client dependency.
-function probeMySQL(check, address, timeoutMs) {
+function probeMySQL(_check, address, timeoutMs) {
   return new Promise((resolve) => {
     const where = `${address.host}:${address.port}`;
     const socket = connect({ host: address.host, port: address.port });

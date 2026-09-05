@@ -42,7 +42,7 @@ export class OpenError extends Error {
   }
 }
 
-export async function defaultLaunch(url, platform = process.platform) {
+async function defaultLaunch(url, platform = process.platform) {
   const opener = OPENERS[platform];
   if (!opener) {
     throw new OpenError(

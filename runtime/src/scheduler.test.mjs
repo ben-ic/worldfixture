@@ -215,7 +215,7 @@ test("a scheduled message fires the causal rules, like a typed one", async () =>
     now: () => T0,
     fetchImpl: stub.fetchImpl,
     // `deliver` reaches SMTP through `smtp.mjs`; intercept at that boundary.
-    sendMail: async (address, message) => delivered.push(message),
+    sendMail: async (_address, message) => delivered.push(message),
   });
 
   assert.equal(played.status, "delivered");
@@ -442,7 +442,7 @@ test("playDue plays everything due, in world order, and only once", async () => 
     rules: [],
     now: () => T0,
     fetchImpl: stub.fetchImpl,
-    sendMail: async (address, message) => sent.push(message),
+    sendMail: async (_address, message) => sent.push(message),
   };
 
   assert.deepEqual(await playDue(db, context, { now: T0 }), []);

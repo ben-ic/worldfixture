@@ -180,7 +180,7 @@ export function currentUser() {
 // so they are streamed rather than buffered and reprinted. A missing `docker`
 // arrives here as a spawn ENOENT and is left to travel: the CLI catches that in
 // one place and explains how to install Docker.
-export function streamDocker(args) {
+function streamDocker(args) {
   return new Promise((settle, reject) => {
     const child = spawn("docker", args, { stdio: ["ignore", "inherit", "inherit"] });
     child.on("error", reject);

@@ -8,7 +8,7 @@ import { chmodSync, rmSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { join } from "node:path";
 
-export const socketPath = (stateDir) => join(stateDir, "control.sock");
+const socketPath = (stateDir) => join(stateDir, "control.sock");
 
 export async function serveControl(instance, stateDir) {
   const path = socketPath(stateDir);

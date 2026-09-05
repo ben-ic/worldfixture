@@ -8,10 +8,9 @@ import json
 import re
 import tarfile
 import tempfile
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
-
 
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9.-]+$")
 LOGIN_PATTERN = re.compile(r"^[a-z][a-z0-9-]+$")
@@ -662,8 +661,8 @@ def rebase_world(source: dict[str, Any], target: datetime) -> dict[str, Any]:
     if target.tzinfo is None:
         raise WorldError("rebase target must include a timezone")
     anchor_at = datetime.fromisoformat(source["clock"]["anchor"].replace("Z", "+00:00"))
-    anchor = anchor_at.astimezone(timezone.utc).date()
-    target_day = target.astimezone(timezone.utc).date()
+    anchor = anchor_at.astimezone(UTC).date()
+    target_day = target.astimezone(UTC).date()
     delta = timedelta(days=((target_day - anchor).days // 7) * 7)
     relative_paths = {tuple(path.split(".")) for path in source["clock"]["rebase"]["relative_paths"]}
     rebased = _rebase_values(copy.deepcopy(source), anchor, delta, relative_paths)
@@ -948,7 +947,7 @@ def _microsoft_projection(world: dict[str, Any]) -> dict[str, Any]:
 
 def _notion_uuid(world_id: str, kind: str, source_id: str) -> str:
     """Return a stable, UUID-shaped Notion identifier for one world record."""
-    digest = hashlib.sha256(f"worldfixture:notion:{world_id}:{kind}:{source_id}".encode("utf-8")).hexdigest()[:32]
+    digest = hashlib.sha256(f"worldfixture:notion:{world_id}:{kind}:{source_id}".encode()).hexdigest()[:32]
     return f"{digest[:8]}-{digest[8:12]}-4{digest[13:16]}-8{digest[17:20]}-{digest[20:32]}"
 
 
@@ -1676,7 +1675,9 @@ def _stripe_projection(world: dict[str, Any]) -> dict[str, Any]:
             product["name"] not in plans,
             f"catalog product {product['id']} is named after subscription plan {product['name']!r}",
         )
-    stripe_fragment = lambda value: re.sub(r"[^a-zA-Z0-9]", "_", value)
+    def stripe_fragment(value):
+        """A Stripe object id fragment: the world id with anything else replaced."""
+        return re.sub(r"[^a-zA-Z0-9]", "_", value)
     customer_ids = {customer["id"]: f"cus_{stripe_fragment(customer['id'])}" for customer in customers}
     product_ids = {name: f"prod_{stripe_fragment(name).lower()}" for name in plans}
     price_ids = {customer["id"]: f"price_{stripe_fragment(customer['id'])}" for customer in customers}
@@ -1739,8 +1740,8 @@ def _stripe_projection(world: dict[str, Any]) -> dict[str, Any]:
                 "description": invoice["description"],
                 "currency": invoice["currency"].lower(),
                 "status": "open" if invoice["status"] == "overdue" else invoice["status"],
-                "created": int(datetime.fromisoformat(invoice["issued_on"]).replace(tzinfo=timezone.utc).timestamp()),
-                "due_date": int(datetime.fromisoformat(invoice["due_on"]).replace(tzinfo=timezone.utc).timestamp()),
+                "created": int(datetime.fromisoformat(invoice["issued_on"]).replace(tzinfo=UTC).timestamp()),
+                "due_date": int(datetime.fromisoformat(invoice["due_on"]).replace(tzinfo=UTC).timestamp()),
                 "amount_due": invoice["amount_cents"],
                 "metadata": {"worldfixture_invoice_id": invoice["id"], "worldfixture_status": invoice["status"]},
             }
@@ -2673,7 +2674,7 @@ def compile_world(source: dict[str, Any]) -> dict[str, Any]:
 
 
 def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
-    anchor = datetime.fromisoformat(source["clock"]["anchor"].replace("Z", "+00:00")).astimezone(timezone.utc).date()
+    anchor = datetime.fromisoformat(source["clock"]["anchor"].replace("Z", "+00:00")).astimezone(UTC).date()
     world = copy.deepcopy(source)
     finance = _expand_finance(world, anchor)
     world["finance"]["resolved"] = finance

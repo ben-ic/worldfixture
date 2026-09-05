@@ -8,3 +8,34 @@ license = "Apache-2.0"
 [tool.setuptools]
 package-dir = {"" = "compiler"}
 packages = ["worldfixture_compiler"]
+
+# Lint rules chosen for the problems they actually catch here, not for style.
+# Line length is not enforced: this code favours one long, readable expression
+# over a wrapped one, and 142 lines in the compiler are over 100 characters on
+# purpose. A rule that fires 142 times teaches people to ignore the linter.
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# Rules that catch mistakes, not preferences.
+#
+# RUF059 (unused unpacked variable) is deliberately absent: it reported both of
+# its findings here as unused when both were used further down the function, and
+# acting on it broke the build. A rule that is wrong twice out of twice is worse
+# than no rule.
+#
+# FURB162 is also absent. It is right -- `fromisoformat` has handled `Z` since
+# 3.11 -- but it fires eleven times inside the date parsing the whole product's
+# determinism rests on, and the explicit `.replace("Z", "+00:00")` states the
+# intent to a reader.
+select = [
+  "F",               # undefined names, unused imports, real mistakes
+  "E4", "E7", "E9",  # errors worth having, without the line-length noise
+  "I",               # import order
+  "UP",              # syntax this Python version makes redundant
+  "B",               # likely bugs
+]
+ignore = [
+  "B007",            # an unused loop counter reads fine in the world generators
+]

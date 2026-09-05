@@ -19,7 +19,7 @@ function digest(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
-export function loadManifest(path) {
+function loadManifest(path) {
   const bytes = readFileSync(path);
   const manifest = JSON.parse(bytes.toString("utf8"));
 

@@ -32,7 +32,7 @@ import { eventsAfter } from "./state.mjs";
 
 const PAGE = 200;
 
-export function formatEvent(row, { verbose = false } = {}) {
+function formatEvent(row, { verbose = false } = {}) {
   const lines = [
     `${String(row.seq).padStart(4)}  ${row.occurred_at}  ${row.type}`,
     `      ${row.actor_id ?? "—"} via ${row.source}${row.caused_by ? `, caused by ${row.caused_by}` : ""}`,

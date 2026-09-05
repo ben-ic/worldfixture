@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { loadSchema, validate } from "./schema.mjs";
-import { DEFAULT_SCALE, isFullScale, scaleWorld } from "./scale.mjs";
+import { DEFAULT_SCALE, scaleWorld } from "./scale.mjs";
 
 export const CONNECTOR_VERSION = "worldfixture.connector/v1";
 export const REQUEST_VERSION = "worldfixture.connector-request/v1";
@@ -12,7 +12,6 @@ export const EVENT_VERSION = "worldfixture.application-event/v1";
 export const DISCOVERY_PATH = "/.well-known/worldfixture";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
-export const CONNECTOR_DOC = join(ROOT, "docs/connectors/protocol-v1.md");
 export const CONNECTOR_DOCS = ["overview.md", "protocol-v1.md", "packs.md", "security.md", "mapping-guide.md", "project.md", "agent-guide.md"]
   .map((name) => join(ROOT, "docs/connectors", name));
 

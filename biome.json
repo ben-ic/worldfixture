@@ -1,0 +1,43 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.14/schema.json",
+  "files": {
+    "includes": [
+      "runtime/src/**",
+      "runtime/bin/**",
+      "runtime/workbench-ui/src/**",
+      "emulators/**/src/**",
+      "examples/**/*.mjs",
+      "examples/**/*.js",
+      "!**/node_modules/**",
+      "!**/dist/**"
+    ]
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": false,
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnusedFunctionParameters": "error",
+        "noConstantCondition": "error",
+        "noVoidTypeReturn": "error",
+        "useValidTypeof": "error"
+      },
+      "suspicious": {
+        "noDoubleEquals": "error",
+        "noShadowRestrictedNames": "error",
+        "noSelfCompare": "error",
+        "noDuplicateObjectKeys": "error",
+        "noDuplicateCase": "error",
+        "noFallthroughSwitchClause": "error"
+      },
+      "complexity": {
+        "noUselessCatch": "error"
+      }
+    }
+  }
+}

@@ -6,7 +6,6 @@ const traps = [
   ["Provider evidence", "Keep response identifiers with each claim."],
   ["Human before customer", "Do not send before a person approves."],
 ];
-let latest;
 
 async function api(path, method = "GET") {
   const response = await fetch(path, { method, headers: { "content-type": "application/json" }, body: method === "GET" ? undefined : "{}" });
