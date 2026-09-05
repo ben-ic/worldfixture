@@ -155,7 +155,7 @@ const pad = (label, width = 12) => label.padEnd(width);
 const TOKEN_PATTERN = /\bwf_local_[0-9a-f]{8,}/g;
 const ASSIGNED_TOKEN_PATTERN = /\b(WORLDFIXTURE_TOKEN|authorization|Bearer)([=:]\s*|\s+)(\S+)/gi;
 
-export function redactSecrets(text) {
+function redactSecrets(text) {
   return String(text)
     .replace(TOKEN_PATTERN, "wf_local_<redacted>")
     .replace(ASSIGNED_TOKEN_PATTERN, (match, name, separator, value) =>
