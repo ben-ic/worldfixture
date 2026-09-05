@@ -428,7 +428,15 @@ class ServiceManifestTest(unittest.TestCase):
 
     def artifact_projections(self):
         if not self.artifact().is_dir():
-            self.skipTest("no built artifact; run `worldfixture_compiler build` first")
+            # NAME THE WORLD. This said "run `worldfixture_compiler build` first"
+            # and the README's documented build command compiles v3, so somebody
+            # following the documentation built a world, ran the tests, and these
+            # two skipped anyway with a message implying they had not.
+            self.skipTest(
+                f"no built artifact at {self.artifact().relative_to(ROOT)}; build it with "
+                "`PYTHONPATH=compiler python3 -m worldfixture_compiler build "
+                "worlds/business.saas-company.v2/world.json --output dist/business.saas-company.v2`"
+            )
         for service in SERVICES:
             for entry in load_manifest(service)["world"].get("projections", []):
                 yield service, entry
