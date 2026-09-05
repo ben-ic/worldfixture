@@ -530,3 +530,39 @@ class ServiceManifestTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class UpstreamProvenanceTest(unittest.TestCase):
+    """A recorded upstream version has to be the one the image installs.
+
+    `emulator.json` records the upstream repository, version, package version and
+    licence for each vendored dependency. It is what the third-party notices rest
+    on, and nothing checked it against the Dockerfile beside it.
+
+    It drifted the first time it could: a Debian security update superseded
+    `cyrus-imapd=3.6.1-4+deb12u4`, whose `cyrus-common (= …u4)` dependency became
+    unsatisfiable, so the Dockerfile moved to `u5` and the provenance record did
+    not. The build failure was loud; the wrong licence record was silent.
+    """
+
+    def test_every_recorded_package_version_is_the_one_installed(self) -> None:
+        checked = 0
+        for manifest_path in sorted((ROOT / "emulators").glob("*/emulator.json")):
+            dockerfile = manifest_path.parent / "Dockerfile"
+            if not dockerfile.is_file():
+                continue
+            recorded = json.loads(manifest_path.read_text())
+            installed = dockerfile.read_text()
+            for upstream in recorded.get("upstream", []):
+                version = upstream.get("package_version")
+                if not version:
+                    continue
+                checked += 1
+                self.assertIn(
+                    version,
+                    installed,
+                    f"{manifest_path.relative_to(ROOT)} records {upstream['name']} "
+                    f"{version}, which {dockerfile.relative_to(ROOT)} does not install",
+                )
+
+        self.assertGreater(checked, 0, "no package versions were checked; the glob or the key changed")
