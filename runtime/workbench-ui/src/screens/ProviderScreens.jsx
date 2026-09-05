@@ -109,6 +109,12 @@ export function Mail({ data, actor, onChanged }) {
   </>;
 }
 
+// OPEN ISSUES ARE COUNTED, NOT READ. The GitHub emulator emits
+// `open_issues_count` as a literal 0 and never increments it when issues are
+// inserted, and `??` does not fall back over 0 -- so `open_issues_count ?? …`
+// printed 0 for every repository in every world, directly under a panel header
+// reporting the real total. The same bug was fixed in the sidebar and missed
+// here, which is why the count is now derived in both places rather than read.
 export function Code({ data, actor, onChanged }) {
   const repositories = data.providers.github.repositories;
   const issues = data.providers.github.issues ?? [];
@@ -116,7 +122,7 @@ export function Code({ data, actor, onChanged }) {
   async function submit(event) { event.preventDefault(); const form = Object.fromEntries(new FormData(event.currentTarget)); await action.run("/api/actions/github-issue", { ...form, person_id: actor.id }); }
   return <><PageHead title="Code" subtitle="GitHub repositories and issues through the real REST API." command="GitHub REST API"/>
     {issues.length > 0 && <Panel title={`Open issues · ${issues.length}`}><div className="data-row github-issue-columns table-head"><span>ISSUE</span><span>REPOSITORY</span><span>AUTHOR</span><span>UPDATED</span></div>{issues.map((issue) => <div className="data-row github-issue-columns" key={issue.id ?? issue.url}><span><strong>{issue.title}</strong><small>#{issue.number}</small></span><code className="muted truncate">{issue.repository?.full_name ?? issue.repository_url?.split("/repos/").at(-1) ?? "—"}</code><span>{issue.user?.login ?? "—"}</span><span>{issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : "—"}</span></div>)}</Panel>}
-    <div className="section"><Panel title="Repositories"><div className="data-row resource-columns table-head"><span>REPOSITORY</span><span>DEFAULT BRANCH</span><span>OPEN ISSUES</span><span>STATE</span></div>{repositories.map((repository) => <div className="data-row resource-columns" key={repository.id ?? repository.full_name}><strong>{repository.full_name ?? repository.name}</strong><code className="muted">{repository.default_branch ?? "main"}</code><code>{repository.open_issues_count ?? issues.filter((issue) => issue.repository_url?.endsWith(`/repos/${repository.full_name}`)).length}</code><code className="green">ready</code></div>)}</Panel></div>
+    <div className="section"><Panel title="Repositories"><div className="data-row resource-columns table-head"><span>REPOSITORY</span><span>DEFAULT BRANCH</span><span>OPEN ISSUES</span><span>STATE</span></div>{repositories.map((repository) => <div className="data-row resource-columns" key={repository.id ?? repository.full_name}><strong>{repository.full_name ?? repository.name}</strong><code className="muted">{repository.default_branch ?? "main"}</code><code>{issues.filter((issue) => issue.repository_url?.endsWith(`/repos/${repository.full_name}`)).length}</code><code className="green">ready</code></div>)}</Panel></div>
     <div className="section"><Panel title={`Create an issue as ${actor.name}`} tools={<code className="blue">POST /issues</code>}><form className="action-form" onSubmit={submit}><label>REPOSITORY<select name="repository">{repositories.map((repository) => <option key={repository.full_name}>{repository.full_name}</option>)}</select></label><label>TITLE<input name="title" required defaultValue="Release follow-up from Workbench"/></label><label>BODY<textarea name="text" required defaultValue="Created through the real GitHub API."/></label><Button kind="primary" disabled={action.busy}>{action.busy ? "Creating…" : "Create issue"}</Button><ActionResult result={action.result}/></form></Panel></div>
   </>;
 }
