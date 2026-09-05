@@ -142,7 +142,7 @@ below come from code inspection, tests, and checks against a running world.
 - Package: `worldfixture@0.2.3` on npm, also tagged `latest`.
 - Image: `ghcr.io/ben-ic/worldfixture:0.2.3`, `linux/amd64` and `linux/arm64`,
   also tagged `latest`.
-- Digest: `sha256:e739c5e41e95ce0b9f07990b7f3ab6ff164b58f6a5f630e523f4a607c29b0a5c`
+- Digest: `sha256:4f60796457014e8519102219ce2b12d442df34f9b1afedd1927ae5911f323b22`
 
 ## 0.2.2
 
