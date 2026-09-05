@@ -45,14 +45,21 @@ below come from code inspection, tests, and checks against a running world.
 
 ### Security
 
-- **Postgres, MariaDB and S3 shared one password with every installation.** The
-  manifests bound `worldfixture-local` and `worldfixture-local-secret` as
-  constants, so the database password on your machine was the database password
-  on everyone's. Each is now 24 random bytes generated on first launch and kept
-  in `.worldfixture/generated-secrets.json` at 0600 -- per project, so two
-  projects do not share one, and stable across launches, so nothing has to be
-  re-copied into an application. The compiled world is untouched, so every world
-  still builds to the same bytes.
+- **Postgres and MariaDB shared one password with every installation.** The
+  manifests bound `worldfixture-local` as a constant, so the database password
+  on your machine was the database password on everyone's. It is now 24 random
+  bytes generated on first launch and kept in
+  `.worldfixture/generated-secrets.json` at 0600 -- per project, so two projects
+  do not share one, and stable across launches, so nothing has to be re-copied
+  into an application. The compiled world is untouched, so every world still
+  builds to the same bytes. These two enforce the password, so this is a
+  credential change.
+- **The S3 keys are generated the same way, and that is not a security fix.**
+  SeaweedFS runs with no authorization: an unsigned request, a forged signature
+  and an anonymous write all succeed, measured against this release's image. The
+  generated keys replace two shared constants in client construction and nothing
+  more. Authenticated object storage is separate work; `docs/providers/s3.md`
+  states the position.
 - **The Workbench withheld the credentials and then offered "Copy .env".** It
   filtered out 15 of the 28 provider bindings, so the file that button produced
   had addresses and no way to authenticate. A world's own credentials are
