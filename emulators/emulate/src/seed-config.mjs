@@ -9,6 +9,17 @@ import { parse as parseYaml } from "yaml";
 const WORLD_API_VERSION = "worldfixture.world-artifact/v1";
 const OVERLAY_FILE = "projections/emulator-overlay.json";
 
+// What a sample seed carries that a world has to declare for itself. Anything
+// here is a credential or an application registration, not world content.
+const CREDENTIAL_KEYS = [
+  "oauth_apps",
+  "oauth_clients",
+  "oauth_applications",
+  "integrations",
+  "tokens",
+  "api_keys",
+];
+
 export function loadSeedConfig({
   seedPath = "seed.yaml",
   worldPath,
@@ -35,10 +46,29 @@ export function loadSeedConfig({
     // a fallback port fail before consent. With no declared application, the
     // local provider accepts the client configuration supplied by the target
     // app while it still validates state, code, redirect URI and token use.
-    for (const provider of ["slack", "github", "google"]) {
-      if (!overlay[provider]) continue;
-      if (!("oauth_apps" in overlay[provider])) delete seed[provider]?.oauth_apps;
-      if (!("oauth_clients" in overlay[provider])) delete seed[provider]?.oauth_clients;
+    // EVERY vendor, and every credential the sample seed carries.
+    //
+    // This named slack, github and google, and the reason it gives applies to
+    // all of them. What the other five kept was not cosmetic: `seed.yaml` ships
+    // `lin_test_admin`, a Linear token with read, write, issues:create,
+    // comments:create and admin scope belonging to
+    // `admin@sample.worldfixture.test` -- a person no world declares -- and it
+    // authenticated in every compiled world. Okta, Clerk, Vercel, Apple and
+    // Twilio each carried a sample client secret or API key the same way.
+    //
+    // `main.mjs` spends thirty lines on why an unknown bearer token must not
+    // become somebody. These arrived through the vendor's own store instead of
+    // the composer's token map and skipped that argument entirely.
+    // Over what the SEED carries, not what the overlay declares. Iterating the
+    // overlay meant a vendor the world says nothing about -- which is every
+    // vendor whose credentials leaked -- was never visited at all, so the sample
+    // stayed exactly where it did the most harm.
+    for (const [provider, sampled] of Object.entries(seed)) {
+      if (provider === "tokens" || !sampled || typeof sampled !== "object") continue;
+      const declared = overlay[provider];
+      for (const key of CREDENTIAL_KEYS) {
+        if (!declared || !(key in declared)) delete sampled[key];
+      }
     }
     log(`world projection applied from ${projection}`);
   }
