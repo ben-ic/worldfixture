@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"><style>body{margin:0;background:#090b0f;color:#e6e9f0;font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#7c9cff;text-decoration:none}a:hover{color:#a8bcff}@keyframes wfpulse{0%,100%{opacity:1}50%{opacity:.35}}</style></helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;background:#090b0f">
+
+<!-- top bar: identity + readiness + reset -->
+<div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 24px;border-bottom:1px solid rgba(255,255,255,.1);background:#0b0e14;position:sticky;top:0;z-index:5">
+  <div style="display:flex;align-items:center;gap:14px;min-width:0">
+    <span style="display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;white-space:nowrap"><span style="width:13px;height:13px;background:#4f7cff;box-shadow:0 0 0 3px #0b0e14,0 0 0 4px rgba(79,124,255,.45)"></span>WorldFixture</span>
+    <span style="width:1px;height:22px;background:rgba(255,255,255,.12)"></span>
+    <span style="display:flex;flex-direction:column;min-width:0"><span style="font:500 13px 'Geist Mono',monospace;white-space:nowrap">business.saas-company:v2</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">artifact sha256:{{ digest }} · instance local · {{ clock }}</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="position:relative">
+      <button onClick="{{ togglePicker }}" style="display:flex;align-items:center;gap:9px;border:1px solid {{ pickerBorder }};background:#0f1218;color:#e6e9f0;font:500 12px 'Instrument Sans',sans-serif;padding:6px 11px;border-radius:4px;cursor:pointer;white-space:nowrap">
+        <span style="width:20px;height:20px;border-radius:4px;background:{{ actorColor }};color:#fff;font:600 9px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center">{{ actorInitials }}</span>
+        <span style="display:flex;flex-direction:column;align-items:flex-start;gap:1px"><span style="font-size:9px;font-family:'Geist Mono',monospace;color:#5c6578;letter-spacing:.04em">ACTING AS</span><span style="font-size:12px;font-weight:600">{{ actorName }}</span></span>
+        <span style="color:#5c6578;font-size:10px">▾</span>
+      </button>
+      <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:0;top:44px;width:328px;background:#0f1218;border:1px solid rgba(255,255,255,.16);border-radius:7px;box-shadow:0 24px 60px rgba(0,0,0,.6);z-index:20;overflow:hidden">
+          <div style="padding:9px 13px;border-bottom:1px solid rgba(255,255,255,.1);font:10px 'Geist Mono',monospace;color:#5c6578">EVERY WRITE USES THIS PERSON'S OWN PROVIDER CREDENTIALS</div>
+          <div style="max-height:264px;overflow-y:auto">
+            <sc-for list="{{ actors }}" as="p" hint-placeholder-count="6">
+              <div onClick="{{ p.pick }}" style="display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:9px 13px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;background:{{ p.bg }}" style-hover="background:rgba(255,255,255,.05)">
+                <span style="width:24px;height:24px;border-radius:4px;background:{{ p.color }};color:#fff;font:600 10px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center">{{ p.initials }}</span>
+                <span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</span><span style="font:10px 'Geist Mono',monospace;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.ids }}</span></span>
+                <span style="font:10px 'Geist Mono',monospace;color:{{ p.driverColor }};white-space:nowrap">{{ p.driver }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 13px;font:10px 'Geist Mono',monospace;color:#5c6578"><span>worldfixture slack send --as maya</span><span>no author spoofing</span></div>
+        </div>
+      </sc-if>
+    </div>
+    <span style="display:flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.08);border-radius:4px;font-size:12px;font-weight:500;color:#4ade80;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80"></span>{{ readyLabel }}</span>
+    <button onClick="{{ openReset }}" style="border:1px solid rgba(255,255,255,.16);background:#0f1218;color:#e6e9f0;font:500 12px 'Instrument Sans',sans-serif;padding:7px 12px;border-radius:4px;cursor:pointer;white-space:nowrap" style-hover="border-color:rgba(255,255,255,.35)">Reset world</button>
+  </div>
+</div>
+
+<sc-if value="{{ agentsOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;inset:0;z-index:41;background:rgba(4,6,10,.72);display:flex;align-items:center;justify-content:center;padding:32px">
+  <div style="width:min(680px,100%);background:#0f1218;border:1px solid rgba(255,255,255,.16);border-radius:10px;box-shadow:0 40px 100px rgba(0,0,0,.7);overflow:hidden">
+    <div style="display:flex;align-items:start;justify-content:space-between;gap:20px;padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,.1)">
+      <div style="display:flex;flex-direction:column;gap:7px;min-width:0">
+        <span style="display:flex;align-items:center;gap:8px;font:10px 'Geist Mono',monospace;color:#8b93a7;letter-spacing:.04em"><span style="width:7px;height:7px;border-radius:50%;background:#5c6578"></span>RESERVED FLAG · NOT IMPLEMENTED</span>
+        <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-.025em">Agentic mode</h2>
+        <span style="font-size:14px;color:#a3abbd;line-height:1.5;text-wrap:pretty">A world is data and works with no agents at all — that is what you are using now. Agentic mode will let an experience attach drivers to selected world people so the world keeps moving while you use your app.</span>
+      </div>
+      <button onClick="{{ closeAgents }}" style="border:1px solid rgba(255,255,255,.16);background:transparent;color:#a3abbd;font:500 12px 'Instrument Sans',sans-serif;padding:6px 10px;border-radius:4px;cursor:pointer;flex:none">Close</button>
+    </div>
+    <pre style="margin:0;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.1);background:#090b0f;font:12px/1.6 'Geist Mono',monospace;color:#c7cddb;overflow:auto"><span style="color:#5c6578">$</span> worldfixture up --agents
+<span style="color:#f87171">error</span>  agentic mode is not implemented in this build
+       the --agents flag is reserved; no model provider adapter is wired
+       the runtime refuses to start rather than silently run without drivers</pre>
+    <div style="display:flex;flex-direction:column">
+      <sc-for list="{{ agentPlan }}" as="a" hint-placeholder-count="4">
+        <div style="display:grid;grid-template-columns:150px 1fr;gap:14px;padding:12px 22px;border-bottom:1px solid rgba(255,255,255,.06);min-width:0"><span style="font:11px 'Geist Mono',monospace;color:#7c9cff">{{ a.label }}</span><span style="font-size:13px;color:#a3abbd;line-height:1.45;text-wrap:pretty">{{ a.text }}</span></div>
+      </sc-for>
+    </div>
+    <div style="display:flex;justify-content:space-between;gap:16px;padding:14px 22px;background:#0b0e14;font-size:12px;color:#5c6578"><span style="text-wrap:pretty">Until then every write in this workbench comes from you, a script, or your application.</span><span style="font-family:'Geist Mono',monospace;white-space:nowrap">phase 7</span></div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tourOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:fixed;right:20px;bottom:20px;z-index:40;width:344px;background:#0f1218;border:1px solid rgba(255,255,255,.18);border-radius:9px;box-shadow:0 24px 60px rgba(0,0,0,.65);overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.1);background:#0b0e14">
+    <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:13px;font-weight:600">Getting started</span><span style="font:10px 'Geist Mono',monospace;color:#8b93a7">{{ tourProgress }} · northstar relay is running</span></span>
+    <div style="display:flex;gap:6px;flex:none">
+      <button onClick="{{ toggleTourMin }}" style="border:1px solid rgba(255,255,255,.16);background:transparent;color:#a3abbd;font:500 11px 'Instrument Sans',sans-serif;padding:5px 8px;border-radius:4px;cursor:pointer">{{ tourMinLabel }}</button>
+      <button onClick="{{ closeTour }}" style="border:1px solid rgba(255,255,255,.16);background:transparent;color:#a3abbd;font:500 11px 'Instrument Sans',sans-serif;padding:5px 8px;border-radius:4px;cursor:pointer">Done</button>
+    </div>
+  </div>
+  <sc-if value="{{ tourExpanded }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-direction:column">
+      <sc-for list="{{ tourSteps }}" as="s" hint-placeholder-count="4">
+        <div onClick="{{ s.go }}" style="display:grid;grid-template-columns:22px 1fr auto;gap:11px;align-items:center;padding:11px 13px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;background:{{ s.rowBg }};min-width:0" style-hover="background:rgba(255,255,255,.04)">
+          <span style="width:22px;height:22px;border-radius:50%;border:1px solid {{ s.ringColor }};color:{{ s.numColor }};background:{{ s.ringBg }};font:600 10px 'Geist Mono',monospace;display:flex;align-items:center;justify-content:center">{{ s.mark }}</span>
+          <span style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:12.5px;font-weight:600;color:{{ s.titleColor }}">{{ s.title }}</span><span style="font-size:11.5px;color:#8b93a7;line-height:1.4;text-wrap:pretty">{{ s.body }}</span></span>
+          <span style="font:10px 'Geist Mono',monospace;color:{{ s.ctaColor }};white-space:nowrap">{{ s.cta }}</span>
+        </div>
+      </sc-for>
+      <div style="padding:10px 13px;font-size:11px;color:#5c6578;line-height:1.45;text-wrap:pretty">Every step has a CLI equivalent. Agentic mode is a reserved flag and is not built yet.</div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<div style="display:grid;grid-template-columns:184px 1fr;flex:1;min-height:0">
+  <!-- nav -->
+  <div style="border-right:1px solid rgba(255,255,255,.1);padding:14px 10px;display:flex;flex-direction:column;gap:2px;background:#0b0e14">
+    <sc-for list="{{ nav }}" as="n" hint-placeholder-count="9">
+      <div onClick="{{ n.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:{{ n.pad }};margin-top:{{ n.mt }};border-radius:4px;font-family:{{ n.family }};font-size:{{ n.size }};letter-spacing:{{ n.ls }};cursor:{{ n.cursor }};background:{{ n.bg }};color:{{ n.color }};font-weight:{{ n.weight }}"><span>{{ n.label }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ n.badge }}</span></div>
+    </sc-for>
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:7px;padding:10px;border-top:1px solid rgba(255,255,255,.08)">
+      <button onClick="{{ openTour }}" style="border:1px solid rgba(255,255,255,.14);background:#0f1218;color:#c7cddb;font:500 12px 'Instrument Sans',sans-serif;padding:7px 10px;border-radius:4px;cursor:pointer;text-align:left">Show first-run guide</button>
+      <button onClick="{{ openAgents }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px dashed rgba(255,255,255,.18);background:transparent;color:#8b93a7;font:500 12px 'Instrument Sans',sans-serif;padding:7px 10px;border-radius:4px;cursor:pointer;text-align:left">Agentic mode<span style="font:9px 'Geist Mono',monospace;color:#5c6578">NOT BUILT</span></button>
+      <div style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ screenCli }}</div>
+    </div>
+  </div>
+
+  <!-- main -->
+  <div style="padding:24px 28px 40px;display:flex;flex-direction:column;gap:24px;min-width:0;max-width:1240px">
+    <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:24px">
+
+    <!-- Q1 what did I get -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 11px 'Geist Mono',monospace;color:#4f7cff">01</span><h2 style="margin:0;font-size:19px;font-weight:600;letter-spacing:-.02em">What did I get?</h2><span style="font-size:13px;color:#8b93a7">Northstar Relay, a 10-person SaaS company plus its customers, on 27 August with 30 days behind it.</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(228px,1fr));gap:12px">
+        <sc-for list="{{ contents }}" as="c" hint-placeholder-count="4">
+          <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;padding:14px 15px;display:flex;flex-direction:column;gap:9px;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:{{ c.color }};flex:none"></span>{{ c.title }}</span><span style="font:500 15px 'Geist Mono',monospace;white-space:nowrap">{{ c.count }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <sc-for list="{{ c.lines }}" as="l" hint-placeholder-count="3">
+                <div style="font-size:12px;color:#8b93a7;line-height:1.4">{{ l }}</div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 15px;border:1px solid rgba(255,255,255,.12);border-radius:7px;background:#0f1218">
+        <div style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:13px;font-weight:600">Four stories are already in motion</span><span style="font-size:12px;color:#8b93a7;line-height:1.45">Lumen renewal risk · release 2.8 disagreement · invoice 4471 open · Theo starts Monday</span></div>
+        <a href="#" style="font-size:12px;font-weight:500;white-space:nowrap">Read the world brief →</a>
+      </div>
+    </div>
+
+    <!-- Q2 + Q3 -->
+    <div style="display:grid;grid-template-columns:1.35fr 1fr;gap:20px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 11px 'Geist Mono',monospace;color:#4f7cff">02</span><h2 style="margin:0;font-size:19px;font-weight:600;letter-spacing:-.02em">How does my app connect?</h2></div>
+        <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.1)">
+            <span style="font-size:13px;font-weight:600">Bindings for this instance</span>
+            <div style="display:flex;gap:6px">
+              <button onClick="{{ copyEnv }}" style="border:1px solid rgba(255,255,255,.16);background:#090b0f;color:#c7cddb;font:500 11px 'Instrument Sans',sans-serif;padding:5px 9px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ copyLabel }}</button>
+              <span style="font:11px 'Geist Mono',monospace;color:#5c6578;padding:5px 0;white-space:nowrap">worldfixture env --export</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ bindings }}" as="b" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column;gap:2px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.06);min-width:0">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:500 12px 'Geist Mono',monospace;color:#7c9cff">{{ b.key }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap;flex:none">{{ b.proto }}</span></div>
+                <span style="font:12px/1.45 'Geist Mono',monospace;color:#c7cddb;word-break:break-all">{{ b.value }}</span>
+              </div>
+            </sc-for>
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 14px;font-size:12px;color:#8b93a7"><span>Credentials are per-person. Control and inspection tokens are never given to your app.</span><a href="#" style="white-space:nowrap">All 15 services →</a></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 11px 'Geist Mono',monospace;color:#4f7cff">03</span><h2 style="margin:0;font-size:19px;font-weight:600;letter-spacing:-.02em">Is it working?</h2></div>
+        <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;overflow:hidden">
+          <sc-for list="{{ services }}" as="s" hint-placeholder-count="5">
+            <div style="display:flex;align-items:start;justify-content:space-between;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.06);min-width:0">
+              <span style="display:flex;gap:8px;min-width:0"><span style="width:7px;height:7px;border-radius:50%;background:{{ s.dot }};flex:none;margin-top:5px"></span><span style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:13px;line-height:1.35">{{ s.name }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ s.impl }}</span></span></span>
+              <span style="display:flex;flex-direction:column;align-items:end;gap:1px;flex:none"><span style="font:10px 'Geist Mono',monospace;color:{{ s.stateColor }}">{{ s.state }}</span><span style="font:10px 'Geist Mono',monospace;color:#8b93a7">{{ s.latency }}</span></span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:#0b0e14">
+            <span style="font-size:12px;color:#8b93a7;min-width:0;line-height:1.4">{{ probeSummary }}</span>
+            <button onClick="{{ probe }}" style="border:1px solid rgba(255,255,255,.16);background:#0f1218;color:#e6e9f0;font:500 11px 'Instrument Sans',sans-serif;padding:5px 10px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ probeLabel }}</button>
+          </div>
+        </div>
+        <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;padding:12px 14px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;gap:10px"><span style="font-size:13px;font-weight:600">Your app</span><span style="font:11px 'Geist Mono',monospace;color:{{ targetColor }};white-space:nowrap">{{ targetState }}</span></div>
+          <div style="font:11px/1.5 'Geist Mono',monospace;color:#8b93a7">{{ targetDetail }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font:600 11px 'Geist Mono',monospace;color:#4f7cff">04</span><h2 style="margin:0;font-size:19px;font-weight:600;letter-spacing:-.02em">What happened after my app acted?</h2><span style="font-size:13px;color:#8b93a7">Every row shows the provider that accepted it, the event WorldFixture observed, and what followed.</span></div>
+      <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.1);flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font-size:13px;font-weight:600;white-space:nowrap">Activity</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ mutationSummary }}</span></div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:#8b93a7;white-space:nowrap">Prove it works:</span>
+            <button onClick="{{ act }}" style="border:1px solid rgba(79,124,255,.6);background:rgba(79,124,255,.12);color:#c9d6ff;font:600 11px 'Instrument Sans',sans-serif;padding:6px 11px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ actLabel }}</button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;max-height:300px;overflow-y:auto" ref="{{ logRef }}">
+          <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,.06);background:{{ a.rowBg }}">
+              <div style="display:flex;flex-direction:column;gap:5px;padding:11px 14px;min-width:0">
+                <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap"><span style="font:11px 'Geist Mono',monospace;color:#5c6578">{{ a.t }}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.srcColor }}"></span><span style="font-size:12px;font-weight:600">{{ a.actor }}</span></span></div>
+                <span style="font-size:12.5px;line-height:1.45;color:#c7cddb;text-wrap:pretty">{{ a.action }}</span>
+                <div style="display:flex;gap:6px;flex-wrap:wrap"><span style="border:1px solid rgba(255,255,255,.12);background:#090b0f;border-radius:3px;padding:2px 6px;font:10px 'Geist Mono',monospace;color:#8b93a7">accepted by {{ a.accepted }}</span><span style="border:1px solid rgba(255,255,255,.12);background:#090b0f;border-radius:3px;padding:2px 6px;font:10px 'Geist Mono',monospace;color:{{ a.obsColor }}">observed {{ a.observed }}</span></div>
+              </div>
+              <sc-if value="{{ a.hasChain }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:6px;padding:0 14px 12px 22px">
+                  <sc-for list="{{ a.chain }}" as="c" hint-placeholder-count="2">
+                    <div style="display:flex;align-items:start;gap:9px;min-width:0"><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">↳</span><span style="font:10px 'Geist Mono',monospace;padding:2px 6px;border-radius:3px;background:{{ c.tagBg }};color:{{ c.tagColor }};flex:none">{{ c.tag }}</span><span style="font-size:12px;line-height:1.45;color:#a3abbd">{{ c.text }}</span></div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:10px"><span style="font:600 11px 'Geist Mono',monospace;color:#4f7cff">05</span><h2 style="margin:0;font-size:19px;font-weight:600;letter-spacing:-.02em">How do I get back to the start?</h2></div>
+      <div style="display:grid;grid-template-columns:1fr;gap:20px;align-items:start">
+        <div style="border:1px solid {{ resetBorder }};background:{{ resetBg }};border-radius:7px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:5px"><span style="font-size:14px;font-weight:600">{{ resetTitle }}</span><span style="font-size:13px;color:#a3abbd;line-height:1.5;text-wrap:pretty">{{ resetBody }}</span></div>
+          <div style="display:flex;align-items:center;gap:10px;grid-column:1;margin-top:2px">
+            <button onClick="{{ doReset }}" style="border:0;background:#e6e9f0;color:#090b0f;font:600 12px 'Instrument Sans',sans-serif;padding:8px 14px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ resetCta }}</button>
+            <span style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">worldfixture reset</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;grid-column:2;grid-row:1 / span 2;border-left:1px solid rgba(255,255,255,.1);padding-left:20px">
+            <sc-for list="{{ resetSteps }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;align-items:start;gap:9px;min-width:0"><span style="font:11px/1.5 'Geist Mono',monospace;color:{{ r.color }};flex:none;width:14px">{{ r.mark }}</span><span style="font-size:12px;line-height:1.45;color:#a3abbd">{{ r.text }}</span></div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ resetProven }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:start;gap:9px;padding:9px 11px;border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.08);border-radius:5px;grid-column:1 / -1;min-width:0"><span style="font:600 11px/1.45 'Geist Mono',monospace;color:#4ade80;white-space:nowrap;flex:none">DIGEST MATCH</span><span style="font-size:12px;line-height:1.45;color:#c7cddb">sha256:{{ digest }} — identical to the accepted starting state</span></div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    </div></sc-if>
+
+    <sc-if value="{{ isServices }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em">Services</h2>
+          <span style="font-size:13px;color:#8b93a7;text-wrap:pretty">One capability has one owner in a run. Start a service and it appears in the sidebar; stop it and its screen goes away.</span>
+        </div>
+        <span style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">worldfixture up --with stripe</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <input type="text" onInput="{{ setSvcQuery }}" placeholder="Search by service, capability profile or implementation…" style="flex:1;min-width:240px;background:#0f1218;border:1px solid rgba(255,255,255,.16);border-radius:5px;color:#e6e9f0;font:13px 'Instrument Sans',sans-serif;padding:10px 13px;outline:none" />
+        <sc-for list="{{ svcFilters }}" as="f" hint-placeholder-count="3">
+          <button onClick="{{ f.pick }}" style="border:1px solid {{ f.border }};background:{{ f.bg }};color:{{ f.color }};font:500 12px 'Instrument Sans',sans-serif;padding:8px 12px;border-radius:5px;cursor:pointer;white-space:nowrap">{{ f.label }}<span style="font:10px 'Geist Mono',monospace;color:#5c6578"> {{ f.count }}</span></button>
+        </sc-for>
+      </div>
+
+      <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;max-height:560px">
+        <div style="flex:1;min-height:0;overflow-y:auto">
+          <sc-for list="{{ svcGroups }}" as="g" hint-placeholder-count="6">
+            <div style="display:flex;flex-direction:column">
+              <div onClick="{{ g.toggle }}" style="position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 15px;background:#0b0e14;border-bottom:1px solid rgba(255,255,255,.1);cursor:pointer">
+                <span style="display:flex;align-items:center;gap:9px;min-width:0"><span style="font:10px 'Geist Mono',monospace;color:#5c6578;width:9px">{{ g.caret }}</span><span style="font:500 11px 'Geist Mono',monospace;color:#a3abbd;letter-spacing:.04em">{{ g.name }}</span></span>
+                <span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ g.meta }}</span>
+              </div>
+              <sc-if value="{{ g.open }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="4">
+                    <div style="display:grid;grid-template-columns:1fr 132px 82px 88px;gap:12px;align-items:start;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,.06);min-width:0">
+                      <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                        <div style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap"><span style="font-size:13px;font-weight:500">{{ r.name }}</span><span style="font-size:11px;color:#8b93a7">{{ r.note }}</span></div>
+                        <div style="display:flex;flex-wrap:wrap;gap:5px">
+                          <sc-for list="{{ r.profiles }}" as="p" hint-placeholder-count="2">
+                            <span style="border:1px solid rgba(255,255,255,.12);background:#090b0f;border-radius:3px;padding:2px 6px;font:10px 'Geist Mono',monospace;color:#a3abbd;white-space:nowrap">{{ p }}</span>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <span style="font-size:12px;line-height:1.4;color:#c7cddb;padding-top:1px">{{ r.impl }}</span>
+                      <span style="font:11px/1.4 'Geist Mono',monospace;color:{{ r.stateColor }};padding-top:2px">{{ r.state }}</span>
+                      <sc-if value="{{ r.canToggle }}" hint-placeholder-val="{{ true }}">
+                        <button onClick="{{ r.toggle }}" style="border:1px solid {{ r.btnBorder }};background:{{ r.btnBg }};color:{{ r.btnColor }};font:500 11px 'Instrument Sans',sans-serif;padding:5px 9px;border-radius:4px;cursor:pointer;white-space:nowrap;justify-self:end">{{ r.btnLabel }}</button>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+          <sc-if value="{{ svcEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:28px 15px;text-align:center;font-size:13px;color:#8b93a7">No service matches that search. Any real protocol can be added with a <span style="font-family:'Geist Mono',monospace;color:#7c9cff">worlds.service/v1</span> manifest.</div>
+          </sc-if>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:14px;padding:11px 15px;border-top:1px solid rgba(255,255,255,.1);background:#0b0e14;font-size:12px;color:#8b93a7"><span style="min-width:0;line-height:1.4">{{ svcFoot }}</span><span style="font-family:'Geist Mono',monospace;color:#5c6578;white-space:nowrap">no core registration required</span></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isConvo }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em">{{ convoTitle }}</h2>
+          <span style="font-size:13px;color:#8b93a7">{{ chatStats }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">PROVIDER</span>
+          <sc-for list="{{ chatProviders }}" as="p" hint-placeholder-count="2">
+            <button onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:7px;border:1px solid {{ p.border }};background:{{ p.bg }};color:{{ p.color }};font:500 12px 'Instrument Sans',sans-serif;padding:6px 11px;border-radius:4px;cursor:{{ p.cursor }};white-space:nowrap"><span style="width:8px;height:8px;border-radius:2px;background:{{ p.dot }}"></span>{{ p.label }}<span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ p.meta }}</span></button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:246px 1fr;border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden;height:560px">
+        <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.1);min-height:0;background:#0b0e14">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.1)"><span style="font-size:13px;font-weight:600;line-height:1.35">{{ workspaceName }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ providerPort }}</span></div>
+          <div style="flex:1;min-height:0;overflow-y:auto;padding:8px 0">
+            <sc-for list="{{ chatRail }}" as="c" hint-placeholder-count="12">
+              <div onClick="{{ c.pick }}" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:{{ c.pad }};margin:{{ c.margin }};border-radius:4px;cursor:{{ c.cursor }};background:{{ c.bg }};min-width:0">
+                <span style="display:flex;align-items:center;gap:7px;min-width:0"><span style="font:{{ c.font }};color:{{ c.color }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.label }}</span></span>
+                <span style="font:10px 'Geist Mono',monospace;color:{{ c.badgeColor }};background:{{ c.badgeBg }};padding:{{ c.badgePad }};border-radius:8px;white-space:nowrap">{{ c.badge }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,.1);font:10px 'Geist Mono',monospace;color:#5c6578">{{ railFoot }}</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;min-width:0;min-height:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.1);min-width:0">
+            <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ chanName }}</span><span style="font-size:11px;line-height:1.4;color:#8b93a7">{{ chanMeta }}</span></div>
+            <span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ chanApi }}</span>
+          </div>
+          <div ref="{{ chatRef }}" style="flex:1;min-height:0;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:13px">
+            <sc-for list="{{ chatMessages }}" as="m" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:30px 1fr;gap:11px;align-items:start;min-width:0">
+                <div style="width:30px;height:30px;border-radius:5px;background:{{ m.avatar }};color:#fff;font:600 11px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center">{{ m.initials }}</div>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <div style="display:flex;gap:9px;align-items:baseline;flex-wrap:wrap"><span style="font-size:13px;font-weight:600">{{ m.name }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ m.t }}</span><span style="font:10px 'Geist Mono',monospace;color:{{ m.tagColor }}">{{ m.tag }}</span></div>
+                  <div style="font-size:13px;line-height:1.5;color:#c7cddb;text-wrap:pretty">{{ m.text }}</div>
+                  <sc-if value="{{ m.hasReacts }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px"><sc-for list="{{ m.reacts }}" as="r" hint-placeholder-count="2"><span style="border:1px solid rgba(255,255,255,.14);background:#090b0f;border-radius:10px;padding:2px 8px;font-size:11px;color:#a3abbd;white-space:nowrap">{{ r }}</span></sc-for></div></sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,.1);padding:11px 16px;display:flex;flex-direction:column;gap:8px;background:#0b0e14">
+            <div style="display:flex;gap:9px;align-items:center;min-width:0">
+              <span style="width:26px;height:26px;border-radius:5px;background:{{ actorColor }};color:#fff;font:600 10px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center;flex:none">{{ actorInitials }}</span>
+              <input type="text" value="{{ draft }}" onChange="{{ setDraft }}" placeholder="{{ draftPlaceholder }}" style="flex:1;min-width:0;background:#090b0f;border:1px solid rgba(255,255,255,.16);border-radius:4px;color:#e6e9f0;font:13px 'Instrument Sans',sans-serif;padding:9px 11px;outline:none" />
+              <button onClick="{{ sendDraft }}" style="border:0;background:#4f7cff;color:#fff;font:600 12px 'Instrument Sans',sans-serif;padding:9px 14px;border-radius:4px;cursor:pointer;white-space:nowrap;flex:none">Send</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px;color:#5c6578"><span style="min-width:0">{{ sendNote }}</span><span style="white-space:nowrap">{{ chanApi }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:11px 14px;border:1px solid rgba(255,255,255,.12);border-radius:7px;background:#0f1218;font-size:12px;color:#8b93a7">
+        <span>Not offered here: editing or deleting history · creating a workspace · admin settings · installing an app.</span>
+        <span style="font-family:'Geist Mono',monospace;color:#5c6578;white-space:nowrap">worldfixture slack send --as {{ actorHandle }}</span>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isRecords }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em">{{ recTitle }}</h2>
+          <span style="font-size:13px;color:#8b93a7;text-wrap:pretty">{{ recSubtitle }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ recApi }}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+        <sc-for list="{{ recStats }}" as="s" hint-placeholder-count="4">
+          <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font:10px 'Geist Mono',monospace;color:#5c6578;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.label }}</span><span style="font:500 18px 'Geist Mono',monospace;letter-spacing:-.02em;color:{{ s.color }}">{{ s.value }}</span><span style="font-size:11px;line-height:1.35;color:#8b93a7">{{ s.note }}</span></div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:340px 1fr;border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden;height:560px">
+        <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.1);min-height:0;background:#0b0e14">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px 9px 14px;border-bottom:1px solid rgba(255,255,255,.1)">
+            <span style="display:flex;align-items:baseline;gap:8px;min-width:0"><span style="font-size:13px;font-weight:600">{{ recListTitle }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ recCount }}</span></span>
+            <sc-if value="{{ canCreate }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ toggleCreate }}" style="border:1px solid rgba(79,124,255,.5);background:rgba(79,124,255,.14);color:#c9d6ff;font:600 11px 'Instrument Sans',sans-serif;padding:5px 9px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ createLabel }}</button>
+            </sc-if>
+          </div>
+          <sc-if value="{{ creating }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:13px 14px;border-bottom:1px solid rgba(255,255,255,.1);background:rgba(79,124,255,.05)">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font-size:12px;font-weight:600">{{ createTitle }}</span><span style="font:10px 'Geist Mono',monospace;color:#7c9cff;white-space:nowrap">{{ createCall }}</span></div>
+              <input type="text" onInput="{{ setCreateTitle }}" placeholder="{{ createPlaceholder }}" style="background:#090b0f;border:1px solid rgba(255,255,255,.16);border-radius:4px;color:#e6e9f0;font:13px 'Instrument Sans',sans-serif;padding:9px 11px;outline:none;width:100%;box-sizing:border-box" />
+              <sc-for list="{{ createFields }}" as="cf" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:5px"><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ cf.label }}</span>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <sc-for list="{{ cf.options }}" as="o" hint-placeholder-count="3">
+                      <button onClick="{{ o.pick }}" style="border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }};font:500 11px 'Geist Mono',monospace;padding:4px 9px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ o.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <button onClick="{{ submitCreate }}" style="border:0;background:#4f7cff;color:#fff;font:600 12px 'Instrument Sans',sans-serif;padding:8px 13px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ createCta }}</button>
+                <button onClick="{{ toggleCreate }}" style="border:1px solid rgba(255,255,255,.16);background:transparent;color:#a3abbd;font:500 12px 'Instrument Sans',sans-serif;padding:8px 11px;border-radius:4px;cursor:pointer">Cancel</button>
+                <span style="font-size:11px;color:#5c6578;min-width:0">Created as {{ actorName }} through the provider API</span>
+              </div>
+            </div>
+          </sc-if>
+          <div style="flex:1;min-height:0;overflow-y:auto">
+            <sc-for list="{{ recList }}" as="i" hint-placeholder-count="6">
+              <div onClick="{{ i.pick }}" style="display:flex;flex-direction:column;gap:4px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;background:{{ i.bg }};border-left:2px solid {{ i.accent }};min-width:0">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:9px"><span style="font-size:13px;font-weight:{{ i.weight }};line-height:1.35">{{ i.title }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578;flex:none">{{ i.when }}</span></div>
+                <div style="display:flex;align-items:center;gap:8px;min-width:0"><span style="font:10px 'Geist Mono',monospace;padding:1px 6px;border-radius:3px;background:{{ i.badgeBg }};color:{{ i.badgeColor }};white-space:nowrap">{{ i.badge }}</span><span style="font-size:11px;line-height:1.35;color:#8b93a7">{{ i.meta }}</span></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;min-width:0;min-height:0">
+          <div style="display:flex;align-items:start;justify-content:space-between;gap:14px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.1);min-width:0">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:15px;font-weight:600;text-wrap:pretty">{{ detTitle }}</span><span style="font-size:12px;line-height:1.4;color:#8b93a7">{{ detMeta }}</span></div>
+            <span style="font:10px 'Geist Mono',monospace;padding:3px 8px;border-radius:3px;background:{{ detBadgeBg }};color:{{ detBadgeColor }};white-space:nowrap">{{ detBadge }}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:rgba(255,255,255,.08)">
+            <sc-for list="{{ detFacts }}" as="f" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:3px;padding:11px 14px;background:#0f1218;min-width:0"><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ f.label }}</span><span style="font-size:13px;line-height:1.35">{{ f.value }}</span></div>
+            </sc-for>
+          </div>
+          <div style="flex:1;min-height:0;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ detTimeline }}" as="e" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:26px 1fr;gap:11px;align-items:start;min-width:0">
+                <div style="width:26px;height:26px;border-radius:5px;background:{{ e.avatar }};color:#fff;font:600 10px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center">{{ e.initials }}</div>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <div style="display:flex;gap:9px;align-items:baseline;flex-wrap:wrap"><span style="font-size:13px;font-weight:600">{{ e.who }}</span><span style="font:10px 'Geist Mono',monospace;color:{{ e.kindColor }}">{{ e.kind }}</span><span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ e.t }}</span></div>
+                  <div style="font-size:13px;line-height:1.5;color:#c7cddb;text-wrap:pretty">{{ e.text }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,.1);padding:12px 16px;display:flex;flex-direction:column;gap:7px;background:#090b0f">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:10px 'Geist Mono',monospace;color:#5c6578">PROVIDER EVIDENCE · LAST OBSERVED EVENT</span><span style="font:10px 'Geist Mono',monospace;color:#7c9cff;white-space:nowrap">{{ detEventType }}</span></div>
+            <pre style="margin:0;font:11px/1.55 'Geist Mono',monospace;color:#a3abbd;overflow:auto;max-height:96px">{{ detEvidence }}</pre>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,.1);padding:11px 16px;display:flex;flex-direction:column;gap:8px;background:#0b0e14">
+            <div style="display:flex;gap:9px;align-items:center;min-width:0">
+              <span style="width:26px;height:26px;border-radius:5px;background:{{ actorColor }};color:#fff;font:600 10px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center;flex:none">{{ actorInitials }}</span>
+              <input type="text" onInput="{{ setRecDraft }}" placeholder="{{ recDraftPlaceholder }}" style="flex:1;min-width:0;background:#090b0f;border:1px solid rgba(255,255,255,.16);border-radius:4px;color:#e6e9f0;font:13px 'Instrument Sans',sans-serif;padding:9px 11px;outline:none" />
+              <sc-for list="{{ recActions }}" as="a" hint-placeholder-count="2">
+                <button onClick="{{ a.run }}" style="border:1px solid {{ a.border }};background:{{ a.bg }};color:{{ a.color }};font:600 12px 'Instrument Sans',sans-serif;padding:9px 13px;border-radius:4px;cursor:pointer;white-space:nowrap;flex:none">{{ a.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:11px;color:#5c6578"><span style="min-width:0">{{ recNote }}</span><span style="white-space:nowrap">{{ recCli }}</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:11px 14px;border:1px solid rgba(255,255,255,.12);border-radius:7px;background:#0f1218;font-size:12px;color:#8b93a7">
+        <span>{{ recUnsupported }}</span>
+        <span style="font-family:'Geist Mono',monospace;color:#5c6578;white-space:nowrap">declared by the service manifest</span>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ isOther }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h2 style="margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em">{{ screenTitle }}</h2>
+          <span style="font-size:13px;color:#8b93a7;text-wrap:pretty">{{ screenSubtitle }}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ screenCli }}</span>
+        </div>
+      </div>
+      <sc-if value="{{ hasTabs }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ tabsLabel }}</span>
+        <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="5">
+          <button onClick="{{ tb.pick }}" style="border:1px solid {{ tb.border }};background:{{ tb.bg }};color:{{ tb.color }};font:500 12px 'Geist Mono',monospace;padding:5px 10px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ tb.label }}<span style="color:#5c6578"> {{ tb.meta }}</span></button>
+        </sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ hasActions }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:9px;padding:13px 15px;border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:600">What {{ actorFirst }} can do here by hand</span>
+          <span style="font:10px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">declared by the service manifest</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          <sc-for list="{{ manualActions }}" as="m" hint-placeholder-count="4">
+            <button onClick="{{ m.run }}" style="border:1px solid rgba(79,124,255,.45);background:rgba(79,124,255,.1);color:#c9d6ff;font:500 12px 'Instrument Sans',sans-serif;padding:6px 11px;border-radius:4px;cursor:pointer;white-space:nowrap" style-hover="background:rgba(79,124,255,.2)">{{ m.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;align-items:center">
+          <span style="font-size:12px;color:#8b93a7;white-space:nowrap">Not offered here:</span>
+          <sc-for list="{{ unsupported }}" as="u" hint-placeholder-count="3">
+            <span style="border:1px dashed rgba(255,255,255,.16);color:#5c6578;font-size:12px;padding:5px 10px;border-radius:4px;white-space:nowrap">{{ u }}</span>
+          </sc-for>
+        </div>
+        <div style="font-size:12px;color:#8b93a7;line-height:1.5;text-wrap:pretty">The workbench only offers actions a service declares and tests. Anything else goes through the provider API from your own app or the CLI — the workbench has no private path into a service's data.</div>
+        <sc-if value="{{ composeOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:11px;padding:14px;border:1px solid rgba(79,124,255,.4);background:rgba(79,124,255,.05);border-radius:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <span style="font-size:13px;font-weight:600">{{ composeTitle }}</span>
+              <span style="font:10px 'Geist Mono',monospace;color:#7c9cff;white-space:nowrap">{{ composeCall }}</span>
+            </div>
+            <sc-for list="{{ composeFields }}" as="f" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+                <span style="font:10px 'Geist Mono',monospace;color:#5c6578">{{ f.label }}</span>
+                <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3">
+                      <button onClick="{{ o.pick }}" style="border:1px solid {{ o.border }};background:{{ o.bg }};color:{{ o.color }};font:500 12px 'Geist Mono',monospace;padding:5px 10px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ o.label }}</button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ true }}">
+                  <input type="text" value="{{ f.value }}" onChange="{{ f.set }}" placeholder="{{ f.placeholder }}" style="background:#090b0f;border:1px solid rgba(255,255,255,.16);border-radius:4px;color:#e6e9f0;font:13px 'Instrument Sans',sans-serif;padding:9px 11px;outline:none;width:100%;box-sizing:border-box" />
+                </sc-if>
+              </div>
+            </sc-for>
+            <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+              <button onClick="{{ submitCompose }}" style="border:0;background:#4f7cff;color:#fff;font:600 12px 'Instrument Sans',sans-serif;padding:8px 14px;border-radius:4px;cursor:pointer;white-space:nowrap">{{ composeCta }}</button>
+              <button onClick="{{ cancelCompose }}" style="border:1px solid rgba(255,255,255,.16);background:transparent;color:#a3abbd;font:500 12px 'Instrument Sans',sans-serif;padding:8px 12px;border-radius:4px;cursor:pointer;white-space:nowrap">Cancel</button>
+              <span style="font-size:12px;color:#8b93a7;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Sent as {{ actorName }} with that person's own token. Nothing is written directly to the service store.</span>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ actionDone }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.08);border-radius:5px;min-width:0"><span style="font:600 10px 'Geist Mono',monospace;color:#4ade80;white-space:nowrap">ACCEPTED</span><span style="font-size:12px;color:#c7cddb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ actionDone }}</span></div>
+        </sc-if>
+      </div>
+      </sc-if>
+      <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:7px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:{{ screenGrid }};gap:14px;padding:9px 15px;border-bottom:1px solid rgba(255,255,255,.1);font:500 10px 'Geist Mono',monospace;color:#5c6578">
+          <sc-for list="{{ screenCols }}" as="c" hint-placeholder-count="4"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c }}</span></sc-for>
+        </div>
+        <sc-for list="{{ screenRows }}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:{{ screenGrid }};gap:14px;align-items:center;padding:11px 15px;border-bottom:1px solid rgba(255,255,255,.06);min-width:0">
+            <span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:500;line-height:1.35">{{ r.a }}</span><span style="font-size:11px;line-height:1.35;color:#8b93a7">{{ r.sub }}</span></span>
+            <span style="font:12px/1.4 'Geist Mono',monospace;color:#a3abbd;word-break:break-word">{{ r.b }}</span>
+            <span style="font-size:12px;line-height:1.4;color:#c7cddb">{{ r.c }}</span>
+            <span style="font:11px/1.4 'Geist Mono',monospace;color:{{ r.dColor }}">{{ r.d }}</span>
+            <sc-if value="{{ r.hasToggle }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ r.toggle }}" style="border:1px solid {{ r.toggleBorder }};background:{{ r.toggleBg }};color:{{ r.toggleColor }};font:500 11px 'Instrument Sans',sans-serif;padding:5px 9px;border-radius:4px;cursor:pointer;white-space:nowrap;justify-self:end">{{ r.toggleLabel }}</button>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="display:flex;justify-content:space-between;gap:14px;padding:11px 15px;font-size:12px;color:#8b93a7"><span style="min-width:0;line-height:1.4">{{ screenFoot }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">read through the provider API</span></div>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+</div>
+</div>
+</x-dc>
+<script data-dc-script type="text/plain" data-props='{"$preview":{"width":1320,"height":1100}}'>
+class Component extends DCLogic {
+  state = { acted: 0, probed: false, probing: false, resetStage: 0, copied: false, min: 47, screen: 'Overview' };
+  logRef = React.createRef();
+  digest = '4c1f9a7e';
+  convoSets = {
+    Chat: { providers: ['Slack', 'Microsoft Teams'] },
+    Mail: { providers: ['Mail', 'Gmail', 'Microsoft Outlook'] },
+    Messaging: { providers: ['Twilio'] },
+  };
+  mailboxes = {
+    Mail: { workspace: 'maya@northstar.test', api: 'IMAP · FETCH / STORE · SMTP send', port: '1143',
+      rail: [{ head: 'FOLDERS' }, { label: 'Inbox', badge: '4', members: '42 messages', topic: 'IMAP INBOX' }, { label: 'Sent', badge: '', members: '38 messages', topic: 'IMAP INBOX.Sent' }, { label: 'Drafts', badge: '', members: '2 messages', topic: 'IMAP INBOX.Drafts' }, { label: 'Lumen renewal', badge: '2', members: '9 messages', topic: 'IMAP INBOX.Lumen' }],
+      threads: {
+        Inbox: [
+          ['Priya Raman', 'Mon 14:02', 'Re: Scheduled export timeouts — are the scheduled exports still failing above 50k rows? Interactive ones look fine.', []],
+          ['Maya Chen', 'Mon 14:35', 'Reproduced it. The worker hits the 2-minute limit. Fix is in review as relay#212.', []],
+          ['Priya Raman', 'Yest. 08:50', 'I have the renewal meeting Thursday. I need something concrete before then.', []],
+          ['Samira Okafor', 'Yest. 10:05', 'Invoice 4471 — Lumen Labs, due Aug 30. 412.00 USD, still open. Not related to the export issue.', []],
+          ['GitHub', 'Yest. 09:31', '[northstar/relay] jonbell requested changes on #212 Fix export worker timeout above 50k rows.', []],
+        ],
+        Sent: [
+          ['Maya Chen', 'Mon 14:35', 'Reproduced it. The worker hits the 2-minute limit. Fix is in review as relay#212.', []],
+          ['Maya Chen', 'Fri 16:40', 'Weekly update: audit page behind a flag, export worker under investigation.', []],
+        ],
+        Drafts: [['Maya Chen', 'Draft', 'Priya — the fix is merged and shipping in 2.8 on…', []]],
+        'Lumen renewal': [
+          ['Elena Petrov', 'Mon 11:02', 'Renewal brief in progress. Do not claim invoice 4471 is paid — it is open until Aug 30.', []],
+          ['Ravi Okonkwo', 'Yest. 09:15', 'Procurement needs the paperwork by Friday, separate from the technical fix.', []],
+        ],
+      } },
+    Gmail: { workspace: 'maya@northstar.test · Gmail API', api: 'Gmail API · users.messages · OAuth', port: '4011',
+      rail: [{ head: 'LABELS' }, { label: 'INBOX', badge: '3', members: '31 messages', topic: 'label:INBOX' }, { label: 'IMPORTANT', badge: '1', members: '8 messages', topic: 'label:IMPORTANT' }, { label: 'SENT', badge: '', members: '22 messages', topic: 'label:SENT' }],
+      threads: {
+        INBOX: [
+          ['Priya Raman', 'Yest. 08:50', 'Need a timeline before Thursday.', []],
+          ['Lumen Labs Billing', 'Mon 07:12', 'Statement for August is available.', []],
+          ['Vercel', 'Fri 18:20', 'Deployment relay-web succeeded in production.', []],
+        ],
+        IMPORTANT: [['Priya Raman', 'Yest. 08:50', 'Need a timeline before Thursday.', []]],
+        SENT: [['Maya Chen', 'Mon 14:35', 'Fix is in review as relay#212.', []]],
+      } },
+    'Microsoft Outlook': { workspace: 'maya@northstar.test · Graph', api: 'Graph · /me/messages · OAuth', port: '4012',
+      rail: [{ head: 'FOLDERS' }, { label: 'Inbox', badge: '2', members: '18 messages', topic: '/me/mailFolders/inbox' }, { label: 'Sent Items', badge: '', members: '11 messages', topic: '/me/mailFolders/sentitems' }],
+      threads: {
+        Inbox: [
+          ['Owen Price', 'Yest. 15:22', 'Does the 2.8 date change the audit page rollout?', []],
+          ['Marta Silva', 'Fri 16:05', 'Our exports are fine at 12k rows, no action needed.', []],
+        ],
+        'Sent Items': [['Maya Chen', 'Yest. 15:40', 'No, the audit page stays behind a flag.', []]],
+      } },
+    Twilio: { workspace: '+1 415 555 0134 · Northstar alerts', api: 'Messages API · status webhooks', port: '4014',
+      rail: [{ head: 'CONVERSATIONS' }, { label: '+1 415 555 0199', badge: '1', members: 'Priya Raman · Lumen Labs', topic: 'SMS' }, { label: '+1 628 555 0117', badge: '', members: 'on-call rotation', topic: 'SMS alerts' }],
+      threads: {
+        '+1 415 555 0199': [
+          ['Northstar alerts', 'Yest. 09:00', 'Your scheduled export #4471 failed. Support has been notified.', []],
+          ['Priya Raman', 'Yest. 09:04', 'Yes I saw, thanks. Already emailed Maya.', []],
+        ],
+        '+1 628 555 0117': [['Northstar alerts', 'Fri 22:41', 'Export worker restarted twice. No customer impact.', []]],
+      } },
+  };
+  creators = {
+    Issues: { label: '+ New issue', title: 'New issue', call: 'POST issueCreate (GraphQL)', cta: 'Create issue', placeholder: 'Issue title',
+      fields: [['PRIORITY', ['urgent', 'high', 'medium', 'low']], ['ASSIGNEE', ['Lucas Meyer', 'Noor Alvarez', 'Jon Bell', 'unassigned']], ['ESTIMATE', ['1', '2', '3', '5', '8']]],
+      make: (t, f, who) => ({ title: 'NR-' + (187 + Math.floor(Math.random() * 9)) + ' ' + t, badge: 'todo', tone: 'plain', meta: f.ASSIGNEE + ' · cycle 12', when: 'now',
+        facts: [['ESTIMATE', f.ESTIMATE + ' points'], ['PRIORITY', f.PRIORITY], ['LINKED', '—']],
+        timeline: [[who, 'created', 'now', 'Created through the Linear-shaped GraphQL API. issueCreate returned success and the runtime recorded the event.']] }) },
+    Code: { label: '+ New issue', title: 'New issue', call: 'POST /repos/northstar/relay/issues', cta: 'Open issue', placeholder: 'Issue title',
+      fields: [['SEVERITY', ['high', 'medium', 'low']], ['LABELS', ['bug', 'enhancement', 'customer']]],
+      make: (t, f, who) => ({ title: '#' + (885 + Math.floor(Math.random() * 9)) + ' ' + t, badge: 'open issue', tone: 'plain', meta: who.split(' ')[0].toLowerCase() + ' · ' + f.LABELS, when: 'now',
+        facts: [['SEVERITY', f.SEVERITY], ['CUSTOMERS', '—'], ['LINKED', '—']],
+        timeline: [[who, 'opened', 'now', 'Opened through the GitHub-compatible API. 201 Created, issue number assigned by the service.']] }) },
+    Payments: { label: '+ New customer', title: 'New customer', call: 'POST /v1/customers', cta: 'Create customer', placeholder: 'Company name',
+      fields: [['PLAN', ['Starter', 'Growth', 'Scale']], ['INTERVAL', ['monthly', 'annual']]],
+      make: (t, f, who) => ({ title: t, badge: 'trialing', tone: 'warn', meta: 'cus_' + t.toLowerCase().replace(/[^a-z]/g, '').slice(0, 8) + ' · ' + f.PLAN + ' ' + f.INTERVAL, when: 'now',
+        facts: [['PLAN', f.PLAN + ' · ' + f.INTERVAL], ['MRR', '0.00 USD'], ['SEATS', '1']],
+        timeline: [[who, 'customer.created', 'now', 'Created through the Stripe-shaped API. 200 ok, customer id assigned by the service.']] }) },
+    Deploys: { label: '+ New deployment', title: 'New deployment', call: 'POST /v13/deployments', cta: 'Deploy', placeholder: 'Branch or commit',
+      fields: [['ENV', ['preview', 'production']]],
+      make: (t, f, who) => ({ title: 'relay-web · ' + f.ENV, badge: 'building', tone: 'warn', meta: t + ' · queued', when: 'now',
+        facts: [['ENV', f.ENV], ['COMMIT', t], ['BUILD', 'queued']],
+        timeline: [[who, 'deployment.created', 'now', 'Build queued through the deployments API.']] }) },
+  };
+  records = {
+    Code: { title: 'Code', subtitle: 'A GitHub-compatible API with tokens, webhooks and notifications.', api: 'REST · /repos/northstar/relay', listTitle: 'Pull requests & issues', cli: 'worldfixture github repos --as maya',
+      unsupported: 'Not offered here: pushing commits · running CI · branch protection · transferring a repo.',
+      draft: 'Comment on this pull request as ', actions: [['Comment', false], ['Approve', true]],
+      items: [
+        { title: '#212 Fix export worker timeout above 50k rows', badge: 'changes requested', tone: 'warn', meta: 'lmeyer · fix/export-timeout', when: '09:31',
+          facts: [['DIFF', '+38 −11'], ['REVIEWERS', 'jonbell, mayachen'], ['CHECKS', '3 passed, 1 pending']],
+          timeline: [
+            ['Lucas Meyer', 'opened', 'Yest. 18:02', 'Raises the worker deadline for scheduled exports and adds a 100k-row load test.'],
+            ['Jon Bell', 'requested changes', 'Yest. 18:40', 'Works, but the retry path is untested above 100k rows. Run the load case before this goes into 2.8.'],
+            ['Lucas Meyer', 'commented', '08:44', 'Load test added. Running on staging tonight.'],
+            ['Lucas Meyer', 'pushed', '09:20', '1 commit to fix/export-timeout.'],
+          ] },
+        { title: '#209 Audit page for scheduled exports', badge: 'approved', tone: 'good', meta: 'nooralv · feature/audit-page', when: 'Mon',
+          facts: [['DIFF', '+412 −6'], ['REVIEWERS', 'hanaito'], ['CHECKS', '4 passed']],
+          timeline: [['Noor Alvarez', 'opened', 'Mon 02:20', 'Audit page behind a feature flag until 2.8 ships.'], ['Hana Ito', 'approved', 'Mon 10:12', 'Copy is final. Looks good.']] },
+        { title: '#884 Export fails silently above 50k rows', badge: 'open issue', tone: 'plain', meta: 'dbanerjee · reported by Lumen Labs', when: 'Yest.',
+          facts: [['SEVERITY', 'high'], ['CUSTOMERS', 'Lumen Labs'], ['LINKED', 'relay#212']],
+          timeline: [['David Banerjee', 'opened', 'Yest. 11:31', 'Lumen export fails with no error surfaced to the user. Reproduction steps attached.'], ['Maya Chen', 'commented', 'Yest. 12:02', 'Root cause is the worker deadline. Tracking in #212.']] },
+        { title: '#877 Add retry metrics to worker', badge: 'open issue', tone: 'plain', meta: 'jonbell', when: 'Fri',
+          facts: [['SEVERITY', 'low'], ['CUSTOMERS', '—'], ['LINKED', '—']],
+          timeline: [['Jon Bell', 'opened', 'Fri 08:02', 'We cannot see restart counts without reading logs.']] },
+      ] },
+    Calendar: { title: 'Calendar', subtitle: 'Google Calendar-shaped events, invitations and responses.', api: 'Calendar API · /events · freebusy', listTitle: 'This week', cli: 'worldfixture calendar events',
+      unsupported: 'Not offered here: changing working hours policy · delegating a calendar · room booking rules.',
+      draft: 'Add an agenda note as ', actions: [['Add note', false], ['Send invite', true]],
+      stats: [['EVENTS THIS WEEK', '18', ''], ['NEEDS RESPONSE', '3', 'awaiting Maya'], ['CONFLICTS', '1', 'Thu 15:00'], ['EXTERNAL GUESTS', '4', 'Lumen, Ember']],
+      items: [
+        { title: 'Lumen renewal review', badge: 'needs response', tone: 'warn', meta: 'Thu 15:00 · Priya Raman + 3', when: 'Thu',
+          facts: [['DURATION', '45 min'], ['ORGANISER', 'Priya Raman'], ['CONFLICT', 'Release go/no-go']],
+          timeline: [['Priya Raman', 'invited', 'Mon 14:10', 'Renewal review with procurement. Agenda: export reliability, timeline, pricing.'], ['Elena Petrov', 'accepted', 'Mon 14:40', 'Accepted on behalf of customer success.']] },
+        { title: 'Release 2.8 go/no-go', badge: 'accepted', tone: 'good', meta: 'Thu 15:00 · engineering', when: 'Thu',
+          facts: [['DURATION', '30 min'], ['ORGANISER', 'Maya Chen'], ['CONFLICT', 'Lumen renewal review']],
+          timeline: [['Maya Chen', 'created', 'Fri 11:00', 'Decide whether the timeout fix ships with 2.8.']] },
+        { title: 'Theo Martin · first day', badge: 'accepted', tone: 'good', meta: 'Mon 09:00 · Imani Brooks', when: 'Mon',
+          facts: [['DURATION', '60 min'], ['ORGANISER', 'Imani Brooks'], ['CONFLICT', '—']],
+          timeline: [['Imani Brooks', 'created', 'Mon 08:30', 'Welcome, tooling setup, staging access.']] },
+        { title: 'Weekly engineering standup', badge: 'recurring', tone: 'plain', meta: 'Daily 09:30 · 6 guests', when: 'Daily',
+          facts: [['DURATION', '15 min'], ['ORGANISER', 'Maya Chen'], ['CONFLICT', '—']],
+          timeline: [['Maya Chen', 'created', 'Aug 1 09:00', 'Recurring weekday standup.']] },
+        { title: 'Ember Commerce check-in', badge: 'declined', tone: 'plain', meta: 'Wed 11:00 · Marta Silva', when: 'Wed',
+          facts: [['DURATION', '30 min'], ['ORGANISER', 'Marta Silva'], ['CONFLICT', '—']],
+          timeline: [['Marta Silva', 'invited', 'Tue 09:00', 'Quarterly check-in.'], ['Maya Chen', 'declined', 'Tue 09:20', 'Elena is covering this account.']] },
+      ] },
+    Payments: { title: 'Payments', subtitle: 'Stripe-shaped customers and catalogue. This world claims stripe.customers.v1 and stripe.catalog.v1.', api: 'Stripe API · /v1/customers · /v1/prices', listTitle: 'Customers', cli: 'worldfixture stripe customers',
+      unsupported: 'Not offered here: invoices and charges (no profile in this world) · refunds · connecting a bank account.',
+      draft: 'Add an internal note as ', actions: [['Add note', false], ['Attach price', true]],
+      stats: [['CUSTOMERS', '6', '4 with a subscription'], ['MRR', '3,240.00 USD', 'across 4 plans'], ['PRODUCTS', '3', '7 prices'], ['PROFILES', '2', 'customers · catalog']],
+      items: [
+        { title: 'Lumen Labs', badge: 'subscribed', tone: 'good', meta: 'cus_lumen · Scale, annual', when: 'renews Sep 30',
+          facts: [['PLAN', 'Scale · annual'], ['MRR', '1,240.00 USD'], ['SEATS', '48']],
+          timeline: [
+            ['Stripe', 'customer.created', 'Feb 2 09:00', 'cus_lumen created with billing contact priya@lumenlabs.test.'],
+            ['Stripe', 'subscription.updated', 'Aug 1 09:00', 'Seats raised from 40 to 48 on the Scale annual price.'],
+            ['Samira Okafor', 'note', 'Yest. 10:05', 'Renewal is up this quarter and export reliability is the open question.'],
+          ] },
+        { title: 'Ember Commerce', badge: 'subscribed', tone: 'good', meta: 'cus_ember · Growth, monthly', when: 'renews Sep 12',
+          facts: [['PLAN', 'Growth · monthly'], ['MRR', '860.00 USD'], ['SEATS', '22']],
+          timeline: [['Stripe', 'customer.created', 'Apr 18 11:20', 'cus_ember created.'], ['Stripe', 'subscription.created', 'Apr 18 11:22', 'Growth monthly price attached.']] },
+        { title: 'Harbor Mobility', badge: 'payment issue', tone: 'bad', meta: 'cus_harbor · Growth, monthly', when: '6 days late',
+          facts: [['PLAN', 'Growth · monthly'], ['MRR', '860.00 USD'], ['SEATS', '18']],
+          timeline: [['Stripe', 'payment_method.card_declined', 'Aug 22 03:10', 'Card ···4117 declined: insufficient funds.'], ['Samira Okafor', 'note', 'Aug 22 09:40', 'Emailed their AP contact. No response yet.']] },
+        { title: 'Fieldnote Studio', badge: 'subscribed', tone: 'good', meta: 'cus_fieldnote · Starter, monthly', when: 'renews Sep 5',
+          facts: [['PLAN', 'Starter · monthly'], ['MRR', '280.00 USD'], ['SEATS', '6']],
+          timeline: [['Stripe', 'customer.created', 'Jun 3 08:40', 'cus_fieldnote created.']] },
+        { title: 'Cedar Office', badge: 'trialing', tone: 'warn', meta: 'cus_cedar · Starter trial', when: 'trial ends Sep 9',
+          facts: [['PLAN', 'Starter · trial'], ['MRR', '0.00 USD'], ['SEATS', '4']],
+          timeline: [['Stripe', 'customer.created', 'Aug 26 14:02', 'Trial started from the marketing site.'], ['Elena Petrov', 'note', 'Aug 27 09:10', 'Wants an export-heavy workflow. Worth a call before the trial ends.']] },
+        { title: 'Catalogue · products & prices', badge: 'catalog', tone: 'plain', meta: '3 products · 7 prices', when: 'Aug 1',
+          facts: [['PRODUCTS', 'Starter, Growth, Scale'], ['PRICES', '7 active'], ['CURRENCY', 'USD']],
+          timeline: [
+            ['Stripe', 'price.created', 'Aug 1 09:00', 'Scale annual price_scale_year at 14,880.00 USD.'],
+            ['Stripe', 'product.updated', 'Aug 1 09:01', 'Growth product description updated for the audit page feature.'],
+          ] },
+      ] },
+    Issues: { title: 'Issues', subtitle: 'Linear-shaped issues, cycles and status changes.', api: 'GraphQL · issues · issueUpdate', listTitle: 'Current cycle', cli: 'worldfixture linear issues',
+      unsupported: 'Not offered here: changing workflow states · deleting a team · billing.',
+      draft: 'Comment on this issue as ', actions: [['Comment', false], ['Move to In Review', true]],
+      items: [
+        { title: 'NR-184 Export worker deadline', badge: 'in progress', tone: 'warn', meta: 'Lucas Meyer · cycle 12', when: '09:20',
+          facts: [['ESTIMATE', '3 points'], ['PRIORITY', 'urgent'], ['LINKED', 'relay#212']],
+          timeline: [['Lucas Meyer', 'started', 'Yest. 18:02', 'Picked up after Maya reproduced the fault.'], ['Jon Bell', 'commented', 'Yest. 18:40', 'Needs the 100k row load test before it moves.']] },
+        { title: 'NR-179 Audit page rollout', badge: 'in review', tone: 'plain', meta: 'Noor Alvarez · cycle 12', when: 'Mon',
+          facts: [['ESTIMATE', '5 points'], ['PRIORITY', 'medium'], ['LINKED', 'relay#209']],
+          timeline: [['Noor Alvarez', 'moved to In Review', 'Mon 10:30', 'Behind a flag until 2.8.']] },
+        { title: 'NR-186 Staging access for Theo', badge: 'todo', tone: 'plain', meta: 'Imani Brooks · cycle 12', when: 'Mon',
+          facts: [['ESTIMATE', '1 point'], ['PRIORITY', 'medium'], ['LINKED', '—']],
+          timeline: [['Imani Brooks', 'created', 'Mon 08:31', 'Theo starts Monday and still has no staging access.']] },
+      ] },
+    Deploys: { title: 'Deploys', subtitle: 'Vercel-shaped deployments and build logs.', api: 'Deployments API · /v13/deployments', listTitle: 'Recent deployments', cli: 'worldfixture vercel deployments',
+      unsupported: 'Not offered here: changing domains · editing project env vars · transferring a project.',
+      draft: 'Add a deployment note as ', actions: [['Add note', false], ['Redeploy', true]],
+      items: [
+        { title: 'relay-web · production', badge: 'ready', tone: 'good', meta: 'main @ 9f2c1a · 48s build', when: 'Fri 18:20',
+          facts: [['ENV', 'production'], ['COMMIT', '9f2c1a'], ['BUILD', '48s']],
+          timeline: [['Vercel', 'deployment.succeeded', 'Fri 18:20', 'Build passed and traffic switched to the new deployment.']] },
+        { title: 'relay-web · preview #212', badge: 'building', tone: 'warn', meta: 'fix/export-timeout @ 3a71bd', when: '09:22',
+          facts: [['ENV', 'preview'], ['COMMIT', '3a71bd'], ['BUILD', 'running']],
+          timeline: [['Vercel', 'deployment.created', '09:22', 'Preview build started for pull request #212.']] },
+      ] },
+    Identity: { title: 'Identity', subtitle: 'OAuth, OIDC and session records for the people in this world.', api: 'OIDC · /authorize · /token · SCIM', listTitle: 'Sessions & apps', cli: 'worldfixture identity sessions',
+      unsupported: 'Not offered here: rotating signing keys · changing an org domain · deleting an audit trail.',
+      draft: 'Add an admin note as ', actions: [['Add note', false], ['Revoke session', true]],
+      items: [
+        { title: 'maya@northstar.test · your app', badge: 'active', tone: 'good', meta: 'OIDC · scopes profile email', when: '09:04',
+          facts: [['PROVIDER', 'Google OAuth'], ['EXPIRES', 'in 58 min'], ['MFA', 'passed']],
+          timeline: [['Google OAuth', 'authorization_code', '09:04', 'Redirect completed and code exchanged for tokens by your app.'], ['Clerk', 'session.created', '09:04', 'Session issued for person.maya.']] },
+        { title: 'theo@northstar.test · pending invite', badge: 'invited', tone: 'warn', meta: 'starts Monday · no staging access', when: 'Mon',
+          facts: [['PROVIDER', 'Okta'], ['EXPIRES', 'in 5 days'], ['MFA', 'not enrolled']],
+          timeline: [['Okta', 'user.created', 'Mon 08:30', 'Account provisioned via SCIM, awaiting first sign-in.']] },
+        { title: 'priya@lumenlabs.test · customer portal', badge: 'active', tone: 'good', meta: 'Sign in with Apple', when: 'Yest.',
+          facts: [['PROVIDER', 'Apple'], ['EXPIRES', 'in 12 days'], ['MFA', 'device']],
+          timeline: [['Apple', 'id_token issued', 'Yest. 08:44', 'Private relay address used; email withheld from the app.']] },
+      ] },
+    Data: { title: 'Data', subtitle: 'MongoDB Atlas-shaped clusters and collections behind your app.', api: 'Data API · /action/find · clusters', listTitle: 'Clusters & collections', cli: 'worldfixture atlas collections',
+      unsupported: 'Not offered here: resizing a cluster · changing network access · restoring a snapshot.',
+      draft: 'Add a note as ', actions: [['Add note', false], ['Run find', true]],
+      items: [
+        { title: 'northstar-prod · exports', badge: '51,204 docs', tone: 'plain', meta: 'M10 · us-east-1', when: '09:36',
+          facts: [['DOCUMENTS', '51,204'], ['SIZE', '412 MB'], ['INDEXES', '4']],
+          timeline: [['your app', 'insertMany', '09:36', 'Wrote 51,204 export rows for the Lumen job.'], ['Atlas', 'metric', '09:37', 'Write latency p99 42 ms, no throttling.']] },
+        { title: 'northstar-prod · people', badge: '11 docs', tone: 'plain', meta: 'M10 · us-east-1', when: 'Aug 1',
+          facts: [['DOCUMENTS', '11'], ['SIZE', '48 KB'], ['INDEXES', '2']],
+          timeline: [['Atlas', 'seeded', 'Aug 1 00:00', 'Loaded from the world artifact projection.']] },
+      ] },
+  };
+  catalogue = [
+    ['Chat', 'Slack', 'slack.messaging.v1 · slack.oauth.v1', 'emulate 0.10.0', 1],
+    ['Chat', 'Microsoft Teams', 'microsoft.graph-users.v1', 'emulate 0.10.0', 1],
+    ['Mail', 'Mail', 'mail.smtp-submission.v1 · mail.imap.v1 · mail.lmtp-delivery.v1', 'Cyrus IMAP 3.6.1', 1],
+    ['Mail', 'Gmail', 'google.gmail.v1', 'emulate 0.10.0', 1],
+    ['Mail', 'Resend', 'resend.email.v1 · resend.contacts.v1 · resend.domains.v1', 'emulate 0.10.0', 1],
+    ['Calendar & files', 'Google Calendar', 'google.calendar.v1', 'emulate 0.10.0', 1],
+    ['Calendar & files', 'Google Drive', 'google.drive.v1', 'emulate 0.10.0', 1],
+    ['Calendar & files', 'Object storage', 'aws.s3.buckets.v1 · aws.s3.objects.v1 · aws.s3.multipart.v1', 'SeaweedFS 4.41', 1],
+    ['Code & delivery', 'GitHub', 'github.repositories.v1 · github.issues.v1 · github.apps.v1 · github.oauth.v1', 'emulate 0.10.0', 1],
+    ['Code & delivery', 'Vercel', 'vercel.projects.v1 · vercel.teams.v1', 'emulate 0.10.0', 1],
+    ['Code & delivery', 'Linear', 'linear.issues.v1 · linear.teams.v1', 'emulate CLI bundle', 0],
+    ['Identity', 'Google OAuth', 'google.oauth.v1', 'emulate 0.10.0', 1],
+    ['Identity', 'Microsoft OAuth', 'microsoft.oauth.v1', 'emulate 0.10.0', 1],
+    ['Identity', 'Apple', 'apple.oauth.v1', 'emulate 0.10.0', 1],
+    ['Identity', 'Okta', 'okta.users.v1 · okta.groups.v1 · okta.oauth.v1', 'emulate 0.10.0', 1],
+    ['Identity', 'Clerk', 'clerk.users.v1 · clerk.organizations.v1', 'emulate 0.10.0', 1],
+    ['Identity', 'GitHub OAuth', 'github.oauth.v1', 'emulate 0.10.0', 1],
+    ['Payments', 'Stripe', 'stripe.customers.v1 · stripe.catalog.v1', 'emulate 0.10.0', 1],
+    ['Messaging', 'Twilio', 'twilio.messaging.v1 · twilio.verify.v1', 'emulate CLI bundle', 0],
+    ['Cloud & data', 'MongoDB Atlas', 'mongoatlas.projects.v1 · mongoatlas.clusters.v1', 'emulate 0.10.0', 1],
+    ['Cloud & data', 'AWS IAM & STS', 'aws.iam.v1 · aws.sts.v1', 'emulate 0.10.0', 1],
+    ['Cloud & data', 'AWS SQS', 'aws.sqs.v1', 'emulate 0.10.0', 1],
+    ['Web', 'HTTP targets', 'http.public-site.v1 · http.feed.v1 · http.probes.v1 · http.metrics.v1 · http.openapi.v1', 'worldfixture', 1],
+    ['Your own', 'your-service', 'any real protocol you implement', 'worldfixture.service/v1 manifest', 2],
+  ].map(([cat, name, surface, impl, tier]) => ({ cat, name, surface, impl, tier }));
+  palette = ['#7c5cff','#2a9d8f','#e76f51','#3a86ff','#c2185b','#d4a017','#5c6578','#0ea5a5','#8b5cf6','#ef4444'];
+  slackRail = [
+    { head: 'CHANNELS' },
+    { label: '#release', badge: '3', members: '8 members', topic: 'Release 2.8 · ships next week' },
+    { label: '#engineering', badge: '', members: '6 members', topic: 'Worker, API and audit page work' },
+    { label: '#support', badge: '1', members: '5 members', topic: 'Customer tickets and escalations' },
+    { label: '#finance', badge: '2', members: '3 members · private', topic: 'Invoices, renewals, spend' },
+    { label: '#general', badge: '', members: '10 members', topic: 'Company-wide' },
+    { label: '#incidents', badge: '', members: '7 members', topic: 'Paging and postmortems' },
+    { head: 'DIRECT MESSAGES' },
+    { label: 'Priya Raman', badge: '1', members: 'Lumen Labs · customer', topic: 'Direct message' },
+    { label: 'Jon Bell', badge: '', members: 'backend', topic: 'Direct message' },
+    { label: 'Imani Brooks', badge: '', members: 'people', topic: 'Direct message' },
+    { label: 'Elena Petrov', badge: '2', members: 'customer success', topic: 'Direct message' },
+  ];
+  teamsRail = [
+    { head: 'TEAMS' },
+    { label: 'Delivery · General', badge: '2', members: '9 members', topic: 'Release coordination' },
+    { label: 'Customer Escalations', badge: '', members: '6 members', topic: 'Shared with Lumen Labs' },
+    { head: 'CHATS' },
+    { label: 'Ravi Okonkwo', badge: '1', members: 'Lumen Labs · procurement', topic: 'Chat' },
+    { label: 'Marta Silva', badge: '', members: 'Ember Commerce', topic: 'Chat' },
+  ];
+  teamsMessages = {
+    'Delivery · General': [
+      ['Maya Chen', 'Yest. 15:10', 'Cross-posting for the folks who live in Teams: 2.8 ships next week, timeout fix pending review.', []],
+      ['Owen Price', 'Yest. 15:22', 'Noted. Does that change the audit page date?', []],
+      ['Noor Alvarez', 'Yest. 15:40', 'No, audit page stays behind a flag until 2.8 is out.', ['👍 2']],
+      ['Jon Bell', '08:58', 'Load test finished clean at 100k rows.', ['🎉 3']],
+    ],
+    'Customer Escalations': [
+      ['Elena Petrov', 'Mon 11:02', 'Lumen escalation is open until we can commit to a date.', []],
+      ['David Banerjee', 'Mon 11:30', 'Ticket #884 has the reproduction steps and the failing export id.', []],
+    ],
+    'Ravi Okonkwo': [
+      ['Ravi Okonkwo', 'Yest. 09:15', 'Procurement needs the renewal paperwork by Friday, separate from the technical fix.', []],
+      ['Samira Okafor', 'Yest. 09:40', 'Understood. Invoice 4471 is unrelated and still open until Aug 30.', []],
+    ],
+    'Marta Silva': [
+      ['Marta Silva', 'Fri 16:05', 'Our exports are fine at 12k rows, no action needed on our side.', []],
+    ],
+  };
+  channels = {
+    '#release': [
+      ['Maya Chen', 'engineering lead', 'Yest. 17:02', 'Reproduced the Lumen timeout. Exports above ~50k rows die at the 2-minute worker limit. Fix is up as #212.', 'slack'],
+      ['Jon Bell', 'backend', 'Yest. 17:40', "Release 2.8 is due next week. I don't want to pull that in without a load test.", 'slack'],
+      ['Lucas Meyer', 'backend', 'Yest. 18:11', 'It is 40 lines and Priya needs an answer before the renewal meeting.', 'slack'],
+      ['Hana Ito', 'design', 'Yest. 18:14', 'reacted 👀', 'slack'],
+      ['Maya Chen', 'engineering lead', '09:12', 'Mobile export test passed on the worker branch. 51k rows in 48s.', 'slack'],
+    ],
+    '#engineering': [
+      ['Hana Ito', 'design', 'Mon 10:12', 'Audit page copy is final, handed to Noor.', 'slack'],
+      ['Noor Alvarez', 'frontend · UTC+9', 'Yest. 02:20', 'Audit page is behind a flag until 2.8 ships.', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Yest. 09:31', 'Keep it flagged. I do not want two risky things in one release.', 'slack'],
+      ['Jon Bell', 'backend', 'Yest. 16:05', 'Load test queued for tonight on staging.', 'slack'],
+      ['Lucas Meyer', 'backend', '08:44', 'Worker retry path now has a 100k row case. Results in #release shortly.', 'slack'],
+      ['Noor Alvarez', 'frontend · UTC+9', '09:02', 'Morning. Anything I should pick up before standup?', 'slack'],
+    ],
+    '#incidents': [
+      ['David Banerjee', 'support', 'Thu 22:41', 'Export worker restarted twice overnight. No customer impact recorded.', 'slack'],
+      ['Jon Bell', 'backend', 'Fri 08:02', 'Restarts line up with the 50k row jobs. Same root cause as #884.', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Fri 08:20', 'Adding it to the postmortem doc. Not paging anyone over it.', 'slack'],
+    ],
+    '#support': [
+      ['David Banerjee', 'support', 'Yest. 11:31', 'Ticket #884: Lumen export fails silently above 50k rows. Linked to relay#212.', 'slack'],
+      ['Elena Petrov', 'customer success', 'Yest. 12:02', 'Priya is aware. I will send an update once the fix is in review.', 'slack'],
+    ],
+    '#general': [
+      ['Imani Brooks', 'people', 'Mon 09:00', 'Theo Martin starts Monday — onboarding page is ready.', 'slack'],
+      ['Samira Okafor', 'finance & ops', 'Tue 14:20', 'Reminder: expenses close Friday.', 'slack'],
+    ],
+    '#finance': [
+      ['Samira Okafor', 'finance & ops', 'Mon 09:15', 'August vendor bills are all in. Nothing unusual.', 'slack'],
+      ['Samira Okafor', 'finance & ops', 'Yest. 10:05', 'Invoice 4471 for Lumen (412.00 USD) is open until Aug 30. Not late.', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Yest. 10:09', 'Understood — it is not related to the renewal risk.', 'slack'],
+      ['Elena Petrov', 'customer success', 'Yest. 10:24', 'I will keep it out of the renewal brief entirely.', 'slack'],
+    ],
+    'Priya Raman': [
+      ['Priya Raman', 'Lumen Labs · customer', 'Mon 14:02', 'Hi Maya — are the scheduled exports still failing above 50k rows?', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Mon 14:30', 'Yes, and we have reproduced it. Interactive exports are unaffected.', 'slack'],
+      ['Priya Raman', 'Lumen Labs · customer', 'Yest. 08:50', 'I have the renewal meeting Thursday. I need something concrete.', 'slack'],
+      ['Priya Raman', 'Lumen Labs · customer', '09:20', 'Any update this morning?', 'slack'],
+    ],
+    'Jon Bell': [
+      ['Jon Bell', 'backend', 'Yest. 17:45', 'I am not blocking the fix, I just want the load test first.', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Yest. 17:52', 'Reasonable. Lucas is running it tonight.', 'slack'],
+    ],
+    'Imani Brooks': [
+      ['Imani Brooks', 'people', 'Mon 08:30', 'Theo starts Monday. Onboarding page is ready.', 'slack'],
+      ['Imani Brooks', 'people', 'Mon 08:31', 'Staging access request is still open — can you nudge whoever owns it?', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Mon 09:10', 'I will chase it this week.', 'slack'],
+    ],
+    'Elena Petrov': [
+      ['Elena Petrov', 'customer success', 'Yest. 12:10', 'Priya asked me directly for a date. What can I promise?', 'slack'],
+      ['Maya Chen', 'engineering lead', 'Yest. 12:22', 'Fix in review, ETA Friday. Nothing stronger than that yet.', 'slack'],
+      ['Elena Petrov', 'customer success', '09:18', 'She emailed again. Sending the update now.', 'slack'],
+    ],
+  };
+  screens = {
+    People: { subtitle: "Every person is a world record with its own provider identities. Pick one to act as.", cli: 'worldfixture people',
+      grid: '1.5fr 1fr 1.4fr 1fr', cols: ['PERSON','SLACK','EMAIL','GITHUB'], foot: '10 employees + 6 customers and vendors',
+      rows: [['Maya Chen','engineering lead','U_MAYA','maya@northstar.test','mayachen'],['Jon Bell','backend','U_JON','jon@northstar.test','jonbell'],['Lucas Meyer','backend','U_LUCAS','lucas@northstar.test','lmeyer'],['Noor Alvarez','frontend · UTC+9','U_NOOR','noor@northstar.test','nooralv'],['Hana Ito','design','U_HANA','hana@northstar.test','hanaito'],['Samira Okafor','finance & ops','U_SAMIRA','samira@northstar.test','—'],['Elena Petrov','customer success','U_ELENA','elena@northstar.test','—'],['David Banerjee','support','U_DAVID','david@northstar.test','dbanerjee'],['Imani Brooks','people','U_IMANI','imani@northstar.test','—'],['Theo Martin','starts Monday','U_THEO','theo@northstar.test','theomartin'],['Priya Raman','Lumen Labs · customer','—','priya@lumenlabs.test','—']] },
+    Chat: { subtitle: "Slack, in this world. Read a channel and post through the emulator's Web API as the selected person.", cli: 'worldfixture slack send --as maya',
+      grid: '1.1fr .95fr 2.5fr .6fr', cols: ['AUTHOR','TIME','MESSAGE','VIA'], foot: '6 channels · 14 DMs · 412 messages over 30 days', rows: [] },
+    Mail: { subtitle: "Real SMTP and IMAP. Send as a person and the message lands in the recipient's mailbox.", cli: 'worldfixture mail inbox --as maya',
+      grid: '1.5fr 1fr 1.4fr 1fr', cols: ['MAILBOX','MESSAGES','LATEST SUBJECT','UNREAD'], foot: '10 mailboxes · 186 messages · invoices, support, newsletters',
+      rows: [['maya@northstar.test','engineering lead','42','Re: Scheduled export timeouts','4'],['samira@northstar.test','finance & ops','38','Invoice 4471 — Lumen Labs, due Aug 30','2'],['elena@northstar.test','customer success','31','Lumen renewal — Thursday','5'],['david@northstar.test','support','29','Ticket #884 export failure','3'],['imani@northstar.test','people','24','Theo first day — Monday','0'],['jon@northstar.test','backend','22','[northstar/relay] Review requested','1']] },
+    Code: { subtitle: 'A GitHub-compatible API with tokens, webhooks and notifications.', cli: 'worldfixture github repos --as maya',
+      grid: '1.8fr .9fr 1.3fr .8fr', cols: ['ITEM','KIND','AUTHOR / STATE','UPDATED'], foot: '2 repositories · 4 pull requests · 9 open issues',
+      rows: [['#212 Fix export worker timeout above 50k rows','northstar/relay','pull request','lmeyer · changes requested','9:31'],['#209 Audit page for scheduled exports','northstar/relay','pull request','nooralv · approved','Mon'],['#884 Export fails silently above 50k rows','northstar/relay','issue','dbanerjee · open','Yest.'],['#877 Add retry metrics to worker','northstar/relay','issue','jonbell · open','Fri'],['#41 Bump pinned toolchain','northstar/infra','pull request','mayachen · open','Thu']] },
+    Files: { subtitle: 'S3 API with SigV4. Browse and change objects the same way your app does.', cli: 'worldfixture s3 ls',
+      grid: '1.8fr 1.1fr .8fr .8fr', cols: ['KEY','BUCKET','SIZE','MODIFIED'], foot: '38 objects across 3 buckets',
+      rows: [['exports/lumen-2026-07.csv','csv export','northstar-exports','3.8 MB','Jul 31'],['exports/ember-2026-08.csv','csv export','northstar-exports','1.2 MB','Aug 24'],['reports/renewal-brief-lumen.pdf','document','northstar-docs','412 KB','Yest.'],['onboarding/theo-checklist.md','document','northstar-docs','6 KB','Mon'],['logs/worker-2026-08-26.log','log','northstar-logs','18 MB','Yest.']] },
+    Services: { subtitle: 'One capability has one owner in a run. Start a service and it appears in the sidebar; stop it and its screen goes away.', cli: 'worldfixture up --with stripe',
+      grid: '1.25fr 1.2fr 1.15fr .7fr 96px', cols: ['SERVICE','PROTOCOL SURFACE','IMPLEMENTATION','STATE',''],
+      foot: 'Any new service is a manifest plus the contract tests. No core registration, no workbench edit.',
+      rows: [
+        ['Slack','','Web API · OAuth · Events','emulate','available'],
+        ['Microsoft Teams','','Graph · /chats · OAuth','emulate','available'],
+        ['Mail','','SMTP · IMAP · LMTP','Cyrus IMAP','available'],
+        ['Gmail','','Gmail API · OAuth','emulate','available'],
+        ['Google Calendar','','Calendar API · invites','emulate','available'],
+        ['Google Drive','','Drive API · files','emulate','available'],
+        ['Google OAuth','','OAuth 2.0 · OIDC','emulate','available'],
+        ['Microsoft Graph','','users · mail · files','emulate','available'],
+        ['Resend','','transactional mail API','emulate','available'],
+        ['Twilio','','SMS · voice webhooks','emulate','available'],
+        ['GitHub','','REST · webhooks · tokens','emulate','available'],
+        ['Linear','','GraphQL API','emulate','available'],
+        ['Vercel','','deployments API','emulate','available'],
+        ['Object storage','','S3 API · SigV4','SeaweedFS','available'],
+        ['MongoDB Atlas','','clusters · data API','emulate','available'],
+        ['Stripe','','payments · webhooks','emulate','available'],
+        ['Clerk','','sessions · users','emulate','available'],
+        ['Okta','','OIDC · SAML · SCIM','emulate','available'],
+        ['Apple','','Sign in with Apple','emulate','available'],
+        ['HTTP targets','','sites · feeds · probes · metrics','worldfixture','available'],
+        ['your-service','bring your own','any real protocol you implement','worlds.service/v1 manifest','extend'],
+      ] },
+    Activity: { subtitle: 'The runtime event log: completed facts with provider evidence and causal parents.', cli: 'worldfixture events --follow',
+      grid: '1.5fr .8fr 1.5fr .7fr', cols: ['EVENT','SOURCE','DETAIL','TIME'], foot: 'append-only · consumers resume from their last cursor',
+      rows: [['communication.message.sent.v1','evt_8f21','slack','person.maya → #release','09:12'],['mail.message.received.v1','evt_8f2e','cyrus','priya@lumenlabs.test → maya','09:26'],['github.review.submitted.v1','evt_8f3a','github','jonbell requested changes on #212','09:31'],['storage.object.put.v1','evt_8f44','s3','exports/lumen-2026-08.csv','09:36'],['scheduler.turn.skipped.v1','evt_8f51','runtime','person.noor sampled no response','09:38']] },
+    Target: { subtitle: 'What your application is, how it was started, and what it has called.', cli: 'worldfixture status --verbose',
+      grid: '1.2fr 1.1fr 1.6fr .8fr', cols: ['PROPERTY','VALUE','DETAIL','STATE'], foot: 'the target receives only emulator endpoints and per-person credentials',
+      rows: [['Command','your app','npm run dev','pid 48120 · started 09:04','running'],['Kind','regular app','http','readiness on :3000/healthz','ready'],['Slack calls','18','chat.postMessage','conversations.history, chat.postMessage','200 ok'],['Mail calls','6','SMTP + IMAP','send and fetch as maya','accepted'],['S3 calls','4','PutObject','ListObjects, PutObject','200 ok'],['Control tokens','none','withheld','clock and inspection stay out of the target','by design']] },
+    Settings: { subtitle: 'Instance, artifact and runtime configuration for this run. Agentic mode is a reserved flag — nothing in the runtime drives world people yet.', cli: 'worldfixture env',
+      grid: '1.2fr 1.3fr 1.5fr .8fr', cols: ['SETTING','VALUE','NOTE','STATE'], foot: 'an existing lock never follows a newer world or service release',
+      rows: [['World','business.saas-company:v2','pinned','artifact sha256:4c1f9a7e','locked'],['Instance path','.worldfixture/runs/local','local','SQLite event log and cursors','local'],['Agentic mode','--agents','not built yet','flag is reserved; the runtime refuses to start with it','unsupported'],['Model budget','not set','n/a until agents land','no model provider adapter is wired','unsupported'],['Clock','real time','running','pause, advance and accelerate available','running'],['Scheduler','off','not built yet','stochastic activation lands with agentic mode','unsupported'],['Reset policy','exact','verified','restores the artifact byte for byte','verified']] },
+  };
+  baseActivity = [
+    { t: '09:12', actor: 'Maya Chen', src: 'slack', action: 'Posted in #release: "Reproduced the Lumen timeout"', accepted: 'slack · 200 ok', observed: 'evt_8f21' },
+    { t: '09:26', actor: 'Priya Raman', src: 'mail', action: 'Delivered mail to maya@northstar.test', accepted: 'cyrus · 250 ok', observed: 'evt_8f2e' },
+    { t: '09:31', actor: 'jonbell', src: 'github', action: 'Requested changes on northstar/relay#212', accepted: 'github · 201', observed: 'evt_8f3a' },
+  ];
+  actions = [
+    { actor: 'your app', src: 'app', action: 'POST chat.postMessage #release "Deploy 2.8 queued"', accepted: 'slack · 200 · ts 17247…',
+      chain: [
+        { tag: 'PROVIDER', text: 'Slack emulator stored the message and updated 10 read cursors' },
+        { tag: 'OBSERVED', text: 'communication.message.sent.v1 recorded with provider evidence' },
+        { tag: 'CONSEQUENCE', text: 'causal rule queued mail.receipt.requested (+2s)' },
+      ] },
+    { actor: 'your app', src: 'app', action: 'PUT exports/lumen-2026-08.csv (51,204 rows)', accepted: 's3 · 200 · ETag 9f2c…',
+      chain: [
+        { tag: 'PROVIDER', text: 'SeaweedFS wrote the object; ListObjects now returns it' },
+        { tag: 'OBSERVED', text: 'storage.object.put.v1 recorded, 4.1 MB' },
+      ] },
+    { actor: 'your app', src: 'app', action: 'SMTP send to priya@lumenlabs.test "Fix in review"', accepted: 'cyrus · 250 accepted',
+      chain: [
+        { tag: 'PROVIDER', text: "Message appended to Priya's mailbox, unread" },
+        { tag: 'OBSERVED', text: 'mail.message.sent.v1 recorded with Message-ID evidence' },
+        { tag: 'CONSEQUENCE', text: 'Lumen renewal story advanced; no agent turn required' },
+      ] },
+  ];
+  actorList = [
+    { name: 'Maya Chen', color: '#7c5cff', ids: 'U_MAYA · maya@northstar.test · mayachen', driver: 'human' },
+    { name: 'Jon Bell', color: '#2a9d8f', ids: 'U_JON · jon@northstar.test · jonbell', driver: 'passive' },
+    { name: 'Lucas Meyer', color: '#e76f51', ids: 'U_LUCAS · lucas@northstar.test · lmeyer', driver: 'passive' },
+    { name: 'Elena Petrov', color: '#3a86ff', ids: 'U_ELENA · elena@northstar.test', driver: 'agent' },
+    { name: 'Samira Okafor', color: '#c2185b', ids: 'U_SAMIRA · samira@northstar.test', driver: 'passive' },
+    { name: 'Imani Brooks', color: '#d4a017', ids: 'U_IMANI · imani@northstar.test', driver: 'passive' },
+    { name: 'Priya Raman', color: '#5c6578', ids: 'priya@lumenlabs.test · customer', driver: 'passive' },
+  ];
+  forms = {
+    'Post to a channel': { call: 'POST /api/chat.postMessage', cta: 'Post to Slack',
+      fields: [{ key: 'channel', label: 'CHANNEL', options: ['#release', '#engineering', '#support', '#general', '#finance'] }, { key: 'text', label: 'MESSAGE', placeholder: 'What should be posted?' }],
+      result: f => `Posted to ${f.channel} as {a} · slack 200 ok · ts 1724747${Math.floor(Math.random() * 900 + 100)} · "${f.text}"` },
+    'Send a direct message': { call: 'POST /api/chat.postMessage (im)', cta: 'Send DM',
+      fields: [{ key: 'to', label: 'TO', options: ['Jon Bell', 'Lucas Meyer', 'Elena Petrov', 'Priya Raman'] }, { key: 'text', label: 'MESSAGE', placeholder: 'Message text' }],
+      result: f => `DM delivered to ${f.to} as {a} · slack 200 ok · "${f.text}"` },
+    'Send mail': { call: 'SMTP · localhost:2525', cta: 'Send mail',
+      fields: [{ key: 'to', label: 'TO', options: ['priya@lumenlabs.test', 'jon@northstar.test', 'samira@northstar.test'] }, { key: 'subject', label: 'SUBJECT', placeholder: 'Subject line' }, { key: 'body', label: 'BODY', placeholder: 'Message body' }],
+      result: f => `SMTP 250 accepted from {a} to ${f.to} · "${f.subject}" · appended to recipient mailbox, unread` },
+    'Comment on a pull request': { call: 'POST /repos/:owner/:repo/issues/:n/comments', cta: 'Post comment',
+      fields: [{ key: 'pr', label: 'PULL REQUEST', options: ['relay#212', 'relay#209', 'infra#41'] }, { key: 'text', label: 'COMMENT', placeholder: 'Comment body' }],
+      result: f => `Comment posted on ${f.pr} as {a} · github 201 · "${f.text}"` },
+    'Upload an object': { call: 'PUT /:bucket/:key (SigV4)', cta: 'Upload',
+      fields: [{ key: 'bucket', label: 'BUCKET', options: ['northstar-exports', 'northstar-docs', 'northstar-logs'] }, { key: 'key', label: 'KEY', placeholder: 'exports/my-file.csv' }],
+      result: f => `PutObject accepted as {a} · ${f.bucket}/${f.key} · 200 · ETag recorded` },
+  };
+  manual = {
+    Chat: { actions: [['Post to a channel', 'Posted to #release as {a} · slack 200 ok · evt recorded'], ['Reply in a thread', 'Threaded reply sent as {a} · slack 200 ok'], ['Send a direct message', 'DM delivered as {a} · slack 200 ok'], ['Add a reaction', 'Reaction added as {a} · slack 200 ok'], ['Mark a channel read', 'Read cursor moved for {a}']],
+      unsupported: ['edit or delete history', 'create a workspace', 'change admin settings', 'install an app'] },
+    Mail: { actions: [['Send mail', 'SMTP accepted from {a} · 250 ok · appended to recipient mailbox'], ['Reply to a thread', 'Reply sent as {a} · 250 ok'], ['Mark read or unread', 'IMAP flag updated for {a}'], ['Move to a folder', 'IMAP move applied for {a}']],
+      unsupported: ['change mailbox quotas', 'add a domain', 'edit an existing message'] },
+    Code: { actions: [['Comment on a pull request', 'Comment posted as {a} · github 201'], ['Submit a review', 'Review submitted as {a} · github 201'], ['Open an issue', 'Issue opened as {a} · github 201'], ['Merge a pull request', 'Merge accepted as {a} · github 200']],
+      unsupported: ['push commits', 'run CI', 'change branch protection', 'transfer a repo'] },
+    Files: { actions: [['Upload an object', 'PutObject accepted as {a} · 200 · ETag recorded'], ['Download an object', 'GetObject 200 as {a}'], ['Delete an object', 'DeleteObject 204 as {a}']],
+      unsupported: ['create a bucket policy', 'change region', 'lifecycle rules'] },
+  };
+  tagStyle = { PROVIDER: ['rgba(192,132,252,.15)', '#c084fc'], OBSERVED: ['rgba(79,124,255,.18)', '#7c9cff'], CONSEQUENCE: ['rgba(255,207,74,.15)', '#ffcf4a'] };
+  srcColor = { slack: '#c084fc', mail: '#4ade80', github: '#fb923c', app: '#4f7cff', s3: '#38bdf8' };
+  componentDidMount() {
+    let seen = false;
+    try { seen = localStorage.getItem('wf-workbench-tour') === 'seen'; } catch (e) {}
+    this.setState({ tour: !seen });
+  }
+  componentDidUpdate() { const el = this.logRef.current; if (el) el.scrollTop = el.scrollHeight; }
+  renderVals() {
+    const { acted, probed, probing, resetStage, copied, min, screen } = this.state;
+    const actorName = this.state.actor ?? 'Maya Chen';
+    const actor = this.actorList.find(a => a.name === actorName) || this.actorList[0];
+    const ini = n => n.split(' ').map(w => w[0]).join('');
+    const man = this.manual[screen];
+    const driverColor = d => d === 'agent' ? '#ffcf4a' : d === 'human' ? '#4ade80' : '#5c6578';
+    const running = this.state.running || ['Slack', 'Microsoft Teams', 'Mail', 'Object storage', 'GitHub', 'HTTP targets'];
+    const caps = [
+      ['Slack', 'Chat', 'slack'], ['Microsoft Teams', 'Chat', 'teams'],
+      ['Mail', 'Mail', 'imap'], ['Gmail', 'Mail', 'gmail'], ['Microsoft Outlook', 'Mail', 'graph'],
+      ['GitHub', 'Code', 'github'], ['Linear', 'Issues', 'linear'], ['Vercel', 'Deploys', 'vercel'],
+      ['Object storage', 'Files', 's3'], ['Google Drive', 'Files', 'gdrive'],
+      ['Google Calendar', 'Calendar', 'gcal'], ['Stripe', 'Payments', 'stripe'], ['Twilio', 'Messaging', 'twilio'],
+      ['Google OAuth', 'Identity', 'oauth'], ['Microsoft OAuth', 'Identity', 'msft'], ['GitHub OAuth', 'Identity', 'gh-oauth'], ['Clerk', 'Identity', 'clerk'], ['Okta', 'Identity', 'okta'], ['Apple', 'Identity', 'apple'],
+      ['MongoDB Atlas', 'Data', 'atlas'], ['AWS IAM & STS', 'Data', 'iam'], ['AWS SQS', 'Data', 'sqs'], ['Resend', 'Mail', 'resend'], ['HTTP targets', 'HTTP', 'sites'],
+    ];
+    const liveCaps = [];
+    for (const c of caps) {
+      if (!running.includes(c[0]) || c[1] === 'HTTP') continue;
+      const hit = liveCaps.find(x => x[1] === c[1]);
+      if (hit) { hit[3] += 1; hit[2] = hit[2].split(' +')[0] + ' +' + hit[3]; continue; }
+      liveCaps.push([c[0], c[1], c[2], 0]);
+    }
+    const q = this.state.svcQuery || '';
+    const svcFilter = this.state.svcFilter || 'all';
+    const collapsed = this.state.svcCollapsed || {};
+    const ql = q.trim().toLowerCase();
+    const svcVisible = this.catalogue.filter(c => {
+      if (ql && !(c.name + ' ' + c.surface + ' ' + c.impl + ' ' + c.cat).toLowerCase().includes(ql)) return false;
+      if (svcFilter === 'running') return running.includes(c.name);
+      if (svcFilter === 'available') return c.tier === 1 && !running.includes(c.name);
+      if (svcFilter === 'planned') return c.tier === 0;
+      return true;
+    });
+    const svcCats = [...new Set(svcVisible.map(c => c.cat))];
+    const composeAction = this.state.composeAction;
+    const form = composeAction ? this.forms[composeAction] : null;
+    const fieldVals = this.state.fieldVals || {};
+    const t = n => '09:' + String(min + n).padStart(2, '0');
+    const sc = this.screens[screen];
+    const convo = this.convoSets[screen];
+    const rec = this.records[screen];
+    // conversation capability: provider list, rail, thread
+    const provs = convo ? convo.providers : [];
+    const prov = provs.includes(this.state.prov) ? this.state.prov : provs[0];
+    let provider = { workspace: '', api: '', meta: '' }, rail = [], msgs = [], chan = '';
+    if (convo) {
+      if (screen === 'Chat') {
+        const p = prov === 'Slack'
+          ? { workspace: 'northstar-relay.slack', api: 'Slack Web API · conversations.history', meta: '4003' }
+          : { workspace: 'Northstar Relay · Teams', api: 'Graph API · /chats/{id}/messages', meta: '4008' };
+        provider = p;
+        rail = prov === 'Slack' ? this.slackRail : this.teamsRail;
+        const def = prov === 'Slack' ? '#release' : 'Delivery · General';
+        chan = rail.some(r => r.label && r.label === this.state.chan) ? this.state.chan : def;
+        msgs = prov === 'Slack'
+          ? (this.channels[chan] || []).map(m => [m[0], m[2], m[3], m[0] === 'Hana Ito' ? ['👀 2'] : [], ''])
+          : (this.teamsMessages[chan] || []).map(m => [m[0], m[1], m[2], m[3], '']);
+      } else {
+        const box = this.mailboxes[prov];
+        provider = { workspace: box.workspace, api: box.api, meta: box.port };
+        rail = box.rail;
+        const def = rail.find(r => r.label).label;
+        chan = rail.some(r => r.label && r.label === this.state.chan) ? this.state.chan : def;
+        msgs = (box.threads[chan] || []).map(m => [m[0], m[1], m[2], m[3], '']);
+      }
+      msgs = [...msgs, ...((this.state.posted && this.state.posted[screen + '|' + prov + '|' + chan]) || [])];
+    }
+    // record capability: list + detail
+    let recItems = [], recSel = 0, det = null;
+    if (rec) {
+      recItems = [...((this.state.created && this.state.created[screen]) || []), ...rec.items];
+      recSel = Math.min(this.state.recSel || 0, recItems.length - 1);
+      det = recItems[recSel];
+    }
+    const railItem = rail.find(r => r.label === chan);
+    const railInfo = {
+      meta: railItem ? ((railItem.members ? railItem.members + ' · ' : '') + railItem.topic) : '',
+      foot: rail.filter(r => r.label).length + (screen === 'Chat' ? ' conversations' : screen === 'Mail' ? ' folders' : ' threads'),
+    };
+    const creator = this.creators[screen];
+    const createVals = this.state.createVals || {};
+    const toneColor = t => t === 'good' ? ['rgba(74,222,128,.15)', '#4ade80'] : t === 'warn' ? ['rgba(255,207,74,.15)', '#ffcf4a'] : t === 'bad' ? ['rgba(239,68,68,.16)', '#f87171'] : ['rgba(255,255,255,.08)', '#a3abbd'];
+    const stateColor = s => s === 'ready' ? '#4ade80' : s === 'available' ? '#8b93a7' : s === 'extend' ? '#7c9cff' : s === 'unsupported' ? '#5c6578' : '#a3abbd';
+    const activity = [
+      ...this.baseActivity.map(a => ({ ...a, rowBg: 'transparent', srcColor: this.srcColor[a.src], obsColor: '#8b93a7', hasChain: false, chain: [] })),
+      ...this.actions.slice(0, acted).map((a, i) => ({
+        ...a, t: t(i * 3), rowBg: 'rgba(79,124,255,.05)', srcColor: this.srcColor.app, obsColor: '#7c9cff',
+        observed: 'evt_9a' + (10 + i), hasChain: true,
+        chain: a.chain.map(c => ({ ...c, tagBg: this.tagStyle[c.tag][0], tagColor: this.tagStyle[c.tag][1] })),
+      })),
+    ];
+    const drift = acted === 0 ? [] : [
+          { service: 'slack', what: '1 message in #release, 10 read cursors moved', delta: '+1', color: '#4ade80' },
+          ...(acted > 1 ? [{ service: 's3', what: 'exports/lumen-2026-08.csv', delta: '+1 object', color: '#4ade80' }] : []),
+          ...(acted > 2 ? [{ service: 'mail', what: "1 message in Priya's mailbox", delta: '+1', color: '#4ade80' }] : []),
+          { service: 'runtime', what: 'event log entries appended', delta: '+' + acted, color: '#7c9cff' },
+        ];
+    const resetCopy = [
+      { title: 'Reset is exact and repeatable', body: 'Reset stops the target, drops all service state, re-loads the pinned projections, and verifies the result against the artifact digest.', cta: 'Reset to starting state' },
+      { title: 'Resetting…', body: 'Stopping the target, clearing service state, re-loading the pinned projections.', cta: 'Resetting…' },
+      { title: 'Back to the starting state', body: 'Every change above was removed and the world was verified against the artifact digest. Run the same action again and you get the same result.', cta: 'Reset again' },
+    ][resetStage];
+    const steps = ['Stop the target and pause new turns','Drop Slack, mail, GitHub and object state','Re-load the pinned projections from the artifact','Verify the restored state against the digest']
+      .map(text => ({ text, mark: resetStage === 2 ? '✓' : resetStage === 1 ? '·' : '○', color: resetStage === 2 ? '#4ade80' : '#5c6578' }));
+    return {
+      digest: this.digest, clock: 'Aug 27 ' + t(acted * 3), readyLabel: running.length + ' of ' + running.length + ' services ready',
+      actorName: actor.name, actorFirst: actor.name.split(' ')[0], actorInitials: ini(actor.name), actorColor: actor.color,
+      pickerOpen: !!this.state.pickerOpen, pickerBorder: this.state.pickerOpen ? 'rgba(79,124,255,.6)' : 'rgba(255,255,255,.16)',
+      togglePicker: () => this.setState(s => ({ pickerOpen: !s.pickerOpen })),
+      actors: this.actorList.map(p => ({ ...p, initials: ini(p.name), driverColor: driverColor(p.driver),
+        bg: p.name === actor.name ? 'rgba(79,124,255,.12)' : 'transparent',
+        pick: () => this.setState({ actor: p.name, pickerOpen: false, actionDone: null, composeAction: null, fieldVals: {} }) })),
+      hasActions: !!man, actionDone: this.state.actionDone || null,
+      manualActions: man ? man.actions.map(([label, result]) => ({ label,
+        run: () => this.forms[label]
+          ? this.setState({ composeAction: label, fieldVals: label === 'Post to a channel' ? { channel: chan } : {}, actionDone: null })
+          : this.setState({ actionDone: result.replace('{a}', actor.name) }) })) : [],
+      unsupported: man ? man.unsupported : [],
+      isOverview: screen === 'Overview', isOther: screen !== 'Overview' && screen !== 'Services' && !convo && !rec,
+      screenTitle: screen, screenSubtitle: sc ? sc.subtitle : '', screenCli: sc ? sc.cli : 'worldfixture status',
+      screenGrid: sc ? sc.grid : '1fr 1fr 1fr 1fr', screenCols: sc ? sc.cols : [], screenFoot: sc ? sc.foot : '',
+      tourOpen: this.state.tour === true,
+      tourExpanded: this.state.tourMin !== true,
+      tourMinLabel: this.state.tourMin === true ? 'Expand' : 'Hide',
+      toggleTourMin: () => this.setState(s => ({ tourMin: !s.tourMin })),
+      tourProgress: (1 + (probed ? 1 : 0) + (acted > 0 ? 1 : 0) + (resetStage === 2 ? 1 : 0)) + ' of 4 done',
+      openTour: () => this.setState({ tour: true, tourMin: false, agents: false }),
+      agentsOpen: this.state.agents === true,
+      openAgents: () => this.setState({ agents: true, tour: false }),
+      closeAgents: () => this.setState({ agents: false }),
+      agentPlan: [
+        { label: 'driver: agent', text: 'An experience selects which world people get a driver. Everyone else stays passive data with no process and no model calls.' },
+        { label: 'activation', text: 'A recorded stochastic activity model decides who wakes on an event, how late they reply, and who ignores it — not a round-robin loop.' },
+        { label: 'bounded workers', text: 'A small worker pool claims due turns, so concurrency is a configured number rather than the population size.' },
+        { label: 'real APIs only', text: 'An agent reads Slack through the Slack API and replies through it. A model response is a proposal; only a provider result becomes an event.' },
+        { label: 'hard budgets', text: 'Cost is reserved in the same transaction as the turn claim. When the budget is gone, agent turns pause and everything else keeps working.' },
+        { label: 'human takeover', text: 'You can revoke an agent lease and act as that person yourself, through the same interfaces.' },
+      ],
+      closeTour: () => { try { localStorage.setItem('wf-workbench-tour', 'seen'); } catch (e) {} this.setState({ tour: false }); },
+      tourSteps: [
+        { done: true, title: 'See what you got', body: 'Eleven people with real Slack, mail and GitHub identities, and four stories already in motion.', cta: 'Open People', target: 'People' },
+        { done: probed, title: 'Connect your app', body: 'Copy the bindings, start your app, then probe to prove it reaches every service with its own credentials.', cta: probed ? 'Probed' : 'Copy bindings', target: 'Overview' },
+        { done: acted > 0, title: 'Do one thing by hand', body: 'Post to #release as Maya. The provider accepts it, the runtime records the event, and consequences follow.', cta: acted > 0 ? 'Done' : 'Open Chat', target: 'Chat' },
+        { done: resetStage === 2, title: 'Reset when you are done', body: 'Reset restores the pinned artifact byte for byte and verifies the digest, so the next run starts identically.', cta: 'See reset', target: 'Overview' },
+      ].map((s, i) => ({
+        title: s.title, body: s.body, cta: s.done ? 'done' : s.cta, mark: s.done ? '✓' : String(i + 1),
+        ringColor: s.done ? 'rgba(74,222,128,.5)' : 'rgba(255,255,255,.2)', ringBg: s.done ? 'rgba(74,222,128,.12)' : 'transparent',
+        numColor: s.done ? '#4ade80' : '#a3abbd',
+        titleColor: s.done ? '#8b93a7' : '#e6e9f0',
+        ctaColor: s.done ? '#4ade80' : '#7c9cff',
+        rowBg: screen === s.target && !s.done ? 'rgba(79,124,255,.07)' : 'transparent',
+        go: () => this.setState({ screen: s.target, recSel: 0, chan: null }),
+      })),
+      isServices: screen === 'Services', svcEmpty: svcVisible.length === 0,
+      svcQuery: q, setSvcQuery: e => { const v = e.target.value; this.setState({ svcQuery: v }); },
+      svcFilters: [['all', 'All', this.catalogue.length], ['running', 'Running', running.length], ['available', 'Not started', this.catalogue.filter(c => c.tier === 1 && !running.includes(c.name)).length], ['planned', 'Not published', this.catalogue.filter(c => c.tier === 0).length]]
+        .map(([key, label, count]) => {
+          const on = key === svcFilter;
+          return { label, count, border: on ? 'rgba(79,124,255,.6)' : 'rgba(255,255,255,.14)', bg: on ? 'rgba(79,124,255,.14)' : '#0f1218', color: on ? '#c9d6ff' : '#a3abbd', pick: () => this.setState({ svcFilter: key }) };
+        }),
+      svcGroups: svcCats.map(cat => {
+        const rows = svcVisible.filter(c => c.cat === cat);
+        const open = collapsed[cat] !== true;
+        const live = rows.filter(c => running.includes(c.name)).length;
+        return { name: cat.toUpperCase(), caret: open ? '▾' : '▸', open,
+          meta: live ? live + ' running · ' + rows.length + ' total' : rows.length + ' available',
+          toggle: () => this.setState(s => ({ svcCollapsed: { ...(s.svcCollapsed || {}), [cat]: !(collapsed[cat] === true ? true : false) } })),
+          rows: rows.map(c => {
+            const on = running.includes(c.name);
+            const busy = this.state.starting === c.name;
+            const state = c.tier === 2 ? 'extend' : busy ? 'starting' : on ? 'ready' : c.tier === 1 ? 'available' : 'not published';
+            return { name: c.name, surface: c.surface, impl: c.impl, profiles: c.surface.split(' · '),
+              note: c.tier === 2 ? 'bring your own' : busy ? 'starting…' : on ? 'running in this world' : c.tier === 1 ? 'not started in this world' : 'package not published to npm',
+              state, stateColor: state === 'ready' ? '#4ade80' : state === 'starting' ? '#ffcf4a' : state === 'available' ? '#8b93a7' : state === 'extend' ? '#7c9cff' : '#5c6578',
+              canToggle: c.tier === 1, btnLabel: busy ? '…' : on ? 'Stop' : 'Start',
+              btnBorder: on ? 'rgba(255,255,255,.16)' : 'rgba(79,124,255,.5)', btnBg: on ? 'transparent' : 'rgba(79,124,255,.14)', btnColor: on ? '#a3abbd' : '#c9d6ff',
+              toggle: () => {
+                if (on) { this.setState({ running: running.filter(x => x !== c.name) }); return; }
+                this.setState({ starting: c.name });
+                setTimeout(() => this.setState(s => ({ starting: null, running: [...(s.running || running), c.name] })), 800);
+              } };
+          }) };
+      }),
+      svcFoot: running.length + ' running · ' + this.catalogue.filter(c => c.tier === 1).length + ' available today · ' + this.catalogue.filter(c => c.tier === 0).length + ' bundled in the emulate CLI only',
+      isConvo: !!convo, convoTitle: screen, chatRef: this.logRef,
+      chatStats: screen === 'Chat' ? '11 people · 6 channels · 14 DMs · 412 messages over 30 days'
+        : screen === 'Mail' ? '10 mailboxes · 186 messages over 30 days · real SMTP and IMAP'
+        : '2 conversations · SMS through the Twilio-shaped API',
+      chatProviders: provs.map(name => {
+        const on = name === prov;
+        const c = this.catalogue.find(x => x.name === name);
+        return { label: name, dot: on ? '#4f7cff' : '#5c6578', meta: c ? c.impl : '', cursor: 'pointer',
+          border: on ? 'rgba(79,124,255,.6)' : 'rgba(255,255,255,.14)', bg: on ? 'rgba(79,124,255,.14)' : '#0f1218', color: on ? '#c9d6ff' : '#a3abbd',
+          pick: () => this.setState({ prov: name, chan: null }) };
+      }).filter(p => running.includes(p.label)),
+      isRecords: !!rec,
+      recTitle: rec ? rec.title : '', recSubtitle: rec ? rec.subtitle : '', recApi: rec ? rec.api : '',
+      recListTitle: rec ? rec.listTitle : '', recCount: rec ? recItems.length + ' items' : '', recCli: rec ? rec.cli : '',
+      canCreate: !!creator, creating: !!creator && !!this.state.creating,
+      createLabel: creator ? creator.label : '', createTitle: creator ? creator.title : '', createCall: creator ? creator.call : '',
+      createCta: creator ? creator.cta : '', createPlaceholder: creator ? creator.placeholder : '',
+      toggleCreate: () => this.setState(s => ({ creating: !s.creating, createTitleVal: '', createVals: {} })),
+      setCreateTitle: e => { const v = e.target.value; this.setState({ createTitleVal: v }); },
+      createFields: creator ? creator.fields.map(([label, options]) => ({ label,
+        options: options.map(o => {
+          const on = (createVals[label] ?? options[0]) === o;
+          return { label: o, border: on ? 'rgba(79,124,255,.6)' : 'rgba(255,255,255,.14)', bg: on ? 'rgba(79,124,255,.14)' : '#0f1218', color: on ? '#c9d6ff' : '#a3abbd',
+            pick: () => this.setState(s => ({ createVals: { ...(s.createVals || {}), [label]: o } })) };
+        }) })) : [],
+      submitCreate: () => {
+        const title = (this.state.createTitleVal || '').trim();
+        if (!title) return;
+        const vals = {};
+        for (const [label, options] of creator.fields) vals[label] = createVals[label] ?? options[0];
+        const item = creator.make(title, vals, actor.name);
+        this.setState(s => ({ created: { ...(s.created || {}), [screen]: [item, ...((s.created && s.created[screen]) || [])] }, creating: false, createTitleVal: '', createVals: {}, recSel: 0 }));
+      },
+      recUnsupported: rec ? rec.unsupported : '',
+      recList: recItems.map((it, i) => {
+        const [bg, color] = toneColor(it.tone);
+        const on = i === recSel;
+        return { title: it.title, meta: it.meta, when: it.when, badge: it.badge, badgeBg: bg, badgeColor: color,
+          bg: on ? 'rgba(79,124,255,.12)' : 'transparent', accent: on ? '#4f7cff' : 'transparent', weight: on ? 600 : 500,
+          pick: () => this.setState({ recSel: i, actionDone: null }) };
+      }),
+      detTitle: det ? det.title : '', detMeta: det ? det.meta : '',
+      detBadge: det ? det.badge : '', detBadgeBg: det ? toneColor(det.tone)[0] : '', detBadgeColor: det ? toneColor(det.tone)[1] : '',
+      detFacts: det ? det.facts.map(([label, value]) => ({ label, value })) : [],
+      recStats: rec && rec.stats ? rec.stats.map(([label, value, note]) => ({ label, value, note, color: '#e6e9f0' })) : [],
+      detEventType: det ? (rec.api.split(' · ')[0].toLowerCase().replace(/[^a-z]/g, '.') + '.observed.v1') : '',
+      detEvidence: det ? JSON.stringify({
+        source: rec.title.toLowerCase(),
+        actor_id: 'person.' + actor.name.split(' ')[0].toLowerCase(),
+        occurred_at: '2026-08-27T09:' + (40 + recSel) + ':00Z',
+        provider_evidence: { object: det.title.split(' ')[0].replace('#', 'id_'), status: det.badge, api: rec.api },
+        caused_by: 'cmd_01h' + (recSel + 3) + 'k',
+      }, null, 2) : '',
+      detTimeline: det ? [...det.timeline, ...((this.state.posted && this.state.posted[screen + '|' + recSel]) || [])].map(e => ({
+        who: e[0], kind: e[1], t: e[2], text: e[3], initials: ini(e[0]),
+        avatar: this.palette[e[0].length % this.palette.length],
+        kindColor: /approv|succeed|paid|ready/.test(e[1]) ? '#4ade80' : /request|fail|declin/.test(e[1]) ? '#ffcf4a' : '#7c9cff',
+      })) : [],
+      recDraftPlaceholder: rec ? rec.draft + actor.name : '',
+      setRecDraft: e => { const v = e.target.value; this.setState({ recDraft: v }); },
+      recNote: 'Written through ' + (rec ? rec.api.split(' · ')[0] : '') + " as " + actor.name.split(' ')[0] + ", recorded with provider evidence",
+      recActions: rec ? rec.actions.map(([label, primary]) => ({ label,
+        border: primary ? '#4f7cff' : 'rgba(255,255,255,.18)', bg: primary ? '#4f7cff' : 'transparent', color: primary ? '#fff' : '#c7cddb',
+        run: () => {
+          const text = (this.state.recDraft || '').trim();
+          this.setState(s => {
+            const key = screen + '|' + recSel;
+            const posted = { ...(s.posted || {}) };
+            posted[key] = [...(posted[key] || []), [actor.name, label.toLowerCase(), 'now', text || label + ' submitted through the provider API.']];
+            return { posted, recDraft: '' };
+          });
+        } })) : [],
+      workspaceName: provider.workspace, providerPort: 'localhost:' + provider.meta, chanApi: provider.api,
+      chatRail: rail.map(r => {
+        if (r.head) return { label: r.head, badge: '', pad: '8px 14px 4px', margin: '4px 0 0', cursor: 'default', bg: 'transparent', font: "500 10px 'Geist Mono',monospace", color: '#5c6578', badgeColor: '#5c6578', badgeBg: 'transparent', badgePad: '0', pick: () => {} };
+        const on = r.label === chan;
+        return { label: r.label, badge: r.badge || '', pad: '7px 11px', margin: '0 8px', cursor: 'pointer',
+          bg: on ? 'rgba(79,124,255,.16)' : 'transparent', font: on ? "600 13px 'Instrument Sans',sans-serif" : "400 13px 'Instrument Sans',sans-serif",
+          color: on ? '#e6e9f0' : r.badge ? '#e6e9f0' : '#a3abbd',
+          badgeColor: r.badge ? '#090b0f' : '#5c6578', badgeBg: r.badge ? '#4f7cff' : 'transparent', badgePad: r.badge ? '1px 6px' : '0',
+          pick: () => this.setState({ chan: r.label }) };
+      }),
+      railFoot: railInfo.foot,
+      chanName: chan, chanMeta: railInfo.meta,
+      chatMessages: msgs.map(m => ({
+        name: m[0], t: m[1], text: m[2], initials: ini(m[0]), avatar: this.palette[m[0].length % this.palette.length],
+        tag: m[4] || '', tagColor: '#4ade80', hasReacts: !!(m[3] && m[3].length), reacts: m[3] || [],
+      })),
+      draft: this.state.draft || '', draftPlaceholder: 'Message ' + chan + ' as ' + actor.name,
+      setDraft: e => { const v = e.target.value; this.setState({ draft: v }); },
+      sendDraft: () => {
+        const text = (this.state.draft || '').trim();
+        if (!text) return;
+        this.setState(s => {
+          const key = screen + '|' + prov + '|' + chan;
+          const posted = { ...(s.posted || {}) };
+          posted[key] = [...(posted[key] || []), [actor.name, 'now', text, [], 'via ' + provider.api.split(' · ')[0] + ' · accepted']];
+          return { posted, draft: '' };
+        });
+      },
+      sendNote: 'Sent with ' + actor.name.split(' ')[0] + "'s own token · recorded with provider evidence",
+      actorHandle: actor.name.split(' ')[0].toLowerCase(),
+      hasTabs: false, tabsLabel: '', tabs: [],
+      composeOpen: !!form, composeTitle: composeAction || '', composeCall: form ? form.call : '', composeCta: form ? form.cta : 'Send',
+      composeFields: form ? form.fields.map(f => ({
+        label: f.label, isSelect: !!f.options, isText: !f.options,
+        value: fieldVals[f.key] ?? (f.options ? f.options[0] : ''), placeholder: f.placeholder || '',
+        set: e => { const v = e.target.value; this.setState(s => ({ fieldVals: { ...s.fieldVals, [f.key]: v } })); },
+        options: (f.options || []).map(o => {
+          const on = (fieldVals[f.key] ?? f.options[0]) === o;
+          return { label: o, border: on ? 'rgba(79,124,255,.6)' : 'rgba(255,255,255,.14)', bg: on ? 'rgba(79,124,255,.14)' : '#0f1218', color: on ? '#c9d6ff' : '#a3abbd',
+            pick: () => this.setState(s => ({ fieldVals: { ...s.fieldVals, [f.key]: o } })) };
+        }),
+      })) : [],
+      cancelCompose: () => this.setState({ composeAction: null }),
+      submitCompose: () => {
+        const vals = {};
+        for (const f of form.fields) vals[f.key] = fieldVals[f.key] ?? (f.options ? f.options[0] : '');
+        if (composeAction === 'Post to a channel' && vals.text) {
+          this.setState(s => {
+            const posted = { ...(s.posted || {}) };
+            posted[vals.channel] = [...(posted[vals.channel] || []), [actor.name, actor.ids.split(' · ')[0], 'now', vals.text, 'slack']];
+            return { posted, chan: vals.channel, composeAction: null, fieldVals: {}, actionDone: form.result(vals).replace('{a}', actor.name) };
+          });
+          return;
+        }
+        this.setState({ composeAction: null, fieldVals: {}, actionDone: form.result(vals).replace('{a}', actor.name) });
+      },
+      screenRows: sc ? sc.rows.map(r => {
+        const row = { a: r[0], sub: r[1], b: r[2], c: r[3], d: r[4], dColor: stateColor(r[4]), hasToggle: false };
+        if (screen !== 'Services' || r[4] === 'extend') return row;
+        const on = running.includes(r[0]);
+        const busy = this.state.starting === r[0];
+        return { ...row,
+          sub: busy ? 'starting…' : on ? 'running in this world' : 'not started in this world',
+          d: busy ? 'starting' : on ? 'ready' : 'available',
+          dColor: busy ? '#ffcf4a' : on ? '#4ade80' : '#8b93a7',
+          hasToggle: true, toggleLabel: busy ? '…' : on ? 'Stop' : 'Start',
+          toggleBorder: on ? 'rgba(255,255,255,.16)' : 'rgba(79,124,255,.5)',
+          toggleBg: on ? 'transparent' : 'rgba(79,124,255,.14)',
+          toggleColor: on ? '#a3abbd' : '#c9d6ff',
+          toggle: () => {
+            if (on) { this.setState({ running: running.filter(x => x !== r[0]) }); return; }
+            this.setState({ starting: r[0] });
+            setTimeout(() => this.setState(s => ({ starting: null, running: [...(s.running || running), r[0]] })), 800);
+          },
+        };
+      }) : [],
+      nav: [
+        { head: 'WORKBENCH' }, { label: 'Overview' }, { label: 'People', badge: '11' }, { label: 'Activity' }, { label: 'Target', badge: 'ok' }, { label: 'Settings' },
+        { head: 'IN THIS WORLD' },
+        ...liveCaps.map(c => ({ label: c[1], badge: c[2] })),
+        { head: 'CATALOGUE' }, { label: 'Services', badge: running.length + ' / ' + this.catalogue.filter(c => c.tier === 1).length },
+      ].map((n, i) => {
+        if (n.head) return { label: n.head, badge: '', pad: '6px 10px 3px', mt: i === 0 ? '0' : '10px', family: "'Geist Mono',monospace", size: '10px', ls: '.04em', cursor: 'default', bg: 'transparent', color: '#5c6578', weight: 500, go: () => {} };
+        const on = n.label === screen;
+        return {
+          label: n.label,
+          badge: n.label === 'Activity' ? String(3 + acted) : (n.badge || ''),
+          pad: '7px 10px', mt: '0', family: "'Instrument Sans',sans-serif", size: '13px', ls: '0', cursor: 'pointer',
+          bg: on ? 'rgba(79,124,255,.14)' : 'transparent', color: on ? '#c9d6ff' : '#a3abbd', weight: on ? 600 : 400,
+          go: () => this.setState({ screen: n.label, actionDone: null, pickerOpen: false, composeAction: null, fieldVals: {}, creating: false, recSel: 0, chan: null }),
+        };
+      }),
+      contents: [
+        { title: 'People', color: '#4f7cff', count: '11', lines: ['Maya Chen · engineering lead', 'Priya Raman · Lumen Labs, customer', '+ 6 customers and vendors'] },
+        { title: 'Slack', color: '#c084fc', count: '412', lines: ['6 channels, 14 DMs, 3 group chats', 'threads, reactions, read state', 'last 30 days'] },
+        { title: 'Mail', color: '#4ade80', count: '186', lines: ['10 mailboxes over IMAP', 'sent, drafts, unread state', 'invoices, newsletters, support'] },
+        { title: 'Code & files', color: '#fb923c', count: '2 repos', lines: ['9 open issues, 4 pull requests', 'reviews and notifications', '38 objects in storage'] },
+      ],
+      bindings: [
+        { key: 'SLACK_BASE_URL', value: 'http://localhost:4003', proto: 'Web API + OAuth' },
+        { key: 'SLACK_BOT_TOKEN', value: 'xoxb-wf-local-…9f2c', proto: 'per-person' },
+        { key: 'SMTP_HOST', value: 'localhost:2525', proto: 'SMTP' },
+        { key: 'IMAP_HOST', value: 'localhost:1143', proto: 'IMAP' },
+        { key: 'S3_ENDPOINT', value: 'http://localhost:8333', proto: 'S3 SigV4' },
+        { key: 'GITHUB_HOST', value: 'http://localhost:4004', proto: 'REST + webhooks' },
+      ],
+      services: running.map((name, i) => {
+        const c = this.catalogue.find(x => x.name === name);
+        return { name, impl: c ? c.impl : '', latency: [4, 7, 5, 3, 2, 6, 8, 5][i % 8] + ' ms', state: 'ready', dot: '#4ade80', stateColor: '#4ade80' };
+      }),
+      probeLabel: probing ? 'Probing…' : probed ? 'Probe again' : 'Probe from my app',
+      probeSummary: probing ? "Calling every service with your app's credentials…" : probed
+        ? 'Your app reached all 5 services · auth accepted · 21 ms total'
+        : 'Readiness is checked by the runtime. Probe to prove your app can reach them too.',
+      probe: () => { this.setState({ probing: true }); setTimeout(() => this.setState({ probing: false, probed: true }), 900); },
+      targetState: acted > 0 ? 'connected · acting' : 'connected', targetColor: '#4ade80',
+      targetDetail: "npm run dev · pid 48120 · bindings from this instance · no agent drivers (not built yet)",
+      copyLabel: copied ? 'Copied' : 'Copy .env',
+      copyEnv: () => { navigator.clipboard?.writeText('SLACK_BASE_URL=http://localhost:4003\nSMTP_HOST=localhost:2525\nIMAP_HOST=localhost:1143\nS3_ENDPOINT=http://localhost:8333\nGITHUB_HOST=http://localhost:4004'); this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1500); },
+      activity, logRef: this.logRef,
+      mutationSummary: acted === 0 ? 'seeded history only · no writes from your app yet' : acted + ' write' + (acted > 1 ? 's' : '') + ' from your app · each one accepted by a real provider',
+      actLabel: acted === 0 ? 'Send a test Slack message' : acted < this.actions.length ? 'Run the next action' : 'Actions complete',
+      act: () => this.setState(s => ({ acted: Math.min(s.acted + 1, this.actions.length), resetStage: 0 })),
+      driftCount: acted === 0 ? 'no drift' : drift.length + ' areas',
+      resetTitle: resetCopy.title, resetBody: resetCopy.body, resetCta: resetCopy.cta,
+      resetBorder: resetStage === 2 ? 'rgba(74,222,128,.4)' : 'rgba(255,255,255,.12)',
+      resetBg: resetStage === 2 ? 'rgba(74,222,128,.05)' : '#0f1218',
+      resetSteps: steps, resetProven: resetStage === 2,
+      openReset: () => this.setState({ screen: 'Overview' }),
+      doReset: () => { if (resetStage === 1) return; this.setState({ resetStage: 1 }); setTimeout(() => this.setState({ resetStage: 2, acted: 0 }), 1100); },
+    };
+  }
+}
+</script>
+</body>
+</html>

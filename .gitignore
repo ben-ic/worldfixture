@@ -11,7 +11,6 @@ docs/system-design.md
 # thumbnails and pasted images, and a generated `dc-runtime` bundle that carries
 # no licence header. None of it is project source, and an unqualified `git add`
 # would otherwise commit it into an Apache-2.0 tree.
-Homepage/
 UI/
 Homepage design system */
 
@@ -37,5 +36,6 @@ docs/.vitepress/dist/
 site/
 
 # Local agent and editor state
+Homepage/.thumbnail
 .gstack/
 .claude/

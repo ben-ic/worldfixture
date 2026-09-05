@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet"><style>body{margin:0;background:#090b0f;color:#e6e9f0;font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#e6e9f0;text-decoration:none}@keyframes wfcaret{0%,45%{opacity:1}50%,95%{opacity:0}100%{opacity:1}}a:hover{color:#7c9cff}</style></helmet>
+
+<div style="position:relative;min-height:100vh;background-color:#090b0f;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:48px 48px;background-position:center top">
+
+<!-- nav -->
+<div style="border-bottom:1px solid rgba(255,255,255,.08);background:rgba(9,11,15,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5">
+<div style="max-width:1160px;margin:0 auto;padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+  <div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em"><span style="display:inline-block;width:14px;height:14px;background:#4f7cff;box-shadow:0 0 0 3px #090b0f,0 0 0 4px rgba(79,124,255,.5)"></span>WorldFixture</div>
+  <div style="display:flex;gap:28px;font-size:14px;color:#a3abbd"><a href="#how">How it works</a><a href="#world">The world</a></div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <a href="/docs/" style="font-size:13px;color:#a3abbd;padding:8px 12px">Docs</a><a href="https://github.com/ben-ic/worldfixture" style="font-size:13px;color:#a3abbd;padding:8px 12px">GitHub</a>
+    <a href="#install" style="font:500 13px 'Geist Mono',monospace;background:#e6e9f0;color:#090b0f;padding:8px 14px;border-radius:4px">npx worldfixture up</a>
+  </div>
+</div></div>
+
+<!-- hero -->
+<div style="max-width:1160px;margin:0 auto;padding:80px 32px 40px;display:flex;flex-direction:column;gap:48px">
+  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:48px;align-items:end">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;gap:8px;align-items:center;font:500 12px 'Geist Mono',monospace;color:#8b93a7;letter-spacing:.02em"><span style="width:6px;height:6px;border-radius:50%;background:#4f7cff;display:inline-block"></span>OPEN SOURCE · LOCAL EMULATORS · NO MODEL CALLS</div>
+      <h1 style="margin:0;font-size:64px;line-height:1.02;letter-spacing:-.035em;font-weight:600;color:#8b93a7;text-wrap:nowrap">Nothing worse<br />than an empty<br />{{ rotWord }}</h1>
+      <div style="font-size:24px;line-height:1.25;letter-spacing:-.02em;font-weight:500;color:#c7cddb;text-wrap:balance">One fake world. Slack, S3, Email, Gmail, GitHub, and more.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:6px">
+      <p style="margin:0;font-size:17px;line-height:1.5;color:#a3abbd;text-wrap:pretty">Local emulators, already filled with people and 30 days of history. Point your app at them with env vars. The person in #release is the person on the pull request.</p>
+      <div id="install" style="display:flex;flex-direction:column;background:#0f1218;border:1px solid rgba(255,255,255,.14);border-radius:8px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 6px 6px 18px;background:#090b0f">
+          <span style="font:16px 'Geist Mono',monospace;color:#e6e9f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span style="color:#4f7cff">$ </span>npx worldfixture up</span>
+          <button onClick="{{ copy }}" style="border:0;background:#4f7cff;color:#fff;font:600 12px 'Instrument Sans',sans-serif;padding:9px 14px;border-radius:5px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#6a90ff">{{ copyLabel }}</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;padding:13px 18px;border-top:1px solid rgba(255,255,255,.1)">
+          <sc-for list="{{ bootLines }}" as="b" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:14px minmax(0,1fr);gap:9px;align-items:baseline;font:12px/1.5 'Geist Mono',monospace;min-width:0">
+              <span style="color:#4ade80">{{ b.mark }}</span>
+              <span style="color:#a3abbd;min-width:0">{{ b.label }} <span style="color:#5c6578">{{ b.port }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="font-size:13px;line-height:1.5;color:#5c6578">Requires Docker. Starts the default <span style="font-family:'Geist Mono',monospace;color:#8b93a7">business.saas-company</span> world. No account, no API key, no model calls.</div>
+    </div>
+  </div>
+
+  <!-- world window -->
+  <div style="display:flex;flex-direction:column;background:#0f1218;border:1px solid rgba(255,255,255,.12);border-radius:10px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;align-items:center;gap:14px"><span style="display:flex;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span></span><span style="font:12px 'Geist Mono',monospace;color:#8b93a7;white-space:nowrap">business.saas-company:v2 · ready in 14s · Aug 27 09:40</span></div>
+      <div style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">30 days of history, one artifact</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1.25fr 1.15fr 1fr;height:440px;overflow:hidden">
+      <!-- slack -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);min-height:0;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#c084fc"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Slack · #release</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">localhost:4003</span></div>
+        <div ref="{{ slackRef }}" style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;flex:1;min-height:0;overflow-y:auto">
+          <sc-for list="{{ slack }}" as="m" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
+              <div style="width:26px;height:26px;border-radius:5px;background:{{ m.avatar }};color:#fff;font:600 10px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center">{{ m.initials }}</div>
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><div style="display:flex;gap:8px;align-items:baseline;white-space:nowrap"><span style="font-size:13px;font-weight:600">{{ m.name }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578">{{ m.t }}</span></div><div style="font-size:13px;line-height:1.45;color:#c7cddb;text-wrap:pretty">{{ m.text }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- mail -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);min-height:0;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#4ade80"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Mail · maya@northstar.test</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">imap :1143</span></div>
+        <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+          <sc-for list="{{ mail }}" as="e" hint-placeholder-count="5">
+            <div style="display:flex;flex-direction:column;gap:3px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);background:{{ e.bg }}">
+              <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-size:13px;font-weight:{{ e.weight }};color:#e6e9f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.from }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">{{ e.t }}</span></div>
+              <div style="font-size:13px;font-weight:{{ e.weight }};color:#c7cddb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.subject }}</div>
+              <div style="font-size:12px;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.preview }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- github -->
+      <div style="display:flex;flex-direction:column;min-height:0;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#fb923c"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">GitHub · northstar/relay</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">localhost:4004</span></div>
+        <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;gap:8px;align-items:center"><span style="font:600 10px 'Geist Mono',monospace;background:rgba(74,222,128,.15);color:#4ade80;padding:2px 6px;border-radius:3px">OPEN</span><span style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fix export worker timeout above 50k rows</span></div>
+          <div style="font:11px 'Geist Mono',monospace;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">#212 · lmeyer wants to merge fix/export-timeout → main · +38 −11</div>
+        </div>
+        <div ref="{{ ghRef }}" style="display:flex;flex-direction:column;gap:10px;padding:12px 16px;flex:1;min-height:0;overflow-y:auto">
+          <sc-for list="{{ github }}" as="g" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:#0b0e14">
+              <div style="display:flex;gap:8px;align-items:center"><span style="font-size:12px;font-weight:600">{{ g.who }}</span><span style="font:10px 'Geist Mono',monospace;color:{{ g.kindColor }}">{{ g.kind }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;margin-left:auto">{{ g.t }}</span></div>
+              <div style="font-size:12px;line-height:1.45;color:#c7cddb">{{ g.text }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.08);background:#090b0f">
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#a3abbd"><span style="width:8px;height:8px;background:#4f7cff;border-radius:2px"></span>Start Slack, GitHub, Google, Notion, Stripe, Local Mail, S3, and more with one shared synthetic dataset.</div>
+      <div style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">{{ status }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- how it works -->
+<div id="how" style="max-width:1160px;margin:0 auto;padding:72px 32px">
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:48px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">HOW IT WORKS</div>
+      <h2 style="margin:0;font-size:34px;line-height:1.1;letter-spacing:-.03em;font-weight:600">Your app talks to real interfaces. Nothing is mocked in your code.</h2>
+      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55">A Slack client calls Slack-shaped APIs. Mail uses SMTP and IMAP. Sign-in is a real OAuth redirect. Your own Postgres and MySQL are seeded from the same world artifact, so the names match everywhere.</p>
+    </div>
+    <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);font:500 11px 'Geist Mono',monospace;color:#8b93a7">POINT YOUR APP AT IT</div>
+      <pre style="margin:0;padding:18px 20px;background:#090b0f;font:13px/1.75 'Geist Mono',monospace;color:#c7cddb;overflow:auto"><span style="color:#5c6578">$</span> worldfixture env --export
+<span style="color:#7c9cff">SLACK_BASE_URL</span>=http://localhost:4003
+<span style="color:#7c9cff">SLACK_TOKEN</span>=xoxb-maya
+<span style="color:#7c9cff">IMAP_HOST</span>=localhost:1143
+<span style="color:#7c9cff">SMTP_HOST</span>=localhost:2525
+<span style="color:#7c9cff">GITHUB_API_URL</span>=http://localhost:4004
+<span style="color:#7c9cff">STRIPE_API_BASE</span>=http://localhost:4013
+<span style="color:#7c9cff">S3_ENDPOINT</span>=http://localhost:8333
+<span style="color:#7c9cff">DATABASE_URL</span>=postgres://localhost:5432/northstar
+<span style="color:#7c9cff">MYSQL_URL</span>=mysql://localhost:3306/northstar
+<span style="color:#5c6578">$</span> npm run dev</pre>
+      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#8b93a7;line-height:1.5">No SDK to install and no code to change. Your application database is seeded too: the customer row in Postgres is the customer in Stripe and the person in #release.</div>
+    </div>
+  </div>
+</div>
+
+<!-- preseeded world -->
+<div id="world" style="max-width:1160px;margin:0 auto;padding:72px 32px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">THE DEFAULT WORLD</div>
+      <h2 style="margin:0;font-size:34px;line-height:1.1;letter-spacing:-.03em;font-weight:600">Northstar Relay, a 99-person SaaS company, late August</h2>
+      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55;text-wrap:pretty">Four threads are open when you start. They run across Slack, mail and GitHub at the same time, so whatever your app reads, it reads the same situation.</p>
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7;margin-top:4px">OPEN THREADS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">RENEWAL RISK</div><div style="font-size:14px;line-height:1.45">Lumen Labs exports over 50k rows hit the two-minute limit. Priya needs an answer before the renewal meeting. Fix is reproduced, not merged.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">RELEASE 2.8</div><div style="font-size:14px;line-height:1.45">Due next week. Lucas wants the focused fix merged; Jon wants another load test first. The thread is open.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">INVOICE 4471</div><div style="font-size:14px;line-height:1.45">412.00 USD, open until Aug 30. Not late, not the renewal problem, and not paid. A brief that says otherwise is wrong.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">ONBOARDING</div><div style="font-size:14px;line-height:1.45">Theo Martin starts Monday. Imani's page is ready; the staging access request is still open.</div></div>
+      </div>
+    </div>
+    <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:1.3fr 1fr 1.4fr 1fr;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);font:500 11px 'Geist Mono',monospace;color:#5c6578"><span>PERSON</span><span>SLACK</span><span>EMAIL</span><span>GITHUB</span></div>
+      <sc-for list="{{ people }}" as="p" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:1.3fr 1fr 1.4fr 1fr;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;align-items:center">
+          <span style="display:flex;flex-direction:column"><span style="font-weight:500">{{ p.name }}</span><span style="font-size:11px;color:#8b93a7">{{ p.role }}</span></span>
+          <span style="font:12px 'Geist Mono',monospace;color:#a3abbd">{{ p.slack }}</span>
+          <span style="font:12px 'Geist Mono',monospace;color:#a3abbd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.email }}</span>
+          <span style="font:12px 'Geist Mono',monospace;color:#a3abbd">{{ p.github }}</span>
+        </div>
+      </sc-for>
+      <div style="padding:12px 16px;font:12px 'Geist Mono',monospace;color:#5c6578;display:flex;justify-content:space-between"><span>99 employees, plus customers and vendors · 30 days of history</span><span>worldfixture people</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- footer cta -->
+<div style="border-top:1px solid rgba(255,255,255,.08)">
+<div style="max-width:1160px;margin:0 auto;padding:72px 32px 48px;display:flex;flex-direction:column;gap:40px">
+  <div style="display:flex;justify-content:space-between;align-items:end;gap:32px;flex-wrap:wrap">
+    <h2 style="margin:0;font-size:44px;line-height:1.02;letter-spacing:-.035em;font-weight:600;max-width:560px">Give your software a world to live in.</h2>
+    <div style="display:flex;gap:10px">
+      <a href="#install" style="font:500 14px 'Geist Mono',monospace;background:#4f7cff;color:#fff;padding:12px 18px;border-radius:5px" style-hover="background:#6a90ff;color:#fff">npx worldfixture up</a>
+      <a href="https://github.com/ben-ic/worldfixture" style="font:500 14px 'Instrument Sans',sans-serif;border:1px solid rgba(255,255,255,.18);color:#e6e9f0;padding:12px 18px;border-radius:5px">View on GitHub</a>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:13px;color:#5c6578;border-top:1px solid rgba(255,255,255,.08);padding-top:20px">
+    <span>Open source under Apache 2.0. Built on emulate, Cyrus IMAP, SeaweedFS and SQLite.</span>
+    <span>Local only.</span>
+  </div>
+</div></div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { copied: false, wi: 0, chars: 0, mode: 'type', held: 0 };
+  words = ['demo', 'dev environment', 'test fixture', 'staging database', 'sandbox'];
+  componentDidMount() {
+    this.tick = setInterval(() => {
+      this.setState(s => {
+        const w = this.words[s.wi];
+        if (s.mode === 'type') {
+          if (s.chars < w.length) return { chars: s.chars + 1 };
+          return { mode: 'hold', held: 0 };
+        }
+        if (s.mode === 'hold') {
+          const held = s.held + 1;
+          return held > 16 ? { mode: 'erase', held: 0 } : { held };
+        }
+        if (s.chars > 0) return { chars: s.chars - 1 };
+        return { mode: 'type', wi: (s.wi + 1) % this.words.length };
+      });
+    }, 85);
+  }
+  componentWillUnmount() { clearInterval(this.tick); }
+  slackRef = React.createRef(); ghRef = React.createRef();
+  avatars = { 'Maya Chen': '#7c5cff', 'Jon Bell': '#2a9d8f', 'Lucas Meyer': '#e76f51', 'Hana Ito': '#d4a017', 'Elena Petrov': '#3a86ff', 'Imani Brooks': '#c2185b', 'Priya Raman': '#5c6578' };
+  seedSlack = [
+    { name: 'Maya Chen', t: 'Yest. 17:02', text: 'Reproduced the Lumen timeout. Scheduled exports above ~50k rows die at the 2-minute worker limit. Fix is up as #212.' },
+    { name: 'Jon Bell', t: 'Yest. 17:40', text: "Release 2.8 is due next week. I don't want to pull that in without a load test." },
+    { name: 'Lucas Meyer', t: 'Yest. 18:11', text: "It's 40 lines and Priya needs an answer before the renewal meeting." },
+  ];
+  seedMail = [
+    { from: 'Priya Raman · Lumen Labs', t: 'Yesterday', subject: 'Re: Scheduled export timeouts', preview: 'Thanks for the update. We have the renewal meeting Thursday and I need to…', unread: true },
+    { from: 'Samira Okafor', t: 'Yesterday', subject: 'Invoice 4471 — Lumen Labs, due Aug 30', preview: '412.00 USD, still open. Not late. Flagging so nobody says it is paid in the…', unread: false },
+    { from: 'Imani Brooks', t: 'Mon', subject: "Theo's first day — Monday", preview: 'Onboarding page is ready. Staging access request is still open with…', unread: false },
+    { from: 'GitHub', t: 'Mon', subject: '[northstar/relay] Review requested: #212', preview: 'jonbell requested changes on Fix export worker timeout above 50k rows', unread: false },
+  ];
+  seedGh = [
+    { who: 'jonbell', kind: 'requested changes', kindColor: '#fb923c', t: 'Yesterday', text: 'Works, but the worker retry path is untested above 100k rows. Run the load case before this goes into 2.8.' },
+    { who: 'lmeyer', kind: 'commented', kindColor: '#8b93a7', t: 'Yesterday', text: 'Fair. Kicking off the 100k run on staging tonight.' },
+  ];
+  renderVals() {
+    const { copied } = this.state;
+    const ini = n => n.split(' ').map(w => w[0]).join('');
+    const slack = this.seedSlack.map(m => ({ ...m, initials: ini(m.name), avatar: this.avatars[m.name] || '#3a4050' }));
+    const mail = this.seedMail.map(e => ({ ...e, weight: e.unread ? 600 : 400, bg: 'transparent' }));
+    return {
+      slack, mail, github: this.seedGh,
+      bootLines: [
+        { mark: '✓', label: 'slack, github, google, notion, stripe', port: '11 emulators' },
+        { mark: '✓', label: 'mail over smtp and imap', port: ':2525 · :1143' },
+        { mark: '✓', label: 'object storage, s3 compatible', port: ':8333' },
+        { mark: '✓', label: 'postgres and mysql, seeded to match', port: ':5432 · :3306' },
+      ],
+      rotWord: React.createElement('span', { style: { color: '#e6e9f0', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-block' } },
+        this.words[this.state.wi].slice(0, this.state.chars),
+        React.createElement('span', { style: { display: 'inline-block', width: '3px', height: '0.9em', background: '#4f7cff', marginLeft: '4px', verticalAlign: '-0.08em', animation: 'wfcaret 1s steps(1,end) infinite' } })),
+      status: 'seeded history · 0 model calls · 0 agent processes',
+      copyLabel: copied ? 'Copied' : 'Copy',
+      copy: () => { navigator.clipboard?.writeText('npx worldfixture up'); this.setState({ copied: true }); setTimeout(() => this.setState({ copied: false }), 1500); },
+      people: [
+        { name: 'Maya Chen', role: 'Engineering lead', slack: 'U_MAYA', email: 'maya@northstar.test', github: 'mayachen' },
+        { name: 'Jon Bell', role: 'Backend', slack: 'U_JON', email: 'jon@northstar.test', github: 'jonbell' },
+        { name: 'Lucas Meyer', role: 'Backend', slack: 'U_LUCAS', email: 'lucas@northstar.test', github: 'lmeyer' },
+        { name: 'Noor Alvarez', role: 'Frontend', slack: 'U_NOOR', email: 'noor@northstar.test', github: 'nooralv' },
+        { name: 'Hana Ito', role: 'Design', slack: 'U_HANA', email: 'hana@northstar.test', github: 'hanaito' },
+        { name: 'Samira Okafor', role: 'Finance & ops', slack: 'U_SAMIRA', email: 'samira@northstar.test', github: '—' },
+        { name: 'Elena Petrov', role: 'Customer success', slack: 'U_ELENA', email: 'elena@northstar.test', github: '—' },
+        { name: 'David Banerjee', role: 'Support', slack: 'U_DAVID', email: 'david@northstar.test', github: 'dbanerjee' },
+        { name: 'Imani Brooks', role: 'People', slack: 'U_IMANI', email: 'imani@northstar.test', github: '—' },
+        { name: 'Theo Martin', role: 'Starts Monday', slack: 'U_THEO', email: 'theo@northstar.test', github: 'theomartin' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
