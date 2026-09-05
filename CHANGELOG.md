@@ -45,6 +45,22 @@ below come from code inspection, tests, and checks against a running world.
 
 ### Security
 
+- **Postgres, MariaDB and S3 shared one password with every installation.** The
+  manifests bound `worldfixture-local` and `worldfixture-local-secret` as
+  constants, so the database password on your machine was the database password
+  on everyone's. Each is now 24 random bytes generated on first launch and kept
+  in `.worldfixture/generated-secrets.json` at 0600 -- per project, so two
+  projects do not share one, and stable across launches, so nothing has to be
+  re-copied into an application. The compiled world is untouched, so every world
+  still builds to the same bytes.
+- **The Workbench withheld the credentials and then offered "Copy .env".** It
+  filtered out 15 of the 28 provider bindings, so the file that button produced
+  had addresses and no way to authenticate. A world's own credentials are
+  synthetic world data and are shown now, masked behind a per-row Show toggle,
+  including the connection URLs that carry a password inside them. The connector
+  token is still never sent to the browser: it writes into your application, not
+  into the world.
+
 - **Sample credentials from the upstream seed authenticated in every world.**
   `seed.yaml` ships `lin_test_admin`, a Linear token with admin scope belonging
   to a person no world declares, and Okta, Clerk, Vercel, Apple and Twilio each
@@ -142,7 +158,7 @@ below come from code inspection, tests, and checks against a running world.
 - Package: `worldfixture@0.2.3` on npm, also tagged `latest`.
 - Image: `ghcr.io/ben-ic/worldfixture:0.2.3`, `linux/amd64` and `linux/arm64`,
   also tagged `latest`.
-- Digest: `sha256:4f60796457014e8519102219ce2b12d442df34f9b1afedd1927ae5911f323b22`
+- Digest: `sha256:db2ff56657139bc3f5a9a076e2d8508b352c6afda8a1a5e187874f09c262a2de`
 
 ## 0.2.2
 
