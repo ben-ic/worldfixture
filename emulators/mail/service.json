@@ -208,6 +208,6 @@
   "ui": {
     "port": "mailbox",
     "path": "/",
-    "title": "Mailbox"
+    "title": "Local Mail"
   }
 }

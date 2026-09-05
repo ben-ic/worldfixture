@@ -208,7 +208,7 @@ try {
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "send",
     "--as", "maya", "--channel", "release-3-2", "--state", "/state", "Image gate passed",
   ]);
-  assert.match(sent.stdout, /rule-slack-channel-notification → mail to jon@/);
+  assert.match(sent.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
   const changedPage = await fetch(changingUrl).then((response) => response.text());
   assert.notEqual(changedPage, initialPage);
   const put = await fetch(
@@ -263,7 +263,7 @@ try {
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "send",
     "--as", "maya", "--channel", "release-3-2", "--state", "/state", "Image gate passed after reset",
   ]);
-  assert.match(sentAfterReset.stdout, /rule-slack-channel-notification → mail to jon@/);
+  assert.match(sentAfterReset.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
   const inboxAfterReset = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "mail", "inbox",
     "--as", "jon", "--state", "/state",

@@ -1,7 +1,7 @@
 {
   "app_id": "905-emulator-http-targets",
   "slug": "emulator-http-targets",
-  "name": "WorldFixture HTTP Target Emulator",
+  "name": "WorldFixture HTTP Targets",
   "version": "v1.4.1",
   "upstream": [],
   "build": {

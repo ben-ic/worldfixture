@@ -101,7 +101,7 @@ const USAGE = `worldfixture — a local world with real interfaces
   worldfixture people            List people and their provider identities
   worldfixture slack send --as <person> --channel <name> <text>
   worldfixture slack history --channel <name> [--as <person>]
-  worldfixture mail inbox --as <person> [--folder INBOX]
+  worldfixture mail inbox --as <person> [--folder INBOX]   Read Local Mail
   worldfixture events [--follow]   Show, or follow, the facts the runtime observed
   worldfixture connector docs      Print the installed Connector v1 documentation
   worldfixture connector prompt <application-url>
@@ -125,8 +125,9 @@ Options
   --application-url <url>  Local application origin (default http://localhost:3000)
   --direct             Run checkout services in the foreground (development)
   --follow             Keep printing events as they are observed (events only)
-  --only <parts>       Start only these parts of the world (slack, github, site,
-                       mail, s3, providers). The default starts all of them.
+  --only <parts>       Start only these parts of the world (slack, github, site
+                       for HTTP targets, mail for Local Mail, s3, providers).
+                       The default starts all of them.
   --no-rebase          Start the world at its authored anchor instead of today
   --scale <name>       How much of the world to send to an application:
                        smoke (at most 25 of anything), sample (at most 250),
@@ -943,7 +944,7 @@ function printReadyBindings(world, bindings, stateDir) {
       `${held.mail_messages} emails, ${held.repositories} repositories`,
   );
   // Measured, not asserted. This world's Slack history is a spine, not a month.
-  say(`${pad("History")}Slack ${days(held.history.slack_days)}, mail ${days(held.history.mail_days)}`);
+  say(`${pad("History")}Slack ${days(held.history.slack_days)}, Local Mail ${days(held.history.mail_days)}`);
   // The world's own "now", against the real one. `up` rebases the world onto
   // today, so these normally sit a day or two apart; started with --no-rebase it
   // shows the date the world was authored at, which is the thing that makes a
@@ -1030,8 +1031,8 @@ export function invocation(argv1 = process.argv[1], root = PACKAGE_ROOT) {
 // already seen, and how long it has been.
 const SERVICE_NAMES = {
   emulate: "the provider APIs",
-  "http-targets": "the public site",
-  mail: "mail",
+  "http-targets": "the HTTP targets",
+  mail: "Local Mail",
   s3: "file storage",
   postgres: "PostgreSQL",
   mysql: "MySQL",
@@ -1090,7 +1091,7 @@ export function startupProgress({ stateDir, startedAt = Date.now() } = {}) {
         const messages = waiting.includes("mail") && mailMessages() > 0
           ? ` (${mailMessages().toLocaleString("en-US")} messages, most of the wait)`
           : "";
-        const left = list(waiting.map(serviceName)).replace("mail", `mail${messages}`);
+        const left = list(waiting.map(serviceName)).replace("Local Mail", `Local Mail${messages}`);
         // "everything else", rather than naming what is ready. Naming it meant
         // agreeing a verb with a list whose head could be singular or plural --
         // "the provider APIs is ready" -- and the reader is waiting on what is
@@ -1396,7 +1397,7 @@ async function slack({ flags, positional }) {
           continue;
         }
         for (const person of effect.delivered) {
-          say(`  ${effect.emission.rule} → mail to ${person.email}`);
+          say(`  ${effect.emission.rule} → Local Mail to ${person.email}`);
         }
       }
     } finally {
@@ -1575,7 +1576,7 @@ async function mail({ flags, positional }) {
   const bindings = readBindings(stateDir);
 
   if (!bindings?.IMAP_HOST_PORT) {
-    say(`No instance with mail is running. Start one with \`${invocation()} up\`.`);
+    say(`No instance with Local Mail is running. Start one with \`${invocation()} up\`.`);
     process.exitCode = 1;
     return;
   }

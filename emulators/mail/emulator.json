@@ -1,7 +1,7 @@
 {
   "app_id": "901-emulator-mail",
   "slug": "emulator-mail-cyrus",
-  "name": "WorldFixture Mail Emulator",
+  "name": "WorldFixture Local Mail",
   "version": "v2.2.1",
   "upstream": [
     {

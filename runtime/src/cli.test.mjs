@@ -158,7 +158,7 @@ test("the history it prints is measured, not the documented 30 days", async () =
   const screen = instance.output();
   await instance.stop();
 
-  const mailDays = Number(screen.match(/History\s+Slack 1 day, mail (\d+) days/)?.[1]);
+  const mailDays = Number(screen.match(/History\s+Slack 1 day, Local Mail (\d+) days/)?.[1]);
   assert.ok(mailDays > 300 && mailDays < 500, `mail history reads ${mailDays} days, and this world holds about a year`);
   assert.match(screen, /8 Slack messages/);
 });
@@ -323,7 +323,7 @@ test("Maya sends on Slack and a channel member reads the result over IMAP", asyn
 
     assert.match(sent.stdout, /Sent as mayac to #release-2-8/);
     // Notified from the world's own channel membership, and never the author.
-    assert.match(sent.stdout, /rule-slack-channel-notification → mail to jon@/);
+    assert.match(sent.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
     assert.ok(!/mail to maya@/.test(sent.stdout), "the author is not notified of their own message");
 
     const read = await cli(["mail", "inbox", "--as", "jon", "--state", state]);

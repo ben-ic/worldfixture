@@ -38,7 +38,7 @@ test("progress names what is left in the reader's words, and how long it has bee
     progress.update({ phase: "starting", services: { emulate: "running", "http-targets": "running", mail: "starting", s3: "starting" } });
     const line = written.join("");
 
-    assert.match(line, /mail and file storage/);
+    assert.match(line, /Local Mail and file storage/);
     assert.match(line, /everything else is ready/);
     assert.match(line, /Loading\s+\d+s/);
     // No internal service names, and no count that matches nothing on screen.
@@ -58,7 +58,7 @@ test("what is finished reassures without having to agree with a verb", () => {
   try {
     progress.update({ phase: "starting", services: { emulate: "running", mail: "starting" } });
     const line = written.join("");
-    assert.match(line, /mail; everything else is ready/);
+    assert.match(line, /Local Mail; everything else is ready/);
     assert.ok(!/\bis ready\b.*\bAPIs\b|APIs is/.test(line), line);
   } finally {
     restore();
@@ -70,7 +70,7 @@ test("nothing ready yet means no reassurance clause at all", () => {
   try {
     progress.update({ phase: "starting", services: { emulate: "starting", mail: "starting" } });
     const line = written.join("");
-    assert.match(line, /the provider APIs and mail/);
+    assert.match(line, /the provider APIs and Local Mail/);
     assert.ok(!line.includes("everything else"), line);
   } finally {
     restore();

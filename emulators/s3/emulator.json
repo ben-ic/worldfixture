@@ -1,7 +1,7 @@
 {
   "app_id": "903-emulator-s3",
   "slug": "emulator-s3",
-  "name": "WorldFixture S3 Emulator",
+  "name": "WorldFixture S3",
   "version": "v4.41",
   "upstream": [
     {
