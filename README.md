@@ -31,38 +31,26 @@ Start only Slack for the shortest first run:
 npx worldfixture up --only slack
 ```
 
-The command prints the Workbench URL and reports which services are still
-loading. It uses a free host port, so do not assume a port number. Open the
-Workbench with the printed link or:
+The command prints progress, the Workbench URL, and the local Slack API
+endpoint. It uses free host ports, so do not assume port numbers. In a second
+terminal, open the Workbench:
 
 ```sh
 npx worldfixture open
 ```
 
-In **Chat**, send one short marker. Then open **Activity** to see the accepted
-provider event. Read the same state from an application with the generated
-bindings:
+Get the API endpoint and local credentials for your application:
 
 ```sh
-eval "$(npx worldfixture env)"
-curl -sS -X POST "$SLACK_BASE_URL/api/conversations.list" \
-  -H "Authorization: Bearer $SLACK_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  --data 'limit=100&types=public_channel,private_channel,mpim,im'
+npx worldfixture env --json
 ```
 
-Restore and stop the world:
-
-```sh
-npx worldfixture reset
-npx worldfixture down
-```
-
-If a start fails, run `npx worldfixture doctor`. It reports the problem and a
-repair command. It changes no state.
+You now have a local Slack API and a Workbench that uses the same state.
 
 Read the [five-minute quick start](docs/getting-started/quick-start.md) for the
-complete path. Run the documentation website locally with:
+complete path. If a start fails, run `npx worldfixture doctor`.
+
+Run the documentation website locally with:
 
 ```sh
 npm --prefix docs install
@@ -122,8 +110,12 @@ Create and build a world:
 npx worldfixture new ./my-world
 npx worldfixture validate ./my-world
 npx worldfixture build ./my-world
-npx worldfixture up ./dist/demo.my-world.v1
+npx worldfixture up ./dist/demo.minimal.v1
 ```
+
+The copy keeps the starter world's id and version until you change them in
+`world.json`, which is why `build` writes `dist/demo.minimal.v1` rather than a
+path named after the directory.
 
 See [How worlds work](docs/guides/worlds.md) and
 [How WorldFixture fits your development loop](docs/architecture.md).
@@ -134,16 +126,25 @@ Run the documented checks:
 
 ```sh
 PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
-npm run docs:check
-npm run docs:build
-cd runtime && node --test
-cd ../emulators/emulate && npm ci && node --test
-cd ../http-targets && node --test test/feed-clock.test.mjs && node test/protocol-test.mjs
+npm --prefix emulators/emulate ci
+node scripts/prepare-service-images.mjs
+(cd runtime && node --test)
+(cd emulators/emulate && node --test)
+node --test emulators/http-targets/test/*.test.mjs
+npm --prefix docs ci && npm run docs:check && npm run docs:build
 ```
 
 The first line is the compiler, schema and world-parity gate, and it needs
-nothing but Python 3.11. The provider emulator's suite needs its pinned
-dependencies installed, which is what the `npm ci` is for.
+nothing but Python 3.11.
+
+The next two are prerequisites of the **runtime** suite, not only the emulator
+one, and both are no-ops once they have run. `emulate` starts as a child process
+that imports `@emulators/core` on its first line, so without its dependencies it
+exits immediately and 22 runtime tests fail on a readiness check that reports
+only `fetch failed`. `prepare-service-images.mjs` builds or pulls the service
+images the manifests name; without it the supervisor builds a missing image
+inside a test's own readiness budget, which is not long enough to build Cyrus
+from a Debian base.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), the
 [contract testing policy](docs/contract-testing.md), and
