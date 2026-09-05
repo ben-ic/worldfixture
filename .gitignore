@@ -34,6 +34,7 @@ node_modules/
 runtime/workbench-ui/dist/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+site/
 
 # Local agent and editor state
 .gstack/

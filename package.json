@@ -35,6 +35,7 @@
     "docs:diagrams:check": "node scripts/render-architecture.mjs --check",
     "docs:build": "npm --prefix docs run build",
     "docs:check": "node scripts/check-docs.mjs",
+    "site:build": "npm --prefix docs run build && node scripts/build-site.mjs",
     "prepack": "npm run build:worlds && npm run build:workbench",
     "lint": "ruff check . && biome lint ."
   },
