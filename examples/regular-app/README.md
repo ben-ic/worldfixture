@@ -44,10 +44,12 @@ It is disabled unless `WORLDFIXTURE_TOKEN` is set. Start it for connector work:
 node ../../runtime/bin/worldfixture.mjs run -- npm start
 ```
 
-Then check, preview, and seed it from the repository root:
+Then check, preview, and seed it from the repository root. Relay Digest prefers
+port 3000 and falls back to a free one when 3000 is taken, so use the URL it
+printed on startup:
 
 ```sh
-node runtime/bin/worldfixture.mjs connector check http://localhost:4300
-node runtime/bin/worldfixture.mjs connector plan http://localhost:4300
-node runtime/bin/worldfixture.mjs connector seed http://localhost:4300
+node runtime/bin/worldfixture.mjs connector check http://localhost:3000
+node runtime/bin/worldfixture.mjs connector plan http://localhost:3000
+node runtime/bin/worldfixture.mjs connector seed http://localhost:3000
 ```

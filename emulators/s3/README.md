@@ -20,8 +20,10 @@ Startup fails if that projection is not there.
 | `x-amz-meta-last-modified` | the record's `last_modified`, which is the document's `modified_at` |
 | `x-amz-meta-owner` | the record's `owner`, which is the owning person's login — the same string this projection's IAM users are named by |
 
-The world's two `communication.documents` become two objects in
-`northstar-relay-documents`. Seeding reads no clock.
+A world's `communication.documents` become objects in its documents bucket:
+eight in `northstar-relay-documents` for the default world
+`business.saas-company:v3`, and two for `business.saas-company:v2`, which is the
+world the commands below build. Seeding reads no clock.
 
 ### The exports bucket is empty, and that is a world-data finding
 
@@ -86,6 +88,9 @@ it seeded:
 ```json
 {"source":"worldfixture-s3","ready":true,"buckets":2,"objects":2}
 ```
+
+The counts are the mounted world's, so that document reads `"objects":8` for the
+default world and `"objects":2` for the `v2` world the run below mounts.
 
 That replaces the old `/healthz` probe deliberately. This artifact once shipped
 unable to store any object at all while `/healthz`, the filer UI and bucket

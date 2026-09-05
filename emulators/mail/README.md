@@ -22,9 +22,13 @@ that projection is not there.
 | Messages | one RFC 5322 message per `messages[]` record, delivered over LMTP |
 | Read state | a message labelled `UNREAD` stays unseen; every other seeded copy is `\Seen` |
 
-The world's 16 people and 74 messages produce 80 mailboxes and 129 deliveries:
-each message reaches its recipient's `INBOX`, and a message labelled `SENT` also
-reaches the sender's `Sent` folder.
+Each message reaches its recipient's `INBOX`, and a message labelled `SENT` also
+reaches the sender's `Sent` folder, so the delivery count is larger than the
+message count. In the default world, `business.saas-company:v3`, 161 people and
+3,069 messages produce 805 mailboxes and 4,528 deliveries; in the smaller
+`business.saas-company:v2`, 16 people and 74 messages produce 80 mailboxes and
+129 deliveries. Seeding those deliveries over LMTP is most of the time a full
+start takes.
 
 `Date` comes from the record's `sent_at`, never from the wall clock.
 `Message-ID` is derived from the record id. A message that is not the first in
@@ -104,9 +108,10 @@ Seeding reads no clock. The message set, its order, every generated header and
 the resulting flags are functions of the projection alone, so two containers
 started from the same artifact hold the same mailboxes with the same UIDs.
 
-Verified: two containers started from the same artifact were dumped over IMAP —
-every mailbox, every UID, every flag and every generated header — and the two
-dumps are byte-identical (937 lines, 129 message copies, 8 unseen, sha256
+Verified on `business.saas-company:v2`, which is small enough to dump whole: two
+containers started from the same artifact were dumped over IMAP -- every mailbox,
+every UID, every flag and every generated header -- and the two dumps are
+byte-identical (937 lines, 129 message copies, 8 unseen, sha256
 `287f2c46b5aa559058f3af93aad699bcd2b9bd88bbe31484db13b26b4f201da7` in both).
 
 What is *not* identical between runs is Cyrus's own bookkeeping, all of it

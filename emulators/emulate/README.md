@@ -2,8 +2,11 @@
 
 This service composes the pinned `emulate` 0.10.0 packages into provider-shaped
 local APIs. The default WorldFixture image uses it for Slack, GitHub, Google,
-Stripe, Resend, Clerk, Okta, Microsoft, Vercel, MongoDB Atlas, Apple, Linear,
-and Twilio.
+Stripe, Resend, Clerk, Okta, Microsoft, Vercel, MongoDB Atlas, Apple, Linear
+and Twilio. Notion is WorldFixture's own vendor, written here rather than taken
+from upstream, and is loaded the same way: a directory under `src/vendors/`
+exporting a plugin is discovered by its name, and a local directory shadows an
+upstream vendor of the same name.
 
 Each vendor starts only when its `WORLDFIXTURE_PORT_<VENDOR>` value is set. Each
 listener uses `WORLDFIXTURE_BIND_<VENDOR>`, or `127.0.0.1` when no bind address
@@ -71,7 +74,9 @@ npm test
 ```
 
 The suite checks identity, seed verification, Slack history, GitHub issues,
-Google behavior, Gmail push, reset data, and aggregate readiness.
+Google behavior, Gmail push, reset data and aggregate readiness. It also runs
+the Stripe billing contract tests and the Notion suite under
+`src/vendors/notion/`, which is the largest part of it.
 
 ## License and dependencies
 

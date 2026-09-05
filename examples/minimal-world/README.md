@@ -3,11 +3,18 @@
 Two people, one channel, two messages, one project and one task. Copy this
 directory, edit it, and you have your own world.
 
+`worldfixture new` makes the copy, from anywhere, whether WorldFixture came from
+npm or from a checkout:
+
 ```sh
-npx worldfixture validate ./minimal-world
-npx worldfixture build ./minimal-world
-npx worldfixture up --world-path dist/demo.minimal.v1
+npx worldfixture new ./my-world
+npx worldfixture validate ./my-world
+npx worldfixture build ./my-world
+npx worldfixture up ./dist/demo.minimal.v1
 ```
+
+The copy keeps this world's id and version until you change them in
+`world.json`, which is why `build` writes `dist/demo.minimal.v1`.
 
 `validate` compiles the world and throws the result away, so anything it accepts
 will build.
