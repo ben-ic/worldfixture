@@ -83,6 +83,64 @@ chmod 640 /etc/sasldb2
 chown -R cyrus:mail "$state/cyrus" "$state/spool" "$state/run"
 sed "s/127.0.0.1:1143/$imap_host:$imap_port/" /etc/worldfixture-mail/cyrus.conf > "$state/cyrus.conf"
 
+# INSTALLED BEFORE THE FIRST CHILD STARTS, deliberately.
+#
+# This trap used to be installed 84 lines below here, after the last of the four
+# children was already up. `cyrus master` starts on the next line, and every way
+# out of the startup sequence in between -- the LMTP socket never appearing, IMAP
+# never answering, the SMTP bridge or the mailbox web never binding, and any
+# command failing under the `set -eu` at the top -- left this shell dying while
+# Cyrus kept running and kept the IMAP port.
+#
+# That is not a leaked process, it is a container that never recovers. The
+# supervisor reads this shell's exit as proof the service stopped and starts the
+# command again; the new `cyrus master` cannot bind a port the old one still
+# owns, so it fails, the shell exits, and the loop repeats forever. What a user
+# sees is a mail emulator restarting without end and no SMTP or IMAP at all.
+#
+# `s3/worldfixture-entrypoint.sh` has the ordering right -- its trap goes in at
+# line 73 and its server starts at line 107 -- and this is the same rule.
+#
+# The pids are named empty first so the trap is safe to fire before any of them
+# exists: `set -u` is in force, and an unquoted empty variable expands to no word
+# at all rather than to an empty argument for `kill`.
+cyrus_pid=
+smtp_pid=
+mailbox_pid=
+health_pid=
+
+stop() {
+  trap - INT TERM EXIT
+  for pid in $health_pid $mailbox_pid $smtp_pid; do
+    kill "$pid" 2>/dev/null || true
+  done
+
+  # Cyrus leaves its launcher and runs `master` under container init. The PID
+  # saved from `master -d &` is therefore not the process that owns IMAP. Debian
+  # pidof does not find it under Rosetta, but BusyBox reads /proc/<pid>/comm and
+  # does. Do not let this shell exit until every Cyrus master is gone: reset
+  # starts mail again as soon as the shell exits.
+  for pid in $(/bin/busybox pidof master 2>/dev/null || true); do
+    kill -TERM "$pid" 2>/dev/null || true
+  done
+
+  for pid in $health_pid $mailbox_pid $smtp_pid $cyrus_pid; do
+    wait "$pid" 2>/dev/null || true
+  done
+
+  attempts=0
+  while /bin/busybox pidof master >/dev/null 2>&1 && [ "$attempts" -lt 100 ]; do
+    attempts=$((attempts + 1))
+    sleep 0.1
+  done
+  if /bin/busybox pidof master >/dev/null 2>&1; then
+    for pid in $(/bin/busybox pidof master 2>/dev/null || true); do
+      kill -KILL "$pid" 2>/dev/null || true
+    done
+  fi
+}
+trap stop INT TERM EXIT
+
 /usr/sbin/cyrus master -C /etc/imapd.conf -M "$state/cyrus.conf" -d &
 cyrus_pid=$!
 
@@ -140,34 +198,6 @@ done
 printf 'ok\n' > "$state/health/readyz"
 /bin/busybox httpd -f -p "$health_host:$health_port" -h "$state/health" &
 health_pid=$!
-
-stop() {
-  trap - INT TERM EXIT
-  kill "$health_pid" "$mailbox_pid" "$smtp_pid" 2>/dev/null || true
-
-  # Cyrus leaves its launcher and runs `master` under container init. The PID
-  # saved from `master -d &` is therefore not the process that owns IMAP. Debian
-  # pidof does not find it under Rosetta, but BusyBox reads /proc/<pid>/comm and
-  # does. Do not let this shell exit until every Cyrus master is gone: reset
-  # starts mail again as soon as the shell exits.
-  for pid in $(/bin/busybox pidof master 2>/dev/null || true); do
-    kill -TERM "$pid" 2>/dev/null || true
-  done
-
-  wait "$health_pid" "$mailbox_pid" "$smtp_pid" "$cyrus_pid" 2>/dev/null || true
-
-  attempts=0
-  while /bin/busybox pidof master >/dev/null 2>&1 && [ "$attempts" -lt 100 ]; do
-    attempts=$((attempts + 1))
-    sleep 0.1
-  done
-  if /bin/busybox pidof master >/dev/null 2>&1; then
-    for pid in $(/bin/busybox pidof master 2>/dev/null || true); do
-      kill -KILL "$pid" 2>/dev/null || true
-    done
-  fi
-}
-trap stop INT TERM EXIT
 
 while kill -0 "$health_pid" 2>/dev/null \
   && kill -0 "$mailbox_pid" 2>/dev/null \
