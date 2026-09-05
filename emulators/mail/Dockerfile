@@ -24,7 +24,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       busybox-static=1:1.35.0-4+deb12u1+b1 \
-      cyrus-imapd=3.6.1-4+deb12u4 \
+      cyrus-imapd=3.6.1-4+deb12u5 \
       libsasl2-modules=2.1.28+dfsg-10 \
       sasl2-bin=2.1.28+dfsg-10 \
  && rm -rf /var/lib/apt/lists/* \
