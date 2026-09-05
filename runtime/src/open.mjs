@@ -89,7 +89,7 @@ export async function openWorkbench({
     throw new OpenError(
       "no_workbench",
       "this instance recorded no Workbench address",
-      "The Workbench is optional. Everything it shows is also in `worldfixture status --verbose` and `worldfixture env`.",
+      "The Workbench is optional. Use `worldfixture status --verbose` for readiness and `worldfixture env` for connection values.",
     );
   }
 
