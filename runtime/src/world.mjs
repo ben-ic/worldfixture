@@ -26,16 +26,51 @@ export function insiders(world) {
   return (world.people ?? []).filter((person) => person.organization_id === organization?.id);
 }
 
-export function findPerson(world, reference) {
-  const wanted = reference.toLowerCase();
-  return (world.people ?? []).find(
-    (person) =>
-      person.id === wanted ||
-      person.id.split("-")[0] === wanted ||
-      person.github_login?.toLowerCase() === wanted ||
-      person.name.toLowerCase() === wanted ||
-      person.email?.toLowerCase() === wanted,
+// An id, a GitHub login, a full name and an email each name ONE person. The
+// first segment of an id does not.
+//
+// Measured against dist/business.saas-company.v3 (161 people): four first
+// segments are shared -- maya (maya-chen, maya-osei), ravi (ravi-kapoor,
+// ravi-sundaram), idris (idris-coulibaly, idris-salim) and lena (lena-fischer,
+// lena-brandt). A single `.find` over all five forms returned whichever of the
+// pair came earlier in the array, so `--as maya` acted as maya-chen and never
+// said that maya-osei existed.
+//
+// So the unique forms are matched first and the first segment only after them,
+// and every first-segment match is returned rather than the first one. The
+// caller decides what an ambiguous reference means; `findPerson` keeps its old
+// single-person contract for the callers that pass a full id.
+function exactMatch(person, wanted) {
+  return (
+    person.id === wanted ||
+    person.github_login?.toLowerCase() === wanted ||
+    person.name.toLowerCase() === wanted ||
+    person.email?.toLowerCase() === wanted
   );
+}
+
+export function findPeople(world, reference) {
+  const wanted = reference.toLowerCase();
+  const people = world.people ?? [];
+  const exact = people.filter((person) => exactMatch(person, wanted));
+  if (exact.length > 0) return exact;
+  return people.filter((person) => person.id.split("-")[0] === wanted);
+}
+
+// The shortest reference that still names exactly this person.
+//
+// `up` prints a `slack send --as <handle>` line for the reader to paste, and
+// that line used to carry the bare first segment. In v3 that is `maya`, which
+// names two people -- so the command the first screen offers would be refused
+// by the command it is offering it to. The full id is used when the segment is
+// shared.
+export function personHandle(world, person) {
+  const short = person.id.split("-")[0];
+  return findPeople(world, short).length === 1 ? short : person.id;
+}
+
+export function findPerson(world, reference) {
+  return findPeople(world, reference)[0];
 }
 
 export function findChannel(world, reference) {

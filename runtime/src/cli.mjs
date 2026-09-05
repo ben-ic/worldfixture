@@ -18,7 +18,7 @@ import { defaultEnvironment } from "./environments.mjs";
 import { loadManifests } from "./manifests.mjs";
 import { ResolutionError, resolveEnvironment, serializeLock } from "./resolve.mjs";
 import { StartupError, start } from "./supervisor.mjs";
-import { contents, findChannel, findPerson, insiders, primaryOrganization, readWorld } from "./world.mjs";
+import { contents, findChannel, findPeople, findPerson, insiders, personHandle, primaryOrganization, readWorld } from "./world.mjs";
 import { history, slackTokenHolders, tokenFor } from "./slack.mjs";
 import { submit } from "./commands.mjs";
 import { inbox } from "./imap.mjs";
@@ -953,7 +953,11 @@ function printReadyBindings(world, bindings, stateDir) {
   const bindingWidth = Math.max(12, ...visibleBindings.map(([name]) => label(name).length + 2));
   for (const [name, value] of visibleBindings) say(`${pad(label(name), bindingWidth)}${value}`);
 
-  const person = findPerson(world, "maya") ?? insiders(world)[0];
+  // The world's own primary person, not the literal "maya". `actingPerson`
+  // stopped assuming that name for the same reason: it is the default world's
+  // person and nobody else's. In v3 it is worse than wrong, because "maya"
+  // matches both maya-chen and maya-osei and the array order picked one.
+  const person = world.people?.find((entry) => entry.primary) ?? insiders(world)[0];
   if (person) {
     say();
     say(person.name);
@@ -965,7 +969,7 @@ function printReadyBindings(world, bindings, stateDir) {
   if (person && channel) {
     say();
     say("Try this");
-    say(`  ${invocation()} slack send --as ${person.id.split("-")[0]} --channel ${channel.name} "Mobile tests passed"`);
+    say(`  ${invocation()} slack send --as ${personHandle(world, person)} --channel ${channel.name} "Mobile tests passed"`);
   }
 
 }
@@ -1270,9 +1274,23 @@ function readBindings(stateDir) {
 // `worldfixture build` -- `slack history --channel general` answered "No person
 // named undefined", naming a flag the user never typed. Every world states who
 // its primary person is, so it is asked rather than assumed.
+//
+// A `--as` that names more than one person is REPORTED, NOT RESOLVED.
+// `business.saas-company:v3` carries 161 people and four shared first segments
+// -- maya, ravi, idris and lena -- so `--as maya` used to act as maya-chen and
+// never mention that maya-osei was also a match. Sending a message as the wrong
+// person is not a mistake the user can see afterwards, so the ambiguity is put
+// in front of them instead.
 function actingPerson(world, flags) {
-  if (flags.as) return findPerson(world, flags.as);
-  return world.people?.find((person) => person.primary) ?? insiders(world)[0];
+  if (!flags.as) return { person: world.people?.find((person) => person.primary) ?? insiders(world)[0] };
+  const matches = findPeople(world, flags.as);
+  if (matches.length > 1) return { ambiguous: matches };
+  return { person: matches[0] };
+}
+
+function sayAmbiguous(reference, matches) {
+  say(`${JSON.stringify(reference)} names ${matches.length} people in this world. Say which one:`);
+  for (const person of matches) say(`  ${person.id.padEnd(22)}${person.name}`);
 }
 
 async function slack({ flags, positional }) {
@@ -1294,7 +1312,12 @@ async function slack({ flags, positional }) {
     return;
   }
 
-  const person = actingPerson(world, flags);
+  const { person, ambiguous } = actingPerson(world, flags);
+  if (ambiguous) {
+    sayAmbiguous(flags.as, ambiguous);
+    process.exitCode = 1;
+    return;
+  }
   if (!person) {
     say(`No person named ${JSON.stringify(flags.as)} in this world. Run \`${invocation()} people\`.`);
     process.exitCode = 1;
@@ -1312,7 +1335,10 @@ async function slack({ flags, positional }) {
     say("People who can act on Slack:");
     for (const id of [...holders].sort()) {
       const holder = findPerson(world, id);
-      if (holder) say(`  ${id.split("-")[0].padEnd(10)}${holder.name}`);
+      // The handle printed here is one the reader will paste after `--as`, so
+      // it has to be the shortest UNAMBIGUOUS one. A bare first segment is
+      // shared by two people four times over in v3.
+      if (holder) say(`  ${personHandle(world, holder).padEnd(22)}${holder.name}`);
     }
     process.exitCode = 1;
     return;
@@ -1533,7 +1559,12 @@ async function mail({ flags, positional }) {
     return;
   }
 
-  const person = actingPerson(world, flags);
+  const { person, ambiguous } = actingPerson(world, flags);
+  if (ambiguous) {
+    sayAmbiguous(flags.as, ambiguous);
+    process.exitCode = 1;
+    return;
+  }
   if (!person) {
     say(`No person named ${JSON.stringify(flags.as)} in this world. Run \`${invocation()} people\`.`);
     process.exitCode = 1;
