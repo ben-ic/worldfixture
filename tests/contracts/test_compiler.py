@@ -710,5 +710,35 @@ class CloudVocabularyTest(unittest.TestCase):
             compile_world(world)
 
 
+class CompilerSourceTest(unittest.TestCase):
+    """A dict literal may not name the same key twice.
+
+    The `projections` dict returned by `_compile_business_operations` listed
+    `aws`, `resend`, `mongoatlas` and `twilio` a second time each. Python keeps
+    the last value for a repeated key, so the duplicates were invisible while
+    both entries named the same variable, and the next edit to one of the first
+    four would have been silently discarded by the copy below it.
+    """
+
+    def test_no_dict_literal_repeats_a_key(self) -> None:
+        import ast
+
+        tree = ast.parse((ROOT / "compiler/worldfixture_compiler/compiler.py").read_text())
+        repeated = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Dict):
+                continue
+            names = [
+                key.value
+                for key in node.keys
+                if isinstance(key, ast.Constant) and isinstance(key.value, str)
+            ]
+            repeated += [
+                f"line {node.lineno}: {name!r}" for name in sorted({n for n in names if names.count(n) > 1})
+            ]
+
+        self.assertEqual([], repeated)
+
+
 if __name__ == "__main__":
     unittest.main()

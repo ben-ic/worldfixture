@@ -3046,10 +3046,11 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
             "okta": okta,
             "stripe": stripe,
             "vercel": vercel,
-            "aws": aws,
-            "resend": resend,
-            "mongoatlas": mongoatlas,
-            "twilio": twilio,
+            # `aws`, `resend`, `mongoatlas` and `twilio` were each listed a
+            # second time here. Python keeps the last value for a repeated key,
+            # so the duplicates were invisible while both entries named the same
+            # variable, and the next edit to one of the first four would have
+            # been silently discarded by the copy below it.
             "mail": mail,
             "model": model,
             "agent": agent,
