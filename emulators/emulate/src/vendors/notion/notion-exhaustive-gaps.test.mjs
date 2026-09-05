@@ -292,3 +292,68 @@ test("/v1/users validates page_size and start_cursor like every other list route
   assert.equal(second.status, 200);
   assert.notEqual((await second.json()).results[0].id, first.results[0].id);
 });
+
+// Closes three separate coercions, all reachable from the MCP surface.
+//
+//   * `mcpListSidebarPages` sized its page with `Number(args.limit) || 100`, so
+//     `limit: 0` -- which the captured tool contract permits, declaring `limit` a
+//     plain number with no minimum and no range check in `validateToolInput` --
+//     asked for none and got a hundred. The sibling `mcpSearchSkills` already used
+//     `??` for the same parameter.
+//
+//   * `mcpGetComments` read `args.page_size`, a key `notion-get-comments` DOES NOT
+//     HAVE: its contract declares `discussion_id`, `include_all_blocks`,
+//     `include_resolved` and `page_id` and nothing else. The expression was a
+//     constant dressed as a parameter, and because `additionalProperties` is
+//     permissive with no lower clamp, a client that DID send `page_size: -5` got
+//     `slice(0, -5)` -- fewer comments, `has_more` true, and a cursor. That is a
+//     pagination loop that never ends.
+//
+//   * `sqlScalar` turned an EMPTY array into the literal text `[]` via
+//     `text || JSON.stringify(value)`. `propertyValue` returns `[]` for an unset
+//     multi_select, people, relation or files property, so a SQL SELECT over any
+//     of them read `[]` where every other empty value reads as nothing.
+test("MCP paging and SQL do not turn an empty request into a full one", () => {
+  const store = fixture({
+    data_sources: [{
+      id: SOURCE, database_id: DATABASE, name: "Projects", accessible_by: [USER],
+      properties: { Name: { id: "title", type: "title" }, Tags: { id: "tags", type: "multi_select" } },
+    }],
+    pages: [
+      { id: PAGE, title: "Root", created_by: USER, accessible_by: [USER] },
+      { id: "10000000-0000-4000-8000-000000000021", title: "Second", created_by: USER, accessible_by: [USER] },
+      { id: "10000000-0000-4000-8000-000000000022", title: "Third", created_by: USER, accessible_by: [USER] },
+      {
+        id: "10000000-0000-4000-8000-000000000023", parent: { type: "data_source_id", data_source_id: SOURCE },
+        created_by: USER, accessible_by: [USER],
+        properties: { Name: { id: "title", type: "title", title: [{ type: "text", text: { content: "Untagged" } }] } },
+      },
+    ],
+  }).store;
+  const domain = createNotionDomain(store, "http://notion.worldfixture.test");
+  const actor = domain.userByLogin("maya@example.test");
+
+  const everything = domain.mcpListSidebarPages({ limit: 50 }, actor, "private");
+  assert.ok(everything.results.length >= 3, "the fixture has more than one sidebar page to page through");
+
+  const none = domain.mcpListSidebarPages({ limit: 0 }, actor, "private");
+  assert.equal(none.results.length, 1, "limit 0 clamps to the smallest page, not to a hundred");
+  assert.equal(none.has_more, true);
+
+  // A non-numeric limit keeps the old default rather than collapsing to NaN.
+  assert.equal(domain.mcpListSidebarPages({ limit: "abc" }, actor, "private").results.length, everything.results.length);
+
+  // `page_size` is not a parameter of this tool, and passing a negative one must
+  // not silently truncate the page it returns.
+  const comments = domain.mcpGetComments({ page_id: PAGE, page_size: -5 }, actor);
+  assert.equal(comments.has_more, false);
+  assert.equal(comments.next_cursor, null);
+
+  const sql = domain.mcpQueryDataSources({
+    data_source_urls: [`collection://${SOURCE}`],
+    mode: "sql",
+    query: `SELECT "Tags" FROM "collection://${SOURCE}"`,
+  }, actor);
+  assert.equal(sql.results.length, 1);
+  assert.equal(sql.results[0].Tags, null, "an unset multi-select must not read as the text []");
+});

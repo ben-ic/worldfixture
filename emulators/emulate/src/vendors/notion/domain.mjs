@@ -1232,8 +1232,17 @@ export function createNotionDomain(store, baseUrl, { objectStore, onChange } = {
     };
   }
   function mcpCreateComment(args, actor) { return createComment({ parent: args.page_id ? { page_id: args.page_id } : undefined, discussion_id: args.discussion_id, markdown: args.markdown, rich_text: args.rich_text }, actor); }
+  // `notion-get-comments` HAS NO `page_size`. Its captured contract declares
+  // `discussion_id`, `include_all_blocks`, `include_resolved` and `page_id` and
+  // nothing else, so `args.page_size` was always `undefined` and the expression
+  // was a constant 100 dressed up as a parameter. That would be harmless on its
+  // own, but `additionalProperties` is permissive, so a client that DID send
+  // `page_size: -5` got it through with no lower clamp: `slice(0, -5)` dropped
+  // the last five comments and still reported `has_more` with a cursor, which is
+  // a pagination loop that never ends. The page size is stated as the constant it
+  // actually is.
   function mcpGetComments(args, actor) {
-    const result = listComments(args.page_id, { pageSize: Math.min(100, Number(args.page_size) || 100), actor });
+    const result = listComments(args.page_id, { pageSize: 100, actor });
     return result ? { comments: result.results, has_more: result.has_more, next_cursor: result.next_cursor } : null;
   }
 
@@ -1973,7 +1982,15 @@ export function createNotionDomain(store, baseUrl, { objectStore, onChange } = {
   }
 
   function mcpListSidebarPages(args, actor, section) {
-    const limit = Math.min(200, Math.max(1, Number(args.limit) || 100));
+    // `??`, not `||`. The captured tool contract declares `limit` as a plain
+    // number with no minimum and `validateToolInput` does not range-check it, so
+    // `limit: 0` reaches here -- and `Number(0) || 100` made it mean a hundred
+    // pages. `Math.max(1, …)` still clamps it to the smallest page the API can
+    // return, which is what `mcpSearchSkills` two hundred lines up already does.
+    // A non-numeric `limit` is the one case the old `||` handled correctly, so it
+    // is handled explicitly rather than left to fall out of NaN comparisons.
+    const requested = Number(args.limit ?? 100);
+    const limit = Math.min(200, Math.max(1, Number.isFinite(requested) ? requested : 100));
     let found = pages.all().filter((record) => canRead(record, actor) && !record.in_trash);
     if (section === "private") found = found.filter((record) => record.sidebar_section === "private" && record.parent?.type === "workspace");
     if (section === "shared") found = found.filter((record) => record.sidebar_section === "shared");
@@ -2000,8 +2017,15 @@ export function createNotionDomain(store, baseUrl, { objectStore, onChange } = {
     if (["string", "number", "bigint"].includes(typeof value)) return value;
     if (typeof value === "boolean") return value ? "__YES__" : "__NO__";
     if (Array.isArray(value)) {
+      // An EMPTY array is an empty cell, not a value to be described. `[]` joins
+      // to `""`, and `|| JSON.stringify(value)` turned that into the two-character
+      // string `[]` -- so `SELECT "Tags"` on a page with no tags returned the
+      // literal text `[]` where every other empty property returns nothing.
+      // `propertyValue` returns `[]` for an unset multi_select, people, relation
+      // or files property, so this was every one of them.
+      if (value.length === 0) return null;
       const text = value.map((item) => item?.plain_text ?? item?.text?.content ?? item?.name ?? item?.id ?? item).join(", ");
-      return text || JSON.stringify(value);
+      return text === "" ? JSON.stringify(value) : text;
     }
     return JSON.stringify(value);
   }
