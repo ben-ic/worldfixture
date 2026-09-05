@@ -155,7 +155,7 @@ test("the connector token is passed to Docker by name, never on the command line
   let runArgs = null;
   let runEnvironment = null;
 
-  const runner = async (command, args, options = {}) => {
+  const runner = async (_command, args, options = {}) => {
     if (args[0] === "inspect") throw missing();
     if (args[0] === "image") return { stdout: "sha256:image\n" };
     if (args[0] === "run") {
@@ -192,11 +192,11 @@ test("a port Docker refuses is taken out of the pool and the launch is retried",
   const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-port-retry-"));
   const attempts = [];
 
-  const runner = async (command, args) => {
+  const runner = async (_command, args) => {
     if (args[0] === "inspect") throw missing();
     if (args[0] === "image") return { stdout: "sha256:image\n" };
     if (args[0] === "run") {
-      const published = args.filter((argument, index) => args[index - 1] === "--publish");
+      const published = args.filter((_argument, index) => args[index - 1] === "--publish");
       attempts.push(published);
       if (published.some((entry) => entry.endsWith(":3306:3306"))) {
         throw Object.assign(new Error("docker run failed"), {
@@ -238,7 +238,7 @@ test("a port Docker refuses is taken out of the pool and the launch is retried",
 // says what to do.
 test("a launch failure carries a repair line for the command line to print", async () => {
   const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-image-"));
-  const runner = async (command, args) => {
+  const runner = async (_command, args) => {
     if (args[0] === "inspect") throw missing();
     if (args[0] === "image") throw missing();
     if (args[0] === "pull") throw Object.assign(new Error("pull failed"), { stderr: "manifest unknown" });

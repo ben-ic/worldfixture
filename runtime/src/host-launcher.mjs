@@ -250,7 +250,7 @@ function translateAddresses(internalAddresses, ports) {
 // an organization prefix can. Getting this wrong is user-visible in both
 // directions -- a pointless pull before an honest error, or an honest error
 // where a pull would have worked -- so it is decided from the shape of the name.
-export function isPullable(image) {
+function isPullable(image) {
   const path = String(image).split("@")[0].split(":")[0];
   if (!path.includes("/")) return false;
   return !path.startsWith("localhost/") && !path.startsWith("127.0.0.1");
