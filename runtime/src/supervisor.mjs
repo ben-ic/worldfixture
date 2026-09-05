@@ -691,6 +691,23 @@ async function proveReady(instance, { readyTimeoutMs }) {
         if (!result.ok) {
           instance.serviceStates.set(service.name, "failed");
           publishProgress(instance);
+          // A CHILD THAT DIED DURING THE WAIT IS REPORTED AS WHAT IT IS. The
+          // exit check above runs before `waitFor` and never again, so a service
+          // that exited one second in was announced a full timeout later as
+          // "did not become ready on its http check: fetch failed" -- a true
+          // sentence about the socket, and the wrong subject. The exit code and
+          // the child's own output were both already known.
+          //
+          // Measured: `emulate` started without its dependencies exits at once
+          // on `Cannot find package '@emulators/core'`, and CI reported 22 tests
+          // failing on a readiness check. Finding the real cause took three runs.
+          if (record.exited !== null) {
+            throw new StartupError(
+              "service_exited",
+              `${service.name} exited with code ${record.exited.code} before it became ready`,
+              { service: service.name, exited: record.exited, log: record.log.tail(), state_changed: true },
+            );
+          }
           throw new StartupError(
             "not_ready",
             `${service.name} did not become ready on its ${check.protocol} check: ${result.detail}`,

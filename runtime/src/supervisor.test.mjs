@@ -670,6 +670,35 @@ test("a container that mounts no world is given no world path, not the host one"
   assert.equal("WORLDFIXTURE_WORLD_PATH" in environment, false);
 });
 
+// The bug this closes: `proveReady` checked `record.exited` once, before each
+// readiness wait, and never during it. A child that died a second into a
+// 180-second wait was therefore reported at the end of it as "did not become
+// ready on its <protocol> check" -- which describes the socket, not the child --
+// while the exit code and the child's own output sat unused in the record.
+//
+// Measured on CI: `emulate` started without its dependencies exits immediately
+// on `Cannot find package '@emulators/core'`, and 22 runtime tests reported
+// `fetch failed` instead. The cause took three CI runs to find.
+test("a service that dies during the wait is reported as exited, not as unready", async () => {
+  const lock = lockFor(["slack.messaging.v1"]);
+  const emulate = lock.services.find((service) => service.name === "emulate");
+
+  // A command that exits at once, so the child is gone well inside the wait and
+  // the readiness socket never answers -- the exact shape of the CI failure.
+  emulate.command = ["node", "-e", "process.stderr.write('cannot find package\\n'); process.exit(1)"];
+
+  await assert.rejects(
+    () => start(lock, { artifactPath: ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES, readyTimeoutMs: 5_000 }),
+    (error) => {
+      assert.equal(error.code, "service_exited", `reported as ${error.code}: ${error.message}`);
+      assert.match(error.message, /emulate exited with code 1/);
+      assert.ok(error.detail.log.some((entry) => /cannot find package/.test(entry.line)),
+        "the child's own output travels with the failure");
+      return true;
+    },
+  );
+});
+
 // Every container service the repo ships either mounts the world or does not ask
 // for it, so no real service loses a path it was using.
 test("no shipped container service is left needing a world path it cannot reach", async () => {
