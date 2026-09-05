@@ -32,4 +32,9 @@ __pycache__/
 # Node
 node_modules/
 runtime/workbench-ui/dist/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Local agent and editor state
 .gstack/
+.claude/

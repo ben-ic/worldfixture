@@ -42,6 +42,15 @@ RUN npm ci --ignore-scripts \
 COPY runtime/workbench-ui ./
 RUN npm run build
 
+FROM ${NODE_IMAGE} AS documentation
+WORKDIR /source/docs
+COPY docs/package.json docs/package-lock.json ./
+RUN npm ci --ignore-scripts \
+ && npm cache clean --force \
+ && rm -rf /root/.npm
+COPY docs ./
+RUN npm run build
+
 FROM ${NODE_IMAGE} AS seaweedfs
 ARG TARGETARCH
 ARG SEAWEEDFS_VERSION=4.41
@@ -114,6 +123,7 @@ COPY worlds ./worlds
 COPY runtime ./runtime
 COPY LICENSE /usr/share/licenses/worldfixture/LICENSE
 COPY --from=workbench-ui /source/runtime/workbench-ui/dist ./runtime/workbench-ui/dist
+COPY --from=documentation /source/docs/.vitepress/dist ./runtime/docs-site
 
 COPY emulators/emulate ./emulators/emulate
 COPY --from=emulate-dependencies /opt/worldfixture/emulators/emulate/node_modules \

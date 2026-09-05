@@ -1,6 +1,7 @@
 # Application connectors
 
-A WorldFixture application connector fills an application with a compiled world.
+A WorldFixture application connector fills an application with data from a
+prepared world artifact.
 It is a development-only HTTP interface implemented inside the target application.
 The application owns its domain model and mapping. WorldFixture owns the source
 records, clock, delivery order, and run receipts.
@@ -34,7 +35,7 @@ skill can inspect an application and implement its connector from these docs.
 
 ## How much of the world to seed
 
-A full seed of the default world sends 13,385 records, and a developer checking
+A full seed of the default world sends 13,417 records, and a developer checking
 that their mapping works does not need them. `check`, `plan` and `seed` take a
 slice:
 
@@ -43,7 +44,7 @@ npx worldfixture connector seed http://localhost:3000 --scale smoke
 npx worldfixture connector seed http://localhost:3000 --limit people=25,messages=5
 ```
 
-`smoke` keeps at most 25 records of anything and sends about 570. `sample` keeps
+`smoke` keeps at most 25 records of anything and sends 586. `sample` keeps
 at most 250. `full` is the default. `--limit` sets counts per collection and
 overrides the preset for the collections it names; a nested list such as
 `messages` is counted per parent. The Workbench offers the same choice under

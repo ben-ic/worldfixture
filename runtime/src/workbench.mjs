@@ -25,6 +25,7 @@ import { SCALE_PRESETS, ScaleError, parseLimits, parseScale } from "./scale.mjs"
 import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
 
 const UI_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../workbench-ui/dist");
+const DOCS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../docs-site");
 const MIME = { ".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".html": "text/html; charset=utf-8",
   ".svg": "image/svg+xml", ".png": "image/png" };
 
@@ -801,6 +802,21 @@ function serveUi(url, response) {
   return true;
 }
 
+function serveDocs(url, response) {
+  if (!url.pathname.startsWith("/docs")) return false;
+  const relative = url.pathname.replace(/^\/docs\/?/, "") || "index.html";
+  const requested = relative.endsWith("/") ? `${relative}index.html` : relative;
+  const path = normalize(join(DOCS_ROOT, requested));
+  if (!path.startsWith(`${DOCS_ROOT}/`) && path !== join(DOCS_ROOT, "index.html")) return false;
+  const file = [path, `${path}.html`, join(path, "index.html")].find((candidate) => existsSync(candidate));
+  if (!file) return false;
+  const extension = file.slice(file.lastIndexOf("."));
+  response.writeHead(200, { "content-type": MIME[extension] ?? "application/octet-stream",
+    "cache-control": extension === ".html" ? "no-store" : "public, max-age=31536000, immutable" });
+  response.end(readFileSync(file));
+  return true;
+}
+
 export async function startWorkbench(instance, {
   artifactPath,
   stateDir,
@@ -877,6 +893,7 @@ export async function startWorkbench(instance, {
       const url = new URL(request.url, "http://worldfixture.local");
       const bindings = instance.applicationBindings ?? instance.bindings();
       if (request.method === "GET" && !url.pathname.startsWith("/api/") && url.pathname !== "/readyz") {
+        if (serveDocs(url, response)) return;
         if (serveUi(url, response)) return;
       }
       if (request.method === "GET" && url.pathname === "/readyz") return json(response, 200, { ready: true });

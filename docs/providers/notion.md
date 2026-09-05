@@ -2,32 +2,61 @@
 
 Verification date: 2026-09-03
 
-Status: the current REST and OAuth profile, public Agent API, Admin API,
-Workers runtime contract, 31-event webhook model, and Workbench views are
-implemented. The vendored public and Admin OpenAPI gates are green. The exact
-41-tool hosted MCP `tools/list` contract is captured from a Free Plan workspace. See
-[the implementation plan](../plans/notion-provider.md).
+Overall status: **Supported and contract-tested** for the named inventories
+below. This is not a claim for the complete Notion product.
 
 WorldFixture implements this provider locally. [emulate.dev](https://emulate.dev/)
 does not list a Notion emulator as of the verification date.
 
-## Status terms and audited release gaps
+## What works
 
-- **Supported** means that the named behavior has a passing contract test with
-  its stated protocol version and evidence source.
-- **Partial** means that useful behavior is implemented, but one or more named
-  contract branches, schemas, or release gates are not verified.
-- **Unsupported** means that the provider does not implement the named
-  behavior. A different implemented surface does not make it partial.
+This page uses the five labels in the [support policy](./support-policy.md).
+Public REST and Admin tests use official schemas and SDK types. They do not use
+production request and response recordings. These surfaces are also **Not
+verified against the production provider**. The hosted MCP `tools/list` capture
+is the only production-provider recording.
 
-| Audit area | Status | Current evidence or gap |
-| --- | --- | --- |
-| Public REST inventory | Supported | All 61 operations pass success-response schema and required authentication, version, and media-header tests against the vendored official public OpenAPI snapshot. Multipart upload requests pass lifecycle tests, but the multipart body is not JSON-schema validated. |
-| Public OAuth | Supported | Authorization, refresh rotation, introspection, and revocation pass the official SDK and public OpenAPI lifecycle tests. |
-| Hosted MCP `tools/list` parity | Supported | The normalized authenticated Free Plan capture has 41 exact tool objects. Names, titles, descriptions, annotations, input schemas, output schemas, and UI metadata match in `hosted-contract.test.mjs`. |
-| Hosted MCP result parity | Partial | The 41 tools dispatch through shared world state. Exact hosted result envelopes are not claimed because the safe capture called only `tools/list`. |
-| Admin API behavior and schema | Supported | All 39 operations pass behavior and request/response schema tests. The normal test uses the vendored official Admin OpenAPI snapshot and its pinned hash. |
-| Hosted Workers | Unsupported | The local Workers adapter is supported. Notion-hosted build, deployment, and sandbox behavior are not emulated. |
+| Surface | What works | What does not work or is not verified | Test proof |
+| --- | --- | --- | --- |
+| Public REST and OAuth | All 61 operations in the pinned public OpenAPI inventory; authorization, token refresh, introspection, and revocation | Other API versions; every possible error branch; multipart body schema validation | **Supported and contract-tested** by `notion-openapi-lifecycle.test.mjs` and the SDK tests |
+| Public Agent API | All 13 methods in `@notionhq/client` 5.26.0 and their named branches | Deprecated alpha thread/chat and internal `external_agent_stub` routes | **Supported and contract-tested** by `notion-agent-branches.test.mjs` and `notion-agents.test.mjs` |
+| Admin API | All 39 operations in the pinned Admin OpenAPI inventory | Other Admin API versions and uncaptured production behavior | **Supported and contract-tested** by `notion-admin-api.test.mjs` |
+| Hosted MCP | Exact 41-tool Free Plan `tools/list`; every advertised local tool dispatches through shared world state | Hosted result-envelope parity; legacy SSE | Definitions are **Supported and contract-tested** by `hosted-contract.test.mjs`; results are **Not verified against the production provider** |
+| Webhooks | 31 event schemas, HMAC signatures, and local delivery capture | External network delivery | **Supported and contract-tested** by `notion-webhooks.test.mjs` and `notion-admin.test.mjs` |
+| Workers | Local deterministic adapter for `@notionhq/workers` 0.9.0 | Notion-hosted build, deployment, sandbox, secrets, logs, and remote commands | Local adapter is **Supported but partial** and tested by `notion-workers.test.mjs`; hosted behavior is **Not supported** |
+| Workbench | Live Notion state and selected provider writes; private subscription and secret controls | Live Workers runtime view | Provider views use shared state; private controls are **Workbench-only**; Workers view is **Not supported** |
+
+## What does not work
+
+- Other Notion API versions are not covered.
+- External webhook delivery does not work.
+- Notion-hosted Workers build, deployment, and sandbox behavior do not work.
+- Hosted MCP result envelopes are not verified.
+- Production REST and Admin request and response recordings are not available.
+
+<details>
+<summary>Architecture, bindings, and world isolation</summary>
+
+## Architecture
+
+Every Notion surface goes through one domain layer:
+
+```text
+Notion REST routes ---+
+                      +--> Notion domain services --> fixture state
+Notion MCP tools -----+             |
+                                    +--> change journal and runtime events
+```
+
+The MCP adapter does not read or write emulator storage directly. It calls the
+same domain services as the REST routes, so a page created through MCP is
+visible through REST and the Workbench, and a REST change is immediately visible
+through MCP search and fetch. Anything that only one of the two surfaces could
+see would be a bug in this arrangement rather than a feature of one protocol.
+
+The provider carries no condition in the runtime resolver or the supervisor.
+What it needs from a run is declared in its service manifest -- profile names,
+bindings, ports and readiness checks -- like every other service.
 
 ## Configuration
 
@@ -52,7 +81,7 @@ comment only when its world entity reference identifies a Notion page.
 
 ### Multiworld isolation
 
-Each compiled world owns one complete Notion projection. When a runtime selects
+Each prepared world artifact owns one complete Notion projection. When a runtime selects
 a world, it replaces the demo `notion` fixture as one unit. It does not deep
 merge pages, users, databases, data sources, or views from another world.
 
@@ -62,6 +91,8 @@ get different Notion IDs. Each world member also gets
 `notion_token_<person-id>`. The shared `notion_token` remains for consumers that
 do not select an actor. If a world has no Notion projection, the provider gets
 an empty Notion fixture and no demo Notion credentials.
+
+</details>
 
 ## Quick start
 
@@ -81,6 +112,9 @@ registration, authorization code with PKCE S256, and the
 `${NOTION_BASE_URL}/mcp` resource value. The server returns MCP `2025-11-25`
 during negotiation.
 
+<details>
+<summary>Request headers, authentication, and protocol contracts</summary>
+
 ## Request contracts
 
 | Surface | Authentication | Required request contract | Exact evidence | Known difference |
@@ -92,6 +126,11 @@ during negotiation.
 | Public Agent API | REST bearer token with `interact:agents` capability | `Notion-Version: 2026-03-11`; JSON mutation bodies use `application/json`; the session stream response uses `text/event-stream` | `notion-agent-branches.test.mjs`, `notion-agents.test.mjs`; `@notionhq/client` 5.26.0 | Exhaustive documented Agent/session filter, event, lifecycle, access, pagination, and limit branches pass. Deprecated alpha thread/chat and internal `external_agent_stub` routes are unsupported. |
 | Workers | The local runtime injects configured OAuth access tokens into the SDK environment. Webhook handlers receive the manifest-defined request. | No public provider-wide header contract exists. Database, sync, tool, OAuth, and webhook contracts come from the pinned `@notionhq/workers` 0.9.0 manifest. | `notion-workers.test.mjs` | This is a local deterministic adapter. It is not the Notion-hosted runtime. |
 | Admin API | `Authorization: Bearer <organization-token>` with the operation-specific organization scope | `Notion-Version: 2026-06-01`; JSON mutations use `Content-Type: application/json` | `notion-admin-api.test.mjs`; vendored `admin-api-2026-06-01.openapi.json` | All 39 behavior and schema paths pass by default. An environment override can test another explicit snapshot. |
+
+</details>
+
+<details>
+<summary>Exact REST, Agent, Admin, and Workers support</summary>
 
 ## Current REST support
 
@@ -126,46 +165,46 @@ Notion responses.
 
 | Endpoint | Status | Contract evidence |
 | --- | --- | --- |
-| `GET /v1/users` | Supported | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/users/:user_id` | Supported | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/users/me` | Supported | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `POST /v1/search` | Supported for current object filters, trash selection, sorting, and pagination | `notion-rest-write.test.mjs` |
-| `GET /v1/pages/:page_id` | Supported | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/pages/:page_id/properties/:property_id` | Supported | `notion-rest-write.test.mjs` |
-| `POST /v1/pages` | Supported, including common Markdown content and data-source templates | `notion-rest-write.test.mjs`, `notion-content-rest.test.mjs`, `notion-sdk.test.mjs` |
-| `PATCH /v1/pages/:page_id` | Supported, including trash and restore through `in_trash` | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `POST /v1/pages/:page_id/move` | Supported | `notion-rest-write.test.mjs` |
-| `GET`, `PATCH /v1/pages/:page_id/markdown` | Common Markdown blocks and update commands supported | `notion-content-rest.test.mjs` |
-| `GET /v1/blocks/:block_id` | Supported | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/blocks/:block_id/children` | Supported | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `PATCH /v1/blocks/:block_id/children` | Supported with current `position`, block-type, table, column, tab, and nesting validation | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `PATCH /v1/blocks/:block_id` | Supported | `notion-rest-write.test.mjs` |
-| `DELETE /v1/blocks/:block_id` | Supported | `notion-rest-write.test.mjs` |
-| `POST /v1/blocks/meeting_notes` | Supported for current file-upload and block source branches | `notion-sdk.test.mjs` |
-| `POST /v1/blocks/meeting_notes/query` | Supported with attendee access, filters, sorts, and a 50-item limit | `notion-sdk.test.mjs` |
-| `POST /v1/databases` | Supported for page and wiki data-source parents | `notion-rest-write.test.mjs` |
-| `GET`, `PATCH /v1/databases/:database_id` | Supported | `notion-rest-write.test.mjs` |
-| `POST /v1/data_sources` | Supported core behavior | `notion-rest-write.test.mjs` |
-| `GET`, `PATCH /v1/data_sources/:data_source_id` | Supported core behavior | `notion-rest-write.test.mjs` |
-| `GET /v1/data_sources/:data_source_id/templates` | Supported listing behavior | `notion-rest-write.test.mjs` |
-| `POST /v1/data_sources/:data_source_id/query` | Typed properties, formula, rollup, timestamp, trash, property projection, 10,000-result status, and wiki page/data-source results supported | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `POST`, `GET /v1/views` | Direct database, dashboard widget, and linked-database creation branches supported | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `GET`, `PATCH`, `DELETE /v1/views/:view_id` | Supported | `notion-rest-write.test.mjs` |
-| `POST /v1/views/:view_id/queries` | Supported with a stable 15-minute cache and a 10,000-result limit | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `GET`, `DELETE /v1/views/:view_id/queries/:query_id` | Supported; delete is idempotent | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `GET /v1/custom_emojis` | Supported with exact-name lookup and pagination | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
-| `GET /v1/async_tasks/:task_id` | Supported | `notion-rest-write.test.mjs` |
-| `POST`, `GET /v1/comments` | Create and paginated list supported | `notion-content-rest.test.mjs` |
-| `GET`, `PATCH`, `DELETE /v1/comments/:comment_id` | Supported for visible integration comments | `notion-content-rest.test.mjs` |
-| `POST`, `GET /v1/file_uploads` | Create and paginated list supported | `notion-content-rest.test.mjs` |
-| `GET /v1/file_uploads/:file_upload_id` | Supported | `notion-content-rest.test.mjs` |
-| `POST /v1/file_uploads/:file_upload_id/send` | Single-part and multi-part sends store bytes in S3 | `notion-s3-upload.test.mjs`, `runtime/src/supervisor.test.mjs` |
-| `POST /v1/file_uploads/:file_upload_id/complete` | Multi-part completion joins S3 part objects | `notion-s3-upload.test.mjs` |
-| `GET`, `POST /v1/oauth/authorize` | Public connection consent is supported for configured clients | `notion-admin.test.mjs` |
-| `POST /v1/oauth/token` | Supported for authorization-code exchange and refresh rotation | `notion-admin.test.mjs`, `notion-openapi-lifecycle.test.mjs` |
-| `POST /v1/oauth/introspect` | Supported with official SDK 5.26.0 | `notion-admin.test.mjs` |
-| `POST /v1/oauth/revoke` | Supported and removes REST token access | `notion-admin.test.mjs` |
-| Older `Notion-Version` values | Unsupported | Use a future separate profile |
+| `GET /v1/users` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/users/:user_id` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/users/me` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `POST /v1/search` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `GET /v1/pages/:page_id` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/pages/:page_id/properties/:property_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `POST /v1/pages` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-content-rest.test.mjs`, `notion-sdk.test.mjs` |
+| `PATCH /v1/pages/:page_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `POST /v1/pages/:page_id/move` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `GET`, `PATCH /v1/pages/:page_id/markdown` | **Supported but partial** | `notion-content-rest.test.mjs`; supports common Markdown blocks and update commands |
+| `GET /v1/blocks/:block_id` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/blocks/:block_id/children` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `PATCH /v1/blocks/:block_id/children` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `PATCH /v1/blocks/:block_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `DELETE /v1/blocks/:block_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `POST /v1/blocks/meeting_notes` | **Supported and contract-tested** | `notion-sdk.test.mjs` |
+| `POST /v1/blocks/meeting_notes/query` | **Supported and contract-tested** | `notion-sdk.test.mjs` |
+| `POST /v1/databases` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `GET`, `PATCH /v1/databases/:database_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `POST /v1/data_sources` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `GET`, `PATCH /v1/data_sources/:data_source_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `GET /v1/data_sources/:data_source_id/templates` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `POST /v1/data_sources/:data_source_id/query` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `POST`, `GET /v1/views` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `GET`, `PATCH`, `DELETE /v1/views/:view_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `POST /v1/views/:view_id/queries` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `GET`, `DELETE /v1/views/:view_id/queries/:query_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `GET /v1/custom_emojis` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
+| `GET /v1/async_tasks/:task_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
+| `POST`, `GET /v1/comments` | **Supported and contract-tested** | `notion-content-rest.test.mjs` |
+| `GET`, `PATCH`, `DELETE /v1/comments/:comment_id` | **Supported and contract-tested** | `notion-content-rest.test.mjs` |
+| `POST`, `GET /v1/file_uploads` | **Supported and contract-tested** | `notion-content-rest.test.mjs` |
+| `GET /v1/file_uploads/:file_upload_id` | **Supported and contract-tested** | `notion-content-rest.test.mjs` |
+| `POST /v1/file_uploads/:file_upload_id/send` | **Supported and contract-tested** | `notion-s3-upload.test.mjs`, `runtime/src/supervisor.test.mjs` |
+| `POST /v1/file_uploads/:file_upload_id/complete` | **Supported and contract-tested** | `notion-s3-upload.test.mjs` |
+| `GET`, `POST /v1/oauth/authorize` | **Supported and contract-tested** | `notion-admin.test.mjs` |
+| `POST /v1/oauth/token` | **Supported and contract-tested** | `notion-admin.test.mjs`, `notion-openapi-lifecycle.test.mjs` |
+| `POST /v1/oauth/introspect` | **Supported and contract-tested** | `notion-admin.test.mjs`; official SDK 5.26.0 |
+| `POST /v1/oauth/revoke` | **Supported and contract-tested** | `notion-admin.test.mjs` |
+| Older `Notion-Version` values | **Not supported** | Use a future separate profile |
 
 The provider rejects an absent or different `Notion-Version`. It rejects an
 unknown token. An MCP access token cannot call the REST API.
@@ -211,13 +250,13 @@ organization token and operation-specific scopes.
 
 | Official operation group | Operations | Status and evidence |
 | --- | ---: | --- |
-| Legal holds, users, workspaces, pages, release, and export | 11 | Supported behavior and default official OpenAPI validation in `notion-admin-api.test.mjs` |
-| Workspace export and managed-user session revocation | 3 | Supported behavior and default official OpenAPI validation |
-| MCP client connection listing, policy, and revocation | 3 | Supported behavior and default official OpenAPI validation |
-| Workspace users | 1 | Supported behavior and default official OpenAPI validation |
-| Permission groups and direct memberships | 10 | Supported behavior and default official OpenAPI validation |
-| Personal access token listing and revocation | 2 | Supported behavior and default official OpenAPI validation |
-| Agent governance, permissions, credit use, limits, policy, status, and delete | 9 | Supported behavior and default official OpenAPI validation |
+| Legal holds, users, workspaces, pages, release, and export | 11 | **Supported and contract-tested** in `notion-admin-api.test.mjs` |
+| Workspace export and managed-user session revocation | 3 | **Supported and contract-tested** |
+| MCP client connection listing, policy, and revocation | 3 | **Supported and contract-tested** |
+| Workspace users | 1 | **Supported and contract-tested** |
+| Permission groups and direct memberships | 9 | **Supported and contract-tested** behavior and default official OpenAPI validation |
+| Personal access token listing and revocation | 2 | **Supported and contract-tested** |
+| Agent governance, permissions, credit use, limits, policy, status, and delete | 10 | **Supported and contract-tested** behavior and default official OpenAPI validation |
 
 The executable test also asserts that it calls 39 unique official operation
 IDs. It validates every successful request and response against the vendored
@@ -236,6 +275,11 @@ Evidence: `notion-workers.test.mjs`.
 Notion-hosted build, deployment, sandbox, public webhook URL, remote `ntn`
 commands, managed migration, encrypted secret storage, and hosted log behavior
 are not emulated. Workers do not add public Notion REST routes.
+
+</details>
+
+<details>
+<summary>Exact MCP tools and production capture</summary>
 
 ## MCP development status
 
@@ -282,7 +326,7 @@ Current normalized capture:
 | `tools/call` | All advertised names dispatch; exact hosted result envelopes remain unverified | `notion.test.mjs`, `mcp-write.test.mjs`, `mcp-content.test.mjs`, `mcp-agents.test.mjs` |
 | `notion-search` | Implemented and advertised to normal MCP clients | `notion.test.mjs` |
 | `notion-fetch` | Implemented and advertised to normal MCP clients | `notion.test.mjs` |
-| OpenAI `search` and `fetch` aliases | Unsupported; the captured current profile keeps `notion-search` and `notion-fetch` | `hosted-contract.test.mjs`, `notion.test.mjs` |
+| OpenAI `search` and `fetch` aliases | **Not verified against the production provider**; official documentation describes client-specific aliases, but the capture did not use an OpenAI client | `hosted-contract.test.mjs`, `notion.test.mjs` |
 | `notion-search-skills` | Implemented for accessible Skill pages | `notion.test.mjs` |
 | `notion-create-file-upload` | Implemented | `mcp-content.test.mjs` |
 | `notion-create-attachment` | Implemented; inline text uses S3, and external URLs and completed upload references are supported | `mcp-content.test.mjs`, `notion-s3-upload.test.mjs` |
@@ -329,6 +373,8 @@ the old local-only `notion-get-self`, `notion-list-agents`, `search`, or `fetch`
 names. Use `notion-fetch` with `id: "self"` for connection identity. Exact hosted
 tool result compatibility remains unclaimed.
 
+</details>
+
 ## Official SDK compatibility
 
 `notion-sdk-all-methods.test.mjs` asserts the exact 63-method public surface of
@@ -336,6 +382,9 @@ tool result compatibility remains unclaimed.
 emulator lifecycle. The focused SDK, Agent, and Admin tests add branch and
 schema evidence. This is an exact tested SDK version. It is not a claim for all
 past or future SDK versions.
+
+<details>
+<summary>Schema evidence and known differences</summary>
 
 ## Response-shape evidence
 
@@ -382,6 +431,8 @@ past or future SDK versions.
   disabled so world data cannot leave the local system.
 - Link preview blocks can be returned when present in fixture content. Notion
   documents them as read-only; create and append are not applicable.
+
+</details>
 
 ## Source evidence
 

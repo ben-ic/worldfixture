@@ -30,6 +30,10 @@ Change `application_url` when the app uses another local origin. Optional
 WorldFixture services are `postgres`, `mysql`, `s3`, and `smtp`. These services
 do not change who owns the app or its normal start command.
 
+Their bindings can change when a preferred port is already in use, so an
+application that consumes them must read the active run bindings. A port copied
+into a config file is not the contract.
+
 You can set the origin when you start WorldFixture:
 
 ```bash

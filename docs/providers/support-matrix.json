@@ -1,0 +1,26 @@
+{
+  "providers": {
+    "apple": { "page": "docs/providers/apple.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["tests/contracts/test_compiler.py"] },
+    "aws": { "page": "docs/providers/aws.md", "labels": ["Not supported"], "tests": ["runtime/src/resolve.test.mjs", "emulators/emulate/src/ready.test.mjs"] },
+    "clerk": { "page": "docs/providers/clerk.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["emulators/emulate/src/overrides/clerk-users.test.mjs"] },
+    "github": { "page": "docs/providers/github.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["emulators/emulate/src/overrides/github-issues.test.mjs"] },
+    "google": { "page": "docs/providers/google.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["emulators/emulate/src/overrides/google-signing.test.mjs", "emulators/emulate/src/overrides/google-batch.test.mjs"] },
+    "linear": { "page": "docs/providers/linear.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["tests/contracts/test_compiler.py"] },
+    "microsoft": { "page": "docs/providers/microsoft.md", "labels": ["Supported but partial", "Workbench-only", "Not verified against the production provider"], "tests": ["emulators/emulate/src/overrides/microsoft-users.test.mjs"] },
+    "mongoatlas": { "page": "docs/providers/mongodb-atlas.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["emulators/emulate/src/overrides/mongoatlas-projects.test.mjs"] },
+    "notion": { "page": "docs/providers/notion.md", "labels": ["Supported and contract-tested", "Supported but partial", "Workbench-only", "Not supported", "Not verified against the production provider"], "tests": ["emulators/emulate/src/vendors/notion/notion-openapi-lifecycle.test.mjs", "emulators/emulate/src/vendors/notion/notion-sdk-all-methods.test.mjs", "emulators/emulate/src/vendors/notion/notion-admin-api.test.mjs", "emulators/emulate/src/vendors/notion/notion-webhooks.test.mjs"] },
+    "okta": { "page": "docs/providers/okta.md", "labels": ["Supported but partial", "Not verified against the production provider"], "tests": ["tests/contracts/test_compiler.py"] },
+    "resend": { "page": "docs/providers/resend.md", "labels": ["Supported but partial", "Workbench-only", "Not supported", "Not verified against the production provider"], "tests": ["tests/contracts/test_compiler.py"] },
+    "slack": { "page": "docs/providers/slack.md", "labels": ["Supported and contract-tested", "Supported but partial", "Not supported", "Not verified against the production provider"], "tests": ["emulators/emulate/src/main.test.mjs", "emulators/emulate/src/overrides/slack-history.test.mjs", "runtime/src/supervisor.test.mjs"] },
+    "stripe": { "page": "docs/providers/stripe.md", "labels": ["Supported and contract-tested", "Supported but partial", "Not supported", "Not verified against the production provider"], "tests": ["emulators/emulate/src/overrides/stripe-billing.test.mjs"] },
+    "twilio": { "page": "docs/providers/twilio.md", "labels": ["Supported but partial", "Workbench-only", "Not supported", "Not verified against the production provider"], "tests": ["tests/contracts/test_compiler.py"] },
+    "vercel": { "page": "docs/providers/vercel.md", "labels": ["Supported but partial", "Not supported", "Not verified against the production provider"], "tests": ["tests/contracts/test_compiler.py"] }
+  },
+  "services": {
+    "http-targets": { "page": "docs/guides/http-targets.md", "tests": ["emulators/http-targets/test/protocol-test.mjs", "emulators/http-targets/test/feed-clock.test.mjs"] },
+    "mail": { "page": "docs/providers/local-mail.md", "tests": ["emulators/mail/test/protocol-test.sh"] },
+    "mysql": { "page": "docs/providers/databases.md", "tests": ["runtime/src/supervisor.test.mjs"] },
+    "postgres": { "page": "docs/providers/databases.md", "tests": ["runtime/src/supervisor.test.mjs"] },
+    "s3": { "page": "docs/providers/s3.md", "tests": ["emulators/s3/test/protocol-test.mjs"] }
+  }
+}

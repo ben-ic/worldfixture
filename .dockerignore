@@ -6,6 +6,8 @@
 dist
 index.html
 **/node_modules
+docs/.vitepress/cache
+docs/.vitepress/dist
 **/.DS_Store
 
 # WorldFixture local secret

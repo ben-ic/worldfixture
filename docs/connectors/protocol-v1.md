@@ -93,7 +93,7 @@ cannot arrive before its project and assignee exist.
 
 ## Seed
 
-Seed receives canonical packs from the compiled artifact. The request has one
+Seed receives canonical packs from the prepared artifact. The request has one
 `idempotency_key` derived from the artifact identity. A connector must treat a
 repeated key as the same operation and must not create duplicate records.
 Connector implementations should accept at least 8 MiB for a local seed request
