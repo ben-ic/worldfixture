@@ -1166,7 +1166,16 @@ function printVerbose(instance) {
     say();
     say("Timeline");
     say(`  ${timeline.total} scheduled arrivals, ${timeline.pending} pending`);
-    say(`  clock ${clock.running ? "running" : "stopped"}, next arrival at t+${Math.round((timeline.next_due_ms ?? 0) / 1000)}s`);
+    // `next_due_ms` IS NULL WHEN NOTHING IS PENDING, AND NULL IS NOT ZERO.
+    // `?? 0` turned an empty queue into "next arrival at t+0s" on the line right
+    // under "0 pending". Every shipped world drains inside ten minutes -- the
+    // last arrival is t+540s in v2, t+599s in v3 and t+600s in the retail world
+    // -- so any run left open past that printed a next arrival that was never
+    // coming.
+    const next = timeline.next_due_ms === null
+      ? "no arrivals left"
+      : `next arrival at t+${Math.round(timeline.next_due_ms / 1000)}s`;
+    say(`  clock ${clock.running ? "running" : "stopped"}, ${next}`);
   }
 
   say();
