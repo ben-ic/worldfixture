@@ -32,24 +32,39 @@ test("a reduced world does not report omitted services or projection-only Micros
   assert.equal(Object.hasOwn(result, "microsoft"), false);
 });
 
-test("Workbench browser bindings contain addresses but no credentials", () => {
-  assert.deepEqual(sanitizePublicBindings({
+// The bug this closes: the Target screen's "Copy .env" button copies this map,
+// and this map dropped every credential -- 15 of the 28 declared provider
+// bindings. A reader pasted it in and every provider call answered 401, with
+// nothing on the screen saying the file was half a file. The tokens are
+// synthetic, regenerated per run, printed by `worldfixture env` and already on
+// disk in `host-bindings.json`, so withholding them protected nothing.
+test("Workbench browser bindings carry the world's own credentials", () => {
+  const bindings = {
     NOTION_BASE_URL: "http://127.0.0.1:4716",
-    NOTION_ADMIN_BASE_URL: "http://127.0.0.1:4716",
     IMAP_HOST_PORT: "127.0.0.1:1143",
     IMAP_USERNAME: "maya@example.test",
-    SITE_BASE_URL: "http://127.0.0.1:8080",
     NOTION_TOKEN: "notion-rest-secret",
     NOTION_ADMIN_TOKEN: "notion-admin-secret",
     IMAP_PASSWORD: "mail-secret",
-    AWS_ACCESS_KEY: "access-key",
-  }), {
-    NOTION_BASE_URL: "http://127.0.0.1:4716",
-    NOTION_ADMIN_BASE_URL: "http://127.0.0.1:4716",
-    IMAP_HOST_PORT: "127.0.0.1:1143",
-    IMAP_USERNAME: "maya@example.test",
-    SITE_BASE_URL: "http://127.0.0.1:8080",
+    S3_SECRET_ACCESS_KEY: "access-key",
+  };
+
+  assert.deepEqual(sanitizePublicBindings(bindings), bindings,
+    "an application cannot authenticate against a world with the addresses alone");
+});
+
+// The connector token is not world data. It is the credential that writes into
+// the developer's own application, so it is the one binding the browser never
+// receives, whatever else travels.
+test("the connector token is the one binding the browser never receives", () => {
+  const result = sanitizePublicBindings({
+    SLACK_BASE_URL: "http://127.0.0.1:4711",
+    SLACK_TOKEN: "xoxb-world-token",
+    WORLDFIXTURE_TOKEN: "wf_local_deadbeef",
   });
+
+  assert.deepEqual(result, { SLACK_BASE_URL: "http://127.0.0.1:4711", SLACK_TOKEN: "xoxb-world-token" });
+  assert.equal(Object.hasOwn(result, "WORLDFIXTURE_TOKEN"), false);
 });
 
 test("provider links use the active browser binding and keep their resource path", () => {

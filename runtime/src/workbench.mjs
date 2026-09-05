@@ -616,11 +616,30 @@ function recordProviderEvent(instance, { type, source, actorId, evidence }) {
   return event;
 }
 
+// A WORLD'S OWN CREDENTIALS ARE WORLD DATA, AND THE READER NEEDS THEM.
+//
+// This used to keep only names ending `_BASE_URL`, `_HOST_PORT`, `_USERNAME` or
+// `_URL`, and drop anything containing TOKEN, SECRET, PASSWORD or KEY. That is
+// 15 of the 28 declared provider bindings withheld -- every `*_TOKEN`, the S3
+// access keys, the IMAP and SMTP passwords -- from a browser showing a synthetic
+// world running on loopback.
+//
+// It was not a safe default, it was a broken one. The Target screen offers
+// "Copy .env", and that button copies exactly this map: a reader pasted it into
+// their application, got base URLs with no credentials, and every provider call
+// answered 401 with nothing on the screen saying half the file was missing.
+// Meanwhile `worldfixture env` prints the same tokens in full, and they sit in
+// `host-bindings.json` on disk, so nothing was being protected.
+//
+// THE CONNECTOR TOKEN IS THE ONE EXCEPTION, and it is a different kind of thing.
+// It is not world data: it is the credential that writes into the developer's
+// own application, so it stays out of the browser and is read from
+// `.worldfixture/token` or the environment. The Target screen says so.
+const CONNECTOR_TOKEN = /^WORLDFIXTURE_TOKEN$/i;
+
 export function sanitizePublicBindings(bindings = {}) {
   return Object.fromEntries(Object.entries(bindings).filter(([name, value]) =>
-    typeof value === "string"
-    && /(?:_BASE_URL|_HOST_PORT|_USERNAME|_URL)$/i.test(name)
-    && !/(?:TOKEN|SECRET|PASSWORD|KEY|CREDENTIAL)/i.test(name)));
+    typeof value === "string" && !CONNECTOR_TOKEN.test(name)));
 }
 
 function publicBindings(stateDir, fallback) {
