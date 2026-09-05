@@ -31,6 +31,14 @@ jobs:
 
       - run: PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 
+      # `ensureImage` builds a missing service image on demand, inside whatever
+      # readiness budget the test allowed. That is fine on a machine that has
+      # built it once; on a runner with an empty cache, building Cyrus from a
+      # Debian base takes longer than cli.test.mjs's 300 seconds and 23 tests
+      # fail with `up never became ready` and no mention of an image build.
+      - name: Prepare the service images the tests start
+        run: node scripts/prepare-service-images.mjs
+
       - name: Runtime
         run: |
           npm --prefix runtime/workbench-ui ci
