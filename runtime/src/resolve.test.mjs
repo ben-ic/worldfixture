@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { loadManifests } from "./manifests.mjs";
 import { defaultEnvironment } from "./environments.mjs";
 import { resolveBindings } from "./bindings.mjs";
+import { prepareCredentials } from "./credentials.mjs";
 import { canonical, resolveEnvironment, serializeLock } from "./resolve.mjs";
 import { validate } from "./schema.mjs";
 
@@ -22,6 +23,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
 const MANIFESTS = loadManifests(join(ROOT, "emulators"));
 const GENERATED_SECRETS = join(mkdtempSync(join(tmpdir(), "worldfixture-secrets-")), "generated-secrets.json");
+const CREDENTIALS = await prepareCredentials({
+  lock: resolveEnvironment(defaultEnvironment("business.saas-company:v2", { includeS3: true, includeProviders: true, includePostgres: true, includeMySQL: true }), { manifests: MANIFESTS, artifactPath: ARTIFACT }),
+  artifactPath: ARTIFACT, stateDir: dirname(GENERATED_SECRETS), generatedSecretsPath: GENERATED_SECRETS,
+});
 
 const schema = (name) => JSON.parse(readFileSync(join(ROOT, "schemas", `${name}.schema.json`), "utf8"));
 
@@ -129,7 +134,7 @@ test("PostgreSQL supplies a complete application connection", () => {
   const result = resolveBindings(lock, {
     artifactPath: ARTIFACT,
     addressOf: () => ({ host: "127.0.0.1", port: 55432 }),
-    generatedSecretsPath: GENERATED_SECRETS,
+    credentials: CREDENTIALS,
   });
 
   assert.deepEqual(result.unresolved, []);
@@ -166,7 +171,7 @@ test("MySQL supplies a complete application connection", () => {
   const result = resolveBindings(lock, {
     artifactPath: ARTIFACT,
     addressOf: () => ({ host: "127.0.0.1", port: 33306 }),
-    generatedSecretsPath: GENERATED_SECRETS,
+    credentials: CREDENTIALS,
   });
 
   assert.deepEqual(result.unresolved, []);
@@ -241,7 +246,7 @@ test("the product image default includes providers and SeaweedFS but closes comp
   const s3 = resolveBindings(lock, {
     artifactPath: ARTIFACT,
     addressOf: () => ({ host: "127.0.0.1", port: 61006 }),
-    generatedSecretsPath: GENERATED_SECRETS,
+    credentials: CREDENTIALS,
   }).resolved;
   assert.match(s3.S3_ACCESS_KEY_ID.value, /^[0-9a-f]{48}$/);
   assert.match(s3.S3_SECRET_ACCESS_KEY.value, /^[0-9a-f]{48}$/);

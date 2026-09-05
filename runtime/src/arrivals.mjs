@@ -62,7 +62,7 @@ function channelById(world, channelId) {
 // This mirrors `submit()` in `commands.mjs` rather than calling it, because the
 // command row was already written by the scheduler: a scheduled arrival is one
 // command, and writing a second one would make the ledger claim two.
-async function chatMessage(db, arrival, { world, bindings, rules, commandId, now, fetchImpl = fetch, sendMail = postMail }) {
+async function chatMessage(db, arrival, { world, bindings, credentials, rules, commandId, now, fetchImpl = fetch, sendMail = postMail }) {
   const base = bindings.SLACK_BASE_URL;
   if (!base) return skipped("this instance did not start Slack");
 
@@ -72,7 +72,7 @@ async function chatMessage(db, arrival, { world, bindings, rules, commandId, now
   const channel = channelById(world, arrival.payload.channel_id);
   if (!channel) return skipped(`the world has no channel ${JSON.stringify(arrival.payload.channel_id)}`);
 
-  const token = tokenFor(author);
+  const token = tokenFor(author, credentials);
   const text = String(arrival.payload.text ?? "");
 
   const answer = await sendSlack(base, token, { channelName: channel.name, text }, { fetchImpl });

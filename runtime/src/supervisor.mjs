@@ -26,6 +26,8 @@ import { aggregate, waitFor } from "./readiness.mjs";
 import { allocate, environmentFor } from "./ports.mjs";
 import { openState, recordInstance, resetState } from "./state.mjs";
 import { serializeLock } from "./resolve.mjs";
+import { CREDENTIALS_FILE, prepareCredentials } from "./credentials.mjs";
+import { resolveBindings } from "./bindings.mjs";
 
 export class StartupError extends Error {
   constructor(code, message, detail = {}) {
@@ -110,11 +112,11 @@ class Log {
 // are installed only in the all-in-one image. The runner makes the choice
 // explicit: checkout runs use the service container; the image uses `command`
 // and never tries to start Docker inside Docker.
-function startChild(service, environment, { cwd, allocation, worldPath, runner, onExit }) {
+function startChild(service, environment, { cwd, allocation, worldPath, runner, onExit, credentialsPath }) {
   const log = new Log();
   const useContainer = Boolean(service.container) && runner !== "process";
   const { command, args, label } = useContainer
-    ? dockerInvocation(service, environment, { allocation, worldPath })
+    ? dockerInvocation(service, environment, { allocation, worldPath, credentialsPath })
     : { command: service.command?.[0], args: service.command?.slice(1), label: "process" };
 
   if (!command) {
@@ -127,7 +129,7 @@ function startChild(service, environment, { cwd, allocation, worldPath, runner, 
 
   const child = spawn(command, args, {
     cwd,
-    env: { ...process.env, ...(useContainer ? {} : environment) },
+    env: { ...process.env, ...environment },
     stdio: ["ignore", "pipe", "pipe"],
     // Its own process group, so shutdown can take the whole tree. A service that
     // supervises children of its own -- mail runs four -- otherwise leaves them.
@@ -144,7 +146,7 @@ function startChild(service, environment, { cwd, allocation, worldPath, runner, 
     log,
     exited: null,
     container: useContainer ? service.container.name : undefined,
-    launch: { service, environment, cwd, allocation, worldPath, runner },
+    launch: { service, environment, cwd, allocation, worldPath, runner, credentialsPath },
   };
 
   child.on("exit", (code, signal) => {
@@ -159,7 +161,7 @@ function startChild(service, environment, { cwd, allocation, worldPath, runner, 
 // the container's own lifetime. `--rm` and `--init` mean a stopped run leaves
 // neither a container nor a zombie, which is the same promise the process path
 // makes.
-function dockerInvocation(service, environment, { allocation, worldPath }) {
+function dockerInvocation(service, environment, { allocation, worldPath, credentialsPath }) {
   const spec = service.container;
   const args = ["run", "--rm", "--init", "--name", spec.name];
 
@@ -175,7 +177,8 @@ function dockerInvocation(service, environment, { allocation, worldPath }) {
     args.push("-v", `${worldPath}:${mount.target}:${mount.mode ?? "ro"}`);
   }
 
-  for (const [name, value] of Object.entries(environment)) args.push("-e", `${name}=${value}`);
+  if (credentialsPath) args.push("--mount", `type=bind,source=${credentialsPath},target=/worldfixture-credentials.json,readonly`);
+  for (const name of Object.keys(environment)) args.push("-e", name);
 
   args.push(spec.tag);
   return { command: "docker", args, label: `container ${spec.name}` };
@@ -226,24 +229,12 @@ export class Instance {
 
   // What `worldfixture status` reports, and what `up` prints a subset of.
   bindings() {
-    const bindings = {};
-
-    for (const [name, source] of Object.entries(this.lock.bindings)) {
-      const address = this.addressOf(source.service, source.port);
-      if (source.from === "port.url") bindings[name] = `http://${address.host}:${address.port}`;
-      else if (source.from === "port.host") bindings[name] = address.host;
-      else if (source.from === "port.port") bindings[name] = String(address.port);
-      else if (source.from === "port.host_port") bindings[name] = `${address.host}:${address.port}`;
-      else if (source.from === "port.connection_url") {
-        const url = new URL(`${source.scheme}://${address.host}:${address.port}`);
-        url.username = source.username;
-        url.password = source.password;
-        url.pathname = `/${source.database}`;
-        bindings[name] = url.toString();
-      } else bindings[name] = { from: source.from, pointer: source.pointer, person: source.person };
-    }
-
-    return bindings;
+    const { resolved } = resolveBindings(this.lock, {
+      artifactPath: this.artifactPath,
+      addressOf: (service, port) => this.addressOf(service, port),
+      credentials: this.credentials,
+    });
+    return Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]));
   }
 
   // Stop new work and terminate every child, then wait. SIGTERM to the process
@@ -427,7 +418,7 @@ export async function start(lock, {
   runner = "container",
   fixedPorts,
   runtimeToken = process.env.WORLDFIXTURE_TOKEN || randomUUID(),
-  generatedSecretsPath,
+  generatedSecretsPath = join(stateDir, "generated-secrets.json"),
   onSpawned,
   // Where a startup step that takes minutes says so. `ensureImage` has written
   // its "this happens once" line since it was added, and nothing ever carried
@@ -437,6 +428,8 @@ export async function start(lock, {
   onNotice,
 }) {
   verifyArtifact(lock, artifactPath);
+  const credentials = await prepareCredentials({ lock, artifactPath, stateDir, generatedSecretsPath });
+  const credentialsPath = join(stateDir, CREDENTIALS_FILE);
 
   // This is a new instance even when it reuses a state directory. A baseline
   // never follows another run or another lock.
@@ -452,6 +445,8 @@ export async function start(lock, {
 
   const children = [];
   const instance = new Instance({ lock, allocation, children, state, id, stateDir, readyTimeoutMs, runtimeToken });
+  instance.credentials = credentials;
+  instance.artifactPath = artifactPath;
 
   // Every reservation is released together, immediately before the first spawn,
   // so no child inherits a socket the supervisor is still holding.
@@ -501,14 +496,17 @@ export async function start(lock, {
         worldSha256,
         runtimeToken,
         statePath: stateDir,
-        generatedSecretsPath,
+        credentials,
       });
+      const usesCredentials = ["emulate", "mail"].includes(service.name);
+      if (usesCredentials) environment.WORLDFIXTURE_CREDENTIALS = useContainer ? "/worldfixture-credentials.json" : credentialsPath;
       children.push(
         startChild(service, environment, {
           cwd: join(serviceRoot, service.name),
           allocation,
           worldPath: artifactPath,
           runner,
+          credentialsPath: usesCredentials ? credentialsPath : undefined,
         }),
       );
     }

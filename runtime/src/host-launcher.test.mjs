@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { test } from "node:test";
 
 import {
@@ -182,10 +182,10 @@ test("the connector token is passed to Docker by name, never on the command line
     assert.equal(runArgs.some((argument) => argument.includes(token)), false);
     assert.equal(runEnvironment.WORLDFIXTURE_TOKEN, token);
     assert.equal(
-      runArgs.includes(`type=bind,source=${generatedSecretsPath},target=/state/project-generated-secrets.json`),
+      runArgs.includes(`type=bind,source=${dirname(generatedSecretsPath)},target=/project-private`),
       true,
     );
-    assert.equal(runArgs.includes("WORLDFIXTURE_GENERATED_SECRETS_PATH=/state/project-generated-secrets.json"), true);
+    assert.equal(runArgs.includes("WORLDFIXTURE_GENERATED_SECRETS_PATH=/project-private/generated-secrets.json"), true);
   } finally {
     rmSync(stateDir, { recursive: true, force: true });
   }

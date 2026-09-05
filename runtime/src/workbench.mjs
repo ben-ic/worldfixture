@@ -594,14 +594,16 @@ function overlayTokens(artifactPath) {
   return projection(artifactPath, "emulator-overlay").tokens ?? {};
 }
 
-function personBindings(bindings, artifactPath, person) {
+function personBindings(bindings, artifactPath, person, credentials) {
   const result = { ...bindings };
-  const slack = resolveToken(artifactPath, { profile: "slack.workspace.v1", person: person.id });
+  const slack = resolveToken(artifactPath, { profile: "slack.workspace.v1", person: person.id, credentials });
   if (slack.scope === "person") result.SLACK_TOKEN = slack.value;
   return result;
 }
 
 function requireProviderIdentity(artifactPath, provider, person) {
+  // Check the identity grant, not an authentication value. personBindings
+  // obtains the corresponding secret from this run's credential snapshot.
   const tokens = overlayTokens(artifactPath);
   if (provider === "slack" && tokens[`slack_token_${person.id}`]) return;
   if (provider === "github" && tokens.github_token?.login === person.github_login) return;
@@ -861,7 +863,7 @@ export async function startWorkbench(instance, {
   // The workspace-shared token is a different token string, so it carries its
   // own counter. Person-scoped WRITES still use that person's own token: acting
   // as somebody is exactly what must not be done with a shared credential.
-  const inspector = resolveToken(artifactPath, { profile: "slack.workspace.v1" });
+  const inspector = resolveToken(artifactPath, { profile: "slack.workspace.v1", credentials: instance.credentials });
   const asInspector = (bindings) => (inspector.value ? { ...bindings, SLACK_TOKEN: inspector.value } : bindings);
 
   // AND IT ASKS SLACK ONLY WHEN SOMETHING HAPPENED.
@@ -1052,7 +1054,7 @@ export async function startWorkbench(instance, {
         const input = await body(request);
         const person = personFor(world, input.person_id);
         requireProviderIdentity(artifactPath, "slack", person);
-        const personal = personBindings(bindings, artifactPath, person);
+        const personal = personBindings(bindings, artifactPath, person, instance.credentials);
         const listed = await providerJson(`${personal.SLACK_BASE_URL}/api/conversations.list`, personal.SLACK_TOKEN, {
           method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "limit=100",
         });

@@ -8,7 +8,7 @@ import { execFile, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const run = promisify(execFile);
@@ -399,8 +399,8 @@ export async function launchHostInstance({
       "--label", "org.worldfixture.instance=local",
       "--mount", `type=bind,source=${stateDir},target=/state`];
     if (generatedSecretsPath) {
-      args.push("--mount", `type=bind,source=${generatedSecretsPath},target=/state/project-generated-secrets.json`);
-      args.push("--env", "WORLDFIXTURE_GENERATED_SECRETS_PATH=/state/project-generated-secrets.json");
+      args.push("--mount", `type=bind,source=${dirname(generatedSecretsPath)},target=/project-private`);
+      args.push("--env", "WORLDFIXTURE_GENERATED_SECRETS_PATH=/project-private/generated-secrets.json");
     }
     // The token is passed by NAME, and its value is handed to Docker through the
     // child's environment instead of its argument list.

@@ -7,7 +7,7 @@
   "build": {
     "port": 4000,
     "readiness_path": "/.well-known/openid-configuration",
-    "generated_secrets": []
+    "generated_secrets": ["provider_tokens", "twilio_auth_token", "twilio_api_key_secrets", "clerk_passwords"]
   },
   "runtime_contract": {
     "backup_restore_adapter": {
@@ -35,9 +35,9 @@
       }
     ],
     "first_use_credential": {
-      "present": false,
-      "reveal": "normal_in_app_onboarding",
-      "rotation_supported": true,
+      "present": true,
+      "reveal": "worldfixture env or Workbench bindings",
+      "rotation_supported": false,
       "value_in_logs": false,
       "value_in_manifest": false
     },

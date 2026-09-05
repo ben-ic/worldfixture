@@ -11,7 +11,7 @@
 
 import { createServer } from "node:net";
 
-import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
+import { credential } from "./credentials.mjs";
 
 // A port the kernel says is free right now. There is an unavoidable race between
 // releasing it and a child binding it; holding the listener until the moment of
@@ -145,7 +145,7 @@ export function environmentFor(service, allocation, {
   worldSha256,
   runtimeToken,
   statePath,
-  generatedSecretsPath,
+  credentials,
 }) {
   // WHO PLAYS THE WORLD'S TIMELINE. The composer inherited a `setTimeout` that
   // inserted the world's scheduled Gmail arrival directly, from outside the
@@ -181,7 +181,7 @@ export function environmentFor(service, allocation, {
     let resolved = value.from === "constant"
       ? value.value
       : value.from === "generated"
-        ? readOrCreateGeneratedSecret(generatedSecretsPath, value.key)
+        ? credential(credentials, value.key)
         : sources[value.from];
     if (value.from === "capability.port.url" || value.from === "capability.port.host_port") {
       const assigned = allocation.get(`${value.service}/${value.port}`);

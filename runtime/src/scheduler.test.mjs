@@ -7,6 +7,7 @@
 // these writes is proved separately, against the one-container image.
 
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import test from "node:test";
 
 import { KINDS, deliverArrival } from "./arrivals.mjs";
@@ -16,6 +17,7 @@ import { forgetSlackCaches } from "./slack.mjs";
 import { eventsAfter, openState, resetState } from "./state.mjs";
 
 const T0 = 1_800_000_000_000;
+const CREDENTIALS = { values: { "token:slack_token_maya-chen": randomBytes(24).toString("hex") } };
 
 const WORLD = {
   id: "test.world",
@@ -47,6 +49,7 @@ function fresh() {
 function providers({ slackOk = true, mailOk = true, httpStatus = 200 } = {}) {
   const calls = [];
   const fetchImpl = async (url, options = {}) => {
+    if (String(url).includes("/api/")) assert.equal(options.headers.Authorization, `Bearer ${CREDENTIALS.values["token:slack_token_maya-chen"]}`);
     calls.push({ url: String(url), method: options.method ?? "GET", body: options.body });
     if (String(url).includes("/api/chat.postMessage")) {
       return new Response(JSON.stringify(slackOk
@@ -131,7 +134,7 @@ test("a chat arrival goes through the Slack Web API and becomes a fact", async (
   const stub = providers();
 
   const played = await playOne(db, pending(db)[0], {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SLACK_BASE_URL: "http://slack.test" },
     rules: [],
     now: () => T0,
@@ -165,7 +168,7 @@ test("a run of chat arrivals costs one Slack request each after the first", asyn
   armTimeline(db, WORLD);
   const stub = providers();
   const context = {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SLACK_BASE_URL: "http://slack.test" },
     rules: [],
     now: () => T0,
@@ -209,7 +212,7 @@ test("a scheduled message fires the causal rules, like a typed one", async () =>
 
   const delivered = [];
   const played = await playOne(db, pending(db)[0], {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SLACK_BASE_URL: "http://slack.test", SMTP_HOST_PORT: "127.0.0.1:2525" },
     rules,
     now: () => T0,
@@ -236,7 +239,7 @@ test("a mail arrival goes over SMTP and is recorded as received", async () => {
 
   const row = pending(db).find((entry) => entry.id === "c-mail");
   const played = await playOne(db, row, {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SMTP_HOST_PORT: "127.0.0.1:2525" },
     now: () => T0,
     sendMail: async (address, message) => sent.push({ address, message }),
@@ -264,7 +267,7 @@ test("via gmail uses the emulator's own messages.insert", async () => {
     kind: "incoming-email",
     payload: { via: "gmail", from_id: "priya-raman", to_id: "maya-chen", subject: "s", body_text: "b" },
   }, {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { GOOGLE_BASE_URL: "http://google.test", GOOGLE_TOKEN: "t" },
     commandId: "cmd_1",
     now: () => T0,
@@ -287,7 +290,7 @@ test("a webhook with no subscriber is skipped with the reason, not invented", as
 
   const played = await deliverArrival(db, {
     id: "pay", kind: "webhook", payload: { event: "finance.invoice.paid", amount_cents: 41200 },
-  }, { world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0, fetchImpl: stub.fetchImpl });
+  }, { world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0, fetchImpl: stub.fetchImpl });
 
   assert.equal(played.status, "skipped");
   assert.match(played.reason, /no webhook subscriber/);
@@ -302,7 +305,7 @@ test("a webhook with a subscriber is posted to it", async () => {
 
   const played = await deliverArrival(db, {
     id: "pay", kind: "webhook", payload: { url: "http://app.test/hooks", event: "finance.invoice.paid" },
-  }, { world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0, fetchImpl: stub.fetchImpl });
+  }, { world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0, fetchImpl: stub.fetchImpl });
 
   assert.equal(played.status, "delivered");
   assert.equal(stub.calls[0].url, "http://app.test/hooks");
@@ -317,7 +320,7 @@ test("an application event with no connector is skipped with the reason", async 
     kind: "application-event",
     payload: { kind: "task.completed", data: { task_id: "task-1" } },
   }, {
-    world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0,
+    world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
     applicationConnector: () => null,
   });
 
@@ -351,7 +354,7 @@ test("an application event is delivered through the connected app", async () => 
     kind: "application-event",
     payload: { kind: "task.completed", data: { task_id: "task-1" } },
   }, {
-    world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0, fetchImpl,
+    world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0, fetchImpl,
     applicationConnector: () => ({ baseUrl: "http://app.test", token: "secret" }),
   });
 
@@ -373,7 +376,7 @@ test("a chat arrival for a channel the world does not have is skipped by name", 
   const db = fresh();
   const played = await deliverArrival(db, {
     id: "x", kind: "chat-message", payload: { author_id: "maya-chen", channel_id: "channel-missing", text: "hi" },
-  }, { world: WORLD, bindings: { SLACK_BASE_URL: "http://slack.test" }, commandId: "cmd_1", now: () => T0 });
+  }, { world: WORLD, credentials: CREDENTIALS, bindings: { SLACK_BASE_URL: "http://slack.test" }, commandId: "cmd_1", now: () => T0 });
 
   assert.equal(played.status, "skipped");
   assert.match(played.reason, /no channel "channel-missing"/);
@@ -390,7 +393,7 @@ test("an arrival for a service this instance did not start is skipped, not faile
     ["s3-object", { bucket: "b", key: "k", body: "x" }],
   ]) {
     const played = await deliverArrival(db, { id: kind, kind, payload }, {
-      world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0,
+      world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
     });
     assert.equal(played.status, "skipped", kind);
     assert.match(played.reason, /did not start/, kind);
@@ -401,7 +404,7 @@ test("an arrival for a service this instance did not start is skipped, not faile
 test("an unknown kind is skipped by name rather than passing unremarked", async () => {
   const db = fresh();
   const played = await deliverArrival(db, { id: "x", kind: "telepathy", payload: {} }, {
-    world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0,
+    world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
   });
   assert.equal(played.status, "skipped");
   assert.match(played.reason, /cannot play a "telepathy" arrival yet/);
@@ -415,7 +418,7 @@ test("a provider that refuses is a failed arrival, recorded once and not retried
   const stub = providers({ slackOk: false });
 
   const played = await playOne(db, pending(db)[0], {
-    world: WORLD, bindings: { SLACK_BASE_URL: "http://slack.test" }, rules: [], now: () => T0, fetchImpl: stub.fetchImpl,
+    world: WORLD, credentials: CREDENTIALS, bindings: { SLACK_BASE_URL: "http://slack.test" }, rules: [], now: () => T0, fetchImpl: stub.fetchImpl,
   });
 
   assert.equal(played.status, "failed");
@@ -437,7 +440,7 @@ test("playDue plays everything due, in world order, and only once", async () => 
   const stub = providers();
   const sent = [];
   const context = {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SLACK_BASE_URL: "http://slack.test", SMTP_HOST_PORT: "127.0.0.1:2525" },
     rules: [],
     now: () => T0,
@@ -464,7 +467,7 @@ test("the loop ticks, suspends without stopping, and resumes", async () => {
   const played = [];
 
   const scheduler = startScheduler(db, {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SLACK_BASE_URL: "http://slack.test", SMTP_HOST_PORT: "127.0.0.1:2525" },
     rules: [],
     now: () => T0,
@@ -498,7 +501,7 @@ test("reset clears the schedule so the world can play its timeline again", async
   armTimeline(db, WORLD);
   const stub = providers();
   const context = {
-    world: WORLD,
+    world: WORLD, credentials: CREDENTIALS,
     bindings: { SLACK_BASE_URL: "http://slack.test", SMTP_HOST_PORT: "127.0.0.1:2525" },
     rules: [], now: () => T0, fetchImpl: stub.fetchImpl, sendMail: async () => {},
   };

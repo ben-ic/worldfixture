@@ -23,13 +23,25 @@ import { allocate, environmentFor, SINGLE_CONTAINER_PORTS } from "./ports.mjs";
 import { appendEvent, openState } from "./state.mjs";
 import { history, send, tokenFor } from "./slack.mjs";
 import { StartupError, start, verifyArtifact, worldPathFor } from "./supervisor.mjs";
-import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
+import { credential, prepareCredentials } from "./credentials.mjs";
+import { inbox } from "./imap.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
 const SERVICES = join(ROOT, "emulators");
 const MANIFESTS = loadManifests(SERVICES);
 const run = promisify(execFile);
+
+test("managed IMAP accepts the run password and rejects the old derived password", async () => {
+  const instance = await start(lockFor(["mail.imap.v1"]), { artifactPath: ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES });
+  try {
+    const address = instance.addressOf("mail", "imap");
+    const where = `${address.host}:${address.port}`;
+    const login = "maya@northstar-relay.worldfixture.test";
+    assert.ok((await inbox(where, { login, password: credential(instance.credentials, "mail-password:maya-chen") })).exists > 0);
+    await assert.rejects(() => inbox(where, { login, password: "maya-chen" }), /authentication|login|failed/i);
+  } finally { await instance.stop(); }
+});
 
 const scratch = [];
 after(() => scratch.forEach((path) => rmSync(path, { recursive: true, force: true })));
@@ -222,7 +234,7 @@ test("a required environment value with no source fails before anything starts",
   assert.throws(() => environmentFor(service, allocation, {}), /requires WORLDFIXTURE_WORLD_PATH/);
 });
 
-test("a generated service environment reuses its project credential", () => {
+test("a generated service environment reuses its project credential", async () => {
   const generatedSecretsPath = join(stateDir(), "generated-secrets.json");
   const service = {
     name: "postgres",
@@ -230,8 +242,9 @@ test("a generated service environment reuses its project credential", () => {
     environment: [{ name: "POSTGRES_PASSWORD", from: "generated", key: "postgres.password", required: true }],
   };
 
-  const first = environmentFor(service, new Map(), { generatedSecretsPath });
-  const second = environmentFor(service, new Map(), { generatedSecretsPath });
+  const credentials = await prepareCredentials({ lock: lockFor(["postgres.wire.v1"]), artifactPath: ARTIFACT, stateDir: stateDir(), generatedSecretsPath });
+  const first = environmentFor(service, new Map(), { credentials });
+  const second = environmentFor(service, new Map(), { credentials });
   assert.match(first.POSTGRES_PASSWORD, /^[0-9a-f]{48}$/);
   assert.equal(second.POSTGRES_PASSWORD, first.POSTGRES_PASSWORD);
 });
@@ -303,7 +316,7 @@ test("a started world answers the real provider API as a world person", async ()
   try {
     const response = await fetch(`${instance.bindings().SLACK_BASE_URL}/api/auth.test`, {
       method: "POST",
-      headers: { Authorization: "Bearer slack_token_maya-chen" },
+      headers: { Authorization: `Bearer ${tokenFor({ id: "maya-chen" }, instance.credentials)}` },
     });
     const body = await response.json();
     assert.equal(body.ok, true);
@@ -365,7 +378,7 @@ test("reset restores provider, HTTP and runtime state to the accepted start", as
   );
   const slack = instance.bindings().SLACK_BASE_URL;
   const site = instance.bindings().SITE_URL;
-  const token = tokenFor({ id: "maya-chen" });
+  const token = tokenFor({ id: "maya-chen" }, instance.credentials);
 
   try {
     const initialHistory = await history(slack, token, "release-2-8");
@@ -523,7 +536,6 @@ test("S3 starts as a container and answers its own protocol", async () => {
 
 test("world reset restarts resettable services and preserves MySQL data", async () => {
   const generatedSecretsPath = join(stateDir(), "generated-secrets.json");
-  const mysqlPassword = readOrCreateGeneratedSecret(generatedSecretsPath, "mysql.password");
   const instance = await start(lockFor(["mysql.wire.v1", "http.public-site.v1"]), {
     artifactPath: ARTIFACT,
     stateDir: stateDir(),
@@ -532,6 +544,7 @@ test("world reset restarts resettable services and preserves MySQL data", async 
     generatedSecretsPath,
   });
   const mysqlRecord = instance.children.find((record) => record.service === "mysql");
+  const mysqlPassword = credential(instance.credentials, "mysql.password");
   const httpRecord = instance.children.find((record) => record.service === "http-targets");
   const containerName = mysqlRecord.container;
   const query = async (sql) => {
@@ -570,7 +583,7 @@ test("Notion file uploads use the selected S3 service and reset with the world",
     const notion = instance.addressOf("emulate", "notion");
     const baseUrl = `http://${notion.host}:${notion.port}`;
     const headers = {
-      Authorization: "Bearer notion_token",
+      Authorization: `Bearer ${credential(instance.credentials, "token:notion_token")}`,
       "Notion-Version": "2026-03-11",
       "content-type": "application/json",
     };

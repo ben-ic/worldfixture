@@ -87,18 +87,22 @@ sub default_domain {
 }
 
 # The projection carries `password_ref` and never a secret. A file named by
-# WORLDFIXTURE_MAIL_PASSWORDS resolves the reference when the environment owns
-# real credentials. Without it the reference resolves to its own identifier, so
-# a first run needs no setup. That default is a local fixture convention for a
-# synthetic world inside the reserved `.test` domain. It is not a security
-# mechanism and it is not a secret store.
+# Managed runs require every password, including Cyrus admin, in their fixed
+# credential file. The legacy standalone adapter can use a password table or
+# derive fixture passwords; a managed run must never use that fallback.
 sub password_resolver {
-  my $path = $ENV{WORLDFIXTURE_MAIL_PASSWORDS};
+  my $managed = $ENV{WORLDFIXTURE_CREDENTIALS};
+  my $path = $managed || $ENV{WORLDFIXTURE_MAIL_PASSWORDS};
   my $table = {};
   if (defined $path && length $path) {
-    die "WORLDFIXTURE_MAIL_PASSWORDS is not readable: $path\n" unless -r $path;
-    $table = JSON::PP->new->utf8->decode(read_file($path));
-    die "WORLDFIXTURE_MAIL_PASSWORDS must hold a JSON object\n" unless ref $table eq "HASH";
+    die "mail credential file is not readable: $path\n" unless -r $path;
+    $table = eval { JSON::PP->new->utf8->decode(read_file($path)) };
+    die "invalid mail credential JSON\n" if $@;
+    if ($managed) {
+      die "invalid run credential format\n" unless ref $table eq "HASH" && ($table->{api_version} // "") eq "worldfixture.credentials/v1";
+      $table = $table->{values};
+    }
+    die "mail credentials must hold a JSON object\n" unless ref $table eq "HASH";
   }
   return sub {
     my ($ref) = @_;
@@ -109,6 +113,7 @@ sub password_resolver {
       die "password for $ref contains a control character\n" if $password =~ /[\x00-\x20\x7f]/;
       return $password;
     }
+    die "this run has no credential for $ref\n" if $managed;
     my $derived = $ref;
     $derived =~ s/^mail-password://;
     $derived =~ s/[^A-Za-z0-9._-]/-/g;

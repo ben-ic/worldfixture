@@ -127,7 +127,8 @@ test("up prints what the user received, and no internal orchestration", async ()
   assert.ok(!screen.includes("sha256"), "no digests on the first screen");
   assert.ok(!/protocol checks passed/.test(screen), "no readiness detail on the first screen");
   assert.ok(!/\(private\)/.test(screen), "no private back channels on the first screen");
-  assert.ok(!screen.includes("slack_token_maya-chen"), "credentials stay in env and the workbench");
+  const runCredentials = JSON.parse(readFileSync(join(state, "credentials.json"), "utf8"));
+  assert.ok(!Object.values(runCredentials.values).some(value => screen.includes(value)), "credentials stay in env and the workbench");
   assert.ok(!/Imap_(?:password|username)/.test(screen), "mail credentials stay in env and the workbench");
   assert.match(screen, new RegExp(`Application environment: ${app.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/\\.env\\.local`));
   const token = readFileSync(join(app, ".env.local"), "utf8").match(/^WORLDFIXTURE_TOKEN=(.+)$/m)?.[1];
@@ -415,12 +416,19 @@ test("env prints shell-safe bindings for the running instance", async () => {
     const { stdout } = await cli(["env", "--state", state]);
 
     assert.match(stdout, /^export SLACK_BASE_URL='http:\/\/127\.0\.0\.1:\d+'$/m);
-    assert.match(stdout, /^export SLACK_TOKEN='slack_token_maya-chen'$/m);
     assert.match(stdout, /^export GITHUB_BASE_URL='http:\/\/127\.0\.0\.1:\d+'$/m);
-    assert.match(stdout, /^export GITHUB_TOKEN='github_token'$/m);
     assert.match(stdout, /^export IMAP_HOST_PORT='127\.0\.0\.1:\d+'$/m);
     assert.match(stdout, /^export IMAP_USERNAME='maya@northstar-relay\.worldfixture\.test'$/m);
-    assert.match(stdout, /^export IMAP_PASSWORD='maya-chen'$/m);
+    const { stdout: json } = await cli(["env", "--state", state, "--json"]);
+    const bindings = JSON.parse(json);
+    const slack = await fetch(`${bindings.SLACK_BASE_URL}/api/auth.test`, { method: "POST", headers: { Authorization: `Bearer ${bindings.SLACK_TOKEN}` } }).then(response => response.json());
+    assert.equal(slack.ok, true);
+    assert.equal(slack.user, "mayac");
+    const github = await fetch(`${bindings.GITHUB_BASE_URL}/user`, { headers: { Authorization: `Bearer ${bindings.GITHUB_TOKEN}` } }).then(response => response.json());
+    assert.equal(github.login, "mayac");
+    assert.notEqual(bindings.IMAP_PASSWORD, "maya-chen");
+    const { stdout: secondTerminal } = await cli(["env", "--state", state, "--json"], { cwd: stateDir() });
+    assert.deepEqual(JSON.parse(secondTerminal), bindings);
     assert.match(stdout, /^export SMTP_HOST_PORT='127\.0\.0\.1:\d+'$/m);
     assert.match(stdout, /# GITHUB_TOKEN is a shared token, not maya-chen's/);
     assert.ok(!stdout.includes("could not be resolved"));

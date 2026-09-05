@@ -24,6 +24,7 @@ export function loadSeedConfig({
   seedPath = "seed.yaml",
   worldPath,
   sessionOverlay,
+  credentialsPath,
   log = () => {},
 } = {}) {
   let seed = readObject(seedPath, "YAML", (body) => parseYaml(body) ?? {});
@@ -35,11 +36,7 @@ export function loadSeedConfig({
     // sample workspace into it or retain the sample when the projection is
     // absent. This keeps separate worlds from sharing identities or content.
     seed.notion = structuredClone(overlay.notion ?? {});
-    for (const token of Object.keys(seed.tokens ?? {})) {
-      if ((token === "notion_token" || token.startsWith("notion_token_")) && !(token in (overlay.tokens ?? {}))) {
-        delete seed.tokens[token];
-      }
-    }
+    seed.tokens = structuredClone(overlay.tokens ?? {});
     // A compiled world owns provider identities and resources. Do not retain
     // the sample OAuth applications from seed.yaml when the world did not
     // declare them. Their fixed localhost callback URLs make a target app with
@@ -76,6 +73,27 @@ export function loadSeedConfig({
   if (sessionOverlay) {
     seed = deepMerge(seed, parseOverlay(sessionOverlay));
     log("session seed overlay applied");
+  }
+
+  if (credentialsPath) {
+    let credentials;
+    try { credentials = JSON.parse(readFileSync(credentialsPath, "utf8")); }
+    catch { throw new Error("cannot read this run's credentials; restore the file or restart the instance"); }
+    if (credentials.api_version !== "worldfixture.credentials/v1") throw new Error("invalid run credential format");
+    const value = reference => {
+      const secret = credentials.values?.[reference];
+      if (typeof secret !== "string" || !secret) throw new Error(`this run has no credential for ${reference}`);
+      return secret;
+    };
+    // The verified artifact contains identity references and permissions. Only
+    // this in-memory seed uses the secrets prepared by the runtime at startup.
+    seed.tokens = Object.fromEntries(Object.entries(seed.tokens ?? {}).map(([reference, subject]) => [value(`token:${reference}`), subject]));
+    if (seed.twilio?.account) seed.twilio.account.auth_token = value("twilio:account:auth_token");
+    for (const key of seed.twilio?.api_keys ?? []) key.secret = value(`twilio:api_key:${key.sid}`);
+    for (const user of seed.clerk?.users ?? []) {
+      if (user.password) user.password = value(`clerk:password:${user.email_addresses?.[0] ?? user.username}`);
+    }
+    if (credentials.values?.["token:demo_token"]) seed.worldfixture_google_token = value("token:demo_token");
   }
 
   return seed;

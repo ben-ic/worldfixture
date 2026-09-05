@@ -49,6 +49,7 @@ import { removeInjectedAtlasDefault } from "./overrides/mongoatlas-projects.mjs"
 import { removeInjectedAccounts } from "./overrides/injected-accounts.mjs";
 import { seedSlackHistory } from "./overrides/slack-history.mjs";
 import { seedGitHubIssues } from "./overrides/github-issues.mjs";
+import { withApiKeyAuth } from "./overrides/api-key-auth.mjs";
 import { startGmailPush } from "./plugins/gmail-push.mjs";
 import { scheduleArrivals } from "./plugins/arrivals.mjs";
 import { loadSeedConfig } from "./seed-config.mjs";
@@ -79,6 +80,7 @@ try {
     seedPath,
     worldPath: process.env.WORLDFIXTURE_WORLD_PATH,
     sessionOverlay: process.env.WORLDFIXTURE_SEED_OVERLAY,
+    credentialsPath: process.env.WORLDFIXTURE_CREDENTIALS,
     log,
   });
 } catch (err) {
@@ -100,8 +102,8 @@ function requested() {
   });
 }
 
-// Copied from upstream's own wiring: seeded tokens become the auth token map, ids
-// counting from 100, and an unseeded emulator still answers to `test_token_admin`.
+// Managed startup has already replaced artifact identity references with
+// project secrets. Keep each subject and its permissions when building the map.
 function tokenMap() {
   const tokens = {};
 
@@ -222,12 +224,10 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
     restoreTokenMap(serverTokens, saved.tokens);
   }
 
-  let fetchHandler = app.fetch;
+  let fetchHandler = withApiKeyAuth(app.fetch, { vendor, tokenMap: serverTokens, isKnownToken: token => loaded.isKnownToken?.(store, token) });
   let googlePrivateJwk;
   if (vendor === "google") {
-    const accessToken = googleSeedToken(seedConfig);
     const wrap = await createGoogleSigningOverride({
-      accessToken,
       privateJwk: acceptedSnapshot?.google_signing_key,
     });
     googlePrivateJwk = wrap.privateJwk;
@@ -248,6 +248,7 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
 // OAuth and Gmail must name the same seeded person. Token insertion order is
 // not an identity rule: the first token may belong to another vendor.
 function googleSeedToken(seed) {
+  if (seed?.worldfixture_google_token) return seed.worldfixture_google_token;
   const people = new Set((seed?.google?.users ?? []).map((user) => user.email).filter(Boolean));
   const match = Object.entries(seed?.tokens ?? {}).find(([, subject]) => people.has(subject?.login));
   if (!match) throw new Error("Google is seeded but no token resolves a Google user");
@@ -345,7 +346,7 @@ if (google) {
     log("gmail push not configured (no WORLDFIXTURE_PUBSUB_PUSH_URL) — watch will register and never deliver");
   }
 
-  const [firstToken] = Object.keys(seedConfig?.tokens ?? {});
+  const firstToken = googleSeedToken(seedConfig);
 
   // The runtime scheduler plays every timeline arrival when there is a runtime
   // above this process. Playing them here as well would deliver each one twice.

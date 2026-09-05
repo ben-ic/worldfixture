@@ -6,7 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { connectorTarget, ensureProject, readProject, readProjectToken } from "./project.mjs";
-import { readOrCreateGeneratedSecret } from "./generated-secrets.mjs";
+import { ensureGeneratedSecrets } from "./generated-secrets.mjs";
 
 test("up can create a project-local config, ignored state, and stable token", () => {
   const directory = mkdtempSync(join(tmpdir(), "worldfixture-project-"));
@@ -20,20 +20,21 @@ test("up can create a project-local config, ignored state, and stable token", ()
   assert.equal(readProjectToken(directory), first.token);
   assert.equal(second.token, first.token);
   assert.equal(statSync(join(directory, ".worldfixture/token")).mode & 0o777, 0o600);
-  assert.equal(statSync(join(directory, ".worldfixture/generated-secrets.json")).mode & 0o777, 0o600);
   assert.match(readFileSync(join(directory, ".worldfixture/.gitignore"), "utf8"), /^\*$/m);
   assert.match(readFileSync(join(directory, ".worldfixture/.gitignore"), "utf8"), /^!project\.json$/m);
   assert.match(readFileSync(join(directory, ".dockerignore"), "utf8"), /^\/\.worldfixture\/token$/m);
-  assert.match(readFileSync(join(directory, ".dockerignore"), "utf8"), /^\/\.worldfixture\/generated-secrets\.json$/m);
+  assert.match(readFileSync(join(directory, ".dockerignore"), "utf8"), /^\/\.worldfixture\/generated-secrets\.json\*$/m);
+  assert.match(readFileSync(join(directory, ".dockerignore"), "utf8"), /^\/\.worldfixture\/runs$/m);
 });
 
-test("generated credentials are stable in one project and different in another", () => {
+test("generated credentials are stable in one project and different in another", async () => {
   const firstProject = ensureProject(mkdtempSync(join(tmpdir(), "worldfixture-secrets-a-")));
   const secondProject = ensureProject(mkdtempSync(join(tmpdir(), "worldfixture-secrets-b-")));
 
-  const first = readOrCreateGeneratedSecret(firstProject.generatedSecretsPath, "postgres.password");
-  assert.equal(readOrCreateGeneratedSecret(firstProject.generatedSecretsPath, "postgres.password"), first);
-  assert.notEqual(readOrCreateGeneratedSecret(secondProject.generatedSecretsPath, "postgres.password"), first);
+  const first = (await ensureGeneratedSecrets(firstProject.generatedSecretsPath, ["postgres.password"]))["postgres.password"];
+  assert.equal((await ensureGeneratedSecrets(firstProject.generatedSecretsPath, ["postgres.password"]))["postgres.password"], first);
+  assert.notEqual((await ensureGeneratedSecrets(secondProject.generatedSecretsPath, ["postgres.password"]))["postgres.password"], first);
+  assert.equal(statSync(firstProject.generatedSecretsPath).mode & 0o777, 0o600);
   assert.match(first, /^[0-9a-f]{48}$/);
 });
 

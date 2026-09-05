@@ -100,8 +100,7 @@ export async function inbox(address, { login, password, mailbox = "INBOX", limit
 
   try {
     await session.greeting();
-    // The world's passwords are fixture references, never secrets, and the
-    // projection carries the reference rather than a value.
+    // The caller resolves the artifact's reference from the run credentials.
     await session.send(`LOGIN "${login}" "${password}"`);
 
     const selected = await session.send(`SELECT "${mailbox}"`);

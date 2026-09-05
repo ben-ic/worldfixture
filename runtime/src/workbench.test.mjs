@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import test from "node:test";
 import { join } from "node:path";
@@ -20,6 +21,7 @@ import {
 } from "./workbench.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
+const CREDENTIALS = { values: { "token:slack_token": randomBytes(24).toString("hex") } };
 
 test("a reduced world does not report omitted services or projection-only Microsoft data", async () => {
   const result = await providerOverview({ MICROSOFT_BASE_URL: "http://127.0.0.1:1" }, join(ROOT, "dist/business.saas-company.v3"), {
@@ -201,7 +203,7 @@ test("Workbench enforces the reveal switch and sends no-store reveal responses",
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   const providerUrl = `http://127.0.0.1:${provider.address().port}`;
   const state = { prepare: () => ({ get: () => ({ seq: 0 }) }) };
-  const instance = { state, applicationBindings: { NOTION_BASE_URL: providerUrl, NOTION_TOKEN: "notion-token" }, bindings: () => ({}) };
+  const instance = { state, credentials: CREDENTIALS, applicationBindings: { NOTION_BASE_URL: providerUrl, NOTION_TOKEN: "notion-token" }, bindings: () => ({}) };
   const options = { artifactPath: join(ROOT, "dist/business.saas-company.v3"), stateDir: ROOT };
   const disabled = await startWorkbench(instance, { ...options, revealWebhookSecrets: false });
   const enabled = await startWorkbench(instance, { ...options, revealWebhookSecrets: true });
@@ -312,7 +314,7 @@ test("Slack history names its authors from the provider's own member list", asyn
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   const providerUrl = `http://127.0.0.1:${provider.address().port}`;
   const state = { prepare: () => ({ get: () => ({ seq: 0 }) }) };
-  const instance = { state, applicationBindings: { SLACK_BASE_URL: providerUrl, SLACK_TOKEN: "slack-token" }, bindings: () => ({}) };
+  const instance = { state, credentials: CREDENTIALS, applicationBindings: { SLACK_BASE_URL: providerUrl, SLACK_TOKEN: "slack-token" }, bindings: () => ({}) };
   const workbench = await startWorkbench(instance, { artifactPath: join(ROOT, "dist/business.saas-company.v3"), stateDir: ROOT });
   try {
     const result = await (await fetch(`${workbench.url}/api/provider/slack?channel=C000000001`)).json();

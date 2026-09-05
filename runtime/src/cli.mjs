@@ -24,6 +24,7 @@ import { submit } from "./commands.mjs";
 import { inbox } from "./imap.mjs";
 import { openState } from "./state.mjs";
 import { resolveBindings, shellQuote } from "./bindings.mjs";
+import { credential, readRunCredentials } from "./credentials.mjs";
 import { aggregate, probe } from "./readiness.mjs";
 import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
 import { requestReset, serveControl } from "./control.mjs";
@@ -532,7 +533,7 @@ async function runApplication(argv) {
   const { resolved } = resolveBindings(found.lock, {
     addressOf: addressReader(found.lock, found.bindings, stateDir),
     artifactPath,
-    generatedSecretsPath: paths(parsed.flags).generatedSecretsPath,
+    credentials: readRunCredentials(stateDir, found.lock.world),
   });
   const environment = Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]));
   if (!found.bindings.WORLDFIXTURE_TOKEN) {
@@ -699,7 +700,7 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
   const application = resolveBindings(lock, {
     addressOf: (service, port) => instance.addressOf(service, port),
     artifactPath,
-    generatedSecretsPath,
+    credentials: instance.credentials,
   });
   if (application.unresolved.length > 0) {
     await workbench.close();
@@ -902,6 +903,7 @@ function armInstanceTimeline(instance, world, { bindings, stateDir, verbose }) {
   const scheduler = startScheduler(instance.state, {
     world,
     bindings,
+    credentials: instance.credentials,
     rules: instance.lock.rules ?? [],
     now: () => Date.now(),
     applicationConnector: () => {
@@ -969,8 +971,7 @@ function printReadyBindings(world, bindings, stateDir) {
   say();
 
   const visibleBindings = Object.entries(bindings).filter(([name, value]) => {
-    const isCredential = name.endsWith("_TOKEN") || name.endsWith("_USERNAME") || name.endsWith("_PASSWORD");
-    return typeof value === "string" && !isCredential;
+    return bindingCanBePrinted(name, value);
   });
   const bindingWidth = Math.max(12, ...visibleBindings.map(([name]) => label(name).length + 2));
   for (const [name, value] of visibleBindings) say(`${pad(label(name), bindingWidth)}${value}`);
@@ -1147,6 +1148,12 @@ const NAMES = { github: "GitHub", s3: "S3", smtp: "SMTP", imap: "IMAP", http: "H
 function label(name) {
   const stem = name.replace(/_(BASE_URL|URL|HOST_PORT|TOKEN)$/, "").toLowerCase();
   return NAMES[stem] ?? stem.replace(/^./, (character) => character.toUpperCase());
+}
+
+export function bindingCanBePrinted(name, value) {
+  if (typeof value !== "string" || /(?:^|_)(?:TOKEN|USERNAME|PASSWORD|SECRET|ACCESS_KEY)(?:_|$)/i.test(name)) return false;
+  try { if (new URL(value).password) return false; } catch { /* Not a URL. */ }
+  return true;
 }
 
 function printVerbose(instance) {
@@ -1375,7 +1382,7 @@ async function slack({ flags, positional }) {
     return;
   }
 
-  const token = tokenFor(person);
+  const token = tokenFor(person, readRunCredentials(stateDir, world));
 
   if (subcommand === "send") {
     const channel = findChannel(world, flags.channel ?? "");
@@ -1561,7 +1568,7 @@ async function env({ flags }) {
   const { resolved, unresolved } = resolveBindings(lock, {
     addressOf: addressReader(lock, bindings, stateDir),
     artifactPath,
-    generatedSecretsPath: paths(flags).generatedSecretsPath,
+    credentials: readRunCredentials(stateDir, lock.world),
   });
   if (flags.json) {
     say(JSON.stringify(Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]))));
@@ -1620,7 +1627,7 @@ async function mail({ flags, positional }) {
   // here reads Cyrus's files.
   const result = await inbox(bindings.IMAP_HOST_PORT, {
     login: account.login,
-    password: derivePassword(account.password_ref),
+    password: credential(readRunCredentials(stateDir, world), account.password_ref),
     mailbox: flags.folder ?? "INBOX",
     limit: Number(flags.limit ?? 10),
   });
@@ -1631,16 +1638,6 @@ async function mail({ flags, positional }) {
     say(`  ${(message.headers.from ?? "?").slice(0, 44).padEnd(46)}${message.headers.subject ?? ""}`);
     if (message.headers.date) say(`  ${" ".repeat(46)}${message.headers.date}`);
   }
-}
-
-// The projection carries `password_ref` and never a secret. With no environment
-// table to resolve it against, the service derives the password from the
-// reference itself, and a client has to derive it the same way. Kept beside the
-// only caller and mirroring `world-mail.pl`'s `password_resolver`, prefix strip
-// and character class exactly; a first run needs no setup, and this is a local
-// fixture convention for a synthetic world, not a secret store.
-function derivePassword(reference) {
-  return reference.replace(/^mail-password:/, "").replace(/[^A-Za-z0-9._-]/g, "-");
 }
 
 function accountFor(artifactPath, person) {

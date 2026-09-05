@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { credential } from "./credentials.mjs";
 
 // A thin Slack client, over the real Slack Web API.
 //
@@ -90,11 +91,10 @@ export async function identity(baseUrl, token, options = {}) {
   return identityCache.get(key);
 }
 
-export function tokenFor(person) {
-  // The token map the compiler writes names the person, which is what makes a
-  // world person able to act as themselves. Every token once resolved to the
-  // emulator's default admin instead.
-  return `slack_token_${person.id}`;
+export function tokenFor(person, credentials) {
+  // This is an artifact identity reference, never the bearer token. A missing
+  // identity must fail instead of becoming the emulator's default admin.
+  return credential(credentials, `token:slack_token_${person.id}`);
 }
 
 // Who the world grants a Slack token, read from the overlay rather than guessed.

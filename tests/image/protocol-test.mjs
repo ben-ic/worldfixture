@@ -20,12 +20,22 @@ const image = process.env.WORLDFIXTURE_IMAGE ?? "worldfixture:local";
 const container = process.env.TEST_CONTAINER_NAME ?? `worldfixture-image-protocol-${process.pid}`;
 const providerPorts = [4701, 4702, 4703, 4704, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4713, 4714];
 const ports = [...providerPorts, 8080, 2525, 1143, 61006];
+const hostPorts = new Map();
+
+// Keep the image's fixed internal ports, but let Docker allocate free host
+// ports so this gate can run beside a developer's existing world.
+function fetch(input, options) {
+  const url = new URL(input);
+  url.port = String(hostPorts.get(Number(url.port)) ?? url.port);
+  return globalThis.fetch(url, options);
+}
 
 async function docker(args, options = {}) {
   return run("docker", args, { maxBuffer: 8 * 1024 * 1024, ...options });
 }
 
 function greeting(port, expected) {
+  port = hostPorts.get(port) ?? port;
   return new Promise((resolve, reject) => {
     const socket = connect(port, "127.0.0.1");
     const fail = (error) => {
@@ -44,6 +54,7 @@ function greeting(port, expected) {
 }
 
 function refuses(port) {
+  port = hostPorts.get(port) ?? port;
   return new Promise((resolve, reject) => {
     const socket = connect(port, "127.0.0.1");
     socket.setTimeout(2_000, () => {
@@ -64,7 +75,7 @@ function refuses(port) {
 let output = "";
 const child = spawn("docker", [
   "run", "--rm", "--name", container,
-  ...ports.flatMap((port) => ["-p", `127.0.0.1:${port}:${port}`]),
+  ...ports.flatMap((port) => ["-p", `127.0.0.1:0:${port}`]),
   image,
 ], { stdio: ["ignore", "pipe", "pipe"] });
 
@@ -96,6 +107,9 @@ try {
     child.once("exit", (code) => reject(new Error(`image exited ${code}:\n${output}`)));
   });
 
+  const mappings = JSON.parse((await docker(["inspect", container, "--format", "{{json .NetworkSettings.Ports}}"])).stdout);
+  for (const port of ports) hostPorts.set(port, Number(mappings[`${port}/tcp`][0].HostPort));
+
   assert.match(output, /S3\s+http:\/\/127\.0\.0\.1:61006/);
   assert.match(output, /SMTP\s+127\.0\.0\.1:2525/);
   assert.match(output, /IMAP\s+127\.0\.0\.1:1143/);
@@ -111,16 +125,16 @@ try {
   // the service-owned readiness checks at the product boundary and compare a
   // response body, so the composer's generic JSON 404 cannot pass the gate.
   for (const [port, path, expected] of [
-    [4701, "/v1/customers", '"object":"list"'],
+    [4701, "/v1/customers", '"type":"authentication_error"'],
     [4702, "/v2/user", "not_authenticated"],
     [4705, "/.well-known/openid-configuration", "authorization_endpoint"],
     [4706, "/v1.0/me", "InvalidAuthenticationToken"],
-    [4707, "/api/atlas/v2/groups", '"results"'],
+    [4707, "/api/atlas/v2/groups", '"errorCode":"UNAUTHORIZED"'],
     [4708, "/api/v1/users", "E0000004"],
-    [4709, "/domains", '"object":"list"'],
+    [4709, "/domains", '"name":"authentication_error"'],
     [4710, "/auth/keys", '"keys"'],
     [4712, "/v1/users", "UNAUTHORIZED"],
-    [4713, "/graphql", "GraphQL query is required"],
+    [4713, "/graphql", "UNAUTHENTICATED"],
     [4714, "/2010-04-01/Accounts.json", "20003"],
   ]) {
     const response = await fetch(`http://127.0.0.1:${port}${path}`);
@@ -179,18 +193,23 @@ try {
     assert.match(environment.stdout, new RegExp(`^export ${name}_BASE_URL=`, "m"), name);
     assert.match(environment.stdout, new RegExp(`^export ${name}_TOKEN=`, "m"), name);
   }
-  assert.match(environment.stdout, /^export GOOGLE_TOKEN='demo_token'$/m);
+  const googleToken = /^export GOOGLE_TOKEN='([^']+)'$/m.exec(environment.stdout)?.[1];
+  assert.ok(googleToken);
+  assert.notEqual(googleToken, "demo_token");
+  const identity = await fetch("http://127.0.0.1:4705/oauth2/v2/userinfo", { headers: { Authorization: `Bearer ${googleToken}` } });
+  assert.equal((await identity.json()).email, "maya@northstar-relay.worldfixture.test");
+  assert.equal((await fetch("http://127.0.0.1:4705/oauth2/v2/userinfo", { headers: { Authorization: "Bearer demo_token" } })).status, 401);
   assert.ok(!environment.stdout.includes("could not be resolved"));
 
   // Keep exact protocol results from the accepted start. Reset must restore
   // these bytes, not only remove the one mutation this test knows about.
   const initialSlack = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "history",
-    "--as", "jon", "--channel", "release-3-2", "--state", "/state",
+    "--as", "jon-bell", "--channel", "release-3-2", "--state", "/state",
   ]);
   const initialInbox = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "mail", "inbox",
-    "--as", "jon", "--state", "/state",
+    "--as", "jon-bell", "--state", "/state",
   ]);
   // The page that changes between requests is the one the world gave
   // `request_variants`. Reading it from the artifact keeps this gate working
@@ -206,7 +225,7 @@ try {
 
   const sent = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "send",
-    "--as", "maya", "--channel", "release-3-2", "--state", "/state", "Image gate passed",
+    "--as", "maya-chen", "--channel", "release-3-2", "--state", "/state", "Image gate passed",
   ]);
   assert.match(sent.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
   const changedPage = await fetch(changingUrl).then((response) => response.text());
@@ -222,15 +241,19 @@ try {
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "reset", "--state", "/state",
   ], { timeout: 180_000 });
   assert.match(reset.stdout, /World restored exactly across 4 services/);
+  const restoredEnvironment = await docker([
+    "exec", container, "node", "runtime/bin/worldfixture.mjs", "env", "--state", "/state",
+  ]);
+  assert.equal(restoredEnvironment.stdout, environment.stdout, "reset changed the run credentials");
 
   const restoredSlack = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "history",
-    "--as", "jon", "--channel", "release-3-2", "--state", "/state",
+    "--as", "jon-bell", "--channel", "release-3-2", "--state", "/state",
   ]);
   assert.equal(restoredSlack.stdout, initialSlack.stdout);
   const restoredInbox = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "mail", "inbox",
-    "--as", "jon", "--state", "/state",
+    "--as", "jon-bell", "--state", "/state",
   ]);
   assert.equal(restoredInbox.stdout, initialInbox.stdout);
   assert.equal(
@@ -261,12 +284,12 @@ try {
   // The connected rule remains active after restore.
   const sentAfterReset = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "send",
-    "--as", "maya", "--channel", "release-3-2", "--state", "/state", "Image gate passed after reset",
+    "--as", "maya-chen", "--channel", "release-3-2", "--state", "/state", "Image gate passed after reset",
   ]);
   assert.match(sentAfterReset.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
   const inboxAfterReset = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "mail", "inbox",
-    "--as", "jon", "--state", "/state",
+    "--as", "jon-bell", "--state", "/state",
   ]);
   assert.match(inboxAfterReset.stdout, /\[#release-3-2\] Maya Chen posted/);
 

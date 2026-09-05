@@ -15,7 +15,7 @@
   "build": {
     "port": 8025,
     "readiness_path": "/readyz",
-    "generated_secrets": []
+    "generated_secrets": ["mail_passwords", "cyrus_admin_password"]
   },
   "runtime_contract": {
     "backup_restore_adapter": {
@@ -36,11 +36,12 @@
       {"name": "WORLDFIXTURE_MAILBOX_LISTEN", "owner": "set_by_platform", "phase": "runtime"},
       {"name": "WORLDFIXTURE_HEALTH_LISTEN", "owner": "set_by_platform", "phase": "runtime"},
       {"name": "WORLDFIXTURE_WORLD_PATH", "owner": "set_by_platform", "phase": "runtime"},
-      {"name": "WORLDFIXTURE_MAIL_PASSWORDS", "owner": "set_by_platform", "phase": "runtime"}
+      {"name": "WORLDFIXTURE_MAIL_PASSWORDS", "owner": "set_by_platform", "phase": "runtime"},
+      {"name": "WORLDFIXTURE_CREDENTIALS", "owner": "set_by_platform", "phase": "runtime"}
     ],
     "first_use_credential": {
       "present": true,
-      "reveal": "resolved_from_projection_password_ref",
+      "reveal": "worldfixture env or Workbench bindings",
       "rotation_supported": false,
       "value_in_logs": false,
       "value_in_manifest": false

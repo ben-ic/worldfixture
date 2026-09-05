@@ -34,14 +34,14 @@
         "port": "stripe",
         "protocol": "http",
         "path": "/v1/customers",
-        "expect": "\"object\":\"list\"",
+        "expect": "\"type\":\"authentication_error\"",
         "kind": "protocol"
       },
       {
         "port": "resend",
         "protocol": "http",
         "path": "/domains",
-        "expect": "\"object\":\"list\"",
+        "expect": "\"name\":\"authentication_error\"",
         "kind": "protocol"
       },
       {
@@ -76,7 +76,7 @@
         "port": "mongoatlas",
         "protocol": "http",
         "path": "/api/atlas/v2/groups",
-        "expect": "\"results\"",
+        "expect": "\"errorCode\":\"UNAUTHORIZED\"",
         "kind": "protocol"
       },
       {
@@ -90,7 +90,7 @@
         "port": "linear",
         "protocol": "http",
         "path": "/graphql",
-        "expect": "GraphQL query is required",
+        "expect": "UNAUTHENTICATED",
         "kind": "protocol"
       },
       {
