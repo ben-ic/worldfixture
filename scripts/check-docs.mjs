@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, extname, join, normalize, relative, resolve } from "node:path";
+import { dirname, extname, join, relative, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
 const docs = join(root, "docs");

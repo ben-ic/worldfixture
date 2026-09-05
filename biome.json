@@ -8,6 +8,7 @@
       "emulators/**/src/**",
       "examples/**/*.mjs",
       "examples/**/*.js",
+      "scripts/**",
       "!**/node_modules/**",
       "!**/dist/**"
     ]
