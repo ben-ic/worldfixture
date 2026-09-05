@@ -11,6 +11,7 @@ import {
   selectNotionWebhookReveal,
   slackChannelTopic,
   startWorkbench,
+  stripePricesWithInterval,
   workbenchWebhookSecretRevealEnabled,
 } from "./workbench.mjs";
 
@@ -151,6 +152,29 @@ test("a blank provider channel topic falls through to the topic the world declar
   assert.equal(slackChannelTopic({ name: "general", topic: { value: "Release 3.2" } }, declared), "Release 3.2");
   assert.equal(slackChannelTopic({ name: "general" }, declared), declared.topic);
   assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, undefined), undefined);
+});
+
+// Closes: the product catalogue printed the literal word "recurring" in its
+// INTERVAL column. `GET /v1/prices` answers `type: "recurring"` and carries no
+// `recurring` object, while the same provider returns the complete price --
+// `recurring: {interval: "month"}` -- inside a subscription item.
+test("a listed Stripe price takes its billing interval from the provider's expanded copy", () => {
+  const listed = [
+    { id: "price_elmgrove", product: "prod_team", currency: "usd", unit_amount: 45700, type: "recurring" },
+    { id: "price_unsubscribed", product: "prod_team", currency: "usd", unit_amount: 1000, type: "recurring" },
+    { id: "price_setup", product: "prod_setup", currency: "usd", unit_amount: 500, type: "one_time" },
+  ];
+  const subscriptions = [
+    { id: "sub_elmgrove", items: { data: [{ price: { id: "price_elmgrove", recurring: { interval: "month", interval_count: 1 } } }] } },
+  ];
+  const [team, unsubscribed, setup] = stripePricesWithInterval(listed, subscriptions);
+  assert.equal(team.recurring.interval, "month");
+  assert.equal(team.unit_amount, 45700);
+  // A price the provider never expands stays blank rather than borrowing an
+  // interval the API would not confirm.
+  assert.equal(unsubscribed.recurring, undefined);
+  assert.equal(setup.recurring, undefined);
+  assert.equal(stripePricesWithInterval(undefined, undefined).length, 0);
 });
 
 // Closes: every Slack message was attributed to a raw member id. History

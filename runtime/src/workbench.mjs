@@ -299,13 +299,35 @@ async function optionalProviderList(baseUrl, token, path, ...keys) {
 // accepted projections are only used where a provider has no list operation.
 // One failed product read is settled separately in providerOverview, so a
 // broken optional surface cannot hide the rest of the world.
+// A LISTED PRICE HAS NO BILLING INTERVAL.
+//
+// `GET /v1/prices` answers `{type: "recurring", unit_amount, currency, ...}` and
+// carries no `recurring` object at all, so the product catalogue printed the
+// literal word "recurring" in its INTERVAL column. The same provider returns the
+// complete price inside a subscription item, `recurring: {interval: "month",
+// interval_count: 1, ...}`, and on business.saas-company.v3 that expanded copy
+// covers 24 of the 24 listed prices.
+//
+// The interval is taken from the provider's own expanded price rather than from
+// the accepted stripe projection, which also declares it: a price the world
+// never put on a subscription then stays honestly blank instead of borrowing a
+// declared interval the API would not confirm.
+export function stripePricesWithInterval(prices, subscriptions) {
+  const expanded = new Map((subscriptions ?? []).flatMap((subscription) =>
+    (subscription.items?.data ?? []).map((item) => item.price).filter((price) => price?.id).map((price) => [price.id, price])));
+  return (prices ?? []).map((price) => price.recurring
+    ? price
+    : { ...price, recurring: expanded.get(price.id)?.recurring });
+}
+
 async function stripeOverview(bindings) {
   const read = (path) => optionalProviderList(bindings.STRIPE_BASE_URL, bindings.STRIPE_TOKEN, path);
-  const [customers, products, prices, paymentIntents, charges, rawSubscriptions, rawInvoices] = await Promise.all([
+  const [customers, products, listedPrices, paymentIntents, charges, rawSubscriptions, rawInvoices] = await Promise.all([
     read("/v1/customers?limit=100"), read("/v1/products?limit=100"), read("/v1/prices?limit=100"),
     read("/v1/payment_intents?limit=100"), read("/v1/charges?limit=100"),
     read("/v1/subscriptions?limit=100&status=all"), read("/v1/invoices?limit=100"),
   ]);
+  const prices = stripePricesWithInterval(listedPrices, rawSubscriptions);
   const subscriptions = rawSubscriptions.map((subscription) => {
     const customer = customers.find((entry) => entry.id === subscription.customer);
     const price = subscription.items?.data?.[0]?.price;
