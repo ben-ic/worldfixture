@@ -1325,11 +1325,41 @@ def _document_object_key(document: dict[str, Any]) -> str:
     return f"documents/{document['id']}{suffix}"
 
 
+# The cloud vocabulary of `business.saas-company`, which was the only world when
+# this projection was written. Each is now a declared value with the reviewed
+# literal as its default, the same way `LEGACY_SLACK_BOTS` below is, so a second
+# world can own its cloud without moving the parity fixture's bytes.
+#
+# `LEGACY_OPERATOR_TEAMS` is the one that was measured wrong. The selector was
+# the bare literal `person["team"] == "engineering"`, and the v3 world names its
+# 16 internal teams `platform`, `reliability`, `exports`, `console` and so on --
+# none of them `engineering`. Its IAM users therefore collapsed to the single
+# primary person out of 99 organization members, and the `[:4]` cap below never
+# engaged at all.
+LEGACY_OPERATOR_TEAMS = ["engineering"]
+# A queue and a role are named after what the first world's product does. A world
+# that sells goods to people has neither an export pipeline nor a billing webhook,
+# and inherited both.
+LEGACY_QUEUES = [
+    {"name": "billing-events", "visibility_timeout": 30},
+    {"name": "export-jobs", "visibility_timeout": 120},
+    {"name": "export-jobs-dlq", "visibility_timeout": 30},
+]
+LEGACY_SERVICE_ROLES = [
+    {"role_name": "billing-webhook", "path": "/services/", "description": "Receives billing events"},
+    {"role_name": "export-worker", "path": "/services/", "description": "Processes customer exports"},
+]
+
+
 def _aws_projection(world: dict[str, Any]) -> dict[str, Any]:
     people, _ = _person_maps(world)
+    software = world.get("software", {})
     main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
     members = [person for person in world["people"] if person["organization_id"] == main_org["id"]]
-    operators = [person for person in members if person.get("primary") or person["team"] == "engineering"][:4]
+    # `.get("team")`, not `person["team"]`: a person without a team is not an
+    # operator, and used to be an unhandled KeyError raised from a projection.
+    operator_teams = set(software.get("operator_teams") or LEGACY_OPERATOR_TEAMS)
+    operators = [person for person in members if person.get("primary") or person.get("team") in operator_teams][:4]
     documents_bucket = f"{main_org['slug']}-documents"
     # Only documents the world actually declares become objects. The exports
     # bucket stays empty here because no world record declares anything in it.
@@ -1362,22 +1392,13 @@ def _aws_projection(world: dict[str, Any]) -> dict[str, Any]:
             ],
             "objects": objects,
         },
-        "sqs": {
-            "queues": [
-                {"name": "billing-events", "visibility_timeout": 30},
-                {"name": "export-jobs", "visibility_timeout": 120},
-                {"name": "export-jobs-dlq", "visibility_timeout": 30},
-            ]
-        },
+        "sqs": {"queues": copy.deepcopy(software.get("queues") or LEGACY_QUEUES)},
         "iam": {
             "users": [
                 {"user_name": person["github_login"], "path": "/people/", "create_access_key": False}
                 for person in operators
             ],
-            "roles": [
-                {"role_name": "billing-webhook", "path": "/services/", "description": "Receives billing events"},
-                {"role_name": "export-worker", "path": "/services/", "description": "Processes customer exports"},
-            ],
+            "roles": copy.deepcopy(software.get("service_roles") or LEGACY_SERVICE_ROLES),
         },
         "worldfixture_organization_id": main_org["id"],
     }

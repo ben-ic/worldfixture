@@ -12,7 +12,6 @@ from pathlib import Path
 from worldfixture_compiler import WorldError, build_world, bundle_world, load_world, validate_world
 from worldfixture_compiler.compiler import compile_world, rebase_world
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "worlds/business.saas-company.v2/world.json"
 
@@ -623,6 +622,81 @@ class WorldCompilerTest(unittest.TestCase):
         world["people"][0]["email"] = "maya@example.com"
         with self.assertRaisesRegex(WorldError, "unsafe person email"):
             validate_world(world)
+
+
+class CloudVocabularyTest(unittest.TestCase):
+    """A projection may not select on one world's team, queue and role names.
+
+    `_aws_projection` was written against `business.saas-company`, the only world
+    at the time, and kept its vocabulary as bare literals. Each is now a declared
+    value with the reviewed literal as its default, the same way
+    `LEGACY_SLACK_BOTS` and `LEGACY_TRACKER_TEAM` are.
+    """
+
+    def test_operators_come_from_the_teams_a_world_declares(self) -> None:
+        # The selector was `person["team"] == "engineering"`. The v3 world names
+        # its 16 internal teams platform, reliability, exports, console and so
+        # on, and none of them "engineering", so its IAM users collapsed to the
+        # single primary person out of 99 organization members -- the `[:4]` cap
+        # never engaged at all, because the filter collapsed first.
+        source = ROOT / "worlds/business.saas-company.v3/world.json"
+        if not source.is_file():
+            self.skipTest("no v3 world source")
+
+        world, _provenance = load_world(source)
+        self.assertNotIn("engineering", {person.get("team") for person in world["people"]})
+        self.assertEqual(1, len(compile_world(world)["projections"]["aws"]["iam"]["users"]))
+
+        world["software"]["operator_teams"] = ["platform", "reliability"]
+        users = compile_world(world)["projections"]["aws"]["iam"]["users"]
+
+        self.assertEqual(4, len(users), [user["user_name"] for user in users])
+
+    def test_a_person_without_a_team_is_not_an_operator(self) -> None:
+        # `person["team"]` was a bare subscript, so a person carrying no team
+        # raised a KeyError out of the AWS projection rather than simply not
+        # being selected. This calls the projection rather than compiling the
+        # world because `_notion_projection` still indexes `person["team"]` the
+        # same way at four sites, which is a separate, unfixed report.
+        from worldfixture_compiler.compiler import _aws_projection
+
+        world = copy.deepcopy(source_world())
+        for person in world["people"]:
+            person.pop("team", None)
+        users = _aws_projection(world)["iam"]["users"]
+
+        self.assertEqual(1, len(users), "only the primary person is left to select")
+
+    def test_the_reviewed_literals_are_still_the_default(self) -> None:
+        # v2 declares none of these and its bytes are the parity evidence, so
+        # the defaults have to reproduce exactly what the literals produced.
+        aws = compile_world(source_world())["projections"]["aws"]
+
+        self.assertEqual(
+            ["mayac", "jonbell", "lucasmeyer", "hanaito"],
+            [user["user_name"] for user in aws["iam"]["users"]],
+        )
+        self.assertEqual(
+            ["billing-events", "export-jobs", "export-jobs-dlq"],
+            [queue["name"] for queue in aws["sqs"]["queues"]],
+        )
+        self.assertEqual(
+            ["billing-webhook", "export-worker"],
+            [role["role_name"] for role in aws["iam"]["roles"]],
+        )
+
+    def test_a_world_owns_its_queues_and_service_roles(self) -> None:
+        # A world that sells goods to people has no export pipeline and no
+        # billing webhook, and inherited both from the first world's product.
+        world = copy.deepcopy(source_world())
+        world["software"]["queues"] = [{"name": "order-events", "visibility_timeout": 30}]
+        world["software"]["service_roles"] = [
+            {"role_name": "fulfilment", "path": "/services/", "description": "Packs orders"}
+        ]
+        aws = compile_world(world)["projections"]["aws"]
+
+        self.assertEqual(["order-events"], [queue["name"] for queue in aws["sqs"]["queues"]])
+        self.assertEqual(["fulfilment"], [role["role_name"] for role in aws["iam"]["roles"]])
 
 
 if __name__ == "__main__":
