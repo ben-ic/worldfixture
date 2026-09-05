@@ -45,6 +45,14 @@ below come from code inspection, tests, and checks against a running world.
 
 ### Security
 
+- Provider tokens and mail passwords are now generated per project before
+  startup. Artifacts retain readable identity references and permissions; the
+  compiler and parity fixtures are unchanged. Every running service and runtime
+  consumer uses the same private credential snapshot. Store writes are locked
+  and atomic; later commands cannot generate replacement secrets. This also
+  replaces declared Twilio secrets and Clerk passwords. Stripe, Resend, and
+  MongoDB Atlas now check API keys, and Linear no longer assigns an unknown
+  caller to the first admin. OAuth-issued tokens retain their own lifecycle.
 - **Postgres and MariaDB shared one password with every installation.** The
   manifests bound `worldfixture-local` as a constant, so the database password
   on your machine was the database password on everyone's. It is now 24 random
@@ -165,7 +173,7 @@ below come from code inspection, tests, and checks against a running world.
 - Package: `worldfixture@0.2.3` on npm, also tagged `latest`.
 - Image: `ghcr.io/ben-ic/worldfixture:0.2.3`, `linux/amd64` and `linux/arm64`,
   also tagged `latest`.
-- Digest: `sha256:db2ff56657139bc3f5a9a076e2d8508b352c6afda8a1a5e187874f09c262a2de`
+- Digest: `sha256:912d8be39685f08e517d2d78c9d8a6e18fc635e53231206c9c971ac686ed1661`
 
 ## 0.2.2
 

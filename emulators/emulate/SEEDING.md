@@ -6,6 +6,8 @@ The provider composer builds one seed object in this order:
 2. Merge the verified world projection from
    `$WORLDFIXTURE_WORLD_PATH/projections/emulator-overlay.json`.
 3. Merge the JSON object in `WORLDFIXTURE_SEED_OVERLAY`, when present.
+4. In a managed run, replace credential references with values from
+   `WORLDFIXTURE_CREDENTIALS`. A missing value stops startup.
 
 Later values replace earlier values. Objects merge recursively. Arrays replace
 arrays.
@@ -23,8 +25,8 @@ development fallback.
 
 ## Tokens
 
-The top-level `tokens` object maps each bearer token to a provider login and a
-scope list:
+In an artifact, the top-level `tokens` object maps each readable identity
+reference to a provider login and a scope list:
 
 ```yaml
 tokens:
@@ -34,7 +36,32 @@ tokens:
 ```
 
 The login must exist in the selected vendor seed. Use a separate token for each
-vendor identity. The composer refuses unknown bearer tokens.
+vendor identity. The compiler and `tests/parity` do not change for this scheme:
+the artifact keeps these references and the same bytes. Only a standalone
+composer without a credential file uses the references as bearer tokens.
+
+Managed startup generates the full credential set before services start. The
+project store is `.worldfixture/generated-secrets.json` (mode 0600, ignored by
+Git and Docker). Atomic replacement and a directory lock protect concurrent
+starts. Values are keyed by world identity and credential reference, not by
+artifact digest. They remain stable across launches and date changes. Different
+projects get different credentials, even when they use the same world.
+
+Each run gets a private `credentials.json` snapshot. Seeding, `worldfixture env`,
+Slack commands, arrivals, mail, and Workbench all use that snapshot. A second
+terminal must select the same project or `--state` directory. It must not create
+replacement credentials. A missing run file fails with a restore/restart error;
+a missing project store does not change a running service's accepted values.
+To recover a lost project store without changing credentials, restore its backup.
+Starting a new run with no project store generates a new set.
+
+Mail passwords, the Cyrus admin password, Twilio account/API-key secrets, and
+declared Clerk passwords follow the same rule. OAuth-issued access tokens keep
+their provider lifecycle; this scheme does not replace them with a seed token.
+The API-key boundary for Stripe, Resend, and MongoDB Atlas refuses unknown and
+anonymous requests. Linear GraphQL also refuses an unknown caller instead of
+using the first admin. This does not add production-grade provider authorization
+or change the separate S3 authentication limitation.
 
 ## Session overlay
 
