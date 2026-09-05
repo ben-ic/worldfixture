@@ -90,7 +90,7 @@ const USAGE = `worldfixture — a local world with real interfaces
   worldfixture up [world]        Start a world and print its bindings
   worldfixture up --world-path <dir>   Start a world artifact you built yourself
   worldfixture new <dir>         Copy the starter world, ready to edit
-  worldfixture build <source>    Compile a world source into an artifact
+  worldfixture build <source>    Prepare a versioned artifact from world JSON
   worldfixture validate <source> Check a world source without building it
   worldfixture open              Open this instance's Workbench in a browser
   worldfixture status            Show what a running instance is serving
@@ -1850,8 +1850,8 @@ const BUILD_USAGE = `worldfixture build <source> [--output <dir>]
   <source>   A directory holding world.json, or the world.json file itself
   --output   Where the artifact is written (default dist/<id>.<version>)
 
-The compiler runs inside the WorldFixture image, so building a world needs
-Docker and nothing else -- no Python, and no checkout of this repository.`;
+The artifact builder runs inside the WorldFixture image. Building a world needs
+Docker and nothing else -- no Python and no checkout of this repository.`;
 
 async function buildCommand({ flags, positional }) {
   const [source] = positional;
@@ -1923,7 +1923,7 @@ function stageWorldArtifact(builtPath, stateDir) {
     throw new BuildError(
       "not_a_world_artifact",
       `${builtPath} is not a built world artifact: it has no world.json and manifest.json`,
-      `Compile the source first: \`worldfixture build <source> --output ${builtPath}\`.`,
+      `Prepare the artifact first: \`worldfixture build <source> --output ${builtPath}\`.`,
     );
   }
 

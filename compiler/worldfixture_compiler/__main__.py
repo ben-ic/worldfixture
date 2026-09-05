@@ -15,7 +15,7 @@ def main() -> int:
     validate = commands.add_parser("validate", help="validate one source world")
     validate.add_argument("source", type=Path)
 
-    build = commands.add_parser("build", help="compile one source world")
+    build = commands.add_parser("build", help="prepare one world artifact from source JSON")
     build.add_argument("source", type=Path)
     build.add_argument("--output", required=True, type=Path)
 

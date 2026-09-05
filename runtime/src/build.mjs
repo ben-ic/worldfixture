@@ -1,5 +1,5 @@
-// `worldfixture build` and `worldfixture validate` — compile a world source
-// into an artifact.
+// `worldfixture build` and `worldfixture validate` prepare a world source as an
+// artifact.
 //
 // THE COMPILER RUNS IN THE PRODUCT IMAGE, NOT ON THE HOST. Using a world has
 // never needed a toolchain: the image ships prebuilt artifacts and `up` mounts
