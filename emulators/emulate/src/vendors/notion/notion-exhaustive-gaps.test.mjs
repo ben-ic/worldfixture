@@ -255,3 +255,40 @@ test("MCP identity and Skill adapters cover pagination and all available filters
   assert.equal(limited.has_more, true);
   assert.deepEqual(domain.mcpSearchSkills({ query: "support", teamspace_id: "61000000-0000-4000-8000-000000000002", limit: 50 }, actor).skills.map((item) => item.title), ["Support skill"]);
 });
+
+// Closes: `/v1/users` was the one paginated reader that validated neither of its
+// pagination parameters. `listUsers` took the RAW query string and coerced it with
+// `Number(pageSize) || 100`, so `?page_size=0` and `?page_size=abc` both returned
+// every user, and it had no invalid-cursor guard, so `findIndex` returning -1
+// became index 0 and an unknown `?start_cursor` re-served page one. Measured
+// against a running fixture: `?page_size=0` came back with all 99 users and 200,
+// while `/v1/custom_emojis`, one route below it, answered 400 for both.
+test("/v1/users validates page_size and start_cursor like every other list route", async () => {
+  const { app } = fixture();
+
+  for (const [query, message] of [
+    ["page_size=0", "page_size must be an integer from 1 through 100."],
+    ["page_size=abc", "page_size must be an integer from 1 through 100."],
+    ["page_size=101", "page_size must be an integer from 1 through 100."],
+    ["start_cursor=totally-bogus", "start_cursor is not valid."],
+  ]) {
+    const refused = await app.request(`/v1/users?${query}`, { headers });
+    assert.equal(refused.status, 400, query);
+    const body = await refused.json();
+    assert.equal(body.code, "validation_error", query);
+    assert.equal(body.message, message, query);
+  }
+
+  // The valid range still pages, and a real cursor still advances rather than
+  // handing back the page it came from.
+  const all = await (await app.request("/v1/users", { headers })).json();
+  assert.ok(all.results.length >= 2);
+
+  const first = await (await app.request("/v1/users?page_size=1", { headers })).json();
+  assert.equal(first.results.length, 1);
+  assert.equal(first.has_more, true);
+
+  const second = await app.request(`/v1/users?page_size=1&start_cursor=${first.next_cursor}`, { headers });
+  assert.equal(second.status, 200);
+  assert.notEqual((await second.json()).results[0].id, first.results[0].id);
+});

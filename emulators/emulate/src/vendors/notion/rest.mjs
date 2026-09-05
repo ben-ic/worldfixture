@@ -81,7 +81,15 @@ export function registerRestRoutes(app, store, baseUrl, options = {}) {
   app.get("/v1/users", (c) => {
     const auth = guard(c, domain, { capability: "read:user" });
     if (auth.response) return auth.response;
-    return c.json(domain.listUsers({ startCursor: c.req.query("start_cursor"), pageSize: c.req.query("page_size") }));
+    // Through the same `pageSize` gate and the same `invalid_cursor` answer as
+    // every other paginated reader here. This route used to hand `listUsers` the
+    // RAW query string and let it coerce, which is how `?page_size=0` came back
+    // with all 99 users and `?start_cursor=totally-bogus` came back with page
+    // one. `/v1/custom_emojis`, one route down, answered 400 for both.
+    const size = pageSize(c);
+    if (size === null) return validation(c, "page_size must be an integer from 1 through 100.");
+    const result = domain.listUsers({ startCursor: c.req.query("start_cursor"), pageSize: size });
+    return result.invalid_cursor ? validation(c, "start_cursor is not valid.") : c.json(result);
   });
 
   app.get("/v1/users/me", (c) => {

@@ -462,16 +462,24 @@ export function createNotionDomain(store, baseUrl, { objectStore, onChange } = {
     return value ? publicUser(value) : null;
   }
 
+  // The caller validates `pageSize`, exactly as it does for every sibling reader
+  // in this file. This used to take the raw query value and coerce it with
+  // `Number(pageSize) || 100`, so `?page_size=0` and `?page_size=abc` both meant
+  // "all of them" -- measured against a running fixture, 99 users for a request
+  // that asked for none. It was also the one reader with no invalid-cursor guard:
+  // `findIndex` returning -1 became index 0, so an unknown `start_cursor`
+  // re-served page one instead of the `start_cursor is not valid.` its siblings
+  // answer.
   function listUsers({ startCursor, pageSize = 100 } = {}) {
     const all = users.all();
-    const start = startCursor ? Math.max(0, all.findIndex((item) => item.notion_id === startCursor) + 1) : 0;
-    const size = Math.min(100, Math.max(1, Number(pageSize) || 100));
-    const selected = all.slice(start, start + size);
+    const start = startCursor ? all.findIndex((item) => item.notion_id === startCursor) + 1 : 0;
+    if (startCursor && start === 0) return { invalid_cursor: true };
+    const selected = all.slice(start, start + pageSize);
     return {
       object: "list",
       results: selected.map(publicUser),
-      next_cursor: start + size < all.length ? selected.at(-1)?.notion_id ?? null : null,
-      has_more: start + size < all.length,
+      next_cursor: start + pageSize < all.length ? selected.at(-1)?.notion_id ?? null : null,
+      has_more: start + pageSize < all.length,
       type: "user",
       user: {},
     };
