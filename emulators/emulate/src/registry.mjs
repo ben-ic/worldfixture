@@ -192,7 +192,10 @@ export const VENDORS = {
   linear: {
     async load() {
       const mod = await import(bundled("dist-7HIQBPU6.js"));
-      return { plugin: mod.linearPlugin, seedFromConfig: mod.seedFromConfig };
+      return {
+        plugin: mod.linearPlugin, seedFromConfig: mod.seedFromConfig,
+        isKnownToken: (store, token) => Boolean(mod.getLinearStore(store).tokens.findOneBy("token", token)),
+      };
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "admin@example.com";
