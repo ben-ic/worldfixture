@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.2.3
 
-Landed since 0.2.2 was published and not yet in a release.
+Everything below was found by reading the code that was already there and
+checking it against a running world, rather than by adding features. Two of the
+findings are credentials a world never declared, which is why this release
+should be taken rather than skipped.
 
 ### Added
 
