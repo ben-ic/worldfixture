@@ -46,6 +46,7 @@ import { removeInjectedGoogleDefault } from "./overrides/google-users.mjs";
 import { removeInjectedMicrosoftDefault } from "./overrides/microsoft-users.mjs";
 import { removeInjectedClerkDefault } from "./overrides/clerk-users.mjs";
 import { removeInjectedAtlasDefault } from "./overrides/mongoatlas-projects.mjs";
+import { removeInjectedAccounts } from "./overrides/injected-accounts.mjs";
 import { seedSlackHistory } from "./overrides/slack-history.mjs";
 import { seedGitHubIssues } from "./overrides/github-issues.mjs";
 import { startGmailPush } from "./plugins/gmail-push.mjs";
@@ -180,6 +181,17 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
   cachedResolver = loaded.createAppKeyResolver?.(store);
 
   loaded.plugin.seed?.(store, baseUrl);
+
+  // BETWEEN the two, deliberately. Upstream's `seedFromConfig` attributes the
+  // world's own content to whichever user happens to be first, so an injected
+  // account removed afterwards has already signed the world's Slack channels,
+  // Linear issues and Vercel team. See `injected-accounts.mjs`.
+  const swept = removeInjectedAccounts(vendor, store, svcSeed);
+  if (swept.removed) {
+    log(`${vendor}: removed ${swept.removed} account(s) the world never declared` +
+      (swept.cascaded ? `, and ${swept.cascaded} row(s) that only referenced them` : ""));
+  }
+
   if (svcSeed && loaded.seedFromConfig) {
     loaded.seedFromConfig(store, baseUrl, svcSeed, webhooks);
   }

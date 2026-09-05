@@ -7,9 +7,14 @@ const UPSTREAM_DEFAULT_EMAIL = "test@example.com";
 // never declared, handed to any application that enumerates users.
 //
 // This is the same defect `removeInjectedGoogleDefault` and
-// `removeInjectedMicrosoftDefault` fix, found on a third vendor by probing every
-// vendor rather than the two anybody had looked at. Keep the default only for a
-// fixture that declares no Clerk users at all.
+// `removeInjectedMicrosoftDefault` fix, found on a third vendor. Keep the default
+// only for a fixture that declares no Clerk users at all.
+//
+// THIS COMMENT USED TO CLAIM the third vendor was found "by probing every vendor
+// rather than the two anybody had looked at". It was not. Six more vendors were
+// still serving one -- apple, github, linear, okta, slack and vercel, every one of
+// them visible in a listing on a running fixture. `injected-accounts.mjs` is the
+// sweep that claim described.
 export function removeInjectedClerkDefault(store, config) {
   if (!Array.isArray(config?.users) || config.users.length === 0) return { removed: 0 };
 
