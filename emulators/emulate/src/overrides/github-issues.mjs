@@ -53,5 +53,27 @@ export function seedGitHubIssues(store, config) {
     }
   }
 
+  // AND THEN RECOUNT, because `open_issues_count` is a stored field, not a
+  // derived one. Upstream keeps it by hand: `adjustRepoOpenIssues` adds ±1 as the
+  // issue and pull-request ROUTES open and close things. Inserting through the
+  // store, which is the only seed-time path there is, walks straight past that.
+  //
+  // What that produced: `GET /repos/northstar-relay/relay-core` answered
+  // `open_issues_count: 0` and `open_issues: 0` while
+  // `GET /repos/northstar-relay/relay-core/issues?state=open` answered with eight
+  // of them. Measured on a running composer, and it was `0` for every repository
+  // in every world -- an app that renders a repo list from the field shows a wall
+  // of zeroes beside issues it can fetch and display one click later.
+  //
+  // Recomputed from the rows rather than incremented, so it is idempotent and
+  // cannot drift. Every repository is recounted, not only the seeded ones: a
+  // count that disagrees with the rows is wrong whoever wrote it. Pull requests
+  // are included because upstream's own accounting includes them -- `pulls.ts`
+  // calls the same adjustment -- and so does GitHub's.
+  for (const repo of gs.repos.all()) {
+    const open = gs.issues.all().filter((issue) => issue.repo_id === repo.id && issue.state === "open").length;
+    if (repo.open_issues_count !== open) gs.repos.update(repo.id, { open_issues_count: open });
+  }
+
   return { issues };
 }

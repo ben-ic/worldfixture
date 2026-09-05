@@ -55,3 +55,50 @@ test("an issue from someone the world lacks is dropped, not misattributed", () =
   assert.equal(result.issues, 0);
   assert.equal(gs.issues.all().find((i) => i.number === 999), undefined);
 });
+
+// Closes: `open_issues_count` is a stored field upstream maintains from the issue
+// and pull-request ROUTES, and seeding writes the store directly, so it stayed at
+// the `0` a repository is created with. Measured on a running composer:
+// `GET /repos/northstar-relay/relay-core` said `open_issues_count: 0` while
+// `…/issues?state=open` returned eight. It read `0` for every repository in every
+// world.
+test("open_issues_count matches the issues the repository actually serves", () => {
+  const world = {
+    ...WORLD,
+    repos: [{
+      owner: "northstar-relay", name: "web-console", auto_init: true,
+      issues: [
+        { number: 322, title: "Audit export labels", state: "open", author: "hanaito" },
+        { number: 323, title: "Retry export webhooks", state: "open", author: "samira-o" },
+        { number: 300, title: "Already handled", state: "closed", author: "hanaito" },
+      ],
+    }],
+  };
+  const { gs } = githubWith(world);
+  const repo = gs.repos.all().find((item) => item.name === "web-console");
+  const open = gs.issues.all().filter((issue) => issue.repo_id === repo.id && issue.state === "open");
+
+  assert.equal(open.length, 2);
+  assert.equal(repo.open_issues_count, 2);
+});
+
+// The count is recomputed from the rows rather than incremented, so it always
+// equals what the read path will serve, and a repository the world declares no
+// issues for is left at zero rather than being given somebody else's total.
+test("every repository's count equals its own open rows", () => {
+  const world = {
+    ...WORLD,
+    repos: [
+      { owner: "northstar-relay", name: "web-console", auto_init: true,
+        issues: [{ number: 322, title: "Audit export labels", state: "open", author: "hanaito" }] },
+      { owner: "northstar-relay", name: "quiet", auto_init: true },
+    ],
+  };
+  const { gs } = githubWith(world);
+
+  for (const repo of gs.repos.all()) {
+    const open = gs.issues.all().filter((issue) => issue.repo_id === repo.id && issue.state === "open").length;
+    assert.equal(repo.open_issues_count, open, repo.name);
+  }
+  assert.equal(gs.repos.all().find((item) => item.name === "quiet").open_issues_count, 0);
+});
