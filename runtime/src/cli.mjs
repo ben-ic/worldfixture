@@ -118,7 +118,7 @@ Options
   --output <dir>       Where build writes the artifact (default dist/<id>.<version>)
   --state <dir>        Where instance state is written (default .worldfixture/runs/local)
   --verbose            Show ports, digests and every readiness check
-  --image <name>       One-container image (default worldfixture:local)
+  --image <name>       One-container image (default ${defaultImage()})
   --app-dir <dir>      Put the connector token in the app's ignored .env.local
   --app-env <name>     Local env file inside --app-dir (default .env.local)
   --project-dir <dir>  Project directory (default current directory)
