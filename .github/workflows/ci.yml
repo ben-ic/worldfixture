@@ -31,6 +31,14 @@ jobs:
 
       - run: PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 
+      # BEFORE the runtime suite, not with the emulator suite. `emulate` is a
+      # child process, `node src/main.mjs`, and it imports @emulators/core on
+      # its first line. Installed later, it exits instantly on ERR_MODULE_NOT_FOUND
+      # and 22 runtime tests fail on a readiness check that reports only
+      # `fetch failed`.
+      - name: Install the provider emulator's pinned dependencies
+        run: npm --prefix emulators/emulate ci
+
       # `ensureImage` builds a missing service image on demand, inside whatever
       # readiness budget the test allowed. That is fine on a machine that has
       # built it once; on a runner with an empty cache, building Cyrus from a
@@ -46,9 +54,7 @@ jobs:
           cd runtime && node --test
 
       - name: Emulators
-        run: |
-          npm --prefix emulators/emulate ci
-          cd emulators/emulate && node --test
+        run: cd emulators/emulate && node --test
 
   determinism:
     runs-on: ubuntu-latest

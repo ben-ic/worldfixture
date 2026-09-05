@@ -25,15 +25,24 @@ Run compiler, schema, and parity tests:
 PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 ```
 
-Run Node.js component tests. The provider emulator's suite needs its pinned
-dependencies installed first:
+Run Node.js component tests. Install the provider emulator's pinned
+dependencies first, and build the service images the runtime suite starts:
 
 ```sh
-(cd runtime && npm test)
 npm --prefix emulators/emulate ci
+node scripts/prepare-service-images.mjs
+(cd runtime && npm test)
 (cd emulators/emulate && npm test)
 node --test emulators/http-targets/test/*.test.mjs
 ```
+
+Both preparation steps are for the runtime suite, not only the emulator one.
+`emulate` runs as a child process that imports `@emulators/core` on its first
+line, so without its dependencies it exits immediately and 22 runtime tests fail
+on a readiness check reporting only `fetch failed`. `prepare-service-images.mjs`
+builds or pulls what the manifests name; without it the supervisor builds a
+missing image inside a test's own readiness budget, and building Cyrus from a
+Debian base does not fit in it. Both are no-ops once they have run.
 
 Build the product image before image or complete example tests:
 
