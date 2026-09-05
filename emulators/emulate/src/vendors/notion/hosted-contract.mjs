@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 
-export const NOTION_MCP_SNAPSHOT = "2026-09-03";
 export const NOTION_MCP_PROTOCOL_VERSION = "2025-11-25";
 
 const contractUrl = new URL("../../../contracts/notion/hosted-mcp-tools-free-2026-09-03.json", import.meta.url);

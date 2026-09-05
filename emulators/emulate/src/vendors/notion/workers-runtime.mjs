@@ -407,30 +407,3 @@ export const notionWorkersRuntimeLimits = Object.freeze({
   webhookMaxAttempts: WEBHOOK_MAX_ATTEMPTS,
   webhookBlockThreshold: WEBHOOK_BLOCK_THRESHOLD,
 });
-
-export const notionWorkersRuntimeSupport = Object.freeze({
-  sdk: "@notionhq/workers@0.9.0",
-  exact: [
-    "Worker manifest serialization",
-    "tool input and output schema validation",
-    "pacer wait calculation and state envelope",
-    "OAuth accessToken environment lookup",
-    "context.notion @notionhq/client construction",
-  ],
-  behavioral: [
-    "managed and attached database declarations with in-memory rows",
-    "replace and incremental sync cycles, pagination, cursors, and stale-row deletion",
-    "cross-database sync targets and upstreamUpdatedAt conflict ordering",
-    "asynchronous webhook acceptance, normalized events, verification, retries, and blocking",
-    "deterministic local IDs, timestamps, state, and run records",
-  ],
-  unsupported: [
-    "Notion-hosted build, deployment, bundle sandbox, and public webhook URLs",
-    "automatic schedule dispatch and ntn remote control commands",
-    "durable state, attached-database binding, and managed-database schema migration",
-    "workspace run, ingress, build, and database-write quotas",
-    "encrypted secret storage, OAuth browser authorization, and automatic token refresh",
-    "hosted log streaming and workspace collaboration",
-    "undocumented SDK capabilities and alpha XLDB execution",
-  ],
-});
