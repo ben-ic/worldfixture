@@ -15,6 +15,14 @@
   ],
   "license": "Apache-2.0",
   "author": "Benjamin Cates",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ben-ic/worldfixture.git"
+  },
+  "homepage": "https://github.com/ben-ic/worldfixture#readme",
+  "bugs": {
+    "url": "https://github.com/ben-ic/worldfixture/issues"
+  },
   "type": "module",
   "bin": {
     "worldfixture": "runtime/bin/worldfixture.mjs"
@@ -22,23 +30,27 @@
   "scripts": {
     "build:worlds": "PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v2/world.json --output dist/business.saas-company.v2 && PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v3/world.json --output dist/business.saas-company.v3 && PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/consumer.retail-brand.v1/world.json --output dist/consumer.retail-brand.v1",
     "build:workbench": "npm --prefix runtime/workbench-ui ci && npm --prefix runtime/workbench-ui run build",
-    "prepack": "npm run build:worlds && npm run build:workbench"
+    "docs:dev": "npm --prefix docs run dev",
+    "docs:diagrams": "node scripts/render-architecture.mjs",
+    "docs:diagrams:check": "node scripts/render-architecture.mjs --check",
+    "docs:build": "npm --prefix docs run build",
+    "docs:check": "node scripts/check-docs.mjs",
+    "prepack": "npm run build:worlds && npm run build:workbench",
+    "lint": "ruff check . && biome lint ."
   },
   "files": [
     "CHANGELOG.md",
     "NOTICE",
     "dist/",
-    "docs/architecture.md",
-    "docs/connectors/agent-guide.md",
-    "docs/connectors/mapping-guide.md",
-    "docs/connectors/overview.md",
-    "docs/connectors/packs.md",
-    "docs/connectors/project.md",
-    "docs/connectors/protocol-v1.md",
-    "docs/connectors/security.md",
+    "docs/",
+    "!docs/node_modules/",
+    "!docs/.vitepress/",
+    "!docs/package.json",
+    "!docs/package-lock.json",
     "examples/minimal-world/",
     "runtime/bin/",
     "runtime/src/",
+    "!runtime/src/*.test.mjs",
     "runtime/workbench-ui/dist/",
     "schemas/",
     "skills/"
