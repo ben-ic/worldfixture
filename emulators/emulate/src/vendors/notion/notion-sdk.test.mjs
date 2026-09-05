@@ -61,6 +61,10 @@ test("official JavaScript SDK 5.26.0 reads current users, emojis, templates, and
   });
   assert.deepEqual(queried.results.map((page) => page.id), [PAGE_ID]);
   assert.deepEqual(Object.keys(queried.results[0].properties), ["Name"]);
+
+  const page = await notion.pages.retrieve({ page_id: PAGE_ID });
+  assert.equal(page.url, `http://notion.worldfixture.test/notion/${PAGE_ID.replaceAll("-", "")}`);
+  assert.equal(page.public_url, null);
 });
 
 test("official JavaScript SDK 5.26.0 writes pages, blocks, comments, and trash fields", async () => {

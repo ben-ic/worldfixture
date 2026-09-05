@@ -298,7 +298,7 @@ function publicUser(user) {
   return result;
 }
 
-function publicPage(page, parentDataSource = null) {
+function publicPage(page, parentDataSource = null, baseUrl = null) {
   const parent = structuredClone(page.parent);
   if (parent?.type === "data_source_id") parent.database_id ??= parentDataSource?.database_id;
   return {
@@ -315,7 +315,10 @@ function publicPage(page, parentDataSource = null) {
     is_archived: Boolean(page.in_trash),
     is_locked: Boolean(page.is_locked),
     properties: responseProperties(page.properties),
-    url: page.url,
+    // A restored snapshot can contain the origin of an earlier run. Notion's
+    // real Page object returns a current web-application URL, so calculate this
+    // response field from the advertised origin and stable page ID.
+    url: baseUrl ? `${baseUrl}/notion/${page.notion_id.replaceAll("-", "")}` : page.url,
     public_url: page.public_url ?? null,
   };
 }
@@ -432,7 +435,11 @@ export function createNotionDomain(store, baseUrl, { objectStore, onChange } = {
   const oauthTokens = collection(store, "oauthTokens", ["token", "refresh_token"]);
   const customEmojis = collection(store, "customEmojis", ["notion_id", "name"]);
   const teamspaces = collection(store, "teamspaces", ["notion_id", "name"]);
-  const renderPage = (record) => publicPage(record, record?.parent?.type === "data_source_id" ? dataSources.findOneBy("notion_id", normalizeId(record.parent.data_source_id)) : null);
+  const renderPage = (record) => publicPage(
+    record,
+    record?.parent?.type === "data_source_id" ? dataSources.findOneBy("notion_id", normalizeId(record.parent.data_source_id)) : null,
+    baseUrl,
+  );
   const renderDataSource = (record) => publicDataSource(record, databases.findOneBy("notion_id", normalizeId(record?.database_id)));
   const renderComment = (record) => publicComment(record, fileUploads, baseUrl);
 

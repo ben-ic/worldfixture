@@ -416,6 +416,15 @@ export async function launchHostInstance({
       childEnvironment.WORLDFIXTURE_TOKEN = connectorToken;
     }
     if (projectConfig) args.push("--env", `WORLDFIXTURE_PROJECT_CONFIG=${JSON.stringify(projectConfig)}`);
+    const notionPort = ports.find((entry) => entry.name === "notion");
+    if (notionPort) {
+      // Notion Page objects contain a web-application URL. The emulator listens
+      // on its fixed container port, but an application uses Docker's selected
+      // host port. Give the provider that advertised origin before it starts so
+      // its API response is usable without a Workbench-only rewrite.
+      args.push("--env", "WORLDFIXTURE_NOTION_PUBLIC_BASE_URL");
+      childEnvironment.WORLDFIXTURE_NOTION_PUBLIC_BASE_URL = `http://127.0.0.1:${notionPort.hostPort}`;
+    }
     for (const entry of ports) args.push("--publish", `127.0.0.1:${entry.hostPort}:${entry.containerPort}`);
     args.push(imageId);
 

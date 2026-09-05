@@ -183,6 +183,35 @@ test("the connector token is passed to Docker by name, never on the command line
   }
 });
 
+test("the Notion emulator advertises its selected host origin", async () => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-notion-origin-"));
+  let runArgs;
+  let runEnvironment;
+  const runner = async (_command, args, options = {}) => {
+    if (args[0] === "inspect") throw missing();
+    if (args[0] === "image") return { stdout: "sha256:image\n" };
+    if (args[0] === "run") {
+      runArgs = args;
+      runEnvironment = options.env;
+      throw new Error("stop after docker arguments are captured");
+    }
+    return { stdout: "" };
+  };
+
+  try {
+    await assert.rejects(() => launchHostInstance({
+      stateDir,
+      image: "worldfixture:test",
+      runner,
+      selectPorts: async () => [{ name: "notion", containerPort: 4716, hostPort: 59428, release: async () => {} }],
+    }));
+    assert.equal(runArgs.includes("WORLDFIXTURE_NOTION_PUBLIC_BASE_URL"), true);
+    assert.equal(runEnvironment.WORLDFIXTURE_NOTION_PUBLIC_BASE_URL, "http://127.0.0.1:59428");
+  } finally {
+    rmSync(stateDir, { recursive: true, force: true });
+  }
+});
+
 // The bug this closes: reserving a socket on 127.0.0.1 proves no PROGRAM holds
 // the port, and says nothing about Docker's own allocator. A container from
 // another project publishing 3306 let the reservation succeed and then made

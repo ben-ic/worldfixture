@@ -132,7 +132,11 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
   const svcSeed = prepared?.config ?? inputSeed;
 
   const seedBaseUrl = typeof svcSeed?.baseUrl === "string" && svcSeed.baseUrl.length > 0 ? svcSeed.baseUrl : undefined;
-  const baseUrl = resolveBaseUrl({ service: vendor, port, seedBaseUrl });
+  // Page objects must advertise the URL an SDK caller can open. In the
+  // one-container runtime, Notion's fixed listener port differs from Docker's
+  // selected host port. This value is not used as the listen address.
+  const publicBaseUrl = vendor === "notion" ? process.env.WORLDFIXTURE_NOTION_PUBLIC_BASE_URL : undefined;
+  const baseUrl = publicBaseUrl ?? resolveBaseUrl({ service: vendor, port, seedBaseUrl });
 
   // The resolver has to be handed to `createServer` before the store it reads exists,
   // so it is captured by closure and filled in immediately after. Upstream does the
