@@ -14,7 +14,16 @@ import { Button, CopyButton, Panel } from "./Primitives.jsx";
 // masks the display only; nothing is re-fetched when it is revealed, because the
 // value was already sent.
 const CREDENTIAL = /(TOKEN|SECRET|PASSWORD|KEY|CREDENTIAL)/i;
+// A CONNECTION URL CARRIES ITS PASSWORD IN THE MIDDLE OF IT.
+// `POSTGRES_URL` is `postgres://worldfixture:<password>@127.0.0.1:5432/worldfixture`,
+// and the name says nothing about a credential -- so masking by name alone
+// printed the password in full one row under the masked `POSTGRES_PASSWORD`.
+// Since those passwords became per-project generated secrets rather than a
+// shared constant, that is a real value to leave on a shared screen.
+const EMBEDDED_CREDENTIAL = /:\/\/[^/@\s]*:[^/@\s]+@/;
 const MASK = "••••••••••••";
+
+const isSecret = (name, value) => CREDENTIAL.test(name) || EMBEDDED_CREDENTIAL.test(value);
 
 export function Bindings({ data, complete = false }) {
   const [revealed, setRevealed] = useState(() => new Set());
@@ -32,7 +41,7 @@ export function Bindings({ data, complete = false }) {
 
   return <Panel title="Bindings for this instance" tools={<CopyButton value={environment}>Copy .env</CopyButton>}>
     {visible.map(([name, value]) => {
-      const secret = CREDENTIAL.test(name);
+      const secret = isSecret(name, value);
       const shown = !secret || revealed.has(name);
       return <div className="data-row binding-row" key={name}>
         <code className="blue truncate">{name}</code>
