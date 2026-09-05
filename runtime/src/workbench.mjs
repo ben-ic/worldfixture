@@ -556,7 +556,7 @@ function readiness(instance) {
 }
 
 const SURFACE_NAMES = { apple: "Apple", clerk: "Clerk", github: "GitHub", google: "Google", linear: "Linear",
-  microsoft: "Microsoft Teams", mongoatlas: "MongoDB Atlas", notion: "Notion", okta: "Okta", resend: "Resend", slack: "Slack",
+  microsoft: "Microsoft Entra", mongoatlas: "MongoDB Atlas", notion: "Notion", okta: "Okta", resend: "Resend", slack: "Slack",
   stripe: "Stripe", twilio: "Twilio", vercel: "Vercel", mail: "Local Mail", s3: "Object storage", http: "HTTP targets" };
 
 function surfaceReadiness(instance) {
