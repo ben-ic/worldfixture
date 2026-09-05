@@ -47,6 +47,32 @@ async function mapBounded(items, operation) {
   return results;
 }
 
+// The reason phrase for a sub-response's status line.
+//
+// This used to be `response.statusText || "OK"`, and Hono builds every response
+// through `c.json(body, status)`, which leaves `statusText` an empty string. So
+// `||` fired on EVERY part and every one of them said `OK` whatever its code.
+// Measured against the running fixture: a batch containing a request for a
+// message that does not exist came back as `HTTP/1.1 404 OK`. A batch client that
+// reads the reason phrase -- and Google's own client libraries parse this line --
+// is being told the opposite of the status code beside it.
+//
+// Only the codes this fixture actually returns are listed. An unlisted code gets
+// an empty reason phrase, which HTTP allows and which is honest, rather than a
+// borrowed one that is wrong.
+const REASON_PHRASES = {
+  200: "OK", 201: "Created", 202: "Accepted", 204: "No Content", 304: "Not Modified",
+  400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found",
+  405: "Method Not Allowed", 409: "Conflict", 412: "Precondition Failed",
+  422: "Unprocessable Entity", 429: "Too Many Requests",
+  500: "Internal Server Error", 501: "Not Implemented", 503: "Service Unavailable",
+};
+
+// `??` would not do here: `statusText` is `""`, not undefined, on every response
+// Hono builds, so the emptiness has to be tested for.
+const reasonPhrase = (response) =>
+  (response.statusText === "" ? REASON_PHRASES[response.status] ?? "" : response.statusText);
+
 function multipartResponse(parts) {
   const boundary = `worldfixture_batch_${crypto.randomUUID().replaceAll("-", "")}`;
   const body = parts.map(({ response, body }, index) => {
@@ -56,7 +82,7 @@ function multipartResponse(parts) {
       "Content-Type: application/http",
       `Content-ID: response-${index + 1}`,
       "",
-      `HTTP/1.1 ${response.status} ${response.statusText || "OK"}`,
+      `HTTP/1.1 ${response.status} ${reasonPhrase(response)}`,
       `Content-Type: ${contentType}`,
       "",
       body,

@@ -57,3 +57,34 @@ test("Gmail batch rejects more than 100 requests", async () => {
   const targets = Array.from({ length: 101 }, (_, index) => `/gmail/v1/users/me/messages/${index}`);
   assert.equal((await fetch(request(targets))).status, 400);
 });
+
+// Closes: the sub-response status line was built with `response.statusText ||
+// "OK"`, and Hono leaves `statusText` an empty string on everything it builds --
+// so EVERY part said `OK` whatever its code. Measured against the running
+// fixture: a batch asking for a message that does not exist came back as
+// `HTTP/1.1 404 OK`.
+test("a failing batch part carries its own reason phrase, not OK", async () => {
+  const fetch = wrapGoogleBatch(async (inner) => {
+    const id = new URL(inner.url).pathname.split("/").at(-1);
+    if (id === "missing") return Response.json({ error: { code: 404 } }, { status: 404 });
+    if (id === "forbidden") return Response.json({ error: { code: 403 } }, { status: 403 });
+    return Response.json({ id });
+  });
+
+  const body = await (await fetch(request([
+    "/gmail/v1/users/me/messages/ok",
+    "/gmail/v1/users/me/messages/missing",
+    "/gmail/v1/users/me/messages/forbidden",
+  ]))).text();
+
+  const statusLines = body.split("\r\n").filter((line) => line.startsWith("HTTP/1.1"));
+  assert.deepEqual(statusLines, ["HTTP/1.1 200 OK", "HTTP/1.1 404 Not Found", "HTTP/1.1 403 Forbidden"]);
+});
+
+// A code with no canonical phrase gets an empty one, which HTTP allows. Borrowing
+// somebody else's phrase is what caused the bug in the first place.
+test("an unlisted status code gets an empty reason phrase rather than a wrong one", async () => {
+  const fetch = wrapGoogleBatch(async () => new Response("{}", { status: 418 }));
+  const body = await (await fetch(request(["/gmail/v1/users/me/messages/teapot"]))).text();
+  assert.ok(body.includes("HTTP/1.1 418 \r\n"), body.split("\r\n").filter((l) => l.startsWith("HTTP")).join("|"));
+});
