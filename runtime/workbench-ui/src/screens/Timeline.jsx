@@ -44,6 +44,7 @@ export function TimelineAxis({ sample, rows, window, selectedGroup, onSelect }) 
       {inView && <div className="timeline-cursor" style={{ left: `${(elapsed - window.from) / window.span * 100}%` }} aria-label={`Current clock position ${elapsedLabel(elapsed)}`}><span>▼</span></div>}
     </div>
     <div className="timeline-ticks"><span>{elapsedLabel(window.from)}</span><span>{elapsedLabel(window.from + window.span / 2)}</span><span>{elapsedLabel(window.from + window.span)} →</span></div>
+    <div className="timeline-counts" aria-label="Timeline legend"><span><b aria-hidden="true">▦</b>Grouped events · number shows the count</span>{Object.entries(OUTCOMES).map(([key, value]) => <span key={key}><b aria-hidden="true">{value.mark}</b>{value.label}</span>)}<span><b aria-hidden="true">▼</b>Current time</span></div>
     <p className="muted">Future stays open. {inView ? "The line marks the current time." : "The current time is outside this view."} Moving this view does not move the clock.</p>
   </div>;
 }
@@ -65,16 +66,16 @@ export function TimelineRecords({ rows, onInspect }) {
 export function TimelineControls({ sample, busy, onCommand, reconnectRequired = false }) {
   const status = sample.status, setup = status.mode === "setup";
   const [duration, setDuration] = useState(""), [startAt, setStartAt] = useState("0s");
-  const [setupRepeat, setSetupRepeat] = useState(() => status.repeat.enabled);
-  useEffect(() => setSetupRepeat(status.repeat.enabled), [status.repeat.enabled]);
+  const [setupLoop, setSetupLoop] = useState(() => Boolean(status.loop?.enabled));
+  useEffect(() => setSetupLoop(Boolean(status.loop?.enabled)), [Boolean(status.loop?.enabled)]);
   const blocked = reconnectRequired || Boolean(busy) || !timelineReadReady(status) || status.mode === "failed";
-  const repeatEnabled = setup ? setupRepeat : status.repeat.enabled;
+  const loopEnabled = setup ? setupLoop : Boolean(status.loop?.enabled);
   return <Panel className="timeline-control">
     <div className="timeline-clock"><span><small>WORLD ELAPSED TIME</small><ClockPosition sample={sample}/></span>
       <span className="timeline-mode">{status.mode === "resetting" ? "Resetting · controls unavailable" : status.mode === "initializing" ? "Initializing · controls unavailable" : setup ? "Setup · paused before delivery" : status.mode === "failed" ? "! Failed · paused" : status.mode === "stopped" ? "Stopped" : !status.clock.started ? "Clock not started" : status.clock.running ? "▶ Running" : "Ⅱ Paused"}</span>
-      <span className="muted">Provider cycle {status.repeat.cycle}{status.clock.world_now && <small>{status.clock.world_now}</small>}</span>
+      <span className="muted">Schedule pass {status.repeat.cycle}{status.clock.world_now && <small>{status.clock.world_now}</small>}</span>
     </div>
-    {setup ? <form className="timeline-command" onSubmit={event => { event.preventDefault(); onCommand({ action: "start", duration: startAt, enabled: setupRepeat }); }}>
+    {setup ? <form className="timeline-command" onSubmit={event => { event.preventDefault(); onCommand({ action: "start", duration: startAt, loop: setupLoop }); }}>
       <label>Start at elapsed time<input value={startAt} onChange={event => setStartAt(event.target.value)} placeholder="90s, 5m, 1w" required disabled={blocked}/></label>
       <Button type="submit" disabled={blocked || !startAt.trim()}>{busy === "start" ? "Applying starting position…" : "Apply position and start"}</Button>
       <p>Events due at or before this position run before live delivery starts. Review any failure before you connect an application.</p>
@@ -84,13 +85,13 @@ export function TimelineControls({ sample, busy, onCommand, reconnectRequired = 
         <label>Advance by<input value={duration} onChange={event => setDuration(event.target.value)} placeholder="90s, 5m, 1w" required disabled={blocked}/></label>
         <Button type="submit" disabled={blocked || !duration.trim()}>{busy === "advance" ? "Delivering due events…" : "Advance forward"}</Button>
       </form>
-      <p className="muted">Advance only moves forward. A paused world stays paused after an advance. For a new run with a starting-position selector, use <code>worldfixture up --setup</code>.</p>
+      <p className="muted">Advance moves forward. A paused world stays paused.</p>
     </>}
-    <div className="timeline-repeat"><label><input type="checkbox" checked={repeatEnabled} disabled={blocked || !status.repeat.eligible}
-      onChange={event => setup ? setSetupRepeat(event.target.checked) : onCommand({ action: "repeat", enabled: event.target.checked })}/> Repeat with baseline restore</label>
-      <p>Each cycle restores world and provider state and removes manual provider changes. Application database data and connector receipts remain. Repeat is off unless you enable it.</p>
-      {!status.repeat.eligible && <p>{status.repeat.reason ?? "This run is not eligible for repeat."}</p>}
-      <p className="muted">Repeat: {status.repeat.status}{status.repeat.error ? ` · ${status.repeat.error}` : ""}</p>
+    <div className="timeline-repeat"><label><input type="checkbox" checked={loopEnabled} disabled={blocked || !status.repeat.eligible}
+      onChange={event => setup ? setSetupLoop(event.target.checked) : onCommand({ action: "loop", enabled: event.target.checked })}/> Loop</label>
+      <p>Play the schedule again when all events finish. Keep provider data, manual changes, and delivery history. The clock keeps moving forward.</p>
+      {!status.repeat.eligible && <p>{status.loop?.reason ?? "Loop needs a schedule with a positive duration."}</p>}
+      {status.repeat.error && <p className="muted">{status.repeat.error}</p>}
     </div>
   </Panel>;
 }

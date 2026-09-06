@@ -1,5 +1,5 @@
 import { clockState, startClock, pauseClock, resumeClock, advanceClock, parseDuration, validateAdvanceTarget } from './clock.mjs';
-import { armTimeline, playDue, timelineState, timelineRecords, DEFAULT_TICK_MS } from './scheduler.mjs';
+import { armTimeline, appendTimelinePass, playDue, timelineState, timelineRecords, DEFAULT_TICK_MS } from './scheduler.mjs';
 
 export class TimelineControlError extends Error {
   constructor(code, message, status = 409, result) {
@@ -17,7 +17,7 @@ export function attachTimelineControl(instance, world, context = {}) {
   const arc = selected.timeline ?? [];
   const arcEnd = Math.max(0, ...arc.map(row => Math.round(row.after_seconds * 1000)));
   const eligible = arc.length > 0 && Number.isSafeInteger(arcEnd) && arcEnd > 0;
-  const reason = eligible ? undefined : 'Repeat requires a selected authored arc with a positive duration';
+  const reason = eligible ? undefined : 'Loop requires a selected authored arc with a positive duration';
   let cachedStopped;
   let mode = 'initializing', stopped = false, suspended = false, tail = Promise.resolve(), timer, tickQueued = false;
   const serialize = work => {
@@ -33,7 +33,7 @@ export function attachTimelineControl(instance, world, context = {}) {
     const date = clock.anchor ? new Date(Date.parse(clock.anchor) + clock.elapsed_ms) : null;
     return { ok: true, mode, sampled_at_ms: now(), epoch: pass.cycle,
       clock: { ...clock, world_now: date && Number.isFinite(date.getTime()) ? date.toISOString() : null },
-      timeline: timelineState(db), repeat: { enabled: Boolean(pass.enabled), eligible, ...(reason ? { reason } : {}), cycle: pass.cycle, status: pass.status, ...(pass.error ? { error: pass.error } : {}) } };
+      timeline: timelineState(db), loop: { enabled: Boolean(pass.enabled), eligible, ...(reason ? { reason } : {}) }, repeat: { enabled: Boolean(pass.enabled), eligible, ...(reason ? { reason } : {}), cycle: pass.cycle, status: pass.status, ...(pass.error ? { error: pass.error } : {}) } };
   };
   const response = played => ({ ...status(), played });
   function requireReady() {
@@ -41,7 +41,7 @@ export function attachTimelineControl(instance, world, context = {}) {
     if (mode === 'initializing') throw new TimelineControlError('timeline_not_initialized', 'Timeline control is not initialized', 503);
   }
   function repeatValue(enabled) {
-    if (typeof enabled !== 'boolean') throw new TimelineControlError('bad_repeat', 'Repeat enabled must be a boolean', 400);
+    if (typeof enabled !== 'boolean') throw new TimelineControlError('bad_repeat', 'Loop enabled must be a boolean', 400);
     if (enabled && !eligible) throw new TimelineControlError('repeat_ineligible', reason, 400);
   }
   function arm() {
@@ -74,7 +74,7 @@ export function attachTimelineControl(instance, world, context = {}) {
     advanceClock(db, milliseconds, { now: now() });
     return drain();
   }
-  async function restore({ repeat = false, setup = mode === 'setup' } = {}) {
+  async function restore({ setup = mode === 'setup' } = {}) {
     const wasRunning = clockState(db, { now: now() }).running;
     pauseClock(db, { now: now() });
     const prior = cycle(); mode = 'resetting'; updateCycle(prior.enabled, 'resetting');
@@ -84,7 +84,7 @@ export function attachTimelineControl(instance, world, context = {}) {
       // Test adapters can implement only provider restore; the controller owns arming.
       arm();
       const played = setup ? [] : await drain();
-      if (setup && !stopped) mode = 'setup'; else finishPosition(wasRunning || repeat);
+      if (setup && !stopped) mode = 'setup'; else finishPosition(wasRunning);
       return { ...response(played), ...result };
     } catch (error) {
       mode = 'failed'; updateCycle(false, 'failed', error.message);
@@ -96,7 +96,16 @@ export function attachTimelineControl(instance, world, context = {}) {
     await drain();
     if (stopped) return;
     const summary = timelineState(db), pass = cycle();
-    if (pass.enabled && !summary.pending && !summary.in_flight && !summary.failed && !summary.uncertain) await restore({ repeat: true });
+    if (pass.enabled && !summary.pending && !summary.in_flight && !summary.failed && !summary.uncertain) {
+      try {
+        const clock = clockState(db, { now: now() });
+        validateAdvanceTarget(arcEnd, clock);
+        appendTimelinePass(db, selected, { offset: clock.elapsed_ms, cycle: pass.cycle + 1 });
+      } catch (error) {
+        pauseClock(db, { now: now() }); mode = 'failed'; updateCycle(false, 'failed', error.message);
+        throw new TimelineControlError('timeline_loop_failed', error.message, 409, response([]));
+      }
+    }
   }
   function startTimer() {
     timer = setInterval(() => {
@@ -112,18 +121,19 @@ export function attachTimelineControl(instance, world, context = {}) {
     initialize(options = {}) {
       return serialize(async () => {
         if (stopped || mode !== 'initializing') throw new TimelineControlError('timeline_already_initialized', 'Timeline is already initialized or stopped');
-        const { startAtMs = 0, repeat = false, setup = false } = options;
+        const { startAtMs = 0, repeat = false, loop = false, setup = false } = options;
         if (!Number.isSafeInteger(startAtMs) || startAtMs < 0 || typeof setup !== 'boolean') throw new TimelineControlError('bad_start_at', 'Setup must be boolean and start time must be a nonnegative safe integer', 400);
         if (setup && startAtMs !== 0) throw new TimelineControlError('conflicting_setup', 'Setup and a start position cannot be combined', 400);
         validateAdvanceTarget(startAtMs, { elapsed_ms: 0, anchor: world.clock?.anchor });
-        repeatValue(repeat);
+        repeatValue(repeat); repeatValue(loop);
+        if (repeat && loop) throw new TimelineControlError('conflicting_loop', 'Use either loop or repeat, not both', 400);
         const existing = cycle();
         if (existing.cycle > 0 && timelineState(db).total > 0) {
           db.prepare("UPDATE scheduled_events SET status='uncertain',error='Runtime stopped during provider delivery; inspect before reset' WHERE status='in_flight'").run();
           pauseClock(db, { now: now() }); mode = 'failed'; updateCycle(false, 'failed', 'Existing timeline state requires inspection or reset');
           throw new TimelineControlError('timeline_recovery_required', 'Existing timeline state requires inspection or reset', 409, response([]));
         }
-        db.prepare("INSERT INTO timeline_cycle(id,enabled,cycle,status) VALUES(1,?,1,?) ON CONFLICT(id) DO UPDATE SET enabled=excluded.enabled,cycle=timeline_cycle.cycle+1,status=excluded.status,error=NULL").run(repeat ? 1 : 0, repeat ? 'running' : 'idle');
+        db.prepare("INSERT INTO timeline_cycle(id,enabled,cycle,status) VALUES(1,?,1,?) ON CONFLICT(id) DO UPDATE SET enabled=excluded.enabled,cycle=timeline_cycle.cycle+1,status=excluded.status,error=NULL").run(loop || repeat ? 1 : 0, loop || repeat ? 'running' : 'idle');
         arm(); mode = setup ? 'setup' : 'paused';
         startTimer();
         if (setup) return response([]);
@@ -140,12 +150,15 @@ export function attachTimelineControl(instance, world, context = {}) {
         if (action === 'status') return response([]);
         if (action === 'reset') return restore({ setup: input.preserveSetup === true || mode === 'setup' });
         if (mode === 'failed') throw new TimelineControlError('timeline_failed', 'Reset the failed timeline before further delivery', 409, response([]));
-        if (action === 'repeat') { repeatValue(input.enabled); updateCycle(input.enabled, input.enabled ? 'running' : 'idle'); return response([]); }
+        if (action === 'loop' || action === 'repeat') { repeatValue(input.enabled); updateCycle(input.enabled, input.enabled ? 'running' : 'idle'); return response([]); }
         if (action === 'start') {
           if (mode !== 'setup') throw new TimelineControlError('timeline_not_setup', 'Start position can only be selected during setup');
           const duration = parseDuration(input.duration ?? '0s');
           validateAdvanceTarget(duration, clockState(db, { now: now() }));
+          if (input.loop !== undefined) { repeatValue(input.loop); }
+          if (input.loop && input.enabled) throw new TimelineControlError('conflicting_loop', 'Use either loop or repeat, not both', 400);
           if (input.enabled !== undefined) { repeatValue(input.enabled); updateCycle(input.enabled, input.enabled ? 'running' : 'idle'); }
+          if (input.loop !== undefined) updateCycle(input.loop, input.loop ? 'running' : 'idle');
           const played = await position(duration); finishPosition(true); return response(played);
         }
         if (mode === 'setup') throw new TimelineControlError('timeline_setup', 'Start the timeline before using running controls');

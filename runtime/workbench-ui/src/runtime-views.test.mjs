@@ -95,3 +95,21 @@ test("Website frame uses the declared preview URL and never substitutes the bind
   assert.doesNotMatch(missing, /<iframe/);
   assert.match(missing, /No declared HTTP target/);
 });
+
+test('Overview puts streaming before connections and keeps service inventory collapsed', () => {
+  const output = render(Overview, { data, setScreen() {} });
+  assert.ok(output.indexOf('Event stream') < output.indexOf('Connect your app'));
+  assert.match(output, /<details class="overview-services"><summary>/);
+  assert.doesNotMatch(output, /Reset world services|secret-real-value/);
+});
+
+const { MessageContent } = await server.ssrLoadModule('/src/components/ContentDetails.jsx');
+test('expanded content escapes text and isolates HTML with scripts and network disabled', () => {
+  const text = render(MessageContent, { content: { text: '<script>bad()</script>', comments: [{ id: 1, body: '<img src=x onerror=bad()>' }] } });
+  assert.doesNotMatch(text, /<script>|<img/);
+  assert.match(text, /&lt;script&gt;/);
+  const html = render(MessageContent, { content: { html: '<script>bad()</script><a href="https://example.test">link</a>' } });
+  assert.match(html, /sandbox=""/);
+  assert.match(html, /default-src &#x27;none&#x27;/);
+  assert.doesNotMatch(html, /allow-scripts|allow-same-origin/);
+});

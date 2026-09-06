@@ -90,13 +90,17 @@ test('append cursor reaches late additions and repeat refuses zero-duration arcs
   assert.equal(control.timeline({ fromMs: 0, toMs: 1 }).data.length, 2);
   const zero = fixture(t, [operation('zero')]); await assert.rejects(zero.control.initialize({ repeat: true }), /positive duration/);
 });
-test('repeat waits for drain, restores provider state, and stops on restore failure', async t => {
+test('legacy repeat loops without restoring; explicit reset remains separate', async t => {
   const { control, instance, db } = fixture(t); await control.initialize({ repeat: true });
-  await control.command({ action: 'advance', duration: '1s' }); assert.equal(instance.restores, 0);
-  await control.tick(); assert.equal(instance.restores, 1); assert.equal(control.status().repeat.cycle, 2); assert.equal(control.status().timeline.pending, 1);
+  await control.command({ action: 'advance', duration: '1s' });
+  await control.tick(); assert.equal(instance.restores, 0); assert.equal(control.status().repeat.cycle, 2);
+  assert.equal(control.status().timeline.pending, 1); assert.equal(control.status().timeline.delivered, 1);
+  assert.equal(control.status().loop.enabled, true);
+  await control.command({ action: 'reset' }); assert.equal(instance.restores, 1);
+  assert.equal(control.status().clock.elapsed_ms, 0); assert.equal(control.status().timeline.delivered, 0);
   instance.restoreBaseline = async () => { throw new Error('Restore refused'); };
-  advanceClock(db, 1000, { now: T0 }); await assert.rejects(control.tick(), /Restore refused/);
-  assert.equal(control.status().mode, 'failed'); assert.equal(control.status().repeat.enabled, false);
+  await assert.rejects(control.command({ action: 'reset' }), /Restore refused/);
+  assert.equal(control.status().mode, 'failed'); assert.equal(control.status().loop.enabled, false);
 });
 test('connector envelope survives failed retry and provider reset; accepted receipts prevent replay', async t => {
   const { control, db, world } = fixture(t, []); await control.initialize({ setup: true });
@@ -199,4 +203,62 @@ test('reset in setup never delivers zero-time domain or application arrivals', a
   const result = await control.command({ action: 'reset', preserveSetup: true });
   assert.equal(result.mode, 'setup'); assert.equal(result.clock.elapsed_ms, 0); assert.equal(result.clock.running, false);
   assert.deepEqual(writes, []); assert.equal(result.timeline.pending, 2); assert.equal(db.prepare('SELECT COUNT(*) AS n FROM commands').get().n, 0);
+});
+
+test('loop preserves provider writes, history, and clock across passes; pause and disable stop further passes', async t => {
+  const { control, instance, db, writes } = fixture(t, [operation('zero'), operation('last', 1)]);
+  await control.initialize({ setup: true });
+  await control.command({ action: 'start', duration: '0s', loop: true });
+  assert.equal(control.status().loop.enabled, true);
+  assert.equal(control.status().repeat.enabled, true);
+  db.exec("CREATE TABLE manual_data(value TEXT); INSERT INTO manual_data VALUES('keep me')");
+  for (let pass = 1; pass <= 3; pass++) {
+    await control.command({ action: 'advance', duration: '1s' });
+    await control.tick();
+    assert.equal(instance.restores, 0);
+    assert.equal(control.status().clock.elapsed_ms, pass * 1000);
+    assert.equal(control.status().repeat.cycle, pass + 1);
+    assert.equal(control.status().timeline.delivered, pass * 2);
+    assert.equal(db.prepare('SELECT value FROM manual_data').get().value, 'keep me');
+  }
+  assert.equal(writes.length, 6);
+  assert.equal(db.prepare('SELECT COUNT(DISTINCT idempotency_key) AS n FROM commands').get().n, 6);
+  await control.command({ action: 'pause' }); await control.tick();
+  assert.equal(control.status().repeat.cycle, 4);
+  await control.command({ action: 'loop', enabled: false });
+  await control.command({ action: 'advance', duration: '1s' });
+  await control.command({ action: 'resume' }); await control.tick();
+  assert.equal(control.status().repeat.cycle, 4);
+  assert.equal(control.status().timeline.delivered, 8);
+});
+
+test('loop rejects invalid settings before mutations and does not append after failure', async t => {
+  const { control } = fixture(t, [operation('bad', 1)], { fetchImpl: async () => Response.json({ error: { message: 'Rejected' } }, { status: 400 }) });
+  await control.initialize({ setup: true });
+  const before = control.status();
+  await assert.rejects(control.command({ action: 'loop', enabled: 'yes' }), /boolean/);
+  await assert.rejects(control.command({ action: 'start', loop: true, enabled: true }), /either loop or repeat/);
+  assert.deepEqual(control.status(), before);
+  await control.command({ action: 'start', loop: true });
+  await assert.rejects(control.command({ action: 'advance', duration: '1s' }), /delivery failed/);
+  await control.tick();
+  assert.equal(control.status().loop.enabled, false);
+  assert.equal(control.status().repeat.cycle, 1);
+  assert.equal(control.status().timeline.total, 1);
+});
+
+
+test('loop waits for delayed effects and keeps their evidence before appending the next pass', async t => {
+  const rules = [{ api_version: 'worldfixture.causal-rule/v1', id: 'rule.follow', when: 'domain.record.created.v1', emit: [{ type: 'social.post.publish.v1', after: '5s',
+    with: { actor_id: { value: 'person.one' }, record: { value: { id: 'post.effect', author_id: 'person.one', body: 'Effect' } } } }] }];
+  const { control, instance } = fixture(t, [operation('last', 1)], { rules });
+  await control.initialize({ loop: true });
+  await control.command({ action: 'advance', duration: '1s' }); await control.tick();
+  assert.equal(control.status().repeat.cycle, 1);
+  await control.command({ action: 'advance', duration: '5s' }); await control.tick();
+  assert.equal(control.status().repeat.cycle, 2); assert.equal(instance.restores, 0);
+  const rows = control.timeline().data;
+  assert.equal(rows.filter(row => row.status === 'delivered').length, 2);
+  assert.equal(rows.find(row => row.id === 'loop:2:last').due_at, 7000);
+  assert.ok(rows.find(row => row.type === 'world.causal.effect.v1').caused_by);
 });

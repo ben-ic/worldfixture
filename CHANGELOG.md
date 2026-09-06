@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Streaming now loops without restoring provider state. The existing `--repeat`
+  option keeps provider data and delivery history. Reset remains a separate action.
+- Workbench Overview puts the clock and connection values first. Email messages
+  and GitHub issues expand in place, and the timeline legend explains grouped events.
+
 - Linux container starts, resets, and world switches retain the host user's
   ownership of private runtime state. This fixes permission failures when the
   host CLI reads files written by the root container process. Private file modes

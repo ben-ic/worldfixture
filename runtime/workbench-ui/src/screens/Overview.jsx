@@ -1,70 +1,64 @@
-import { useState } from "react";
-import { post } from "../api.js";
+import { useEffect, useRef, useState } from "react";
+import { generationResponse, request } from "../api.js";
 import { serviceScreen } from "../navigation.mjs";
-import { overviewExamples, peopleSelection, resourceCountText, surfaceResources, worldLabels } from "../runtime-data.mjs";
-import { ActivityTable, Bindings } from "../components/RuntimeViews.jsx";
-import { Button, CopyButton, Notice, Panel, SectionTitle } from "../components/Primitives.jsx";
+import { peopleSelection, resourceCountText, surfaceResources, worldLabels } from "../runtime-data.mjs";
+import { acceptClockSample, clockSample, elapsedLabel, readClockCommandResponse, timelineReadReady } from "../timeline-model.mjs";
+import { Bindings } from "../components/RuntimeViews.jsx";
+import { Button, Notice, Panel } from "../components/Primitives.jsx";
+import { TimelineControls } from "./Timeline.jsx";
 
-export function Overview({ data, setScreen, onRefresh, onReset, onAction }) {
-  const [probing, setProbing] = useState(false);
-  const [probe, setProbe] = useState(null);
-  const [probeError, setProbeError] = useState(null);
-  const surfaces = data.surfaces ?? [];
-  const probed = new Map((probe?.surfaces ?? []).map((surface) => [surface.id, surface]));
-  const pending = surfaces.filter((surface) => surface.state !== "ready");
-  const people = peopleSelection(data);
-  const labels = worldLabels(data);
-  const examples = overviewExamples(data);
-  async function runProbe() {
-    setProbing(true); setProbeError(null);
+function WorldStream({ setScreen, onChanged, session }) {
+  const [sample, setSample] = useState(null), [error, setError] = useState(null), [busy, setBusy] = useState(null);
+  const latest = useRef(null), lifetime = useRef(null);
+  function receive(value) { const next = acceptClockSample(latest.current, clockSample(value, performance.now())); latest.current = next; setSample(next); }
+  useEffect(() => {
+    const abort = new AbortController(); lifetime.current = abort;
+    const poll = async () => { try { const value = await request("/api/clock", { signal: abort.signal }); if (!abort.signal.aborted) { receive(value); setError(null); } } catch (cause) { if (!abort.signal.aborted) setError(cause.message); } };
+    poll(); const timer = setInterval(poll, 2000);
+    return () => { abort.abort(); clearInterval(timer); };
+  }, []);
+  async function command(input) {
+    setBusy(input.action); setError(null);
     try {
-      const result = await post("/api/probe", {});
-      setProbe(result);
-      if (surfaces.length > 0 && surfaces.every((surface) => result.surfaces?.some((entry) => entry.id === surface.id && entry.ready))) {
-        onAction?.({ type: "probe", target: "services", success: true });
-      }
-    } catch (failure) { setProbeError(failure.message); }
-    finally { setProbing(false); }
+      const response = await generationResponse("/api/clock", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input), signal: lifetime.current?.signal });
+      const result = await readClockCommandResponse(response);
+      if (lifetime.current?.signal.aborted) return;
+      if (result.status) receive(result.status);
+      if (!result.accepted) setError(result.error);
+      await onChanged?.();
+    } catch (cause) { if (!lifetime.current?.signal.aborted) setError(cause.message); }
+    finally { if (!lifetime.current?.signal.aborted) setBusy(null); }
   }
-  return <>
-    <SectionTitle number="01" title="What did I get?" detail={data.world.description}/>
-    {pending.length > 0 && <Notice kind="warning"><strong>{pending.length} selected {pending.length === 1 ? "surface is" : "surfaces are"} not ready.</strong> Open <button className="link" onClick={() => setScreen("Services")}>Services</button> for the current state.</Notice>}
-    <div className="metric-grid">
-      <Panel className="metric"><div className="metric-top"><strong>People</strong><span>{people.worldPeople}</span></div><div className="metric-lines"><span>People in this world</span><span>{people.organizationSummary}</span><button className="link" onClick={() => setScreen("People")}>View people →</button></div></Panel>
-      {surfaces.map((surface) => {
-        const read = surfaceResources(data, surface);
-        const measured = read.resources.some((resource) => resource.count !== null);
-        return <Panel className="metric" key={surface.id}>
-          <div className="metric-top"><strong>{surface.name}</strong><span>{measured ? "Available" : "Unavailable"}</span></div>
-          <div className="metric-lines"><span>Runtime: {surface.state ?? "unknown"}</span>
-            {read.resources.map((resource) => <span key={resource.label}>{resource.label}: {resourceCountText(resource)}</span>)}
-            {!read.available && <span>{read.error}</span>}
-            <button className="link" onClick={() => setScreen(serviceScreen(surface))}>Open service →</button>
-          </div>
-        </Panel>;
-      })}
+  const totals = sample?.status.timeline;
+  return <div className="overview-stream">
+    <div className="overview-section-head"><h2>Event stream</h2><Button kind="small" onClick={() => setScreen("Timeline")}>Open timeline →</Button></div>
+    {error && <Notice kind="error">{error}</Notice>}
+    {sample ? <><TimelineControls sample={sample} busy={busy || Boolean(error)} onCommand={command} reconnectRequired={session?.reconnect_required}/>
+      {timelineReadReady(sample.status) && <div className="overview-totals"><span><strong>{totals.delivered}</strong> delivered</span><span><strong>{totals.pending}</strong> pending</span><span><strong>{totals.failed + totals.uncertain}</strong> need review</span><span>Next event <strong>{totals.next_due_ms === null ? "Schedule complete" : elapsedLabel(totals.next_due_ms)}</strong></span></div>}
+    </> : <Notice>Reading the world clock…</Notice>}
+  </div>;
+}
+
+export function Overview({ data, setScreen, onRefresh, onAction, session }) {
+  const surfaces = data.surfaces ?? [], labels = worldLabels(data), people = peopleSelection(data);
+  const [selected, setSelected] = useState(surfaces[0]?.id);
+  const surfaceId = surfaces.some(surface => surface.id === selected) ? selected : surfaces[0]?.id;
+  const ready = surfaces.filter(surface => surface.state === "ready").length;
+  const peopleById = new Map((data.people ?? []).map(person => [person.id, person.name]));
+  return <div className="overview-page">
+    <header className="overview-header"><div><small>YOUR WORLD</small><h1>{labels.heading}</h1><p>{data.world.description || labels.detail}</p></div>
+      <div className="overview-health"><button className="link" onClick={() => setScreen("Services")}>{ready} of {surfaces.length} services ready</button><button className="link" onClick={() => setScreen("People")}>{people.worldPeople} people →</button></div>
+    </header>
+    {ready < surfaces.length && <Notice kind="warning">Some services are not ready. Open Services to see their state.</Notice>}
+    <WorldStream setScreen={setScreen} onChanged={onRefresh} session={session}/>
+    <div className="overview-columns">
+      <div><div className="overview-section-head"><h2>Connect your app</h2><a href="/docs/getting-started/connect-an-app">Setup guide ↗</a></div>
+        {surfaces.length ? <><label className="overview-service">Service<select value={surfaceId} onChange={event => setSelected(event.target.value)}>{surfaces.map(surface => <option key={surface.id} value={surface.id}>{surface.name}</option>)}</select></label><Bindings key={surfaceId} compact data={data} surfaceId={surfaceId} onAction={onAction}/></> : <Notice>No services are selected.</Notice>}
+      </div>
+      <div><div className="overview-section-head"><h2>Recent activity</h2><Button kind="small" onClick={() => setScreen("Activity")}>View all →</Button></div>
+        <Panel>{(data.activity ?? []).slice(0, 3).map(event => { let evidence = event.provider_evidence ?? {}; if (typeof evidence === "string") { try { evidence = JSON.parse(evidence); } catch { evidence = {}; } } return <article className="overview-activity" key={event.id}><small>{peopleById.get(event.actor_id) ?? event.source ?? "World"} · {event.occurred_at ? new Date(event.occurred_at).toLocaleTimeString() : ""}</small><strong>{event.type?.replace(/[._]+/g, " ")}</strong>{(evidence.text || evidence.subject || evidence.reason) && <p>{evidence.text || evidence.subject || evidence.reason}</p>}</article>; })}{!data.activity?.length && <p className="empty">Events will appear here after delivery.</p>}</Panel>
+      </div>
     </div>
-    {surfaces.length === 0 && <Notice>No service surfaces are selected for this instance.</Notice>}
-    <Panel className="story"><div><strong>{labels.heading}</strong><span>{labels.detail}</span></div><button className="link" onClick={() => setScreen("People")}>Inspect the people →</button></Panel>
-    <Panel className="timeline-overview"><div><strong>Control world time</strong><p>Inspect scheduled events, pause or advance the clock, and choose whether this run repeats.</p></div><Button onClick={() => setScreen("Timeline")}>Open timeline →</Button></Panel>
-    <div className="section split"><div><SectionTitle number="02" title="How does my app connect?"/><Bindings data={data} onAction={onAction}/></div>
-      <div><SectionTitle number="03" title="Is it working?"/><Panel>
-        {surfaces.map((surface) => {
-          const measured = probed.get(surface.id);
-          return <div className="surface-ready" key={surface.id}><span><i className={`state-dot ${surface.state}`}/><span><strong>{surface.name}</strong><small>{surface.implementation} {surface.version}</small></span></span><span><code className={surface.state === "ready" ? "green" : "yellow"}>{surface.state ?? "unknown"}</code><small>{measured ? `${measured.ready ? "Probe passed" : "Probe failed"} · ${measured.latency_ms} ms` : "Runtime state"}</small>{measured?.detail && <small>{measured.detail}</small>}</span></div>;
-        })}
-        {probeError && <Notice kind="error">Probe unavailable: {probeError}</Notice>}
-        <div className="probe-row"><span>Probe the selected service endpoints. A failed probe does not count as a successful read.</span><Button onClick={runProbe} disabled={probing || surfaces.length === 0}>{probing ? "Probing…" : "Probe services"}</Button></div>
-      </Panel></div>
-    </div>
-    <div className="section"><SectionTitle number="04" title="Try the selected connections" detail="These commands use this run's dynamic bindings."/>
-      <Panel className="example-grid">{examples.map(({ name, command }) => <div className="example-card" key={name}><span>{name}</span><pre>{command}</pre><CopyButton value={command}>Copy</CopyButton></div>)}</Panel>
-      <p className="muted docs-cta"><a href="/docs/getting-started/connect-an-app">Open SDK setup and complete examples</a></p>
-    </div>
-    <div className="section"><SectionTitle number="05" title="What happened after my app acted?" detail="Provider acceptance, runtime observation, and consequences."/><ActivityTable data={data} limit={6} onRefresh={onRefresh} onAction={onAction}/></div>
-    <div className="section"><SectionTitle number="06" title="How do I get back to the start?"/><Panel className="reset-box">
-      <div><strong>Reset is exact and repeatable</strong><p className="muted">Reset restores world and provider state. It preserves all application database data.</p><Button kind="danger" onClick={onReset}>Reset world services</Button></div>
-      <div className="reset-steps"><span>○ Stop application surfaces</span><span>○ Restore provider and protocol state</span><span>○ Clear observed runtime events</span><span>○ Verify the accepted start</span><span>When finished: <code>npx worldfixture down</code></span></div>
-    </Panel></div>
-  </>;
+    <details className="overview-services"><summary>Explore services · {surfaces.length} selected</summary><div className="metric-grid">{surfaces.map(surface => { const read = surfaceResources(data, surface); return <Panel key={surface.id} className="metric"><div className="metric-top"><strong>{surface.name}</strong><span>{surface.state}</span></div><div className="metric-lines">{read.resources.map(resource => <span key={resource.label}>{resource.label}: {resourceCountText(resource)}</span>)}{!read.available && <span>Unavailable · {read.error}</span>}<button className="link" onClick={() => setScreen(serviceScreen(surface))}>Open service →</button></div></Panel>; })}</div></details>
+  </div>;
 }

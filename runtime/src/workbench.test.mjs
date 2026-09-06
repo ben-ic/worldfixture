@@ -361,3 +361,33 @@ test("Slack history names its authors from the provider's own member list", asyn
     await new Promise((resolve) => provider.close(resolve));
   }
 });
+
+test('expanded Gmail uses the selected person and GitHub details paginate comments on the configured provider', async t => {
+  const calls = [];
+  const provider = createServer((request, response) => {
+    calls.push({ path: request.url, token: request.headers.authorization });
+    let value;
+    if (request.url.includes('/gmail/')) value = { id: 'mail_1', payload: { mimeType: 'text/plain', body: { data: Buffer.from('Full email content').toString('base64url') } } };
+    else if (request.url.includes('/comments?')) value = request.url.endsWith('page=1') ? Array.from({ length: 100 }, (_, id) => ({ id, body: `Comment ${id}` })) : [{ id: 100, body: 'Last comment' }];
+    else value = { body: 'Full issue description' };
+    response.writeHead(200, { 'content-type': 'application/json' }); response.end(JSON.stringify(value));
+  });
+  await new Promise(resolve => provider.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${provider.address().port}`;
+  const workbench = await startWorkbench({ state: { prepare: () => ({ get: () => ({ seq: 0 }) }) },
+    credentials: { values: { ...CREDENTIALS.values, 'token:google_token_noor-alvarez': 'noor-only' } },
+    applicationBindings: { GOOGLE_BASE_URL: base, GOOGLE_TOKEN: 'primary', GITHUB_BASE_URL: base, GITHUB_TOKEN: 'github-only' } },
+    { artifactPath: join(ROOT, 'dist/business.saas-company.v2'), stateDir: ROOT });
+  t.after(async () => { await workbench.close(); await new Promise(resolve => provider.close(resolve)); });
+  const mail = await fetch(`${workbench.url}/api/provider/gmail-message?person_id=noor-alvarez&id=mail_1`);
+  assert.equal((await mail.json()).text, 'Full email content');
+  assert.deepEqual(calls[0], { path: '/gmail/v1/users/me/messages/mail_1?format=full', token: 'Bearer noor-only' });
+  const issue = await fetch(`${workbench.url}/api/provider/github-issue?repository=owner/repo&number=1`);
+  const body = await issue.json();
+  assert.equal(body.text, 'Full issue description'); assert.equal(body.comments.length, 101);
+  const count = calls.length;
+  for (const query of ['repository=https://other.test/repo&number=1', 'repository=owner/repo&number=../2', 'repository=../repo&number=1']) {
+    const response = await fetch(`${workbench.url}/api/provider/github-issue?${query}`); assert.equal(response.status, 400);
+  }
+  assert.equal(calls.length, count);
+});

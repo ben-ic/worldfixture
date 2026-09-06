@@ -17,7 +17,7 @@ export function TopBar({ data, actor, liveState, onActors, onReset, onWorlds }) 
     </div>
     <div className="top-actions">
       <Button className="actor-button" onClick={onActors} disabled={!(data.people ?? []).length}>{actor && <Avatar name={String(actor.name ?? actor.id)}/>}<span><small>ACTING AS</small><strong>{actor ? actor.name ?? actor.id : "No person selected"}</strong></span></Button>
-      <span className={`status ${running === surfaces.length ? "" : "warn"}`}><i/>{running} of {surfaces.length} services ready <small>· {liveState === "connected" ? "live" : liveState}</small></span>
+      <span className={`status ${running === surfaces.length ? "" : "warn"}`}><i/>{running} of {surfaces.length} services ready <small>· {liveState === "connected" ? "updates connected" : liveState}</small></span>
       {onWorlds && <Button onClick={onWorlds}>Choose world</Button>}
       <Button onClick={onReset}>Reset world</Button>
     </div>
@@ -28,7 +28,7 @@ export function Sidebar({ data, screen, setScreen, onGuide }) {
   const navigation = selectedNavigation(data);
   const running = navigation.filter(entry => entry.surface.state === "ready").length;
   const runtimeStatus = data.phase && data.phase !== "ready" ? data.phase
-    : !navigation.length ? "no services" : running === navigation.length ? "running"
+    : !navigation.length ? "no services" : running === navigation.length ? "services ready"
       : navigation.some(entry => entry.surface.state === "failed") ? "failed" : "not ready";
   const groups = [...new Set(navigation.map(entry => entry.group))];
   return <aside className="sidebar">
@@ -47,7 +47,7 @@ export function Sidebar({ data, screen, setScreen, onGuide }) {
 }
 
 export function FirstRunGuide({ open, onClose, steps, setScreen }) {
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
   const complete = steps.filter(step => step.done).length;
   if (!open) return null;
   return <aside className="first-run">

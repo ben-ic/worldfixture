@@ -155,7 +155,7 @@ Options
   --no-rebase          Start the world at its authored anchor instead of today
   --start-at <duration> Apply arrivals through this position before the run is ready
   --setup              Wait for a starting position in the Workbench before delivery
-  --repeat             Restore provider state and replay after each completed arc
+  --repeat             Loop the schedule after each completed arc; keep provider data
   --scale <name>       How much of the world to send to an application:
                        smoke (at most 25 of anything), sample (at most 250),
                        or full. The default is full.
@@ -1344,8 +1344,8 @@ function printClock(result) {
   if (timeline.next_due_ms === null) say("No scheduled arrivals remain.");
   else say(`Next arrival: t+${timeline.next_due_ms / 1000}s`);
   if (result.mode === "setup") say("Choose a starting position in the Workbench. No arrivals have been applied.");
-  if (repeat?.enabled) say(`Repeat: cycle ${repeat.cycle} · ${repeat.status}. Each cycle restores WorldFixture provider state; application data stays intact.`);
-  if (repeat?.error) say(`Repeat stopped: ${repeat.error}`);
+  if (repeat?.enabled) say(`Loop: pass ${repeat.cycle} · ${repeat.status}. Provider data and delivery history stay intact.`);
+  if (repeat?.error) say(`Loop stopped: ${repeat.error}`);
 }
 
 async function clockCommand({ flags, positional }) {

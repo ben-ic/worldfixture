@@ -50,6 +50,22 @@ export function armTimeline(db, world) {
   return { armed, total: timeline.length };
 }
 
+// Append a new pass. Keep the clock, provider state, and all delivery evidence.
+export function appendTimelinePass(db, world, { offset, cycle }) {
+  const rows = (world.timeline ?? []).filter(event => event?.id && event.kind).map(event => ({
+    id: `loop:${cycle}:${event.id}`, due: offset + Math.round(Number(event.after_seconds ?? 0) * 1000), event,
+  }));
+  if (rows.some(row => !Number.isSafeInteger(row.due) || row.due < 0)) throw new Error('Loop schedule exceeds the supported clock range');
+  db.exec('SAVEPOINT append_timeline_pass');
+  try {
+    const insert = db.prepare('INSERT INTO scheduled_events(id,due_at,type,payload) VALUES(?,?,?,?)');
+    for (const { id, due, event } of rows) insert.run(id, due, event.kind, JSON.stringify(event.payload ?? {}));
+    db.prepare('UPDATE timeline_cycle SET cycle=? WHERE id=1').run(cycle);
+    db.exec('RELEASE append_timeline_pass');
+  } catch (error) { db.exec('ROLLBACK TO append_timeline_pass'); db.exec('RELEASE append_timeline_pass'); throw error; }
+  return rows.length;
+}
+
 export function pending(db) {
   return db.prepare("SELECT * FROM scheduled_events WHERE status = 'pending' ORDER BY due_at, id").all();
 }

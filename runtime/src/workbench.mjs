@@ -13,7 +13,8 @@ import { domainCollectionPath, readDomainOverview, validateDomainPage, validateD
 import { resolveToken, resolveTokenReference } from "./bindings.mjs";
 import { submit } from "./commands.mjs";
 import { executeDomainOperation } from "./domain-operations.mjs";
-import { inbox } from "./imap.mjs";
+import { gmailContent } from "./message-content.mjs";
+import { inbox, readMessage } from "./imap.mjs";
 import { probe } from "./readiness.mjs";
 import { send as sendMail } from "./smtp.mjs";
 import { appendEvent, eventsAfter, latestEvents } from "./state.mjs";
@@ -1027,6 +1028,33 @@ export async function startWorkbench(initialInstance, {
       if (request.method === "POST" && url.pathname === "/api/probe") {
         await body(request);
         return reply(200, { surfaces: await probeApplicationSurfaces(instance) });
+      }
+      if (request.method === "GET" && url.pathname === "/api/provider/gmail-message") {
+        const person = personFor(world, url.searchParams.get("person_id"));
+        requireProviderIdentity(artifactPath, "google", person);
+        const selected = googlePersonBindings(bindings, artifactPath, person, instance.credentials);
+        const id = url.searchParams.get("id");
+        if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) return reply(400, { error: "Invalid message ID" });
+        const message = await providerJson(`${selected.GOOGLE_BASE_URL}/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`, selected.GOOGLE_TOKEN);
+        return reply(200, { ...gmailHeaders(message), ...gmailContent(message.payload) });
+      }
+      if (request.method === "GET" && url.pathname === "/api/provider/mail-message") {
+        if (!bindings.IMAP_HOST_PORT) return reply(404, { error: "Local mail is not selected" });
+        const uid = Number(url.searchParams.get("uid")), mailbox = url.searchParams.get("mailbox");
+        if (!Number.isSafeInteger(uid) || uid < 1 || !["INBOX", "Sent"].includes(mailbox)) return reply(400, { error: "Invalid message UID or mailbox" });
+        return reply(200, await readMessage(bindings.IMAP_HOST_PORT, { login: bindings.IMAP_USERNAME, password: bindings.IMAP_PASSWORD, uid, mailbox }));
+      }
+      if (request.method === "GET" && url.pathname === "/api/provider/github-issue") {
+        if (!bindings.GITHUB_BASE_URL) return reply(404, { error: "GitHub is not selected" });
+        const repository = url.searchParams.get("repository"), number = url.searchParams.get("number");
+        if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repository ?? "") || repository.split("/").some(part => part === "." || part === "..") || !/^[1-9][0-9]*$/.test(number ?? "") || !Number.isSafeInteger(Number(number))) return reply(400, { error: "Invalid repository or issue number" });
+        const path = `/repos/${repository.split("/").map(encodeURIComponent).join("/")}/issues/${number}`;
+        const issue = await providerJson(`${bindings.GITHUB_BASE_URL}${path}`, bindings.GITHUB_TOKEN);
+        const comments = await readPages(async (page = 1) => {
+          const rows = await providerJson(`${bindings.GITHUB_BASE_URL}${path}/comments?per_page=100&page=${page}`, bindings.GITHUB_TOKEN);
+          return { rows, next: Array.isArray(rows) && rows.length === 100 ? page + 1 : null };
+        }, { initial: 1 });
+        return reply(200, { text: issue.body ?? "", comments: comments.rows, commentsStatus: collectionState(comments) });
       }
       if (request.method === "GET" && url.pathname === "/api/provider/gmail") {
         const person = personFor(world, url.searchParams.get("person_id"));

@@ -9,22 +9,29 @@
 // person reading their own inbox needs LOGIN, SELECT, FETCH and LOGOUT; a
 // general-purpose IMAP library is not the thing under test here.
 
+import { mimeContent } from "./message-content.mjs";
 import { connect } from "node:net";
 
 class Session {
   #socket;
-  #buffer = "";
+  #buffer = Buffer.alloc(0);
+  #literal = null;
+  #error = null;
   #tag = 0;
   #waiters = [];
 
-  constructor(socket) {
+  constructor(socket, timeoutMs) {
     this.#socket = socket;
-    socket.setEncoding("utf8");
+    socket.on("error", error => this.#fail(error));
+    socket.on("close", () => this.#fail(new Error("IMAP connection closed")));
+    socket.setTimeout(timeoutMs, () => socket.destroy(new Error("IMAP response timed out")));
     socket.on("data", (chunk) => {
-      this.#buffer += chunk;
+      this.#buffer = Buffer.concat([this.#buffer, chunk]);
       this.#drain();
     });
   }
+
+  #fail(error) { this.#error = error; for (const waiter of this.#waiters.splice(0)) waiter.reject(error); }
 
   // Untagged lines accumulate; a tagged line ends the command that asked.
   #drain() {
@@ -32,10 +39,17 @@ class Session {
       const waiter = this.#waiters[0];
       if (!waiter) return;
 
+      if (this.#literal !== null) {
+        if (this.#buffer.length < this.#literal) return;
+        const literal = this.#buffer.subarray(0, this.#literal).toString('utf8');
+        this.#buffer = this.#buffer.subarray(this.#literal); this.#literal = null;
+        waiter.lines.literals.push(literal); waiter.lines.push(...literal.split('\r\n'));
+        continue;
+      }
       const end = this.#buffer.indexOf("\r\n");
       if (end === -1) return;
 
-      const line = this.#buffer.slice(0, end);
+      const line = this.#buffer.subarray(0, end).toString("utf8");
       this.#buffer = this.#buffer.slice(end + 2);
 
       if (waiter.tag && line.startsWith(`${waiter.tag} `)) {
@@ -50,13 +64,17 @@ class Session {
         else waiter.reject(new Error(`unexpected greeting: ${line}`));
       } else {
         waiter.lines.push(line);
+        const literal = line.match(/\{(\d+)\}$/);
+        if (literal) this.#literal = Number(literal[1]);
       }
     }
   }
 
   #expect(tag) {
+    if (this.#error) return Promise.reject(this.#error);
     return new Promise((resolve, reject) => {
-      this.#waiters.push({ tag, lines: [], resolve, reject });
+      const lines = []; lines.literals = [];
+      this.#waiters.push({ tag, lines, resolve, reject });
       this.#drain();
     });
   }
@@ -88,7 +106,7 @@ function open(host, port, timeoutMs) {
     socket.on("error", reject);
     socket.on("connect", () => {
       socket.setTimeout(0);
-      resolve(new Session(socket));
+      resolve(new Session(socket, timeoutMs));
     });
   });
 }
@@ -111,7 +129,7 @@ export async function inbox(address, { login, password, mailbox = "INBOX", limit
 
     const first = Math.max(1, exists - limit + 1);
     const fetched = await session.send(
-      `FETCH ${first}:${exists} (FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID IN-REPLY-TO)])`,
+      `FETCH ${first}:${exists} (UID FLAGS BODY.PEEK[HEADER.FIELDS (FROM TO SUBJECT DATE MESSAGE-ID IN-REPLY-TO)])`,
     );
 
     return { mailbox, exists, unseen, messages: parseEnvelopes(fetched) };
@@ -134,7 +152,7 @@ function parseEnvelopes(lines) {
   for (const line of lines) {
     const start = line.match(/^\* (\d+) FETCH /);
     if (start) {
-      current = { seq: Number(start[1]), seen: !/\\Seen/.test(line) === false, headers: {} };
+      current = { seq: Number(start[1]), uid: Number(line.match(/UID (\d+)/)?.[1]) || undefined, seen: !/\\Seen/.test(line) === false, headers: {} };
       messages.push(current);
       continue;
     }
@@ -169,4 +187,19 @@ function decodeWords(value) {
       return whole;
     }
   });
+}
+
+// UID stays stable when another message is removed from the mailbox.
+export async function readMessage(address, { login, password, mailbox = 'INBOX', uid, timeoutMs = 10_000 }) {
+  if (!Number.isSafeInteger(uid) || uid < 1 || !['INBOX', 'Sent'].includes(mailbox)) throw new Error('Invalid message UID or mailbox');
+  const quote = value => '"' + String(value).replace(/["\\]/g, '\\$&').replace(/[\r\n]/g, '') + '"';
+  const [host, port] = address.split(':');
+  const session = await open(host, Number(port), timeoutMs);
+  try {
+    await session.greeting(); await session.send(`LOGIN ${quote(login)} ${quote(password)}`);
+    await session.send(`SELECT ${quote(mailbox)}`);
+    const fetched = await session.send(`UID FETCH ${uid} (BODY.PEEK[])`);
+    if (fetched.literals.length !== 1) throw new Error('Message is no longer available');
+    return mimeContent(fetched.literals[0]);
+  } finally { session.close(); }
 }

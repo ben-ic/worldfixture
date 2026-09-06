@@ -21,14 +21,14 @@ test("the complete Timeline first render works before clock or record responses 
   assert.doesNotMatch(markup, /No scheduled records|Advance forward|Apply position and start/);
 });
 
-test("setup can choose the starting position before delivery and states the repeat reset effect", () => {
+test("setup can choose the starting position before delivery and keeps data when looping", () => {
   const markup = render(TimelineControls, { sample, onCommand() {} });
   assert.match(markup, /Setup · paused before delivery/);
   assert.match(markup, /Start at elapsed time/);
   assert.match(markup, /Apply position and start/);
   assert.match(markup, /at or before this position/);
-  assert.match(markup, /removes manual provider changes/);
-  assert.match(markup, /Application database data and connector receipts remain/);
+  assert.match(markup, /Keep provider data, manual changes, and delivery history/);
+  assert.doesNotMatch(markup, /baseline restore|reset.and.repeat/);
   assert.doesNotMatch(markup, /checked=""|Advance forward|type="range"/);
 });
 
@@ -40,7 +40,7 @@ test("running controls are forward-only, paused is visible, and ineligible repea
   assert.match(markup, /Resume/);
   assert.match(markup, /Advance forward/);
   assert.match(markup, /type="checkbox" disabled=""/);
-  assert.match(markup, /no positive duration/);
+  assert.match(markup, /positive duration/);
   assert.doesNotMatch(markup, /Start at elapsed time|Apply position and start|type="range"/);
 });
 
@@ -82,6 +82,8 @@ test("overlapping axis marks name every loaded event and open groups without a d
   const markup = render(TimelineAxis, { sample, rows, window: { from: 0, span: 30000 }, onSelect() {} });
   assert.match(markup, /2000 loaded events/);
   assert.match(markup, /2000 Pending/);
+  assert.match(markup, /Grouped events · number shows the count/);
+  assert.match(markup, /Timeline legend/);
   assert.match(markup, /Future stays open/);
   assert.match(markup, /Moving this view does not move the clock/);
   assert.doesNotMatch(markup, /role="slider"|type="range"|draggable="true"/);

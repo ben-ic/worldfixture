@@ -15,19 +15,15 @@ The port can change each time that you start a world.
 
 Use the **left sidebar** to move between product areas. The **top bar** shows
 who you act as, service readiness, and **Reset world**. **Overview** shows the
-world summary and connection values.
+world clock, Loop controls, recent activity, and connection values. Expand
+**Explore services** to see the service inventory.
 
 [Open the full-size Overview screenshot](/workbench/overview.png).
 
-These screenshots show a running `business.saas-company:v3` world with Slack
-and GitHub selected. Your services, people, counts, and ports can differ. Use
-the values in your own Workbench. Credentials remain hidden in the images.
-
-<!-- Captured 2026-09-05 with the repository Workbench UI at 5c19dc6, served
-     locally against the existing running world's API. The container had an
-     older Workbench build. Chat was captured with the current repository
-     /api/provider/slack handler connected to that same live Slack service,
-     so sender names come from users.list. These are browser captures. -->
+The Overview and expanded content screenshots show a local run with all selected
+services ready. The Services, Chat, and Activity screenshots show an earlier run
+with Slack and GitHub selected. Your people, counts, and ports can differ.
+Credentials remain hidden in the images.
 
 ## Your first visit
 
@@ -42,7 +38,7 @@ Do not call a service until it shows **Ready**.
 
 ## Find connection values
 
-In **Overview**, find **How does my app connect?**. Select **Copy .env** for the
+In **Overview**, find **Connect your app** and choose a service. Select **Copy .env** for that service's
 connection values together, or **Copy** beside one value. Tokens are hidden;
 **Show** reveals the selected token when you need it.
 
@@ -75,6 +71,19 @@ successful write, refresh the provider page to see the updated state.
 
 If a page has **Acting as**, select a world person. The page enables a write only
 when that person has the required provider identity and credential.
+
+## Open emails and issues
+
+Select an email row in **Gmail** or **Local Mail** to read its full body in place.
+Select **Reply** inside the open message to fill the reply form. Closing a row
+returns to the compact message list.
+
+![Local Mail with a streamed notification expanded to show its body.](/workbench/mail-expanded.png)
+
+Select an issue in **Code** to read its description and comments. Content loads
+from the provider when you open the row. If a read fails, select **Retry**.
+
+![GitHub issue expanded with its description and comments.](/workbench/github-expanded.png)
 
 ## Check what happened
 

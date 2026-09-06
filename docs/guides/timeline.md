@@ -11,7 +11,7 @@ Open **Timeline** in the Workbench to watch the world clock and scheduled
 delivery. The counts show pending, in-flight, delivered, failed, skipped, and
 uncertain outcomes. Select an event mark to inspect the records in that group.
 
-![Timeline with a running clock, pause and advance controls, delivery counts, and two delivered records in the selected group.](/workbench/timeline-streaming.png)
+![Timeline with a running clock, Loop enabled, retained deliveries, and a complete symbol legend.](/workbench/timeline-streaming.png)
 
 The scheduled data reaches the provider services. This Chat capture shows four
 scheduled messages in Slack's **#release-3-2** channel. Open **Chat**, select the
@@ -23,11 +23,9 @@ These screenshots show `business.saas-company:v3` in a separate local run.
 The Timeline capture shows a running clock. The Chat capture shows messages
 read after a pause. Your counts, times, and selected services can differ.
 
-<!-- Browser captures from 2026-09-06. Started worldfixture:ci-owner-fix with
-     --setup in a separate project, applied 0s, and observed live deliveries.
-     Captured Chat after pausing at t+1m 13s. Resumed and captured Timeline
-     at t+1m 31s with a delivered event group selected. No test message was
-     posted through the composer, and no application connector was configured. -->
+<!-- Browser captures from 2026-09-06. Timeline shows the updated Workbench
+     after two completed passes in an isolated worldfixture:workbench-review
+     run. Chat is from the earlier isolated streaming review run. -->
 
 ## Read, pause, and advance
 
@@ -100,25 +98,42 @@ Managed Workbench requests also use `X-WorldFixture-Generation`. Read the curren
 generation from `GET /api/session`; mutations with missing or old generations are
 refused. A switch invalidates earlier clock samples and timeline pages.
 
-## Repeat with baseline restore
+## Loop without reset
+
+Enable **Loop** in Overview or Timeline to play the schedule again after all
+scheduled events and their delayed effects finish. The clock keeps moving forward.
+Provider data, manual changes, and delivery history remain available. The square
+symbol (**▦**) means grouped events; the number shows how many loaded events are
+in that group. The legend explains every timeline symbol.
+
+The existing CLI option also enables Loop:
 
 ```sh
 worldfixture up --repeat
 ```
 
-Repeat is off by default. You can also enable it in the Timeline screen. Each
-cycle waits for delivery to settle, restores WorldFixture-owned provider state,
-and checks readiness before the next pass. Manual provider changes are removed.
-Application database services with `reset: false` remain intact. Repeat stops on
-delivery or reset failure. A selected arc with no positive duration cannot repeat.
+Loop is off by default. Each new pass appends events with new arrival IDs and
+future due times. It does not restore the baseline. Use **Reset world** separately
+when you need to return to the initial data. This changes the previous behavior
+of `--repeat`, which restored provider data between passes.
 
-Application connector events retain their ID, payload, and inferred `occurred_at`
-across retries and repeat. The ID format is
+`POST /api/clock` accepts `{ "action": "loop", "enabled": true }`.
+A setup start can include `"loop": true`. The older `repeat` action remains an
+alias. `GET /api/clock` includes `loop.enabled`; `repeat.cycle` identifies the
+current schedule pass. Clients must refresh timeline pages when that value changes.
+
+Loop sends the same authored payloads through the provider APIs. New messages,
+comments, and payments without a fixed invoice ID accumulate. Fixed object keys
+follow the provider's overwrite rules. Operations that cannot be repeated, such
+as paying an invoice that is already paid, stop delivery for inspection. Loop
+also stops on delivery failure. A schedule needs a positive duration to loop.
+
+Application connector events get a new ID for each loop pass. Retries within a
+pass retain their ID, payload, and inferred `occurred_at`. The ID format is
 `wf:<encoded-world-id>:<encoded-world-version>:<encoded-arrival-id>`, where each
-component uses URL encoding. Accepted connector receipts survive provider reset;
-repeat does not send an already accepted mutation to the preserved application.
-If an event's target or authored payload changes under the same identity, delivery
-fails for inspection. An explicit authored `occurred_at` is part of that payload.
+component uses URL encoding. Accepted receipts survive an explicit provider
+reset. If the target or payload changes under the same ID, delivery fails for
+inspection.
 
 The runtime does not claim exactly-once delivery across a crash for a provider
 without idempotency or a result lookup. An interrupted in-flight attempt is

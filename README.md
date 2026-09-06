@@ -51,11 +51,12 @@ The world keeps changing after startup. Scheduled messages, email, GitHub
 comments, payments, and S3 objects arrive through local provider APIs and
 protocols. Your application can read the new data from those same services.
 
-Use **Timeline** to watch delivery, pause or resume world time, and advance by
+Use **Overview** or **Timeline** to control streaming. Enable **Loop** to replay
+the schedule while keeping provider data and delivery history. Pause or resume world time, and advance by
 a duration such as `90s` or `5m`. The event marks show delivered and pending
 records. Select a mark to inspect its events.
 
-[![Live Timeline with the running world clock, pause and advance controls, delivery counts, and a selected group of delivered events.](docs/public/workbench/timeline-streaming.png)](docs/public/workbench/timeline-streaming.png)
+[![Live Timeline with Loop enabled, retained delivery counts, and a legend for grouped events.](docs/public/workbench/timeline-streaming.png)](docs/public/workbench/timeline-streaming.png)
 
 The result appears in the provider. Here, four scheduled messages have arrived
 in Slack's **#release-3-2** channel. **Refresh conversation** reads the current
@@ -65,7 +66,7 @@ channel history.
 
 These captures show a running `business.saas-company:v3` world with all selected
 services ready. See [Timeline controls](https://worldfixture.com/docs/guides/timeline)
-for starting positions, event details, and repeat with baseline restore.
+for starting positions, event details, and continuous looping.
 
 ## Requirements
 
@@ -117,10 +118,9 @@ contributor documentation.
 **Overview** shows the current world, service readiness, and application
 connection values. Credentials are hidden.
 
-[![Workbench Overview with the world summary, connection values, and ready Slack and GitHub services.](docs/public/workbench/overview.png)](docs/public/workbench/overview.png)
+[![Workbench Overview with the world clock, Loop controls, connection values, and recent activity.](docs/public/workbench/overview.png)](docs/public/workbench/overview.png)
 
-This Overview capture shows `business.saas-company:v3` with Slack and GitHub
-selected. Your services, counts, and ports can differ. Select an image to open
+This Overview capture shows `business.saas-company:v3` with all selected services ready. Your services, counts, and ports can differ. Select an image to open
 it at full size. See the [Workbench guide](https://worldfixture.com/docs/guides/workbench)
 for more screenshots and instructions.
 

@@ -26,7 +26,7 @@ const MASK = "••••••••••••";
 
 const isSecret = (name, value) => CREDENTIAL.test(name) || EMBEDDED_CREDENTIAL.test(value);
 
-export function Bindings({ data, complete = false, surfaceId, onAction }) {
+export function Bindings({ data, complete = false, surfaceId, onAction, compact = false }) {
   const [revealed, setRevealed] = useState(() => new Set());
   const [query, setQuery] = useState("");
   const allGroups = bindingGroupsFor(data, { surfaceId });
@@ -44,10 +44,10 @@ export function Bindings({ data, complete = false, surfaceId, onAction }) {
   }
 
   return <Panel title={surfaceId === undefined ? "Bindings for this instance" : "Bindings for this service"} tools={entries.length > 0 && <CopyButton value={environment} onCopy={copied}>Copy .env</CopyButton>}>
-    {entries.length > 0 && <div className="action-form"><label>FIND A BINDING OR CAPABILITY<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Binding name or service"/></label><span className="muted">{entries.length} bindings available. Open a group to view and copy its values.</span></div>}
+    {!compact && entries.length > 0 && <div className="action-form"><label>FIND A BINDING OR CAPABILITY<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Binding name or service"/></label><span className="muted">{entries.length} bindings available. Open a group to view and copy its values.</span></div>}
     {groups.map((group) => <details className="technical-details" key={group.id} open={complete || Boolean(query) || groups.length === 1}>
       <summary>{group.name ?? group.id} · {group.entries.length} bindings</summary>
-      {group.capabilities?.length > 0 && <div className="panel-pad muted">{group.capabilities.join(" · ")}</div>}
+      {!compact && group.capabilities?.length > 0 && <div className="panel-pad muted">{group.capabilities.join(" · ")}</div>}
       {group.entries.map(([name, value]) => {
       const secret = isSecret(name, value);
       const shown = !secret || revealed.has(name);
