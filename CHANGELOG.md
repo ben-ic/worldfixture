@@ -2,6 +2,9 @@
 
 ## 0.2.4
 
+- Package builds prepare a local Python environment and install the compiler's
+  declared dependencies, so publishing does not require a separate `jsonschema`
+  installation in system Python.
 - Worlds can run without a company profile. Provider selection, identities,
   domain records, and Workbench views use the selected world's declarations.
 - Timeline controls support setup, starting positions, advance, and repeat.

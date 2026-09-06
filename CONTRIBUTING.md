@@ -119,3 +119,13 @@ committed SVG files match their D2 sources.
 
 Use the [release checklist](docs/release-checklist.md) before you publish source
 archives, packages, or container images.
+
+Package builds require Python 3.11 or later with `venv` and Node.js 22 or later.
+`npm run build:worlds` creates an ignored Python environment at
+`.worldfixture/build-venv` and installs the dependencies from `pyproject.toml`.
+It does not install packages into system Python or require shell activation.
+The first build needs access to the Python package index.
+
+Run `npm pack` to check the complete package build before `npm publish`.
+Both commands build the worlds and Workbench through `prepack`. A preview with
+`--ignore-scripts` does not check these builds.
