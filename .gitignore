@@ -35,6 +35,12 @@ docs/.vitepress/cache/
 docs/.vitepress/dist/
 site/
 
+# Python build output. `pip install .` writes both of these into the checkout,
+# so a contributor who follows CONTRIBUTING ends up with a dirty tree.
+build/
+*.egg-info/
+.venv/
+
 # Local agent and editor state
 Homepage/.thumbnail
 examples/demo_app/.thumbnail

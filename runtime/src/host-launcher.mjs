@@ -285,14 +285,6 @@ function translateAddresses(internalAddresses, ports) {
   return addresses;
 }
 
-// Wait for the world to finish loading, and say what is usable before it does.
-//
-// `bindings.json` still marks a world that is FULLY ready, so nothing that runs
-// after `up` ever sees a half-seeded world. But the Workbench is listening long
-// before that -- measured on the default world, about 2 seconds against 117 --
-// and there is no reason to make somebody watch a blank terminal while it is
-// already open. When the container publishes `workbench.json`, `onWorkbench`
-// fires once with its URL.
 // Can this image name be fetched from a registry?
 //
 // `worldfixture:local` cannot: it names something built on this machine, and a
@@ -338,32 +330,27 @@ export async function ensureHostImage(image, { runner = run, onProgress } = {}) 
   return { pulled: true };
 }
 
-async function waitForStart(stateDir, containerId, timeoutMs, runner = run, onWorkbench, byContainerPort = new Map(), onProgress) {
+// Wait for the world to finish loading, and report what is usable as it lands.
+//
+// `bindings.json` marks a world that is FULLY ready, so nothing that runs after
+// `up` ever sees a half-seeded world. The container publishes `progress.json`
+// on every transition underneath that, which is what `onProgress` carries: the
+// caller can tick each part of the world off as it comes up without ever
+// implying that the whole thing is ready.
+//
+// The Workbench is listening long before the world is finished -- measured on
+// the default world, about 2 seconds against 117 -- and this used to announce
+// its URL the moment it appeared. That was a mistake dressed as helpfulness:
+// the address is the one thing somebody will act on, and acting on it at two
+// seconds opens a world with no mail, no files and no databases in it. It is
+// reported once, on the ready screen, with everything else.
+async function waitForStart(stateDir, containerId, timeoutMs, runner = run, onProgress) {
   const deadline = Date.now() + timeoutMs;
   const bindingsPath = join(stateDir, "bindings.json");
   const lockPath = join(stateDir, "environment.lock.json");
-  const workbenchPath = join(stateDir, "workbench.json");
   const progressPath = join(stateDir, "progress.json");
-  let announced = false;
   let lastProgress = "";
   while (Date.now() < deadline) {
-    if (!announced) {
-      const workbench = readJson(workbenchPath);
-      if (workbench?.url) {
-        announced = true;
-        // TRANSLATED, NOT PRINTED RAW. The container knows only its own inside
-        // address; Docker maps that to whatever host port was free. Every other
-        // binding goes through `translateBindings` for this reason and this one
-        // did not, so the early line printed the container's port.
-        //
-        // It hid because 4715 is usually free, so both numbers matched. When it
-        // is taken -- the fallback case this launcher exists for -- the URL named
-        // a real listener belonging to ANOTHER instance, which looks like it
-        // worked. Measured: a second world published its Workbench on 62391
-        // while the printed line said 4715, which was the first world's.
-        onWorkbench?.(translateBindings({ WORKBENCH_URL: workbench.url }, byContainerPort).WORKBENCH_URL);
-      }
-    }
     // The container publishes what it is doing; report it only when it changes,
     // so a caller can render one line rather than a scrolling log.
     if (onProgress) {
@@ -397,7 +384,6 @@ export async function launchHostInstance({
   requestedWorld,
   runner = run,
   selectPorts = selectHostPorts,
-  onWorkbench,
   // `onPull` is called with ONE ARGUMENT, THE IMAGE NAME, because that is what
   // its only caller prints: `cli.mjs` renders it as `Fetching <name>`. A port
   // retry is a different event with nothing to fetch, so it gets its own
@@ -406,6 +392,10 @@ export async function launchHostInstance({
   // runner before this was split.
   onPull,
   onPortRetry,
+  // The published host ports, handed over once Docker has accepted them. The
+  // caller names them while the world loads, and a port it invented instead
+  // would be a lie somebody types into an application.
+  onPorts,
   onProgress,
   containerArgs = [],
   prepareContainerArgs,
@@ -514,10 +504,9 @@ export async function launchHostInstance({
     const { stdout } = await runner("docker", args, { maxBuffer: 1024 * 1024, env: childEnvironment });
     containerId = stdout.trim();
 
-    // Built before the wait, because the early Workbench announcement needs it
-    // to turn the container's own port into the one Docker published.
     const byContainerPort = new Map(ports.map((entry) => [entry.containerPort, entry]));
-    await waitForStart(stateDir, containerId, timeoutMs, runner, onWorkbench, byContainerPort, onProgress);
+    onPorts?.(ports.map(({ name, containerPort, hostPort }) => ({ name, containerPort, hostPort })));
+    await waitForStart(stateDir, containerId, timeoutMs, runner, onProgress);
 
     const lock = readJson(join(stateDir, "environment.lock.json"));
     const internalBindings = readJson(join(stateDir, "bindings.json"));

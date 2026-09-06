@@ -458,6 +458,11 @@ export async function start(lock, {
   // swallowed every message. A checkout run that had to build an image sat
   // silent for the whole build.
   onNotice,
+  // Where this run reports what it is doing, for a caller in the same process.
+  // The container route reads `progress.json` off the bind mount instead; this
+  // is the same information handed straight over, so `up --direct` can say what
+  // is loading rather than sitting silent for a minute and a half.
+  onProgress,
 }) {
   verifyArtifact(lock, artifactPath);
   const selectedWorld = JSON.parse(readFileSync(join(artifactPath, "world.json"), "utf8"));
@@ -498,6 +503,11 @@ export async function start(lock, {
 
   const children = [...preservedChildren];
   const instance = new Instance({ lock, allocation, children, state, id, stateDir, readyTimeoutMs, runtimeToken });
+  // Published before anything is started, so a caller learns the full list of
+  // services -- and can name every one of them -- from the first report rather
+  // than watching the list grow.
+  instance.onProgress = onProgress;
+  publishProgress(instance);
   instance.credentials = credentials;
   instance.generation = generation;
   instance.artifactPath = artifactPath;
@@ -614,17 +624,20 @@ function dirnameOf(path) {
 // Written on every transition and read by whoever wants it. Best-effort: a run
 // must not fail because a progress file could not be written.
 export function publishProgress(instance) {
+  const progress = {
+    api_version: "worldfixture.progress/v1",
+    phase: instance.phase,
+    services: Object.fromEntries(instance.serviceStates),
+    updated_at: new Date().toISOString(),
+  };
+  try {
+    instance.onProgress?.(progress);
+  } catch {
+    // A run whose caller cannot render its progress still runs.
+  }
   if (!instance.stateDir) return;
   try {
-    writeFileSync(
-      join(instance.stateDir, "progress.json"),
-      `${JSON.stringify({
-        api_version: "worldfixture.progress/v1",
-        phase: instance.phase,
-        services: Object.fromEntries(instance.serviceStates),
-        updated_at: new Date().toISOString(),
-      })}\n`,
-    );
+    writeFileSync(join(instance.stateDir, "progress.json"), `${JSON.stringify(progress)}\n`);
     shareHostOwnership(join(instance.stateDir, "progress.json"));
   } catch {
     // A run that cannot report its progress still runs.

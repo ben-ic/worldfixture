@@ -55,10 +55,36 @@ export function rebaseForSession(artifactPath, stateDir, {
   } catch (error) {
     // Preserve the original input and previous session when compilation fails.
     const detail = String(error.stderr ?? error.message).trim().split("\n").pop();
-    if (!quiet) process.stdout.write(`  the world could not be rebased onto today, so it starts at its authored anchor: ${detail}\n`);
-    return { artifactPath, rebased: false, reason: detail };
+    const repair = repairFor(error, detail);
+    if (!quiet) {
+      process.stdout.write(`  the world could not be rebased onto today, so it starts at its authored anchor: ${detail}\n`);
+      if (repair) process.stdout.write(`  ${repair}\n`);
+    }
+    return { artifactPath, rebased: false, reason: detail, repair };
   } finally {
     // A failed rollback must leave its backup available for recovery.
     if (!existsSync(previous)) rmSync(temporary, { recursive: true, force: true });
   }
+}
+
+// The one repair for a rebase that could not run at all.
+//
+// THE FAILURE THIS NAMES. A checkout without the compiler's Python dependency
+// installed reported `ModuleNotFoundError: No module named 'jsonschema'` and
+// nothing else, on a line about world dates. The world then started sixteen
+// days behind today, four unrelated-looking tests failed, and nowhere did
+// anything say which command fixes it. Every other failure in this CLI names a
+// component, a cause and one repair; this one named a Python traceback.
+//
+// Only the causes that have a single certain repair are named. A compiler that
+// ran and rejected the source is a different problem and gets no advice.
+export function repairFor(error, detail = String(error?.stderr ?? error?.message ?? "")) {
+  if (error?.code === "ENOENT") {
+    return "python3 is not on PATH. The world compiler needs Python 3.11 or newer to rebase a world onto today.";
+  }
+  const missing = /No module named '([^']+)'/.exec(detail);
+  if (missing) {
+    return `The world compiler is missing its ${missing[1]} dependency. Install it with \`python3 -m pip install -r requirements.txt\`.`;
+  }
+  return null;
 }

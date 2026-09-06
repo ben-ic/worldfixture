@@ -12,9 +12,11 @@ You need Docker and Node.js 22 or later. WorldFixture supports `arm64` and
 npx worldfixture up --only slack
 ```
 
-The first run downloads the WorldFixture image. The command prints progress,
-the Workbench URL, and the local Slack API endpoint. Wait until it reports that
-the world is ready.
+The first run downloads the WorldFixture image. The command ticks off each part
+of the world as it becomes usable, with the port it answers on, and keeps a
+running clock for the parts still loading. When the world is ready it prints the
+full set of addresses, including the Workbench URL and the local Slack API
+endpoint. Nothing is offered before it works, so wait for the ready report.
 
 ## 2. Open
 

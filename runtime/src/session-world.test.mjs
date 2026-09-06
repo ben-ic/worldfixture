@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { rebaseForSession } from "./session-world.mjs";
+import { rebaseForSession, repairFor } from "./session-world.mjs";
 import { inspectWorldArtifact } from "./world-catalogue.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -47,6 +47,60 @@ test("compiler failure preserves an input that is also the previous session", (t
   assert.deepEqual(readFileSync(join(input, "manifest.json")), before);
   assert.equal(inspectWorldArtifact(input).valid, true);
   assert.deepEqual(readdirSync(state), ["world"]);
+});
+
+// THE FAILURE THIS NAMES. A checkout without the compiler's Python dependency
+// installed reported `ModuleNotFoundError: No module named 'jsonschema'` on a
+// line about world dates, started the world sixteen days behind today, and
+// never said which command fixes it.
+test("a rebase that cannot run at all names the command that fixes it", (t) => {
+  const state = temporary(t);
+  const input = join(state, "world");
+  cpSync(BUILT, input, { recursive: true });
+  const result = rebaseForSession(input, state, {
+    quiet: true,
+    runCompiler() {
+      throw Object.assign(new Error("Command failed"), {
+        stderr: "Traceback (most recent call last):\n  File \"<string>\", line 1\nModuleNotFoundError: No module named 'jsonschema'",
+      });
+    },
+  });
+  assert.equal(result.rebased, false);
+  assert.match(result.reason, /No module named 'jsonschema'/);
+  assert.match(result.repair, /missing its jsonschema dependency/);
+  assert.match(result.repair, /pip install -r requirements\.txt/);
+});
+
+test("a missing python3 is named as a missing python3, not as a compiler that refused", (t) => {
+  const state = temporary(t);
+  const input = join(state, "world");
+  cpSync(BUILT, input, { recursive: true });
+  const result = rebaseForSession(input, state, {
+    quiet: true,
+    runCompiler() { throw Object.assign(new Error("spawn python3 ENOENT"), { code: "ENOENT" }); },
+  });
+  assert.equal(result.rebased, false);
+  assert.match(result.repair, /python3 is not on PATH/);
+});
+
+// A compiler that ran and rejected the source is a different problem, and
+// advice invented for it would send somebody to install something they have.
+test("a compiler that ran and refused the source is given no repair to follow", (t) => {
+  const state = temporary(t);
+  const input = join(state, "world");
+  cpSync(BUILT, input, { recursive: true });
+  const result = rebaseForSession(input, state, {
+    quiet: true,
+    runCompiler() { throw new Error("world.yaml: person maya-chen has no email"); },
+  });
+  assert.equal(result.rebased, false);
+  assert.equal(result.repair, null);
+});
+
+test("the repair is decided from the cause, not from the wording of a traceback", () => {
+  assert.equal(repairFor({ code: "ENOENT" }, "spawn python3 ENOENT").startsWith("python3 is not on PATH"), true);
+  assert.match(repairFor({}, "ModuleNotFoundError: No module named 'yaml'"), /missing its yaml dependency/);
+  assert.equal(repairFor({}, "the compiler rejected this world"), null);
 });
 
 test("unverified source leaves the artifact and state unchanged", (t) => {

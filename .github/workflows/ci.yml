@@ -16,7 +16,7 @@ jobs:
         with: { python-version: "3.11" }
 
       - name: Install compiler dependencies
-        run: python3 -m pip install .
+        run: python3 -m pip install -r requirements.txt
 
       # Contract and runtime tests require the built artifacts they read.
       - name: Build the worlds the tests read
@@ -69,7 +69,7 @@ jobs:
         with: { python-version: "3.11" }
 
       - name: Install compiler dependencies
-        run: python3 -m pip install .
+        run: python3 -m pip install -r requirements.txt
 
       - name: Build every source world for the matrix
         run: |
@@ -124,7 +124,7 @@ jobs:
         with: { python-version: "3.11" }
 
       - name: Install compiler dependencies
-        run: python3 -m pip install .
+        run: python3 -m pip install -r requirements.txt
 
       # The promise the product rests on. PYTHONHASHSEED differs between the two
       # builds because dict ordering is the likeliest way it would quietly break.

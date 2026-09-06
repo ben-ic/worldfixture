@@ -1,6 +1,6 @@
 {
   "name": "worldfixture",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Run a local software world and seed a connected application.",
   "keywords": [
     "fixture",

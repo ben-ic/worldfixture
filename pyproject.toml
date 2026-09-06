@@ -3,8 +3,13 @@ name = "worldfixture-compiler"
 version = "0.1.0"
 description = "Deterministic compiler for WorldFixture world artifacts"
 requires-python = ">=3.11"
-dependencies = ["jsonschema>=4.10,<5"]
 license = "Apache-2.0"
+# Read from `requirements.txt`, so the pin lives in exactly one place and a
+# `pip install -r requirements.txt` checkout matches a `pip install .` one.
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools]
 package-dir = {"" = "compiler"}

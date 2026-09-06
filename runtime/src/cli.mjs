@@ -649,7 +649,12 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
   const session = flags["no-rebase"]
     ? { artifactPath: inputPath, rebased: false }
     : rebaseForSession(inputPath, stateDir, { quiet: true });
-  if (!flags["no-rebase"] && !session.rebased) say(`World dates use the authored anchor: ${session.reason}`);
+  if (!flags["no-rebase"] && !session.rebased) {
+    say(`World dates use the authored anchor: ${session.reason}`);
+    // The repair, when there is exactly one. A world quietly starting weeks
+    // behind today is the kind of wrong that is discovered much later.
+    if (session.repair) say(`  ${session.repair}`);
+  }
   const artifactPath = session.artifactPath;
   const world = readWorld(artifactPath);
   const inOneContainer = process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1";
@@ -701,8 +706,19 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
   // is deliberate: the host launcher treats `bindings.json` as the marker for a
   // world that is fully ready, so writing it early would make `worldfixture up`
   // report a world that is still seeding as finished.
+
+  // The same launch lines the container route prints, driven by the supervisor
+  // in this process. `--direct` used to run the whole ninety seconds in silence.
+  const progress = startupProgress({ stateDir });
+  say();
+  say(`Starting    ${world.id}:${world.version}`);
+  progress.begin();
+
   let workbench;
   const openEarly = async (started) => {
+    // Every port is allocated by the time this runs, which is the first moment
+    // the launch lines can name one.
+    progress.reportPorts(launchPorts(started));
     workbench = await startWorkbench(started, {
       artifactPath,
       stateDir,
@@ -726,13 +742,16 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
       // The image build inside `start` takes minutes on a first checkout run.
       // Its "this happens once" line had no way out of the supervisor until
       // this callback existed, so the build looked like a hang.
-      onNotice: (line) => say(line),
+      onNotice: (line) => progress.note(line),
+      onProgress: (value) => progress.update(value),
     });
   } catch (error) {
+    progress.done();
     await workbench?.close();
     rmSync(`${stateDir}/workbench.json`, { force: true });
     throw error;
   }
+  progress.done();
 
   writeSessionJson(`${stateDir}/workbench.json`, { url: workbench.url, state: "ready" });
   try {
@@ -891,42 +910,48 @@ async function up(parsed) {
 
   const started = Date.now();
   const progress = startupProgress({ stateDir, startedAt: started });
-  const result = await launchHostInstance({
-    stateDir,
-    image: parsed.flags.image ?? process.env.WORLDFIXTURE_IMAGE ?? defaultImage(),
-    connectorToken: project.token,
-    projectConfig: project.config,
-    generatedSecretsPath: project.generatedSecretsPath,
-    requestedWorld,
-    // The launcher checks reuse before this callback changes the input snapshot.
-    prepareContainerArgs: () => prepareContainerArgs(builtPath, stateDir, parsed.flags, selected),
-    // A first run on a new machine has no image. Say what is happening: this is
-    // a few hundred megabytes and a silent minute reads as a hang.
-    onPull: (name) => {
-      say();
-      say(`Fetching    ${name}`);
-      say("            about 190 MB, once; later runs reuse it");
-    },
-    // A port Docker refuses costs a whole second launch attempt. Name the port,
-    // because the user's own other container is holding it and only they can
-    // say which one. This used to be routed through `onPull`, which printed
-    // `Fetching    [object Object]` and a line about 190 MB.
-    onPortRetry: (port) => {
-      say();
-      say(`Port        ${port} is already published by another container; retrying on a free one`);
-    },
-    // The Workbench is open well before the world has finished seeding. Say so
-    // when it happens rather than at the end, so the wait is spent looking at
-    // the world instead of at nothing.
-    onWorkbench: (url) => {
-      progress.done();
-      say();
-      say(`Workbench   ${url}`);
-      say(`            open after ${Math.round((Date.now() - started) / 1000)}s; the world is still loading`);
-    },
-    onProgress: (value) => progress.update(value),
-  });
-  progress.done();
+  // Before Docker is even asked for the image. The gap between the command and
+  // the container's first word is several seconds on a warm machine and minutes
+  // on a cold one, and it used to be spent staring at a bare prompt.
+  say();
+  say(`Starting    ${selected.id}:${selected.version}`);
+  progress.begin();
+  // `finally`, because a launch that throws must still stop the clock and take
+  // its line back. Without it a failure printed its own message on top of a
+  // spinner that kept turning under a dead container.
+  let result;
+  try {
+    result = await launchHostInstance({
+      stateDir,
+      image: parsed.flags.image ?? process.env.WORLDFIXTURE_IMAGE ?? defaultImage(),
+      connectorToken: project.token,
+      projectConfig: project.config,
+      generatedSecretsPath: project.generatedSecretsPath,
+      requestedWorld,
+      // The launcher checks reuse before this callback changes the input snapshot.
+      prepareContainerArgs: () => prepareContainerArgs(builtPath, stateDir, parsed.flags, selected),
+      // A first run on a new machine has no image. Say what is happening: this is
+      // a few hundred megabytes and a silent minute reads as a hang.
+      onPull: (name) => progress.note(
+        `Fetching    ${name}`,
+        "            about 190 MB, once; later runs reuse it",
+      ),
+      // A port Docker refuses costs a whole second launch attempt. Name the port,
+      // because the user's own other container is holding it and only they can
+      // say which one. This used to be routed through `onPull`, which printed
+      // `Fetching    [object Object]` and a line about 190 MB.
+      onPortRetry: (port) => progress.note(
+        `Port        ${port} is already published by another container; retrying on a free one`,
+      ),
+      // The host ports are chosen before the container starts, so the launch
+      // lines can carry the address each part will answer on. Nothing is invented
+      // here: these are the ports Docker was told to publish.
+      onPorts: (chosen) => progress.reportPorts(chosen),
+      onProgress: (value) => progress.update(value),
+    });
+  } finally {
+    progress.done();
+  }
   if (applicationEnvironment && result.bindings.WORLDFIXTURE_TOKEN !== applicationEnvironment.token) {
     writeConnectorEnvironment(applicationEnvironment.appDir, {
       fileName: applicationEnvironment.fileName,
@@ -1088,31 +1113,59 @@ export function invocation(argv1 = process.argv[1], root = PACKAGE_ROOT) {
 
 // What the world is doing while it loads.
 //
-// THE SILENCE THIS CLOSES. `up` printed the Workbench URL after about a second
-// and then said nothing for another ninety, because the only thing the host
-// could observe was `bindings.json` eventually appearing. Ninety seconds of
-// nothing reads as a hang, and the useful answer -- everything is up except
+// THE SILENCE THIS CLOSES. `up` used to print the Workbench URL after about a
+// second and then say nothing for another ninety, because the only thing the
+// host could observe was `bindings.json` eventually appearing. Ninety seconds
+// of nothing reads as a hang, and the useful answer -- everything is up except
 // mail, which is delivering 3,069 messages over LMTP -- was known inside the
 // container the whole time.
 //
-// IT SAYS IT IN THE READER'S WORDS. The first version printed the runtime's own
+// AND THE URL THAT ARRIVED TOO EARLY. Printing the Workbench address at two
+// seconds was worse than the silence. The one actionable thing in the terminal
+// was an invitation to open a world with no mail, no files and no databases in
+// it yet, and somebody who accepts an invitation the moment it is offered
+// should not be punished for it. The address is now withheld until the world
+// behind it is real, and the wait is filled with what is actually happening.
+//
+// IT SAYS IT IN THE READER'S WORDS. An early version printed the runtime's own
 // names and counts: "2 of 4 services ready, waiting on mail, s3". Nothing else
-// on the screen mentions four services -- the ready screen lists thirteen
-// provider addresses -- so the number invited the reader to work out which four,
-// and `s3` and `emulate` are names for parts of this program rather than parts
-// of a world. What somebody waiting wants is what is left, in words they have
-// already seen, and how long it has been.
-const SERVICE_NAMES = {
-  emulate: "the provider APIs",
-  "http-targets": "the HTTP targets",
-  mail: "Local Mail",
-  s3: "file storage",
-  postgres: "PostgreSQL",
-  mysql: "MySQL",
-};
+// in the output mentions four services, and `s3` and `emulate` are names for
+// parts of this program rather than parts of a world. This names the things
+// somebody came for -- the emulators, mail, storage, the databases -- and ticks
+// each one off at the moment it can actually be used.
+//
+// IT IS A CLI, NOT A DISPLAY. Every tick is an ordinary line, printed once, in
+// order, and left in the scrollback. The only thing ever rewritten is a single
+// trailing line carrying the clock, which is erased before anything permanent
+// is printed under it. Piped output loses that one line and nothing else.
 
-function serviceName(name) {
-  return SERVICE_NAMES[name] ?? name;
+// One line of the launch, in the order somebody cares about them.
+//
+// A group is printed only when this run actually has it: a project without
+// Postgres never sees a Postgres line, rather than a line that stays blank.
+const STARTUP_GROUPS = [
+  { key: "providers", services: ["emulate"], ports: () => [] },
+  { key: "mail", services: ["mail"], label: "mail over smtp and imap", ports: () => ["smtp", "imap"] },
+  { key: "storage", services: ["s3"], label: "object storage, s3 compatible", ports: () => ["s3"] },
+  // The ports come from the databases this run actually has, not from the pair
+  // this group can hold: a Postgres-only project printed `:5432 · :3306` and
+  // named a MySQL that was never started.
+  { key: "databases", services: ["postgres", "mysql"], ports: (present) => present },
+  { key: "site", services: ["http-targets"], label: "the world's own web pages", ports: () => ["site"] },
+];
+
+// Vendors the emulator line names first: the ones somebody recognises without
+// reading, then whatever else this world carries, alphabetically.
+const FAMILIAR_VENDORS = ["slack", "github", "google", "notion", "stripe"];
+
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+
+// Colour, only where it can be seen and only where it carries meaning: a green
+// tick for done, dim for the addresses and the clock. `NO_COLOR` is honoured,
+// because output that ignores it is output somebody has to fight.
+function palette(enabled) {
+  const wrap = (code) => (text) => (enabled ? `[${code}m${text}[0m` : text);
+  return { green: wrap("32"), red: wrap("31"), dim: wrap("2") };
 }
 
 // "a, b and c", because a comma-separated list of two reads as an error message.
@@ -1121,20 +1174,46 @@ function list(names) {
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
-export function startupProgress({ stateDir, startedAt = Date.now() } = {}) {
+// The port each part of the world answers on, keyed the way the launch lines
+// name it. `addresses()` keys are `service/port`, and it is the port half that
+// carries the name somebody recognises -- `smtp`, `imap`, `s3`.
+function launchPorts(instance) {
+  return Object.entries(instance.addresses()).map(([key, address]) => ({
+    name: key.split("/").at(-1),
+    hostPort: address.port,
+  }));
+}
+
+export function startupProgress({ stateDir, startedAt = Date.now(), ports = [], now = () => Date.now() } = {}) {
   const tty = process.stdout.isTTY === true;
-  let printed = false;
-  let last = "";
-  let lastLine = "";
+  const colour = palette(tty && !process.env.NO_COLOR);
+  const hostPort = new Map(ports.map((entry) => [entry.name, entry.hostPort ?? entry.containerPort]));
+
+  let states = {};
+  let phase = "starting";
+  let frame = 0;
+  let live = false;
+  let ticker = null;
+  let finished = false;
+  let width = 0;
+  const printed = new Set();
+  let lock = null;
   let mailCount = null;
 
-  // Why mail is the slow one, in the world's own numbers. Read once, from the
-  // world this run rebased into its state directory, and skipped entirely if it
-  // is not there yet -- this is a reassurance, not a requirement.
-  const mailMessages = () => {
-    if (mailCount !== null || !stateDir) return mailCount;
+  // Read from the state directory this run writes into, and skipped entirely
+  // while it is not there yet. Both of these are reassurance rather than
+  // requirement, so neither is ever waited for.
+  const readLock = () => {
+    if (lock) return lock;
     try {
-      const world = JSON.parse(readFileSync(join(stateDir, "world/world.json"), "utf8"));
+      lock = JSON.parse(readFileSync(join(stateDir ?? "", "environment.lock.json"), "utf8"));
+    } catch { /* Not written yet. */ }
+    return lock;
+  };
+  const mailMessages = () => {
+    if (mailCount !== null) return mailCount;
+    try {
+      const world = JSON.parse(readFileSync(join(stateDir ?? "", "world/world.json"), "utf8"));
       const mail = world.communication?.resolved_mail ?? world.communication?.mail ?? [];
       mailCount = Array.isArray(mail) ? mail.length : 0;
     } catch {
@@ -1143,55 +1222,155 @@ export function startupProgress({ stateDir, startedAt = Date.now() } = {}) {
     return mailCount;
   };
 
+  // Which vendors the emulator line names, and how many there are. Counted from
+  // this run's own lock, so `--only slack,github` says two and not fourteen.
+  const vendors = () => {
+    const capabilities = readLock()?.capabilities;
+    if (!capabilities) return [];
+    const found = new Set();
+    for (const [capability, holder] of Object.entries(capabilities)) {
+      if (holder.service === "emulate") found.add(capability.split(".")[0]);
+    }
+    const rest = [...found].filter((name) => !FAMILIAR_VENDORS.includes(name)).sort();
+    return [...FAMILIAR_VENDORS.filter((name) => found.has(name)), ...rest];
+  };
+
+  // `:2525 · :1143`, and nothing at all when this run's ports are not known --
+  // an invented port number is worse than a missing one.
+  const addresses = (group, present) => group.ports(present)
+    .map((name) => hostPort.get(name))
+    .filter(Boolean)
+    .map((port) => `:${port}`)
+    .join(" · ");
+
+  const describe = (group, present) => {
+    if (group.key === "providers") {
+      const names = vendors();
+      return {
+        label: names.length ? names.slice(0, 5).join(", ") : "the provider APIs",
+        detail: names.length ? `${names.length} ${names.length === 1 ? "emulator" : "emulators"}` : "",
+      };
+    }
+    if (group.key === "databases") return { label: `${list(present)}, seeded to match`, detail: addresses(group, present) };
+    return { label: group.label, detail: addresses(group, present) };
+  };
+
+  // A group is only as far along as its slowest part: `postgres and mysql` is
+  // not usable until both of them are.
+  const stateOf = (present) => {
+    const values = present.map((name) => states[name]);
+    if (values.includes("failed")) return "failed";
+    return values.every((value) => value === "running") ? "running" : "starting";
+  };
+
+  // Every line this run will print, in order, with the state each one is in.
+  const rows = () => {
+    const known = Object.keys(states);
+    if (known.length === 0) return [];
+    const grouped = STARTUP_GROUPS.flatMap((group) => {
+      const present = group.services.filter((name) => known.includes(name));
+      if (present.length === 0) return [];
+      return [{ ...describe(group, present), key: group.key, state: stateOf(present) }];
+    });
+    // A service this list has never heard of still gets a line, under its own
+    // name. Dropping it would mean waiting on something with nothing on screen
+    // to account for the wait, which is the exact failure this replaced.
+    const claimed = new Set(STARTUP_GROUPS.flatMap((group) => group.services));
+    const rest = known.filter((name) => !claimed.has(name)).sort()
+      .map((name) => ({ key: name, label: name, detail: "", state: stateOf([name]) }));
+    return [...grouped, ...rest];
+  };
+
+  // The clock, and one honest sentence about where the time is going.
+  const status = () => {
+    const elapsed = `${Math.round((now() - startedAt) / 1000)}s`;
+    if (phase === "capturing-baseline") {
+      return `${elapsed}  recording the accepted state, so \`reset\` can restore it exactly`;
+    }
+    if (Object.keys(states).length === 0) return `${elapsed}  starting the world`;
+    const waiting = Object.entries(states).filter(([, state]) => state === "starting").map(([name]) => name);
+    if (waiting.length === 0) return `${elapsed}  opening the Workbench`;
+    // Mail is the long pole on any world that has any, and saying why turns a
+    // stall into a number that is going somewhere.
+    if (waiting.includes("mail") && mailMessages() > 0) {
+      return `${elapsed}  delivering ${mailMessages().toLocaleString("en-US")} messages into Local Mail`;
+    }
+    return `${elapsed}  loading`;
+  };
+
+  // The one rewritten line. Erased before anything permanent is printed under
+  // it, so the scrollback never keeps a half-finished clock.
+  const eraseLive = () => {
+    if (!live) return;
+    process.stdout.write("\r[2K");
+    live = false;
+  };
+  const drawLive = () => {
+    if (!tty || finished) return;
+    // Clipped to the terminal, because `\r` and a clear only reach the last
+    // row. A line that wrapped left its own first half on the screen above it,
+    // and the baseline sentence is long enough to wrap at eighty columns.
+    const room = Math.max(8, (process.stdout.columns ?? 80) - 8);
+    const text = status();
+    const clipped = text.length > room ? `${text.slice(0, room - 1)}…` : text;
+    process.stdout.write(`\r[2K  ${colour.dim(SPINNER[frame % SPINNER.length])}  ${colour.dim(clipped)}`);
+    live = true;
+  };
+
+  // A line per group, printed once, at the moment that group becomes usable.
+  const flush = () => {
+    for (const row of rows()) {
+      if (row.state === "starting" || printed.has(row.key)) continue;
+      printed.add(row.key);
+      eraseLive();
+      const mark = row.state === "failed" ? colour.red("×") : colour.green("✓");
+      const detail = row.detail ? `  ${colour.dim(row.detail)}` : "";
+      say(`  ${mark}  ${row.label.padEnd(width)}${detail}`.trimEnd());
+    }
+  };
+
   return {
+    // Started before anything is known, because the first seconds of `docker
+    // run` are the ones that most look like a hang.
+    begin() {
+      if (finished || !tty || ticker) return;
+      drawLive();
+      ticker = setInterval(() => {
+        frame += 1;
+        drawLive();
+      }, 120);
+      ticker.unref?.();
+    },
+    // The host chooses its published ports before the container starts; the
+    // launch lines carry them, so they arrive here rather than at construction.
+    reportPorts(chosen) {
+      for (const entry of chosen ?? []) hostPort.set(entry.name, entry.hostPort ?? entry.containerPort);
+    },
+    // Anything else that speaks during the launch goes through here. A bare
+    // `say` would land on top of the line the clock is rewriting.
+    note(...lines) {
+      eraseLive();
+      for (const line of lines) say(line);
+      drawLive();
+    },
     update(progress) {
-      const states = Object.entries(progress.services ?? {});
-      if (states.length === 0) return;
-
-      const elapsed = `${Math.round((Date.now() - startedAt) / 1000)}s`;
-      const waiting = states.filter(([, state]) => state === "starting").map(([name]) => name);
-      const ready = states.filter(([, state]) => state === "running").map(([name]) => serviceName(name));
-
-      // Recording the accepted state stops every service and starts it again, so
-      // a count would run backwards -- 4 of 4, then 2 of 4 -- and a number going
-      // backwards reads as something breaking.
-      let line;
-      if (progress.phase === "capturing-baseline") {
-        line = `Loading     ${elapsed}   recording the accepted state, so \`reset\` can restore it exactly`;
-      } else if (waiting.length === 0) {
-        line = `Loading     ${elapsed}   everything is up`;
-      } else {
-        const messages = waiting.includes("mail") && mailMessages() > 0
-          ? ` (${mailMessages().toLocaleString("en-US")} messages, most of the wait)`
-          : "";
-        const left = list(waiting.map(serviceName)).replace("Local Mail", `Local Mail${messages}`);
-        // "everything else", rather than naming what is ready. Naming it meant
-        // agreeing a verb with a list whose head could be singular or plural --
-        // "the provider APIs is ready" -- and the reader is waiting on what is
-        // LEFT. What is done only has to reassure, not enumerate.
-        line = `Loading     ${elapsed}   ${left}`
-          + (ready.length > 0 ? "; everything else is ready" : "");
-      }
-
-      // Deduplicated on the STATE, not the rendered line. The line carries an
-      // elapsed count, so comparing lines made every one unique and a piped run
-      // repeated the same phase three times as the seconds ticked. A terminal
-      // wants the clock to move; a log wants each distinct state once.
-      const key = `${progress.phase}:${waiting.join(",")}:${ready.length}`;
-      if (key === last && !tty) return;
-      if (line === lastLine) return;
-      last = key;
-      lastLine = line;
-
-      if (!tty) return say(line);
-      if (!printed) {
-        process.stdout.write("\n");
-        printed = true;
-      }
-      process.stdout.write(`\r\u001b[2K${redactSecrets(line)}`);
+      if (finished) return;
+      phase = progress.phase ?? phase;
+      states = { ...states, ...(progress.services ?? {}) };
+      // Fixed from every line this run will print, the first time the whole set
+      // is known, so the addresses line up down the column even though the
+      // lines are printed minutes apart.
+      width = Math.max(width, ...rows().map((row) => row.label.length));
+      flush();
+      drawLive();
     },
     done() {
-      if (tty && printed) process.stdout.write("\r\u001b[2K");
+      if (finished) return;
+      flush();
+      finished = true;
+      if (ticker) clearInterval(ticker);
+      ticker = null;
+      eraseLive();
     },
   };
 }

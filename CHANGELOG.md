@@ -6,6 +6,28 @@
   option keeps provider data and delivery history. Reset remains a separate action.
 - Workbench Overview puts the clock and connection values first. Email messages
   and GitHub issues expand in place, and the timeline legend explains grouped events.
+- `worldfixture up` reports its launch as it happens. Each part of the world
+  gets a line the moment it can actually be used -- the emulators it started
+  and how many, mail over SMTP and IMAP, object storage, the databases it
+  seeded -- each with the port it answers on, above a single line carrying the
+  clock and what the wait is currently spent on. `up --direct` reports the same
+  way; it used to run its whole startup in silence.
+- The compiler's Python dependency is pinned in `requirements.txt`, which
+  `pyproject.toml` now reads, so `pip install .` and
+  `pip install -r requirements.txt` install the same versions and cannot drift.
+  CONTRIBUTING and CI install through it.
+- A world that cannot be rebased onto today because the compiler could not run
+  now names the repair. Without `jsonschema` installed for the `python3` on
+  PATH, `up` reported a bare `ModuleNotFoundError` on a line about world dates
+  and then started the world weeks behind today; it now says which dependency
+  is missing and the command that installs it, and says so separately for a
+  `python3` that is not on PATH at all. A compiler that ran and rejected the
+  source is left alone, because advice invented for it would be wrong.
+- `up` no longer prints the Workbench address while the world is still loading.
+  It appeared about two seconds in, roughly a hundred seconds before the world
+  behind it had any mail, files, or databases, so the one actionable thing in
+  the terminal was an invitation into a world that was not there yet. The
+  address is now reported once, on the ready screen, with everything else.
 
 - Linux container starts, resets, and world switches retain the host user's
   ownership of private runtime state. This fixes permission failures when the

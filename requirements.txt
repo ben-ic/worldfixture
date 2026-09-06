@@ -1,0 +1,11 @@
+# The compiler's runtime dependencies.
+#
+# ONE PIN, TWO ENTRY POINTS. `pyproject.toml` reads this file for its
+# `dependencies`, so `pip install .` and `pip install -r requirements.txt`
+# install the same versions and cannot drift apart. The container installs the
+# same pin through apt as `python3-jsonschema`; that one is matched by hand,
+# because Debian names and versions packages its own way.
+#
+# Without this the compiler cannot validate a world against the schemas, and
+# every path that builds or rebases a world fails at import.
+jsonschema>=4.10,<5

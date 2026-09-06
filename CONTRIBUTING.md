@@ -29,9 +29,22 @@ PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 ```
 
 This used to need nothing but Python 3.11. It now needs one dependency, pinned
-in `pyproject.toml` and installed in the image as `python3-jsonschema`. Without
-it every test errors at import with `No module named 'jsonschema'`, which reads
-as a broken checkout rather than a missing install.
+in `requirements.txt` -- which `pyproject.toml` reads, so `pip install .` and
+`pip install -r requirements.txt` agree -- and installed in the image as
+`python3-jsonschema`. Without it every test errors at import with `No module
+named 'jsonschema'`, which reads as a broken checkout rather than a missing
+install.
+
+The Node.js runtime needs it too, and not only the Python tests: `worldfixture
+up` rebases the selected world onto today by calling the compiler through the
+`python3` on your PATH. Without the dependency the rebase fails, the world
+starts at its authored anchor weeks behind today, and four unrelated-looking
+runtime tests fail. `up` now names the missing dependency and this command when
+that happens.
+
+On a PEP 668 interpreter -- a Homebrew or distribution Python that refuses to be
+written to -- either add `--break-system-packages`, or use a virtual environment
+and make sure it is the `python3` on PATH when you run the CLI.
 
 Run Node.js component tests. Install pinned dependencies, build the Workbench,
 and prepare the service images first:
