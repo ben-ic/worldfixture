@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.4
+
+- Worlds can run without a company profile. Provider selection, identities,
+  domain records, and Workbench views use the selected world's declarations.
+- Timeline controls support setup, starting positions, advance, and repeat.
+  World switching replaces provider state and credentials while preserving
+  application databases and accepted connector receipts.
+- Corrected payment dates, provider API coverage, and reset behavior. Removed
+  obsolete code and added checks across shipped and generated worlds.
+- The package selects `ghcr.io/ben-ic/worldfixture:sha-d9139dc`, the published
+  coupling image for AMD64 and ARM64. Its existing container version label is
+  `0.2.3`; the source revision identifies this build. Full default-world checks
+  passed on native ARM64. AMD64 checks passed on smaller worlds; default-world
+  startup exceeded the limits under Rosetta. Native AMD64 default-world runtime
+  verification remains open.
+
 ## 0.2.3
 
 This release combines an audit of existing behavior with documentation,

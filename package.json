@@ -1,6 +1,6 @@
 {
   "name": "worldfixture",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Run a local software world and seed a connected application.",
   "keywords": [
     "fixture",
@@ -67,6 +67,6 @@
     "node": ">=22"
   },
   "worldfixture": {
-    "image": "ghcr.io/ben-ic/worldfixture:0.2.3"
+    "image": "ghcr.io/ben-ic/worldfixture:sha-d9139dc"
   }
 }
