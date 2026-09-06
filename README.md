@@ -144,6 +144,7 @@ See [How worlds work](docs/guides/worlds.md) and
 Run the documented checks from the repository root:
 
 ```sh
+python3 -m pip install .
 PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 npm run docs:check
 npm run docs:diagrams:check

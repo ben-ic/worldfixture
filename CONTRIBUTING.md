@@ -20,11 +20,18 @@ the public README, the applicable documentation-site page, and the
 
 ## Test groups
 
-Run compiler, schema, and parity tests:
+Run compiler, schema, and parity tests. The compiler validates against the
+schemas with `jsonschema`, so install the package once first:
 
 ```sh
+python3 -m pip install .
 PYTHONPATH=compiler python3 -m unittest discover -s tests -t .
 ```
+
+This used to need nothing but Python 3.11. It now needs one dependency, pinned
+in `pyproject.toml` and installed in the image as `python3-jsonschema`. Without
+it every test errors at import with `No module named 'jsonschema'`, which reads
+as a broken checkout rather than a missing install.
 
 Run Node.js component tests. Install pinned dependencies, build the Workbench,
 and prepare the service images first:
