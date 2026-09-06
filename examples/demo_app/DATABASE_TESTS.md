@@ -3,10 +3,11 @@
 Run from this example after `npm ci`:
 
 ```sh
-ACCOUNT_DESK_TEST_IMAGE=worldfixture:account-desk node scripts/check-databases.mjs
+ACCOUNT_DESK_TEST_IMAGE=ghcr.io/ben-ic/worldfixture:0.2.5 node scripts/check-databases.mjs
 ```
 
-The image must already exist locally. This command does not build or publish it.
+The image must already exist locally; `docker pull` it first, or name a local
+build. This command does not build or publish it.
 
 The check creates two temporary projects outside this repository. One selects
 PostgreSQL. The other selects MariaDB. Both use the installed `worldfixture`
@@ -29,12 +30,19 @@ project files remain for inspection. The test containers are removed.
 
 ## Verified result
 
-Both profiles passed on 2026-09-05 with Node 26.5.0, installed WorldFixture
-0.2.3, and local image:
+Both profiles passed on 2026-09-06 with Node 26.5.0, installed WorldFixture
+0.2.3, and the published `ghcr.io/ben-ic/worldfixture:0.2.5`:
 
 ```text
-sha256:0cc583df8dec71b84b58b143558b418884a8285dcb75180d9e136c0590a4b080
+sha256:de90b87caba05396b7570807fed2ae50d85e0f82ab302cfabc8ad1ed21d9d41e
 ```
+
+This is the run that retired the locally built image. The PostgreSQL host
+authentication fix this example used to need a private build for is in the
+published image, so the check now passes on a tag anybody can pull.
+
+They also passed on 2026-09-05 with the same CLI and a local build,
+`sha256:0cc583df8dec71b84b58b143558b418884a8285dcb75180d9e136c0590a4b080`.
 
 | Check | PostgreSQL | MariaDB |
 | --- | --- | --- |

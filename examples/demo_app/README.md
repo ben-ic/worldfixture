@@ -14,7 +14,7 @@ from the repository; the `worldfixture` npm package does not include this app.
 ```sh
 cd examples/demo_app
 npm ci
-npx worldfixture up --image worldfixture:account-desk
+npx worldfixture up --image ghcr.io/ben-ic/worldfixture:0.2.5
 npx worldfixture run -- npm run dev
 ```
 
@@ -22,8 +22,10 @@ Open the URL printed by Account Desk. The default is `http://127.0.0.1:5175`.
 If that port is in use, the app prints another port. Provider ports come from
 the installed CLI's generated bindings. Do not put provider ports in the UI.
 
-This sequence uses the corrected **local image**, not the published default.
-Build it from the repository root if it is not present:
+The `--image` is here because this example still installs the 0.2.3 CLI, whose
+own default is the 0.2.3 image. It names the published 0.2.5 image; nothing has
+to be built locally. Building one from the repository root still works if you
+want to run the example against an unreleased change:
 
 ```sh
 docker build -t worldfixture:account-desk .
@@ -33,11 +35,16 @@ The app selects PostgreSQL for drafts and action receipts. Provider records
 remain in their WorldFixture services. Both PostgreSQL and MariaDB have passed
 live storage and reset tests. See [Database checks](DATABASE_TESTS.md).
 
-The tested published image `ghcr.io/ben-ic/worldfixture:0.2.3` lacks the Calendar
-seed correction and PostgreSQL host authentication fix. If you deliberately
-use that image, `ACCOUNT_DESK_DATABASE=sqlite` is an explicit app-storage
-workaround; it does not fix Calendar. A failed database connection never causes
-an automatic fallback. No updated image has been published by this work.
+`ghcr.io/ben-ic/worldfixture:0.2.3` lacks the Calendar seed correction and the
+PostgreSQL host authentication fix, and this example used to need a locally
+built image to get around that. `ghcr.io/ben-ic/worldfixture:0.2.5` carries
+both. Measured against it on 2026-09-06: all 20 provider reads passed, Calendar
+among them with 12 records, and `scripts/check-databases.mjs` passed on both
+PostgreSQL and MariaDB through the ordinary `npx` flow.
+
+If you deliberately run the 0.2.3 image, `ACCOUNT_DESK_DATABASE=sqlite` is an
+explicit app-storage workaround; it does not fix Calendar. A failed database
+connection never causes an automatic fallback.
 
 ## Show the customer flow
 
