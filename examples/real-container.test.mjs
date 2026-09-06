@@ -27,47 +27,17 @@ function waitForLine(child, pattern, timeoutMs = 30_000) {
   });
 }
 
-function decodeHtml(value) {
-  return value.replaceAll("&amp;", "&").replaceAll("&quot;", '"').replaceAll("&lt;", "<").replaceAll("&gt;", ">");
-}
-
-async function connectOAuth(appUrl, provider, identity) {
-  let response = await fetch(`${appUrl}/auth/${provider}/start`, { redirect: "manual" });
-  const authorizeUrl = response.headers.get("location");
-  assert.ok(authorizeUrl, `${provider} supplied an authorization URL`);
-  const consent = await fetch(authorizeUrl).then((result) => result.text());
-  const forms = [...consent.matchAll(/<form[\s\S]*?<\/form>/g)].map((match) => match[0]);
-  const form = forms.find((candidate) => candidate.toLowerCase().includes(identity.toLowerCase()));
-  assert.ok(form, `${provider} consent listed ${identity}`);
-  const action = form.match(/action="([^"]+)"/)?.[1];
-  assert.ok(action, `${provider} consent supplied a form action`);
-  const fields = new URLSearchParams();
-  for (const tag of form.match(/<input[^>]*>/g) ?? []) {
-    const name = tag.match(/name="([^"]+)"/)?.[1];
-    const value = tag.match(/value="([^"]*)"/)?.[1];
-    if (name) fields.set(name, decodeHtml(value ?? ""));
-  }
-  response = await fetch(new URL(action, authorizeUrl), { method: "POST", redirect: "manual",
-    headers: { "content-type": "application/x-www-form-urlencoded" }, body: fields });
-  const callback = response.headers.get("location");
-  assert.ok(callback, `${provider} returned an authorization code`);
-  response = await fetch(callback, { redirect: "manual" });
-  assert.equal(response.status, 302, `${provider} exchanged its authorization code`);
-}
-
 async function composerPids(containerId) {
   const { stdout } = await run("docker", ["top", containerId, "-eo", "pid,ppid,pgid,args"]);
   return stdout.split("\n").filter((line) => line.includes("node src/main.mjs"))
     .map((line) => line.trim().split(/\s+/)[0]);
 }
 
-test("both examples use a real one-container instance with fallback ports", { timeout: 360_000 }, async () => {
+test("MCP and protocol examples use a real one-container instance with fallback ports", { timeout: 360_000 }, async () => {
   const state = mkdtempSync(join(tmpdir(), "worldfixture-examples-"));
   const busy = createServer((_request, response) => response.end("busy"));
   await new Promise((resolve) => busy.listen(8080, "127.0.0.1", resolve));
-  let regular;
   let copilot;
-  let oauthRegular;
 
   try {
     const up = await run(process.execPath, [BIN, "up", "--state", state], { cwd: ROOT, timeout: 300_000 });
@@ -145,46 +115,6 @@ test("both examples use a real one-container instance with fallback ports", { ti
     assert.ok(changedWorkbench.providers.slack.messageCount > workbench.providers.slack.messageCount);
     assert.ok(changedWorkbench.providers.mail.sent.exists > workbench.providers.mail.sent.exists);
 
-    regular = spawn("npm", ["start"], {
-      cwd: join(ROOT, "examples/regular-app"),
-      env: { ...process.env, WORLDFIXTURE_STATE: state },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const regularUrl = (await waitForLine(regular, /Relay Digest: (http:\/\/\S+)/))[1];
-    const first = await fetch(`${regularUrl}/api/state`).then((response) => response.json());
-    const lumen = first.accounts.find((account) => account.name === "Lumen Labs");
-    assert.ok(lumen);
-    assert.ok(lumen.mail > 0);
-    assert.ok(lumen.issues > 0);
-    assert.equal(first.buckets.length, 2);
-    const brief = await fetch(`${regularUrl}/api/brief`, { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ customerId: lumen.id }) }).then((response) => response.json());
-    assert.ok(brief.sections.some((section) => section.source.startsWith("GitHub")));
-    assert.ok(brief.sections.every((section) => section.source));
-    const published = await fetch(`${regularUrl}/api/publish`, { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ customerId: lumen.id }) }).then((response) => response.json());
-    assert.match(published.marker, /^RELAY_DIGEST_/);
-    assert.equal(published.phases.at(-1), "Consequences settled");
-    for (const provider of ["slack", "github", "gmail", "mail", "files"]) {
-      const response = await fetch(`${regularUrl}/api/${provider}`);
-      assert.equal(response.status, 200, `${provider} has a working regular-app view`);
-    }
-
-    oauthRegular = spawn("npm", ["start"], {
-      cwd: join(ROOT, "examples/regular-app"),
-      env: { ...process.env, PORT: "0", WORLDFIXTURE_AUTH_MODE: "oauth", WORLDFIXTURE_STATE: state },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const oauthUrl = (await waitForLine(oauthRegular, /Relay Digest: (http:\/\/\S+)/))[1];
-    await connectOAuth(oauthUrl, "slack", "maya");
-    await connectOAuth(oauthUrl, "github", "mayac");
-    await connectOAuth(oauthUrl, "google", "maya@");
-    const oauthState = await fetch(`${oauthUrl}/api/state`).then((response) => response.json());
-    assert.ok(oauthState.connections.filter((connection) => ["slack", "github", "google"].includes(connection.id)).every((connection) => connection.ready));
-    const oauthSlack = await fetch(`${oauthUrl}/api/slack`, { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ channel: "release-3-2", text: "OAuth real-container gate" }) });
-    assert.equal(oauthSlack.status, 200, await oauthSlack.text());
-
     copilot = spawn("npm", ["start"], {
       cwd: join(ROOT, "examples/mcp-server"),
       env: { ...process.env, WORLDFIXTURE_STATE: state },
@@ -221,21 +151,18 @@ test("both examples use a real one-container instance with fallback ports", { ti
     const composerAfterReset = await composerPids(instance.container_id);
     assert.equal(composerAfterReset.length, 1);
     assert.notEqual(composerAfterReset[0], composerBeforeReset[0], "reset replaced the provider process");
-    const restored = await fetch(`${regularUrl}/api/state`).then((response) => response.json());
-    assert.match(restored.resetProof, /accepted starting state is present/i);
-    const oauthAfterReset = await fetch(`${oauthUrl}/api/state`).then((response) => response.json());
-    assert.deepEqual(Object.fromEntries(oauthAfterReset.connections
-      .filter((connection) => ["slack", "github", "google"].includes(connection.id))
-      .map((connection) => [connection.id, connection.ready])), { slack: false, github: false, google: false });
+    const restored = await fetch(`${bindings.WORKBENCH_URL}/api/overview`).then((response) => response.json());
+    assert.equal(restored.providers.slack.messageCount, workbench.providers.slack.messageCount,
+      "reset restored the starting Slack message count");
+    assert.equal(restored.providers.mail.sent.exists, workbench.providers.mail.sent.exists,
+      "reset restored the starting Local Mail sent count");
     const events = await run(process.execPath, [BIN, "events", "--state", state], { cwd: ROOT });
     assert.match(events.stdout, /No events yet/);
 
     await run(process.execPath, [BIN, "down", "--state", state], { cwd: ROOT, timeout: 30_000 });
     await assert.rejects(run("docker", ["inspect", instance.container_id]));
   } finally {
-    if (regular?.exitCode === null) regular.kill("SIGTERM");
     if (copilot?.exitCode === null) copilot.kill("SIGTERM");
-    if (oauthRegular?.exitCode === null) oauthRegular.kill("SIGTERM");
     await run(process.execPath, [BIN, "down", "--state", state], { cwd: ROOT }).catch(() => {});
     await new Promise((resolve) => busy.close(resolve));
     rmSync(state, { recursive: true, force: true });

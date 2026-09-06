@@ -1,0 +1,48 @@
+{
+  "apiVersion": "account-desk.provider-live-evidence/v1",
+  "checkedAt": "2026-09-05T19:33:04Z",
+  "meaning": "Historical results from separate local test instances. These are not the current app run's results and do not prove production API parity.",
+  "packageVersion": "0.2.3",
+  "image": "worldfixture:account-desk",
+  "imageId": "sha256:0cc583df8dec71b84b58b143558b418884a8285dcb75180d9e136c0590a4b080",
+  "probe": "tests/providers-plan-live.mjs",
+  "productionVerified": false,
+  "runs": [
+    {
+      "world": "consumer.retail-brand:v1",
+      "artifactSource": "Repository-authored JSON built with the installed public npx CLI and corrected image",
+      "artifactDigest": "sha256:9f9e2df83ec0d377d5a81a190c7e6caaf099c96c17049fd8556edcb442ea8bb9",
+      "commands": [
+        "npx --no-install worldfixture build <repo>/worlds/consumer.retail-brand.v1 --image worldfixture:account-desk --output <isolated-project>/retail-corrected",
+        "npx --no-install worldfixture up --world-path <isolated-project>/retail-corrected --image worldfixture:account-desk",
+        "ACCOUNT_DESK_ISOLATED_PROVIDER_TEST=1 EXPECTED_WORLD_ID=consumer.retail-brand npx --no-install worldfixture run -- node <app>/tests/providers-plan-live.mjs"
+      ],
+      "readSummary": { "passed": 22, "failed": 0, "skipped": 0 },
+      "passedReadServices": ["slack", "github", "gmail", "calendar", "drive", "notion", "notion-mcp", "notion-admin", "notion-agent", "stripe", "linear", "resend", "twilio", "clerk", "okta", "microsoft", "apple", "vercel", "mongoatlas", "s3", "mail", "http"],
+      "writeSummary": { "passed": 16, "failed": 0, "skipped": 0 },
+      "passedActionIds": ["slack.send", "github.issue", "gmail.send", "notion.note", "s3.put", "stripe.draft", "calendar.event", "drive.file", "linear.issue", "resend.send", "twilio.send", "mail.send", "notion-mcp.connect", "notion-mcp.page", "notion-agent.session", "notion.webhook-capture"],
+      "localControlActionIds": ["notion.webhook-capture"],
+      "emptyInventories": ["notion-admin", "resend", "twilio", "vercel"],
+      "notes": ["Empty inventory reads are valid responses, not proof of resource lifecycle support.", "The write plan did not mutate provider state before approval.", "Every approved write had fresh readback.", "Repeating the same approval sent no second write.", "No default SaaS customer, channel, person, page or bucket ID was used."]
+    },
+    {
+      "world": "business.saas-company:v3",
+      "only": ["slack", "site"],
+      "commands": [
+        "npx --no-install worldfixture up --only slack,site --image worldfixture:account-desk",
+        "ACCOUNT_DESK_ISOLATED_PROVIDER_TEST=1 EXPECT_ONLY=slack,http npx --no-install worldfixture run -- node <app>/tests/providers-plan-live.mjs"
+      ],
+      "selectedServices": ["slack", "http"],
+      "readSummary": { "passed": 2, "failed": 0, "skipped": 20 },
+      "writeSummary": { "passed": 1, "failed": 0, "skipped": 0 },
+      "passedActionIds": ["slack.send"],
+      "notes": ["All 20 unselected service groups were skipped, not reported as selected or successful.", "HTTP checks included RSS parsing and expected stable, failing and flapping responses.", "Repeating the same approval sent no second write."]
+    }
+  ],
+  "measuredGaps": [
+    { "area": "installed world selection", "status": "unfixed in npm 0.2.3", "detail": "The positional consumer.retail-brand:v1 argument starts the default SaaS artifact. Use an explicit --world-path and check WORLDFIXTURE_WORLD_ID." },
+    { "area": "installed retail artifact", "status": "unfixed in npm 0.2.3", "detail": "Bundled retail Calendar projection returns HTTP 500 on calendarList. Rebuilding authored JSON with the corrected image fixes its calendar fields." },
+    { "area": "Slack timestamp filtering", "status": "app readback works around measured provider gap", "detail": "The current history route ignores oldest/latest/inclusive. The app sends the official timestamp bounds and follows bounded cursor pages until the exact returned message timestamp and text are found. It does not resend the write." },
+    { "area": "Local Mail JSON boundary", "status": "fixed in app", "detail": "IMAP BigInt metadata is converted to exact decimal strings before JSON storage or API output. No integer precision is lost." }
+  ]
+}

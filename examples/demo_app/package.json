@@ -1,0 +1,43 @@
+{
+  "name": "account-desk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "node src/server/main.mjs --dev",
+    "start": "node src/server/main.mjs",
+    "build": "vite build",
+    "test": "node --test tests/*.test.mjs src/ui/*.test.mjs",
+    "verify": "node src/verification/cli.mjs",
+    "test:installed-package": "node scripts/check-installed.mjs",
+    "test:databases": "node scripts/check-databases.mjs",
+    "test:first-run": "node scripts/check-first-run.mjs",
+    "test:coverage": "node --test tests/providers-coverage.test.mjs && node scripts/check-coverage.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1127.0",
+    "@linear/sdk": "93.0.1",
+    "@notionhq/client": "5.26.0",
+    "@octokit/rest": "22.0.1",
+    "@slack/web-api": "7.12.0",
+    "fast-xml-parser": "5.11.1",
+    "googleapis": "178.0.0",
+    "imapflow": "1.7.8",
+    "jose": "6.1.0",
+    "mysql2": "3.24.3",
+    "nodemailer": "10.0.0",
+    "pg": "8.23.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "resend": "6.26.0",
+    "stripe": "22.6.1",
+    "twilio": "6.1.0"
+  },
+  "devDependencies": {
+    "vite": "6.4.3",
+    "worldfixture": "0.2.3"
+  }
+}

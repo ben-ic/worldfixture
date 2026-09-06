@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#EEF2F5; font-family:'Instrument Sans', system-ui, sans-serif; color:#1B2430; }
+  a { color:#0E7FAE; }
+  a:hover { color:#0A5F84; }
+</style>
+</helmet>
+
+<div style="display:flex;flex-direction:column;gap:56px;padding:56px;align-items:flex-start">
+
+  <div style="max-width:900px;display:flex;flex-direction:column;gap:12px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">Account Desk · verification · frames 10–15</div>
+    <div style="font-size:34px;font-weight:600;letter-spacing:-0.02em">Verification</div>
+    <div style="font-size:16px;line-height:1.6;color:#5A6675;text-wrap:pretty">Same application shell, denser type and monospace evidence. Before, during and after a run, then one expanded failure, one explained skip, and one unsupported operation. All results shown are illustrative sample data, not executed test evidence.</div>
+  </div>
+
+  <div data-screen-label="10 Before a run" style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">10 · Before a run — what is selected, what is covered, nothing executed yet</div>
+    <div style="width:1280px;height:800px;background:#F5F8FA;border:1px solid #DDE4EA;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;box-shadow:0 1px 3px rgba(20,30,40,0.06)">
+      <div style="background:#FFFFFF;border-right:1px solid #DDE4EA;display:flex;flex-direction:column;padding:18px 14px;gap:22px">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:#0E7FAE"></div>
+          <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Account Desk</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Needs attention</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Customers</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Work</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Service health</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Connections</div>
+        </div>
+        <div style="border-top:1px solid #E7ECF1;padding-top:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3;padding:0 10px">Developer</div>
+          <div style="background:#E8F3F9;color:#0A5F84;font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:6px">Verification</div>
+        </div>
+        <div style="margin-top:auto;border-top:1px solid #E7ECF1;padding-top:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3">Last run</div>
+          <div style="font-size:12.5px;color:#3D4A59;line-height:1.45">None in this session. Previous run kept under History.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <div style="height:56px;flex:none;background:#FFFFFF;border-bottom:1px solid #DDE4EA;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+          <div style="display:flex;align-items:center;gap:14px"><div style="font-size:15px;font-weight:600">Verification</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">world northstar-relay · rev-41 · tests v0.9.3</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:13px;color:#3D4A59;border:1px solid #DDE4EA;border-radius:6px;padding:8px 13px">History</div>
+            <div style="font-size:13px;font-weight:600;color:#FFFFFF;background:#0E7FAE;border-radius:6px;padding:8px 15px">Run 47 checks</div>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:20px 24px;display:grid;grid-template-columns:minmax(0,1fr) 328px;gap:20px;overflow:hidden">
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13.5px;font-weight:600">Selected workflows</div>
+              <div style="font-size:12.5px;color:#5A6675">Groups stay in this order while results arrive</div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:10px 16px;background:#FAFCFD;border-bottom:1px solid #E7ECF1;font-size:11.5px;color:#5A6675">
+                <div>Group</div><div>Checks</div><div>Coverage</div><div>State</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">Google · Gmail, Calendar, Drive</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">9 planned</div>
+                <div style="font-size:12.5px;color:#3D4A59">Contract-tested</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">GitHub</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">6 planned</div>
+                <div style="font-size:12.5px;color:#3D4A59">Contract-tested</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">Stripe</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">7 planned</div>
+                <div style="font-size:12.5px;color:#3D4A59">Contract-tested · pinned SDK</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">Notion · REST, webhooks, MCP</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">8 planned</div>
+                <div style="font-size:12.5px;color:#8A5200">Partial</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">Slack</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">5 planned</div>
+                <div style="font-size:12.5px;color:#3D4A59">Contract-tested</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">HTTP targets and RSS</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">6 planned</div>
+                <div style="font-size:12.5px;color:#3D4A59">Contract-tested</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+                <div style="font-size:13.5px;font-weight:600">App database · PostgreSQL</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#3D4A59">6 planned</div>
+                <div style="font-size:12.5px;color:#3D4A59">Profile A of two</div>
+                <div style="font-size:12.5px;color:#5A6675">○ Not run</div>
+              </div>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 118px 96px;gap:12px;padding:12px 16px;align-items:center;background:#FAFCFD">
+                <div style="font-size:13.5px;font-weight:600;color:#3D4A59">Linear, Twilio, Okta, Vercel</div>
+                <div style="font-family:'Geist Mono',monospace;font-size:12.5px;color:#5A6675">11 planned</div>
+                <div style="font-size:12.5px;color:#5A6675">Not selected in this run</div>
+                <div style="font-size:12.5px;color:#5A6675">– Will skip</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:11px">
+              <div style="font-size:13.5px;font-weight:600">Executed and covered are different</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#3D4A59">
+                <div style="display:flex;justify-content:space-between"><span>Planned in the suite</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">58</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Selected this run</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">47</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Executed so far</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">0</span></div>
+              </div>
+              <div style="font-size:12.5px;color:#5A6675;line-height:1.5;border-top:1px solid #F0F3F6;padding-top:9px">A service can be ready before any check has run. A reduced run never reports complete coverage.</div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:9px">
+              <div style="font-size:13.5px;font-weight:600">What a run does</div>
+              <div style="font-size:12.5px;color:#5A6675;line-height:1.55">Writes go to an explicitly selected test instance and are read back through the provider. All effects stay in this local world. Durations are measured, never simulated.</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#3D4A59;border-top:1px solid #F0F3F6;padding-top:9px"><span style="width:16px;height:16px;border-radius:3px;background:#0E7FAE;color:#FFFFFF;font-size:11px;display:flex;align-items:center;justify-content:center">✓</span>Keep request and response captures</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-screen-label="11 During a run" style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">11 · During a run — stable order, failure surfaced without opening rows</div>
+    <div style="width:1280px;height:800px;background:#F5F8FA;border:1px solid #DDE4EA;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;box-shadow:0 1px 3px rgba(20,30,40,0.06)">
+      <div style="background:#FFFFFF;border-right:1px solid #DDE4EA;display:flex;flex-direction:column;padding:18px 14px;gap:22px">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:#0E7FAE"></div>
+          <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Account Desk</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Needs attention</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Customers</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Work</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Service health</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Connections</div>
+        </div>
+        <div style="border-top:1px solid #E7ECF1;padding-top:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3;padding:0 10px">Developer</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#E8F3F9;color:#0A5F84;font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:6px">Verification<span style="font-family:'Geist Mono',monospace;font-size:11px">running</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <div style="height:56px;flex:none;background:#FFFFFF;border-bottom:1px solid #DDE4EA;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+          <div style="display:flex;align-items:center;gap:14px"><div style="font-size:15px;font-weight:600">Run in progress</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">elapsed 00:19 · 23 of 47</div></div>
+          <div style="font-size:13px;color:#3D4A59;border:1px solid #DDE4EA;border-radius:6px;padding:8px 13px">Stop run</div>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:20px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13.5px;font-weight:600">Running · Notion append block</div>
+              <div style="display:flex;align-items:center;gap:14px;font-size:12.5px;color:#3D4A59"><span><span style="font-family:'Geist Mono',monospace;color:#1F7A4D">✓ 20</span> passed</span><span><span style="font-family:'Geist Mono',monospace;color:#B3261E">× 1</span> failed</span><span><span style="font-family:'Geist Mono',monospace;color:#5A6675">– 2</span> skipped</span></div>
+            </div>
+            <div style="height:6px;border-radius:3px;background:#E7ECF1;overflow:hidden;display:flex"><div style="width:43%;background:#0E7FAE"></div></div>
+            <div style="font-size:12.5px;color:#5A6675">Checks report as they finish. Some answer in under a second, some take up to thirty.</div>
+          </div>
+
+          <div style="background:#FCE9E7;border:1px solid #EDBEB9;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px"><span style="width:20px;height:20px;border-radius:50%;background:#B3261E;color:#FFFFFF;font-size:12px;display:flex;align-items:center;justify-content:center;flex:none">×</span><div style="font-size:13.5px;color:#7F1D18"><span style="font-weight:600">1 failure so far:</span> Stripe · mark invoice uncollectible</div></div>
+            <div style="font-size:13px;font-weight:600;color:#7F1D18">Open detail</div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:#FAFCFD;border-bottom:1px solid #E7ECF1"><div style="font-size:13px;font-weight:600">Google · Gmail, Calendar, Drive</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#1F7A4D">9 of 9 ✓</div></div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px 96px 88px;gap:12px;padding:11px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+              <div style="font-size:13.5px">Send customer reply</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">gmail.messages.send</div><div style="font-size:12.5px;font-weight:600;color:#1F7A4D">✓ Passed</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">840ms</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px 96px 88px;gap:12px;padding:11px 16px;align-items:center">
+              <div style="font-size:13.5px">Read reply back from mailbox</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">gmail.messages.get</div><div style="font-size:12.5px;font-weight:600;color:#1F7A4D">✓ Passed</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">210ms</div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:#FAFCFD;border-bottom:1px solid #E7ECF1"><div style="font-size:13px;font-weight:600">Notion · REST, webhooks, MCP</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#0E7FAE">3 of 8 · running</div></div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px 96px 88px;gap:12px;padding:11px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+              <div style="font-size:13.5px">Append block to account note</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">notion.blocks.append</div><div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#0A5F84"><span style="width:8px;height:8px;border-radius:50%;background:#0E7FAE"></span>Running</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">1.2s</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 150px 96px 88px;gap:12px;padding:11px 16px;align-items:center">
+              <div style="font-size:13.5px">Capture webhook locally</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">notion.webhook</div><div style="font-size:12.5px;color:#5A6675">○ Queued</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">—</div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;opacity:0.75">
+            <div style="font-size:13px;font-weight:600;color:#3D4A59">Stripe · GitHub · Slack · HTTP · App database</div>
+            <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">queued in fixed order</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div style="display:flex;flex-direction:column;gap:56px;padding:0 56px 56px;align-items:flex-start">
+
+  <div data-screen-label="12 After a run" style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">12 · After a run — grouped summary, failures first, skips explained in place</div>
+    <div style="width:1280px;height:800px;background:#F5F8FA;border:1px solid #DDE4EA;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;box-shadow:0 1px 3px rgba(20,30,40,0.06)">
+      <div style="background:#FFFFFF;border-right:1px solid #DDE4EA;display:flex;flex-direction:column;padding:18px 14px;gap:22px">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:#0E7FAE"></div>
+          <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Account Desk</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Needs attention</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Customers</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Work</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Service health</div>
+          <div style="font-size:13.5px;color:#3D4A59;padding:8px 10px">Connections</div>
+        </div>
+        <div style="border-top:1px solid #E7ECF1;padding-top:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3;padding:0 10px">Developer</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;background:#E8F3F9;color:#0A5F84;font-weight:600;font-size:13.5px;padding:8px 10px;border-radius:6px">Verification<span style="font-family:'Geist Mono',monospace;font-size:11px;color:#B3261E">2 failed</span></div>
+        </div>
+        <div style="margin-top:auto;border-top:1px solid #E7ECF1;padding-top:14px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3">Run</div>
+          <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#1B2430">run-2026-09-05-03</div>
+          <div style="font-size:12.5px;color:#5A6675;line-height:1.45">Captures kept for 30 days.</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <div style="height:56px;flex:none;background:#FFFFFF;border-bottom:1px solid #DDE4EA;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+          <div style="display:flex;align-items:center;gap:14px"><div style="font-size:15px;font-weight:600">Run finished</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">47 checks · 00:41 · northstar-relay rev-41</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:13px;color:#3D4A59;border:1px solid #DDE4EA;border-radius:6px;padding:8px 13px">Download results</div>
+            <div style="font-size:13px;font-weight:600;color:#FFFFFF;background:#0E7FAE;border-radius:6px;padding:8px 15px">Run again</div>
+          </div>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:20px 24px;display:flex;flex-direction:column;gap:14px;overflow:hidden">
+          <div style="display:flex;gap:12px">
+            <div style="flex:1;background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:3px"><div style="font-size:12.5px;color:#5A6675">Passed</div><div style="display:flex;align-items:baseline;gap:7px"><span style="font-family:'Geist Mono',monospace;font-size:22px;color:#1F7A4D">34</span><span style="font-size:12.5px;color:#5A6675">✓ of 36 executed</span></div></div>
+            <div style="flex:1;background:#FFFFFF;border:1px solid #EDBEB9;border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:3px"><div style="font-size:12.5px;color:#5A6675">Failed</div><div style="display:flex;align-items:baseline;gap:7px"><span style="font-family:'Geist Mono',monospace;font-size:22px;color:#B3261E">2</span><span style="font-size:12.5px;color:#5A6675">× both explained</span></div></div>
+            <div style="flex:1;background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:3px"><div style="font-size:12.5px;color:#5A6675">Skipped</div><div style="display:flex;align-items:baseline;gap:7px"><span style="font-family:'Geist Mono',monospace;font-size:22px;color:#5A6675">11</span><span style="font-size:12.5px;color:#5A6675">– with reasons</span></div></div>
+            <div style="flex:1.3;background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:4px"><div style="font-size:12.5px;color:#5A6675">Coverage</div><div style="font-size:13px;line-height:1.45;color:#3D4A59">36 of 58 planned checks executed. This run does not claim complete coverage.</div></div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;overflow:hidden">
+            <div style="padding:10px 16px;background:#FAFCFD;border-bottom:1px solid #E7ECF1;display:flex;align-items:center;justify-content:space-between"><div style="font-size:13px;font-weight:600">Needs attention first</div><div style="font-size:12.5px;color:#5A6675">Group order is unchanged from the run plan</div></div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 176px 128px 96px 84px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center;background:#FEF7F6">
+              <div style="font-size:13.5px;font-weight:600">Mark invoice uncollectible</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">stripe.invoices.markUncollectible</div><div style="font-size:12.5px;color:#8A5200">Supported but partial</div><div style="font-size:12.5px;font-weight:600;color:#B3261E">× Failed</div><div style="font-size:12.5px;font-weight:600;color:#0E7FAE">Open</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 176px 128px 96px 84px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center;background:#FEF7F6">
+              <div style="font-size:13.5px;font-weight:600">Deliver Notion webhook to receiver</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">notion.webhook.deliver</div><div style="font-size:12.5px;color:#8A5200">Supported but partial</div><div style="font-size:12.5px;font-weight:600;color:#B3261E">× Failed</div><div style="font-size:12.5px;font-weight:600;color:#0E7FAE">Open</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 176px 128px 96px 84px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+              <div style="font-size:13.5px">Create engineering follow-up</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">github.issues.create</div><div style="font-size:12.5px;color:#3D4A59">Contract-tested</div><div style="font-size:12.5px;font-weight:600;color:#1F7A4D">✓ Passed</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">1.1s</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 176px 128px 96px 84px;gap:12px;padding:12px 16px;border-bottom:1px solid #F0F3F6;align-items:center">
+              <div style="font-size:13.5px">Handle deliberate 500 from endpoint</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">http.get /v1/always-500</div><div style="font-size:12.5px;color:#3D4A59">Expected failure</div><div style="font-size:12.5px;font-weight:600;color:#1F7A4D">✓ Passed</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">96ms</div>
+            </div>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) 176px 128px 96px 84px;gap:12px;padding:12px 16px;align-items:center;background:#FAFCFD">
+              <div style="font-size:13.5px;color:#3D4A59">Create customer task</div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">linear.issues.create</div><div style="font-size:12.5px;color:#5A6675">Not verified</div><div style="font-size:12.5px;font-weight:600;color:#5A6675">– Skipped</div><div style="font-size:12.5px;font-weight:600;color:#0E7FAE">Reason</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;font-weight:600">Google · Gmail, Calendar, Drive</span><span style="font-size:12.5px;color:#5A6675">9 checks</span></div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#1F7A4D">9 passed</div></div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;font-weight:600">App database · PostgreSQL</span><span style="font-size:12.5px;color:#5A6675">6 checks · includes reset preservation</span></div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#1F7A4D">6 passed</div></div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:#FAFCFD"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;font-weight:600;color:#3D4A59">Linear, Twilio, Okta, Vercel</span><span style="font-size:12.5px;color:#5A6675">not selected in this run</span></div><div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">11 skipped</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-screen-label="13 Expanded failure" style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">13 · One expanded failure — steps, expected, actual, and the next useful action</div>
+    <div style="width:1280px;height:800px;background:#F5F8FA;border:1px solid #DDE4EA;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;box-shadow:0 1px 3px rgba(20,30,40,0.06)">
+      <div style="background:#FFFFFF;border-right:1px solid #DDE4EA;display:flex;flex-direction:column;padding:18px 14px;gap:14px">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:#0E7FAE"></div>
+          <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Account Desk</div>
+        </div>
+        <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3;padding:10px 10px 0">Results in this run</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;align-items:center;gap:8px;background:#FCE9E7;border-radius:6px;padding:8px 10px;font-size:12.5px;font-weight:600;color:#7F1D18">× Stripe invoice</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px;color:#7F1D18">× Notion webhook</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px;color:#3D4A59">✓ GitHub follow-up</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px;color:#3D4A59">✓ Gmail reply</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px;color:#5A6675">– Linear task</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <div style="height:56px;flex:none;background:#FFFFFF;border-bottom:1px solid #DDE4EA;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#5A6675"><span>Verification</span><span style="color:#B0BAC6">/</span><span style="color:#1B2430;font-weight:600;font-size:15px">Mark invoice uncollectible</span></div>
+          <div style="font-size:12.5px;font-weight:600;color:#B3261E;background:#FCE9E7;border-radius:4px;padding:5px 10px">× Failed at step 3</div>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:20px 24px;display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:20px;overflow:hidden">
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;overflow:hidden">
+              <div style="padding:11px 16px;background:#FAFCFD;border-bottom:1px solid #E7ECF1;font-size:13px;font-weight:600">Steps</div>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 96px 72px;gap:10px;padding:11px 16px;border-bottom:1px solid #F0F3F6;align-items:center"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#5A6675">1</span><span style="font-size:13.5px">Create test invoice on the selected test customer</span><span style="font-size:12.5px;font-weight:600;color:#1F7A4D">✓ Passed</span><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">420ms</span></div>
+                <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 96px 72px;gap:10px;padding:11px 16px;border-bottom:1px solid #F0F3F6;align-items:center"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#5A6675">2</span><span style="font-size:13.5px">Finalize the invoice</span><span style="font-size:12.5px;font-weight:600;color:#1F7A4D">✓ Passed</span><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">380ms</span></div>
+                <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 96px 72px;gap:10px;padding:11px 16px;border-bottom:1px solid #F0F3F6;align-items:center;background:#FEF7F6"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#B3261E">3</span><span style="font-size:13.5px;font-weight:600">Mark the invoice uncollectible</span><span style="font-size:12.5px;font-weight:600;color:#B3261E">× Failed</span><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">1.9s</span></div>
+                <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 96px 72px;gap:10px;padding:11px 16px;align-items:center"><span style="font-family:'Geist Mono',monospace;font-size:11.5px;color:#5A6675">4</span><span style="font-size:13.5px;color:#5A6675">Read the invoice back and compare status</span><span style="font-size:12.5px;color:#5A6675">– Not reached</span><span style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">—</span></div>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:11px">
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Expected</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.5">200 · invoice.status = "uncollectible"</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Actual</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.5;color:#B3261E">400 · parameter_unsupported: status transition</span></div>
+              </div>
+              <div style="font-size:13.5px;line-height:1.6;color:#28313D;border-top:1px solid #F0F3F6;padding-top:11px;text-wrap:pretty">The local Stripe provider accepts the request but does not implement this status transition, so the invoice stayed open. The application handled the error and left the case unchanged. This is a provider gap, not a defect in the reply workflow.</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="font-size:13px;font-weight:600;color:#FFFFFF;background:#0E7FAE;border-radius:6px;padding:8px 14px">Retry this check</div>
+                <div style="font-size:13px;color:#3D4A59;border:1px solid #DDE4EA;border-radius:6px;padding:8px 14px">Open the invoice in Workbench ↗</div>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;overflow:hidden">
+              <div style="padding:10px 16px;border-bottom:1px solid #E7ECF1;display:flex;align-items:center;justify-content:space-between;background:#FAFCFD"><div style="font-size:13px;font-weight:600">Request and response</div><div style="font-size:12.5px;color:#5A6675">Credentials removed · shown collapsed by default</div></div>
+              <div style="padding:12px 16px;font-family:'Geist Mono',monospace;font-size:12px;line-height:1.7;color:#28313D;background:#FBFCFD">
+                <div style="color:#5A6675">POST /v1/invoices/in_1Q9x/mark_uncollectible</div>
+                <div style="color:#5A6675">authorization: Bearer ••••••••••••</div>
+                <div style="color:#5A6675">idempotency-key: case-1174-step3</div>
+                <div style="height:8px"></div>
+                <div style="color:#B3261E">400 { "error": { "code": "parameter_unsupported",</div>
+                <div style="color:#B3261E">&nbsp;&nbsp;"message": "status transition not implemented" } }</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:13.5px;font-weight:600">Operation</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#3D4A59">
+                <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11.5px;color:#5A6675">Service</span><span>Stripe · local provider</span></div>
+                <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11.5px;color:#5A6675">Operation</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">invoices.markUncollectible</span></div>
+                <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11.5px;color:#5A6675">SDK</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">stripe-node 16.2.0 (pinned)</span></div>
+                <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:11.5px;color:#5A6675">Test instance</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">cus_test_desk_04</span></div>
+              </div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:13.5px;font-weight:600">Support</div>
+              <div style="font-size:12.5px;font-weight:600;color:#8A5200;background:#FDF1DC;border-radius:4px;padding:4px 8px;width:fit-content">Supported but partial</div>
+              <div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#3D4A59;line-height:1.5">
+                <div><span style="color:#5A6675">Works · </span>create, finalize, read, list</div>
+                <div><span style="color:#5A6675">Missing · </span>uncollectible transition</div>
+                <div><span style="color:#5A6675">Evidence · </span><span style="color:#0E7FAE;font-weight:600">this run's capture</span></div>
+              </div>
+              <div style="font-size:12.5px;color:#5A6675;line-height:1.5;border-top:1px solid #F0F3F6;padding-top:9px">Not verified against the production provider. Local results do not remove that limit.</div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:7px">
+              <div style="font-size:13.5px;font-weight:600">Effect on the app</div>
+              <div style="font-size:12.5px;color:#5A6675;line-height:1.55">Billing hold is recorded on case-1174 in Account Desk. No provider state was changed by the failed step.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:56px;padding:0 56px 56px;align-items:flex-start">
+
+  <div data-screen-label="14 Skip and expected failure" style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">14 · One explained skip, and an expected failure that passes</div>
+    <div style="width:1280px;height:800px;background:#F5F8FA;border:1px solid #DDE4EA;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;box-shadow:0 1px 3px rgba(20,30,40,0.06)">
+      <div style="background:#FFFFFF;border-right:1px solid #DDE4EA;display:flex;flex-direction:column;padding:18px 14px;gap:14px">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:#0E7FAE"></div>
+          <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Account Desk</div>
+        </div>
+        <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3;padding:10px 10px 0">Results in this run</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="padding:8px 10px;font-size:12.5px;color:#7F1D18">× Stripe invoice</div>
+          <div style="padding:8px 10px;font-size:12.5px;color:#7F1D18">× Notion webhook</div>
+          <div style="background:#EDF1F5;border-radius:6px;padding:8px 10px;font-size:12.5px;font-weight:600;color:#3D4A59">– Linear task</div>
+          <div style="background:#E6F4EC;border-radius:6px;padding:8px 10px;font-size:12.5px;font-weight:600;color:#14532E">✓ Deliberate 500</div>
+        </div>
+        <div style="margin-top:auto;border-top:1px solid #E7ECF1;padding-top:14px;font-size:12.5px;color:#5A6675;line-height:1.5">A skipped check is not a defect. 11 skips in this run, each with a reason.</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <div style="height:56px;flex:none;background:#FFFFFF;border-bottom:1px solid #DDE4EA;display:flex;align-items:center;padding:0 24px;gap:8px;font-size:13.5px;color:#5A6675"><span>Verification</span><span style="color:#B0BAC6">/</span><span style="color:#1B2430;font-weight:600;font-size:15px">Two results that are easy to misread</span></div>
+
+        <div style="flex:1;min-height:0;padding:20px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-content:start;overflow:hidden">
+
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="padding:14px 16px;border-bottom:1px solid #E7ECF1;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:9px"><span style="font-size:12.5px;font-weight:600;color:#3D4A59;background:#EDF1F5;border-radius:4px;padding:3px 8px">– Skipped</span><span style="font-size:12.5px;color:#5A6675">not a failure</span></div>
+              <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em">Create customer task</div>
+              <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">linear.issues.create · Linear</div>
+            </div>
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+              <div style="background:#F7FAFC;border:1px solid #E7ECF1;border-radius:6px;padding:12px 13px;display:flex;flex-direction:column;gap:5px">
+                <div style="font-size:12px;color:#5A6675">Skip reason</div>
+                <div style="font-size:13.5px;line-height:1.55;color:#28313D">Linear was not among the services selected for this run, so no connection was requested. Nothing was attempted and nothing was mocked.</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#3D4A59">
+                <div style="display:flex;justify-content:space-between"><span>Prerequisite</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">service: linear</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Checks skipped in group</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">4</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Coverage effect</span><span style="font-size:12.5px">counted as planned, not executed</span></div>
+              </div>
+              <div style="font-size:13px;line-height:1.55;color:#5A6675;border-top:1px solid #F0F3F6;padding-top:11px">A selected service that fails to answer is reported as Failed instead. Skipped only ever means not selected, or a named prerequisite was absent.</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="font-size:13px;font-weight:600;color:#FFFFFF;background:#0E7FAE;border-radius:6px;padding:8px 14px">Add Linear and re-run group</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;display:flex;flex-direction:column;overflow:hidden">
+            <div style="padding:14px 16px;border-bottom:1px solid #E7ECF1;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:9px"><span style="font-size:12.5px;font-weight:600;color:#14532E;background:#E6F4EC;border-radius:4px;padding:3px 8px">✓ Passed</span><span style="font-size:12.5px;color:#5A6675">the endpoint failed on purpose</span></div>
+              <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em">Handle a failing endpoint</div>
+              <div style="font-family:'Geist Mono',monospace;font-size:12px;color:#5A6675">http.get /v1/always-500 · HTTP target</div>
+            </div>
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Expected</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.5">500, then the app shows a recovery step</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Actual</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px;line-height:1.5;color:#14532E">500, recovery step shown</span></div>
+              </div>
+              <div style="font-size:13.5px;line-height:1.6;color:#28313D;border-top:1px solid #F0F3F6;padding-top:11px">The check passes because the error branch behaved correctly, not because the request succeeded. Service health shows this target as behaving as expected rather than healthy.</div>
+              <div style="display:flex;flex-direction:column;gap:9px;font-size:13px;color:#3D4A59">
+                <div style="display:flex;justify-content:space-between"><span>Retries attempted</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">2 of 2</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Timeout</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">5s explicit</span></div>
+                <div style="display:flex;justify-content:space-between"><span>Duration</span><span style="font-family:'Geist Mono',monospace;font-size:12.5px">96ms</span></div>
+              </div>
+              <div style="font-size:13px;color:#0E7FAE;font-weight:600;border-top:1px solid #F0F3F6;padding-top:11px">Open the recorded response →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div data-screen-label="15 Unsupported operation" style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#5A6675">15 · One unsupported operation — what it does not count as</div>
+    <div style="width:1280px;height:800px;background:#F5F8FA;border:1px solid #DDE4EA;border-radius:10px;overflow:hidden;display:grid;grid-template-columns:220px 1fr;box-shadow:0 1px 3px rgba(20,30,40,0.06)">
+      <div style="background:#FFFFFF;border-right:1px solid #DDE4EA;display:flex;flex-direction:column;padding:18px 14px;gap:14px">
+        <div style="display:flex;align-items:center;gap:9px;padding:0 6px">
+          <div style="width:22px;height:22px;border-radius:5px;background:#0E7FAE"></div>
+          <div style="font-size:15px;font-weight:600;letter-spacing:-0.01em">Account Desk</div>
+        </div>
+        <div style="font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#8A95A3;padding:10px 10px 0">Operations</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="padding:8px 10px;font-size:12.5px;color:#3D4A59">Notion REST</div>
+          <div style="background:#EDF1F5;border-radius:6px;padding:8px 10px;font-size:12.5px;font-weight:600;color:#3D4A59">Notion webhooks</div>
+          <div style="padding:8px 10px;font-size:12.5px;color:#3D4A59">Notion MCP</div>
+          <div style="padding:8px 10px;font-size:12.5px;color:#3D4A59">Notion Admin</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;min-width:0">
+        <div style="height:56px;flex:none;background:#FFFFFF;border-bottom:1px solid #DDE4EA;display:flex;align-items:center;justify-content:space-between;padding:0 24px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:#5A6675"><span>Verification</span><span style="color:#B0BAC6">/</span><span style="color:#1B2430;font-weight:600;font-size:15px">Deliver webhook to an external receiver</span></div>
+          <div style="font-size:12.5px;font-weight:600;color:#3D4A59;background:#EDF1F5;border-radius:4px;padding:5px 10px">Not supported here</div>
+        </div>
+
+        <div style="flex:1;min-height:0;padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-content:start;overflow:hidden">
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+              <div style="font-size:15px;line-height:1.6;color:#28313D;text-wrap:pretty">Notion can record a webhook locally when a page changes, but it cannot deliver that notification to a receiver outside the local world. Local capture and external receipt are reported as two different results.</div>
+              <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+                <div style="border:1px solid #BCDDCA;background:#F4FBF7;border-radius:7px;padding:12px 13px;display:flex;flex-direction:column;gap:5px">
+                  <div style="font-size:12.5px;font-weight:600;color:#14532E">✓ Local capture</div>
+                  <div style="font-size:13px;line-height:1.5;color:#245F3F">Notification recorded in the local capture log 1.4s after the block was appended.</div>
+                </div>
+                <div style="border:1px solid #DDE4EA;background:#FAFCFD;border-radius:7px;padding:12px 13px;display:flex;flex-direction:column;gap:5px">
+                  <div style="font-size:12.5px;font-weight:600;color:#3D4A59">– External receipt</div>
+                  <div style="font-size:13px;line-height:1.5;color:#5A6675">Never received. This provider does not deliver to an external receiver here.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:11px">
+              <div style="font-size:13.5px;font-weight:600">Works · Missing · Evidence</div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;background:#F7FAFC;border-radius:6px;padding:13px">
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Works</span><span style="font-size:13px;line-height:1.5">Page write, read-back, local capture</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Missing</span><span style="font-size:13px;line-height:1.5">Outbound delivery, signatures, retries</span></div>
+                <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:11.5px;color:#5A6675">Evidence</span><span style="font-size:13px;line-height:1.5;color:#0E7FAE;font-weight:600">Capture log and provider read-back</span></div>
+              </div>
+              <div style="font-size:13px;line-height:1.55;color:#5A6675;border-top:1px solid #F0F3F6;padding-top:11px">A Workbench-only operation cannot count as provider API coverage. This result is excluded from the webhook delivery coverage total and named in the run summary.</div>
+            </div>
+
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13px;color:#3D4A59">The customer flow is unaffected: the account note saved and read back.</div>
+              <div style="font-size:13px;font-weight:600;color:#0E7FAE;flex:none">Open the saved note ↗</div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:13.5px;font-weight:600">Support labels in use</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:12.5px;color:#3D4A59">
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#1F7A4D;flex:none"></span>Supported and contract-tested</div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#B26A00;flex:none"></span>Supported but partial</div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#5A6675;flex:none"></span>Workbench-only</div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#8A95A3;flex:none"></span>Not supported</div>
+                <div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:#C4CDD8;flex:none"></span>Not verified against the production provider</div>
+              </div>
+              <div style="font-size:12.5px;color:#5A6675;line-height:1.5;border-top:1px solid #F0F3F6;padding-top:9px">Support labels describe the operation. Execution states describe one run. They are never combined into a single badge.</div>
+            </div>
+            <div style="background:#FFFFFF;border:1px solid #DDE4EA;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:7px">
+              <div style="font-size:13.5px;font-weight:600">Illustrative</div>
+              <div style="font-size:12.5px;color:#5A6675;line-height:1.55">Every result in these frames is sample content for design review. It is not executed test evidence.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:1000}}"></script>
+</body>
+</html>

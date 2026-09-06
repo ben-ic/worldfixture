@@ -1,0 +1,11 @@
+node_modules
+.account-desk
+.env*
+.worldfixture/token
+.worldfixture/generated-secrets*
+.worldfixture/runs
+
+# WorldFixture local secrets
+/.worldfixture/token
+/.worldfixture/generated-secrets.json*
+/.worldfixture/runs
