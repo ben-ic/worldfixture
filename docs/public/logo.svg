@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="WorldFixture">
+  <title>WorldFixture</title>
+  <!--
+    The mark: an open ring around a three-by-three grid, with a square sitting in
+    the gap. The ring is the world; the grid is what it holds; the square is the
+    application you point at it, joining the circle rather than sitting outside.
+
+    Geometry is measured from the source artwork, normalised to a 64 unit box:
+    ring centreline r=25.2 stroke=5.05, gap from 30.7 to 62.8 degrees clockwise
+    from three o'clock, dots r=1.36 on a 6 unit pitch, square 8.5 centred on the
+    ring's outer edge at 46.85 degrees, which is the middle of the gap.
+  -->
+  <defs>
+    <linearGradient id="wf-ring" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0" stop-color="#50B1FF"/>
+      <stop offset="1" stop-color="#3097FF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Flat ends, because the gap is a radial cut and not a rounded terminal. -->
+  <path d="M43.52 54.41A25.2 25.2 0 1 1 53.67 44.86"
+        fill="none" stroke="url(#wf-ring)" stroke-width="5.05"/>
+
+  <g fill="#28DCB0">
+    <circle cx="26" cy="26" r="1.36"/><circle cx="32" cy="26" r="1.36"/><circle cx="38" cy="26" r="1.36"/>
+    <circle cx="26" cy="32" r="1.36"/><circle cx="32" cy="32" r="1.36"/><circle cx="38" cy="32" r="1.36"/>
+    <circle cx="26" cy="38" r="1.36"/><circle cx="32" cy="38" r="1.36"/><circle cx="38" cy="38" r="1.36"/>
+  </g>
+
+  <rect x="46.65" y="47.85" width="8.55" height="8.6" fill="#28DCB0"/>
+</svg>

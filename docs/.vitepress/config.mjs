@@ -1,9 +1,14 @@
 import { defineConfig } from "vitepress";
 
+// The runtime serves this site at /docs/. A different deployment can set
+// DOCS_BASE without a source change, so every asset path is built from it
+// rather than written with a leading slash that would break under any other
+// base.
+const base = process.env.DOCS_BASE ?? "/docs/";
+const asset = (file) => `${base}${file}`;
+
 export default defineConfig({
-  // The runtime serves this site at /docs/. A different deployment can set
-  // DOCS_BASE without a source change.
-  base: process.env.DOCS_BASE ?? "/docs/",
+  base,
   title: "WorldFixture",
   description: "Stateful local provider services for development, demos, and CI.",
   cleanUrls: true,
@@ -12,7 +17,17 @@ export default defineConfig({
   // in that small image instead of deriving page dates from a checkout.
   lastUpdated: false,
   ignoreDeadLinks: false,
+  head: [
+    ["link", { rel: "icon", href: asset("favicon.ico"), sizes: "32x32" }],
+    ["link", { rel: "icon", href: asset("favicon.svg"), type: "image/svg+xml" }],
+    ["link", { rel: "apple-touch-icon", href: asset("apple-touch-icon.png") }],
+    ["meta", { name: "theme-color", content: "#061127" }],
+  ],
   themeConfig: {
+    // Root relative, NOT through `asset`: VitePress resolves `themeConfig.logo`
+    // against the base itself, so prefixing it here produced /docs/docs/logo.svg.
+    // The `head` entries above are not resolved for you, and do need the base.
+    logo: { src: "/logo.svg", alt: "WorldFixture" },
     siteTitle: "WorldFixture docs",
     search: { provider: "local" },
     sidebar: [

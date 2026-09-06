@@ -41,6 +41,13 @@ cpSync(join(homepage, "WorldFixture Homepage.dc.html"), join(out, "index.html"))
 cpSync(join(homepage, "support.js"), join(out, "support.js"));
 cpSync(join(homepage, "uploads"), join(out, "uploads"), { recursive: true });
 cpSync(join(homepage, "og.png"), join(out, "og.png"));
+// The tab icon, the home screen icon and the logo, which the homepage head
+// references from the site root. The documentation carries its own copies
+// under /docs/, because VitePress rewrites asset paths against its own base.
+for (const file of ["favicon.svg", "favicon.ico", "favicon-192.png", "icon-512.png",
+                    "apple-touch-icon.png", "logo.svg", "site.webmanifest"]) {
+  cpSync(join(homepage, file), join(out, file));
+}
 cpSync(docs, join(out, "docs"), { recursive: true });
 
 console.log(`site/ assembled: homepage at /, documentation at /docs/`);

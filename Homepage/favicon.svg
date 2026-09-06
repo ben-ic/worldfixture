@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="WorldFixture">
+  <title>WorldFixture</title>
+  <!--
+    The same mark as `logo.svg`, redrawn for a browser tab.
+
+    IT IS NOT THE LOGO SCALED DOWN, AND IT CANNOT BE. Rendered at 16 pixels the
+    logo's dots are two thirds of a pixel across: they vanish, and what is left
+    is a pale ring that could belong to anything. So this version is drawn for
+    the raster it will actually meet. The ring is thicker and nearly full bleed,
+    the dot grid is enlarged, and the pitch between dots is set so the gaps
+    survive a 16 pixel grid rather than filling in and turning the grid into a
+    plaid. It sits on the dark disc from the app icon, which is what gives the
+    blue and the teal something to read against on a light or a dark tab strip.
+
+    Every candidate was rendered at 16, 32 and 48 and looked at before this one
+    was chosen. Proportion still follows the logo: the gap runs 30.7 to 62.8
+    degrees clockwise from three o'clock, and the square is centred on the
+    ring's outer edge in the middle of that gap.
+  -->
+  <defs>
+    <linearGradient id="wf-ring" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0" stop-color="#50B1FF"/>
+      <stop offset="1" stop-color="#3097FF"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="32" cy="32" r="27.5" fill="#061127"/>
+
+  <path d="M45.48 58.24A29.5 29.5 0 1 1 57.37 47.06"
+        fill="none" stroke="url(#wf-ring)" stroke-width="4.8"/>
+
+  <g fill="#28DCB0">
+    <circle cx="20.4" cy="20.4" r="2.8"/><circle cx="32" cy="20.4" r="2.8"/><circle cx="43.6" cy="20.4" r="2.8"/>
+    <circle cx="20.4" cy="32" r="2.8"/><circle cx="32" cy="32" r="2.8"/><circle cx="43.6" cy="32" r="2.8"/>
+    <circle cx="20.4" cy="43.6" r="2.8"/><circle cx="32" cy="43.6" r="2.8"/><circle cx="43.6" cy="43.6" r="2.8"/>
+  </g>
+
+  <rect x="48.52" y="49.97" width="10.6" height="10.6" fill="#28DCB0"/>
+</svg>
