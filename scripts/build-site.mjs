@@ -40,6 +40,7 @@ mkdirSync(out, { recursive: true });
 cpSync(join(homepage, "WorldFixture Homepage.dc.html"), join(out, "index.html"));
 cpSync(join(homepage, "support.js"), join(out, "support.js"));
 cpSync(join(homepage, "uploads"), join(out, "uploads"), { recursive: true });
+cpSync(join(homepage, "og.png"), join(out, "og.png"));
 cpSync(docs, join(out, "docs"), { recursive: true });
 
 console.log(`site/ assembled: homepage at /, documentation at /docs/`);

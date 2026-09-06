@@ -1,5 +1,15 @@
 # WorldFixture
 
+[![CI](https://github.com/ben-ic/worldfixture/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ben-ic/worldfixture/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Node.js: 22 or later](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](#requirements)
+[![Documentation](https://img.shields.io/badge/docs-read-4f7cff)](https://worldfixture.com/docs/)
+
+[Website](https://worldfixture.com/) ·
+[Documentation](https://worldfixture.com/docs/) ·
+[Quick start](https://worldfixture.com/docs/getting-started/quick-start) ·
+[Provider support](https://worldfixture.com/docs/providers/)
+
 WorldFixture runs stateful local provider services for development, demos, and
 CI.
 Start Slack, GitHub, Google, Notion, Stripe, Local Mail, S3, and more with one
@@ -21,14 +31,14 @@ npx worldfixture up consumer.retail-brand:v1
 ```
 
 An explicit world takes precedence over the project's `world` setting. Without
-either, `up` selects `business.saas-company:v3`. See [How worlds work](docs/guides/worlds.md)
+either, `up` selects `business.saas-company:v3`. See [How worlds work](https://worldfixture.com/docs/guides/worlds)
 for artifact paths, project settings, and date handling.
 
 Use **Choose world** in the Workbench or `npx worldfixture switch <world>` to
 change a running world. A switch restores provider state and changes credentials.
 Application database data remains. Confirm the new application connection before
-you start its timeline. See [Switch a running world](docs/guides/worlds.md#switch-a-running-world)
-and [Timeline controls](docs/guides/timeline.md).
+you start its timeline. See [Switch a running world](https://worldfixture.com/docs/guides/worlds#switch-a-running-world)
+and [Timeline controls](https://worldfixture.com/docs/guides/timeline).
 
 All people, organizations, domains, messages, and financial records are
 synthetic. WorldFixture is pre-release software. It implements selected
@@ -65,10 +75,10 @@ npx worldfixture env --json
 
 You now have a local Slack API and a Workbench that uses the same state.
 
-Read the [five-minute quick start](docs/getting-started/quick-start.md) for the
+Read the [five-minute quick start](https://worldfixture.com/docs/getting-started/quick-start) for the
 complete path. If a start fails, run `npx worldfixture doctor`.
 
-Run the documentation website locally with:
+Read the [documentation website](https://worldfixture.com/docs/), or run it locally:
 
 ```sh
 npm --prefix docs ci
@@ -78,6 +88,23 @@ npm run docs:dev
 The website includes local search, navigation, provider support tables, SDK
 examples, Workbench guidance, reset rules, HTTP targets, troubleshooting, and
 contributor documentation.
+
+## See the Workbench
+
+**Overview** shows the current world, service readiness, and application
+connection values. Credentials are hidden.
+
+[![Workbench Overview with the world summary, connection values, and ready Slack and GitHub services.](docs/public/workbench/overview.png)](docs/public/workbench/overview.png)
+
+**Chat** shows Slack channels and message history. Select a world person to
+read and post through the same provider API that your application uses.
+
+[![Workbench Chat with Slack channels, messages with sender names, and a message composer.](docs/public/workbench/chat.png)](docs/public/workbench/chat.png)
+
+These screenshots show `business.saas-company:v3` with Slack and GitHub
+selected. Your services, counts, and ports can differ. Select an image to open
+it at full size. See the [Workbench guide](https://worldfixture.com/docs/guides/workbench)
+for more screenshots and instructions.
 
 ## Connect an application
 
@@ -98,13 +125,13 @@ npx worldfixture connector plan "$APP_URL" --scale smoke
 npx worldfixture connector seed "$APP_URL" --scale smoke
 ```
 
-See [Connect an application](docs/getting-started/connect-an-app.md),
-[Bindings](docs/guides/bindings.md), and the
-[connector overview](docs/connectors/overview.md).
+See [Connect an application](https://worldfixture.com/docs/getting-started/connect-an-app),
+[Bindings](https://worldfixture.com/docs/guides/bindings), and the
+[connector overview](https://worldfixture.com/docs/connectors/overview).
 
 ## Provider support
 
-The [provider support index](docs/providers/index.md) states which endpoints,
+The [provider support index](https://worldfixture.com/docs/providers/) states which endpoints,
 writes, SDK versions, Workbench views, events, and limitations have evidence.
 It uses these labels:
 
@@ -136,8 +163,8 @@ The copy keeps the starter world's id and version until you change them in
 `world.json`, which is why `build` writes `dist/demo.minimal.v1` rather than a
 path named after the directory.
 
-See [How worlds work](docs/guides/worlds.md) and
-[How WorldFixture fits your development loop](docs/architecture.md).
+See [How worlds work](https://worldfixture.com/docs/guides/worlds) and
+[How WorldFixture fits your development loop](https://worldfixture.com/docs/architecture).
 
 ## Development
 
@@ -186,7 +213,7 @@ inside a test's own readiness budget, which is not long enough to build Cyrus
 from a Debian base.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), the
-[contract testing policy](docs/contract-testing.md), and
-[how to add a provider](docs/providers/adding-a-provider.md).
+[contract testing policy](https://worldfixture.com/docs/contract-testing), and
+[how to add a provider](https://worldfixture.com/docs/providers/adding-a-provider).
 
 Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
