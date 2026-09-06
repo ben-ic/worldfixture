@@ -32,7 +32,7 @@ export function createLiveHub({ redact = value => value, heartbeatMs = 15000 } =
   heartbeat.unref?.();
   return {
     get size() { return clients.size; },
-    attach(request, response) {
+    attach(_request, response) {
       if (clients.size >= 32) throw Object.assign(new Error('Too many live connections. Close an unused Account Desk tab.'), { status: 429 });
       response.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache, no-transform', connection: 'keep-alive', 'x-accel-buffering': 'no', 'x-content-type-options': 'nosniff' });
       response.write('retry: 2000\n\n');

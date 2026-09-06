@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Linux container starts, resets, and world switches retain the host user's
+  ownership of private runtime state. This fixes permission failures when the
+  host CLI reads files written by the root container process. Private file modes
+  and provider service ownership remain intact.
+- CI checks runtime state access as a non-root Linux user and prints redacted
+  CLI diagnostics when world selection fails. Fixed the example app's lint errors.
+
 ## 0.2.4
 
 - Package builds prepare a local Python environment and install the compiler's

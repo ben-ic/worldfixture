@@ -11,8 +11,9 @@
 // dependency, which keeps the runtime as free of a supply chain as the compiler.
 
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+import { shareHostOwnership } from './host-state-ownership.mjs';
 
 export const SCHEMA_VERSION = 2;
 
@@ -144,6 +145,11 @@ export function openState(path) {
     );
   }
 
+  if (path !== ":memory:") {
+    for (const file of [path, `${path}-wal`, `${path}-shm`]) {
+      if (existsSync(file)) shareHostOwnership(file);
+    }
+  }
   return db;
 }
 

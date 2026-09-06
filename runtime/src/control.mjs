@@ -7,6 +7,7 @@
 import { chmodSync, rmSync } from "node:fs";
 import { createConnection, createServer } from "node:net";
 import { join } from "node:path";
+import { shareHostOwnership } from './host-state-ownership.mjs';
 import { readActiveGeneration } from './session-files.mjs';
 
 const socketPath = (stateDir) => join(stateDir, "control.sock");
@@ -55,6 +56,7 @@ export async function serveControl(instance, stateDir) {
     server.listen(path, resolve);
   });
   chmodSync(path, 0o600);
+  shareHostOwnership(path);
 
   return {
     path,

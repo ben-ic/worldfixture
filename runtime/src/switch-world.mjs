@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { shareHostOwnership } from './host-state-ownership.mjs';
 import { defaultEnvironment } from './environments.mjs';
 import { loadManifests } from './manifests.mjs';
 import { resolveEnvironment, serializeLock } from './resolve.mjs';
@@ -14,7 +15,10 @@ const DEFAULT_SOURCES = [join(ROOT, 'worlds')];
 const HASH = /^[a-f0-9]{64}$/;
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const json = path => JSON.parse(readFileSync(path, 'utf8'));
-const save = (path, value) => writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
+const save = (path, value) => {
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
+  shareHostOwnership(path);
+};
 
 function checked(path, sourceRoots = []) {
   const entry = inspectWorldArtifact(path, { sourceRoots });
@@ -30,6 +34,7 @@ function managedDirectory(path) {
     const info = lstatSync(path);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Managed directory must not be a symlink or file: ${path}`);
   } else mkdirSync(path, { mode: 0o700 });
+  shareHostOwnership(path);
   return path;
 }
 function stateRoot(stateDir) {
@@ -40,6 +45,7 @@ function stateRoot(stateDir) {
 function copyFiles(sourceRoot, targetRoot, table) {
   const actualRoot = realpathSync(sourceRoot);
   mkdirSync(targetRoot, { mode: 0o700 });
+  shareHostOwnership(targetRoot);
   for (const [name, expected] of Object.entries(table)) {
     const actual = realpathSync(join(actualRoot, name));
     if (!below(actualRoot, actual)) throw new Error(`Source file leaves its verified directory: ${name}`);
@@ -48,6 +54,7 @@ function copyFiles(sourceRoot, targetRoot, table) {
     const target = join(targetRoot, name);
     mkdirSync(dirname(target), { recursive: true, mode: 0o700 });
     writeFileSync(target, bytes, { flag: 'wx', mode: 0o444 });
+    shareHostOwnership(target);
   }
 }
 function copyArtifact(entry, target) {
@@ -56,6 +63,7 @@ function copyArtifact(entry, target) {
   if (JSON.stringify(JSON.parse(manifestBytes)) !== JSON.stringify(entry.manifest)) throw new Error('Artifact manifest changed after selection');
   copyFiles(entry.artifactPath, target, entry.manifest.files);
   writeFileSync(join(target, 'manifest.json'), manifestBytes, { flag: 'wx', mode: 0o444 });
+  shareHostOwnership(join(target, 'manifest.json'));
   const copied = checked(target);
   if (copied.digest !== entry.digest) throw new Error('Copied artifact digest differs from selection');
   return copied;
@@ -192,6 +200,7 @@ export function prepareSwitchWorld(input = {}, {
       session: { artifactPath, digest: artifact.digest, rebased: session.rebased, reason: session.reason ?? null } });
     save(join(directory, 'environment.json'), spec);
     writeFileSync(join(directory, 'environment-lock.json'), serializeLock(lock), { flag: 'wx', mode: 0o600 });
+    shareHostOwnership(join(directory, 'environment-lock.json'));
     return { lock, artifactPath, world, selection, spec, stateDir: runtimeDir };
   } catch (error) {
     rmSync(directory, { recursive: true, force: true });

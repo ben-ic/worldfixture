@@ -1,6 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { shareHostOwnership } from './host-state-ownership.mjs';
 import { ensureGeneratedSecrets } from "./generated-secrets.mjs";
 import { oauthClientEntries } from "../../emulators/emulate/src/oauth-client-config.mjs";
 
@@ -74,6 +75,7 @@ export async function prepareCredentials({ lock, artifactPath, stateDir, generat
   const path = join(stateDir, CREDENTIALS_FILE);
   const temporary = `${path}.${randomUUID()}.tmp`;
   writeFileSync(temporary, `${JSON.stringify(credentials, null, 2)}\n`, { mode: 0o600, flag: "wx" });
+  shareHostOwnership(temporary);
   renameSync(temporary, path);
   chmodSync(path, 0o600);
   return credentials;

@@ -85,7 +85,7 @@ test('secondary SDK writes send official shapes and confirm fresh readback', asy
 });
 
 test('secondary SDK writes do not retry failures or follow redirects', async () => {
-  const item = await fixture((request, response) => { response.writeHead(500, { 'content-type': 'application/json' }); response.end(JSON.stringify({ errors: [{ message: 'Test failure' }], message: 'Test failure' })); });
+  const item = await fixture((_request, response) => { response.writeHead(500, { 'content-type': 'application/json' }); response.end(JSON.stringify({ errors: [{ message: 'Test failure' }], message: 'Test failure' })); });
   try {
     const actions = [
       ['linear.issue', { teamId: 'team-1', title: 'Failure', description: 'Test' }],
@@ -96,8 +96,8 @@ test('secondary SDK writes do not retry failures or follow redirects', async () 
     assert.equal(item.requests.length, 3);
   } finally { await item.close(); }
   let escaped = 0;
-  const destination = await fixture((request, response) => { escaped++; response.end('{}'); });
-  const redirect = await fixture((request, response) => { response.writeHead(302, { location: destination.env.RESEND_BASE_URL }); response.end(); });
+  const destination = await fixture((_request, response) => { escaped++; response.end('{}'); });
+  const redirect = await fixture((_request, response) => { response.writeHead(302, { location: destination.env.RESEND_BASE_URL }); response.end(); });
   try {
     for (const id of ['linear', 'resend', 'twilio']) await assert.rejects(redirect.sdk.read(id));
     assert.equal(escaped, 0);

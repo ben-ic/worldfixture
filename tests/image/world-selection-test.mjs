@@ -340,6 +340,9 @@ async function checkCase(item, index) {
   } catch (error) {
     details.failure = safeFailure(error, tasks, state, project);
     save(); // Keep diagnostics before cleanup removes the live records.
+    // CI's step log must show the redacted CLI failure, not only "Host up
+    // failed". The artifact remains the complete record for later review.
+    console.error(JSON.stringify(details.failure, null, 2));
     throw error;
   } finally {
     if (mode === 'direct') {

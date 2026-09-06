@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveBindings } from './bindings.mjs';
 import { checkConnector, connectorWorld } from './connector.mjs';
@@ -7,7 +7,7 @@ import { serializeLock } from './resolve.mjs';
 import { createSessionManager } from './session-manager.mjs';
 import { listSwitchWorlds, prepareSwitchWorld } from './switch-world.mjs';
 import { refreshHostGeneration } from './host-launcher.mjs';
-import { writeSessionJson as writeJson } from './session-files.mjs';
+import { writeSessionFile, writeSessionJson as writeJson } from './session-files.mjs';
 
 export function configureApplicationBindings(instance, workbenchUrl) {
   const result = resolveBindings(instance.lock, {
@@ -48,14 +48,14 @@ export function attachManagedSession(instance, {
       mkdirSync(current.stateDir, { recursive: true });
       configureApplicationBindings(current, workbench.url);
       const lockBytes = serializeLock(current.lock);
-      writeFileSync(join(current.stateDir, 'environment.lock.json'), lockBytes, { mode: 0o600 });
+      writeSessionFile(join(current.stateDir, 'environment.lock.json'), lockBytes);
       const spec = current.environmentSpec;
       if (spec) writeJson(join(current.stateDir, 'environment.json'), spec);
       writeJson(join(current.stateDir, 'bindings.json'), current.applicationBindings);
       writeJson(join(current.stateDir, 'addresses.json'), current.addresses());
       // Compatibility files are published under the transition gate. Managed
       // readers use the active-generation pointer after the manager commits it.
-      writeFileSync(join(sessionRoot, 'environment.lock.json'), lockBytes, { mode: 0o600 });
+      writeSessionFile(join(sessionRoot, 'environment.lock.json'), lockBytes);
       writeJson(join(sessionRoot, 'bindings.json'), current.applicationBindings);
       writeJson(join(sessionRoot, 'addresses.json'), current.addresses());
       writeJson(join(sessionRoot, 'workbench.json'), { url: workbench.url, state: 'ready', generation });

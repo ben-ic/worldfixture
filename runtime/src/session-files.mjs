@@ -1,14 +1,20 @@
 import { chmodSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { join, resolve, relative, isAbsolute } from 'node:path';
+import { shareHostOwnership } from './host-state-ownership.mjs';
 
-export function writeSessionJson(path, value) {
+export function writeSessionFile(path, bytes) {
   const temporary = `${path}.${randomUUID()}.tmp`;
   try {
-    writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
+    writeFileSync(temporary, bytes, { mode: 0o600 });
+    shareHostOwnership(temporary);
     renameSync(temporary, path);
     chmodSync(path, 0o600);
   } finally { rmSync(temporary, { force: true }); }
+}
+
+export function writeSessionJson(path, value) {
+  writeSessionFile(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export function readActiveGeneration(sessionRoot, { allowTransition = false } = {}) {

@@ -36,7 +36,7 @@ test('background polling permits cached details, but concurrent manual reads sta
   const calls = [];
   const app = createApplication({ store, connector: {}, actions: [], providers: {
     catalog: () => [{ id: 'gmail', selected: true }],
-    async read(id, options = {}) {
+    async read(_id, options = {}) {
       calls.push(options.purpose || 'fresh');
       if (options.purpose === 'poll') await new Promise(resolve => { release = resolve; });
       return { items: [{ id: options.purpose === 'poll' ? 'cached' : 'fresh' }] };

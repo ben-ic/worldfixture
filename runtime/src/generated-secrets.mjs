@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { chmodSync, mkdirSync, readFileSync, renameSync, rmdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { shareHostOwnership } from './host-state-ownership.mjs';
 
 export const GENERATED_SECRETS_FILE = "generated-secrets.json";
 
@@ -36,6 +37,7 @@ export async function ensureGeneratedSecrets(path, keys) {
       if (!Object.hasOwn(values, key)) values[key] = randomBytes(24).toString("hex");
     }
     writeFileSync(temporary, `${JSON.stringify(values, null, 2)}\n`, { mode: 0o600, flag: "wx" });
+    shareHostOwnership(temporary);
     renameSync(temporary, path);
     chmodSync(path, 0o600);
     return values;

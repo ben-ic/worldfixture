@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { s3Fetch } from "./s3-signing.mjs";
 import { createServer } from "node:http";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { writeSessionJson } from './session-files.mjs';
 import { collectionState, combineReads, notionPage, readPages, readRecords } from "./workbench-collection-reads.mjs";
 import { readOktaOverview, readClerkOverview, readVercelOverview, readResendOverview, readMongoAtlasOverview, readTwilioOverview } from "./workbench-product-data.mjs";
 import { readLinearOverview, readStripeOverview } from "./workbench-provider-data.mjs";
@@ -953,7 +954,7 @@ export async function startWorkbench(initialInstance, {
           url: display.toString().replace(/\/$/, ""),
           transport_url: connectorTransportUrl(display),
         };
-        writeFileSync(connectorFile(connectorStateDir), `${JSON.stringify(target, null, 2)}\n`, { mode: 0o600 });
+        writeSessionJson(connectorFile(connectorStateDir), target);
         return reply(200, await connectorOverview(instance, connectorStateDir, artifactPath, generation));
       }
       if (request.method === "POST" && url.pathname === "/api/connector/disconnect") {

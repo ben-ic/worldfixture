@@ -1,4 +1,3 @@
-import { forgetSlackCaches } from "./slack.mjs";
 // The supervisor: one lock in, a running world out.
 //
 // It does the eight things `extraction-plan.md` asks of it, in order: read a
@@ -23,6 +22,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { shareHostOwnership } from './host-state-ownership.mjs';
+import { forgetSlackCaches } from "./slack.mjs";
 import { startClock, pauseClock } from "./clock.mjs";
 import { executionPreflight } from "./execution-preflight.mjs";
 import { lifecyclePath } from "./lifecycle-paths.mjs";
@@ -624,6 +625,7 @@ export function publishProgress(instance) {
         updated_at: new Date().toISOString(),
       })}\n`,
     );
+    shareHostOwnership(join(instance.stateDir, "progress.json"));
   } catch {
     // A run that cannot report its progress still runs.
   }

@@ -11,15 +11,16 @@
 
 import { spawn } from "node:child_process";
 import { randomUUID } from 'node:crypto';
-import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { shareHostArtifact } from './host-state-ownership.mjs';
 import { defaultEnvironment } from "./environments.mjs";
 import { rebaseForSession } from "./session-world.mjs";
 import { attachManagedSession, configureApplicationBindings } from './session-runtime.mjs';
 import { assertSessionRecoverable, SessionError } from './session-manager.mjs';
-import { activeFile, activeStateDir, readActiveGeneration, sessionPath } from './session-files.mjs';
+import { activeFile, activeStateDir, readActiveGeneration, sessionPath, writeSessionJson, writeSessionFile } from './session-files.mjs';
 import { importSwitchArtifact, listSwitchWorlds } from './switch-world.mjs';
 import { inspectWorldArtifact, resolveWorldSelection } from "./world-catalogue.mjs";
 export { rebaseForSession };
@@ -679,10 +680,10 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
   mkdirSync(stateDir, { recursive: true });
   if (project) {
     const target = connectorTarget(project.config, { inContainer: inOneContainer });
-    writeFileSync(join(stateDir, "application-connector.json"), `${JSON.stringify(target, null, 2)}\n`, { mode: 0o600 });
+    writeSessionJson(join(stateDir, "application-connector.json"), target);
   }
-  writeFileSync(`${stateDir}/environment.json`, `${JSON.stringify(spec, null, 2)}\n`);
-  writeFileSync(`${stateDir}/environment.lock.json`, serializeLock(lock));
+  writeSessionJson(`${stateDir}/environment.json`, spec);
+  writeSessionFile(`${stateDir}/environment.lock.json`, serializeLock(lock));
 
   // THE WORKBENCH OPENS WHILE THE WORLD IS STILL LOADING.
   //
@@ -708,10 +709,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
       port: inOneContainer ? 4715 : 0,
       host: inOneContainer ? "0.0.0.0" : "127.0.0.1",
     });
-    writeFileSync(
-      `${stateDir}/workbench.json`,
-      `${JSON.stringify({ url: workbench.url, state: "loading" }, null, 2)}\n`,
-    );
+    writeSessionJson(`${stateDir}/workbench.json`, { url: workbench.url, state: "loading" });
   };
 
   let instance;
@@ -736,10 +734,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
     throw error;
   }
 
-  writeFileSync(
-    `${stateDir}/workbench.json`,
-    `${JSON.stringify({ url: workbench.url, state: "ready" }, null, 2)}\n`,
-  );
+  writeSessionJson(`${stateDir}/workbench.json`, { url: workbench.url, state: "ready" });
   try {
     configureApplicationBindings(instance, workbench.url);
   } catch (error) {
@@ -824,9 +819,8 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
   }
   // The host treats these bindings as the accepted-ready marker. Initial
   // positioning must finish through provider APIs before that marker is visible.
-  writeFileSync(bindingsPath, `${JSON.stringify(instance.applicationBindings, null, 2)}\n`, { mode: 0o600 });
-  chmodSync(bindingsPath, 0o600);
-  writeFileSync(`${stateDir}/addresses.json`, `${JSON.stringify(instance.addresses(), null, 2)}\n`);
+  writeSessionJson(bindingsPath, instance.applicationBindings);
+  writeSessionJson(`${stateDir}/addresses.json`, instance.addresses());
   const finished = runUntilInterrupted(instance, bindingsPath, control, workbench, scheduler);
 
   printReady(instance, world, { verbose: flags.verbose, stateDir });
@@ -943,7 +937,7 @@ async function up(parsed) {
     token: result.bindings.WORLDFIXTURE_TOKEN,
   });
   const target = connectorTarget(project.config, { inContainer: true });
-  writeFileSync(join(stateDir, "application-connector.json"), `${JSON.stringify(target, null, 2)}\n`, { mode: 0o600 });
+  writeSessionJson(join(stateDir, "application-connector.json"), target);
   // Resolved again, and deliberately: the container rebases the world onto today
   // and writes it into the bind-mounted state directory, so the world this
   // screen describes only exists once the instance is up. Reading the path taken
@@ -2169,6 +2163,7 @@ function stageWorldArtifact(builtPath, stateDir, expectedWorld = inspectWorldArt
       copyFileSync(join(builtPath, name), target);
     }
     verify(pending);
+    shareHostArtifact(pending);
     rmSync(staged, { recursive: true, force: true });
     renameSync(pending, staged);
   } catch (error) {

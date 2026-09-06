@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 
+import { shareHostArtifact } from './host-state-ownership.mjs';
 import { inspectWorldArtifact } from "./world-catalogue.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -42,6 +43,7 @@ export function rebaseForSession(artifactPath, stateDir, {
         !isDeepStrictEqual(checked.manifest.source_files, selected.manifest.source_files)) {
       throw new Error("World source changed after artifact selection");
     }
+    shareHostArtifact(prepared);
     if (existsSync(output)) renameSync(output, previous);
     try { renameSync(prepared, output); }
     catch (error) {

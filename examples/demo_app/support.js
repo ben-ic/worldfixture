@@ -218,8 +218,10 @@
         case "!==":
           return lv !== rv;
         case "==":
+          // biome-ignore lint/suspicious/noDoubleEquals: Evaluate the template's explicit coercive equality operator.
           return lv == rv;
         default:
+          // biome-ignore lint/suspicious/noDoubleEquals: Evaluate the template's explicit coercive inequality operator.
           return lv != rv;
       }
     }

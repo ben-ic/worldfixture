@@ -10,7 +10,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
-import { readActiveGeneration, sessionPath } from './session-files.mjs';
+import { readActiveGeneration, sessionPath, writeSessionJson } from './session-files.mjs';
 
 const run = promisify(execFile);
 
@@ -113,9 +113,9 @@ export function refreshHostGeneration(stateDir, { generation, selection, binding
   const ports = record.ports ?? [];
   const selected = selection && { id: selection.id, version: selection.version, digest: selection.digest };
   const updated = { ...record, generation, ...(selected ? { requested_world: selected } : {}) };
-  writeFileSync(join(stateDir, FILES.bindings), `${JSON.stringify(translateBindings(bindings, new Map(ports.map(row => [row.containerPort, row]))), null, 2)}\n`, { mode: 0o600 });
-  writeFileSync(join(stateDir, FILES.addresses), `${JSON.stringify(translateAddresses(addresses, ports), null, 2)}\n`, { mode: 0o600 });
-  writeFileSync(join(stateDir, FILES.instance), `${JSON.stringify(updated, null, 2)}\n`, { mode: 0o600 });
+  writeSessionJson(join(stateDir, FILES.bindings), translateBindings(bindings, new Map(ports.map(row => [row.containerPort, row]))));
+  writeSessionJson(join(stateDir, FILES.addresses), translateAddresses(addresses, ports));
+  writeSessionJson(join(stateDir, FILES.instance), updated);
 }
 
 function validRequestedWorld(value) {

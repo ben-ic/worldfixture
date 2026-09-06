@@ -87,6 +87,14 @@ jobs:
       - name: Build the current product image
         run: docker buildx build --load -t worldfixture:coupling-ci .
 
+      - name: Check private state access for a non-root Linux user
+        run: |
+          set -o pipefail
+          mkdir -p .worldfixture/coupling/host-ownership
+          docker run --rm --entrypoint node \
+            --mount "type=bind,source=$PWD/tests/image/host-ownership-check.mjs,target=/check.mjs,readonly" \
+            worldfixture:coupling-ci /check.mjs | tee .worldfixture/coupling/host-ownership/report.json
+
       - name: Check world selection through direct and host launch
         run: npm run test:world-selection -- --image worldfixture:coupling-ci --report .worldfixture/coupling/p1-selection --run
 
@@ -103,6 +111,7 @@ jobs:
           path: |
             .worldfixture/coupling-ci
             .worldfixture/coupling/p1-selection
+            .worldfixture/coupling/host-ownership
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
