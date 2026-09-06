@@ -76,9 +76,88 @@ The Workbench calls `conversations.list`, reads each conversation with
 message. It writes with `chat.postMessage`. These actions use the same store as
 API clients.
 
-The emulator can keep incoming webhook and local interaction state. Exact Slack
-Events API delivery, signatures, retries, Socket Mode, and production event
-payloads are **Not verified against the production provider**.
+WorldFixture sends Slack Events API callbacks to an external HTTP receiver.
+These callbacks use the Slack envelope and signing protocol. They are separate
+from WorldFixture Connector v1 events. Socket Mode is **Not supported**.
+
+## Events API webhooks
+
+Set `slack.events_api` in the emulator seed overlay. Start the app receiver before
+WorldFixture starts. Use an address that the emulator can reach; for a receiver on
+the Docker host, this can be `http://host.docker.internal:3000/slack/events`.
+
+```json
+{
+  "slack": {
+    "events_api": {
+      "request_url": "http://host.docker.internal:3000/slack/events",
+      "signing_secret": "local-slack-signing-secret",
+      "app_id": "A0123456789",
+      "user": "mayac",
+      "events": ["message.channels", "reaction_added", "reaction_removed"]
+    }
+  }
+}
+```
+
+`user` must name a declared Slack user. You can instead set `user_id` to that
+user's Slack ID. The callback uses the world's user and workspace IDs. Set
+`app_id` to the app ID expected by the receiver. You can also set
+`verification_token`; otherwise, WorldFixture generates it and saves it with
+the provider state. Configure the app to check `X-Slack-Signature` with the same
+`signing_secret`.
+
+At startup, WorldFixture sends a signed `url_verification` request. The receiver
+must return HTTP 200 with its `challenge` value as plain text, JSON, or a form
+field within three seconds. Startup fails if verification fails. A restored provider snapshot
+retains the verified subscription.
+
+Successful API writes send asynchronous `event_callback` POSTs. A slow receiver
+does not hold the Slack API response. Each callback has a unique `event_id`,
+`event_time`, the app and workspace IDs, installation authorization, and an inner
+Slack event. Message timestamps and resource IDs match the API state.
+
+| Subscriptions | Trigger |
+| --- | --- |
+| `message.channels`, `message.groups`, `message.im`, `message.mpim` | Message creation, thread replies, edits, deletion, and message subtypes emitted by supported conversation methods |
+| `reaction_added`, `reaction_removed` | Add or remove a message reaction |
+| `user_change` | Change standard profile data; changes to custom fields alone do not send an event |
+| `channel_archive`, `channel_unarchive`, `channel_rename`, `group_archive`, `group_unarchive`, `group_rename` | Change channel state or name |
+| `member_joined_channel`, `member_left_channel` | Change channel membership; creating a channel sends a join event for its creator |
+| `file_created`, `file_shared`, `file_deleted` | Complete an upload, share a file, or delete it |
+| `pin_added`, `pin_removed` | Add or remove a message pin |
+
+The subscription controls which events the receiver gets. Private channel and DM
+events require membership. Bot installations also require membership for public
+channel events. Pin and `member_joined_channel` events require membership for
+user installations in public channels too. These rules follow Slack's
+[pin event](https://docs.slack.dev/reference/events/pin_added/) and
+[member join event](https://docs.slack.dev/reference/events/member_joined_channel/)
+contracts. Ephemeral messages and RTM-only presence events do not produce
+Events API callbacks. Unknown subscription names cause a configuration error.
+
+WorldFixture signs the exact JSON bytes with Slack's `v0` HMAC-SHA256 protocol.
+The receiver must return HTTP 2xx within three seconds. Delivery follows up to
+two HTTP 301/302 redirects. Failed delivery has up to three retries: immediately,
+after one minute, then after five minutes. Retries retain the event ID and body
+and add `X-Slack-Retry-Num` and `X-Slack-Retry-Reason`. A failed response with
+`X-Slack-No-Retry: 1` stops retries. These rules follow the
+[Slack Events API delivery contract](https://docs.slack.dev/apis/events-api/) and
+[request signing protocol](https://docs.slack.dev/authentication/verifying-requests-from-slack/).
+
+This coverage is **Supported and contract-tested locally**, not verified against
+production Slack. App mentions, `channel_created` callbacks, DM open/close
+callbacks, and event types absent from the table are not implemented. Production
+scope enforcement, event rate limits, automatic subscription disabling, delayed
+event delivery, and `apps.event.authorizations.list` are not implemented.
+Pending retries do not survive process restart. Full fidelity for every Slack
+event is not claimed.
+
+Channel creation sends `member_joined_channel`. A change to custom profile
+fields alone does not send `user_change`, as
+[Slack specifies](https://docs.slack.dev/reference/events/user_change/).
+Only one app installation can be configured per world. Local HTTP receiver URLs
+are allowed for development; Slack checks the receiver's SSL certificate.
 
 The examples use `@slack/web-api` 7.12.0 and `slack_sdk` 3.36.0. These
 versions do not have full provider contract coverage. SDK methods that call a
@@ -93,6 +172,7 @@ exact rate limits are **Not supported**.
 ## Evidence and authority
 
 Tests: `emulators/emulate/src/main.test.mjs`,
+`emulators/emulate/src/webhooks/slack.test.mjs`,
 `emulators/emulate/src/overrides/slack-history.test.mjs`,
 `runtime/src/supervisor.test.mjs`, `runtime/src/cli.test.mjs`, and
 `tests/contracts/test_compiler_core.py`.

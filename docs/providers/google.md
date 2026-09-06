@@ -1,7 +1,7 @@
 # Google
 
 WorldFixture uses `@emulators/google` 0.10.0. WorldFixture adds signing-key,
-declared-user, Gmail batch, and Gmail push behavior.
+declared-user, Gmail batch, Gmail push, and Calendar/Drive webhook behavior.
 
 | Question | Answer |
 | --- | --- |
@@ -28,8 +28,8 @@ sends mail through the same Gmail state.
 ## What does not work
 
 There is no full Pub/Sub service. Calendar event get and update by ID do not
-work. Drive delete, permissions, comments, revisions, changes, and shared drives
-do not work. Google APIs that are not on this page do not work.
+work. Drive delete, permissions, comments, revisions, and shared drives
+do not work. The Drive changes feed covers local file writes. Google APIs that are not on this page do not work.
 
 ## Connection and authentication
 
@@ -85,8 +85,74 @@ reproduce all Google consent, client validation, scope, and token rules.
 | Drive get and update | `GET`, `PATCH`, and `PUT /drive/v3/files/:fileId` | Read metadata or `alt=media`; change name and parents |
 
 Calendar event get and update by ID are **Not supported**. Drive delete,
-permissions, comments, revisions, changes, and shared-drive operations are
+permissions, comments, revisions, and shared-drive operations are
 **Not supported**.
+
+## Calendar and Drive push notifications
+
+Calendar and Drive can send native notification POSTs to an external receiver.
+Each request has an empty body and `X-Goog-*` headers. It does not contain
+resource content. After a notification, read the resource or its change feed.
+The receiver gets an initial `sync` request with message number `1`.
+
+| Operation | Route | Local behavior |
+| --- | --- | --- |
+| Watch Calendar events | `POST /calendar/v3/calendars/:calendarId/events/watch` | Initial sync, then `exists` after successful event creation or deletion; supports `eventTypes` filters |
+| Watch the calendar list | `POST /calendar/v3/users/:userId/calendarList/watch` | Initial sync; list notifications when an implemented REST write changes the owner's calendar records |
+| Watch a Drive file | `POST /drive/v3/files/:fileId/watch` | Initial sync, then `update` after name or parent changes; `X-Goog-Changed` identifies the changed field group |
+| Watch Drive changes | `POST /drive/v3/changes/watch?pageToken=<token>` | Initial sync, then `change` after successful file writes |
+| Read Drive changes | `GET /drive/v3/changes/startPageToken`; `GET /drive/v3/changes?pageToken=<token>` | Owner-specific local file changes, with pagination and a new start token |
+| Stop notifications | `POST /calendar/v3/channels/stop`; `POST /drive/v3/channels/stop` | Requires the channel `id`, `resourceId`, owner, and client |
+
+Enable external delivery in the Google service seed configuration:
+
+```json
+{
+  "webhooks": {
+    "live_delivery": true,
+    "allow_insecure_http": true
+  }
+}
+```
+
+The default captures notifications without a network request.
+`WORLDFIXTURE_GOOGLE_WEBHOOK_DELIVERY=1` also enables external delivery.
+`allow_insecure_http` permits HTTP for local receivers; omit it for HTTPS.
+Use a receiver address reachable from the emulator process, such as
+`http://host.docker.internal:3000/google-events` for a receiver on the Docker
+host. Create a channel with this request body and a normal Google bearer token:
+
+```json
+{
+  "id": "my-unique-channel",
+  "type": "web_hook",
+  "address": "http://host.docker.internal:3000/google-events",
+  "token": "my-channel-token"
+}
+```
+
+The response has `kind: "api#channel"`, `id`, `resourceId`, `resourceUri`,
+`expiration`, and the optional `token`. Notification headers use these same
+values. Tokens are echoed in `X-Goog-Channel-Token`; Google does not use an
+HMAC signature for these notifications. Message numbers increase after sync.
+Expired or stopped channels do not receive new notifications or pending retries.
+
+Calendar channels default to seven days. Drive channels default to one hour;
+file channels have a one-day limit and change channels have a seven-day limit.
+`expiration` is a Unix timestamp in milliseconds. `params.ttl` is in seconds.
+Notifications use `User-Agent: APIs-Google`. Temporary server errors
+(`500`, `502`, `503`, `504`) and connection errors retry with exponential
+backoff. Other failures stop delivery. The fixture retry delays are 1, 2, 4, 8,
+and 16 seconds; Google does not publish an exact schedule or attempt limit.
+Timers are in memory and do not survive a process restart.
+
+ACL and Settings watch are not supported because their resource APIs are not
+implemented. Shared-drive watch and change filters are not supported. The
+CalendarList API currently has no write routes, so normal CalendarList watches
+receive only sync. Direct store changes do not produce these notifications.
+The receiver's `robots.txt` is not checked. Seeded tokens share one local client
+unless their auth record sets `client_id`. OAuth tokens retain their client.
+These limits are separate from the native header and empty-body contract.
 
 ## Workbench, events, and SDKs
 
@@ -95,8 +161,10 @@ The Workbench reads Inbox and Sent through Gmail routes. It sends mail through
 
 Gmail push sends a Pub/Sub-shaped envelope to
 `WORLDFIXTURE_PUBSUB_PUSH_URL`. There is no Pub/Sub management API. The watch
-operation does not send the immediate notification that production Gmail sends.
-Push behavior is limited to this local delivery.
+operation causes an initial notification on the next local polling tick.
+Production Gmail sends this notification immediately. The local polling interval
+defaults to two seconds. Authenticated Pub/Sub push JWTs and subscription retry
+policies are not implemented.
 
 No official `googleapis` SDK version has a provider contract test. An SDK call
 works only if it maps to a route in this page.
@@ -111,10 +179,21 @@ provider**.
 ## Evidence and authority
 
 Tests: `google-signing.test.mjs`, `google-batch.test.mjs`,
-`declared-oauth-extra.test.mjs`, `gmail-push.test.mjs`, and compiler contract tests
+`declared-oauth-extra.test.mjs`, `gmail-push.test.mjs`, `webhooks/google.test.mjs`, and compiler contract tests
 under `tests/contracts/`.
 
 Authority: [Google OAuth 2.0](https://developers.google.com/identity/protocols/oauth2),
 [Gmail API](https://developers.google.com/gmail/api/reference/rest),
 [Calendar API](https://developers.google.com/calendar/api/v3/reference), and
 [Drive API](https://developers.google.com/drive/api/reference/rest/v3).
+
+Webhook references: [Calendar push notifications](https://developers.google.com/workspace/calendar/api/guides/push),
+[Calendar events.watch](https://developers.google.com/workspace/calendar/api/v3/reference/events/watch),
+and [Drive push notifications](https://developers.google.com/workspace/drive/api/guides/push).
+
+
+Gmail push sends an initial notification after each successful watch.
+Retries preserve the Pub/Sub message ID, publish time, and raw body. Notifications follow the include
+or exclude label filters. Stop and expiration end delivery. A renewed watch
+starts a new notification sequence. The polling interval defaults to two seconds. Set `WORLDFIXTURE_PUBSUB_SUBSCRIPTION` for an exact
+subscription name. Authenticated Pub/Sub JWT delivery is not implemented.

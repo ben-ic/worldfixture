@@ -10,8 +10,8 @@ API support label: **Supported but partial**. The local inbox is
 ## What does not work
 
 The current global Contact API, broadcasts, templates, topics, receiving,
-suppression management, production delivery, production domain verification,
-and webhooks do not work. These operations are **Not supported**. Production
+suppression management, production delivery, and production domain verification
+do not work. These operations are **Not supported**. Production
 behavior and the official Resend SDK are
 **Not verified against the production provider**.
 
@@ -26,39 +26,88 @@ WorldFixture uses `@emulators/resend` 0.10.0.
 
 ## Route reference
 
-| Method and path | Input | Output | Proof |
-| --- | --- | --- | --- |
-| `POST /emails` | Sender, recipients, subject, and supported content fields | `id` | Registered route source |
-| `POST /emails/batch` | Array of supported email objects | `data[]` with IDs | Registered route source |
-| `GET /emails` | Local list query | Email list | Registered route source |
-| `GET /emails/:id` | Email ID | Sender, recipients, subject, content, status, and timestamps | Registered route source |
-| `POST /emails/:id/cancel` | Email ID | Updated email state | Registered route source |
-| `POST, GET /domains` | Domain JSON or list query | Domain data | Registered route source |
-| `GET, DELETE /domains/:id` | Domain ID | Domain object or delete result | Registered route source |
-| `POST /domains/:id/verify` | Domain ID | Updated local verification state | Registered route source |
-| `POST, GET /api-keys` | Key name or list query | Key metadata; create returns the local secret | Registered route source |
-| `DELETE /api-keys/:id` | Key ID | Delete result | Registered route source |
-| `POST, GET /audiences` | Audience name or list query | Audience data | Registered route source |
-| `DELETE /audiences/:id` | Audience ID | Delete result | Registered route source |
-| `POST, GET /audiences/:audience_id/contacts` | Contact JSON or list query | Contact data | Registered route source |
-| `DELETE /audiences/:audience_id/contacts/:id` | Audience and contact IDs | Delete result | Registered route source |
-| `GET /inbox`, `GET /inbox/:id` | Optional message ID | Local inbox data | Registered local route source |
+| Method and path | Input | Output |
+| --- | --- | --- |
+| `POST /emails` | Sender, recipients, subject, and supported content fields | `id` |
+| `POST /emails/batch` | Array of supported email objects | `data[]` with IDs |
+| `GET /emails` | Local list query | Email list |
+| `GET /emails/:id` | Email ID | Sender, recipients, subject, content, status, and timestamps |
+| `POST /emails/:id/cancel` | Email ID | Updated email state |
+| `POST, GET /domains` | Domain JSON or list query | Domain data |
+| `GET, DELETE /domains/:id` | Domain ID | Domain object or delete result |
+| `POST /domains/:id/verify` | Domain ID | Updated local verification state |
+| `POST, GET /api-keys` | Key name or list query | Key metadata; create returns the local secret |
+| `DELETE /api-keys/:id` | Key ID | Delete result |
+| `POST, GET /audiences` | Audience name or list query | Audience data |
+| `DELETE /audiences/:id` | Audience ID | Delete result |
+| `POST, GET /audiences/:audience_id/contacts` | Contact JSON or list query | Contact data |
+| `DELETE /audiences/:audience_id/contacts/:id` | Audience and contact IDs | Delete result |
+| `GET /inbox`, `GET /inbox/:id` | Optional message ID | Local inbox data |
 
 Email create accepts the local subset of sender, recipient, subject, HTML, text,
 reply-to, CC, BCC, headers, tags, attachments, and schedule data. Domain data
 includes ID, name, status, records, and timestamps. Contact data includes ID,
 email, names, unsubscribe state, and timestamps.
 
-## State, reset, Workbench, and proof
+## State, reset, and Workbench
 
 Writes change the store that API reads and the Workbench use. The Workbench
 reads emails, domains, audiences, and contacts through the live API. It has no
 Resend write control. Reset restarts and reseeds the store. Stop does not
 preserve this state.
 
-Implementation: emulate.dev. WorldFixture adds no Resend API route. Proof is
-the registered route source, compiler projection tests, and live Workbench
-reads. No endpoint has a Resend contract test or production recording. No
-official SDK version has a WorldFixture test.
+WorldFixture uses emulate.dev for the local API and adds webhook registration
+and event delivery. The official Resend SDK is not verified for this provider.
 
 Provider authority: [Resend API reference](https://resend.com/docs/api-reference/introduction).
+
+
+## Native webhook delivery
+
+Create a webhook with `POST /webhooks` and a JSON body that contains
+`endpoint` and `events`, for example `events: ["email.sent"]`. The response
+contains `id` and `signing_secret`. List, get, update, and delete operations
+use `/webhooks` and `/webhooks/:id`. Update uses `PATCH`; set `status` to
+`disabled` to stop delivery. IDs and signing secrets are generated by the API.
+Get includes the signing secret; list omits it. List currently returns all
+webhooks and ignores `limit`, `before`, and `after`.
+
+Accepted email writes send JSON event bodies with `type`, `created_at`, and
+`data`. Email IDs, recipients, sender, tags, and creation time come from the
+accepted email. The email store, email list, email get, and events share one
+`message_id`. An accepted `Message-ID` header supplies this value. Otherwise,
+WorldFixture generates `<EMAIL_UUID@worldfixture.local>`. This is a local
+message identity; no production mail server processes the message.
+Requests use the Svix `svix-id`, `svix-timestamp`, and
+`svix-signature` headers. Failed deliveries keep the same event ID and body.
+The retry schedule follows the published Resend schedule. Delivery is
+asynchronous. HTTP is accepted for local test receivers.
+
+| Accepted local operation | Generated events |
+| --- | --- |
+| Immediate single or batch email send | `email.sent`, then simulated `email.delivered` |
+| Scheduled email create | `email.scheduled` |
+| Domain create or delete | `domain.created` or `domain.deleted` |
+| Domain verification with a state change | `domain.updated` |
+| Audience contact create or delete | `contact.created` or `contact.deleted` |
+
+Scheduled messages stay scheduled until cancelled; no clock sends them later.
+The local batch route also accepts `scheduled_at` and emits `email.scheduled`.
+This is a local extension: the official batch API does not support that field.
+Cancel has no webhook event. Rejected writes do not emit events.
+
+The remaining email events, `contact.updated`, `suppression.added`, and
+`suppression.removed` can be selected in registration but have no implemented
+API trigger. Webhook event history, attempt APIs, manual replay, failure email
+notifications, and automatic endpoint disable are not implemented. Optional
+broadcast and template IDs are absent because those APIs are not implemented.
+Domain records and delivery outcomes are simulated. Complete production
+webhook behavior is not supported.
+
+Sources: [event body](https://resend.com/docs/webhooks/emails/sent),
+[scheduled event](https://resend.com/docs/webhooks/emails/scheduled),
+[batch limits](https://resend.com/docs/api-reference/emails/send-batch-emails),
+[SDK event types](https://github.com/resend/resend-node/blob/main/src/webhooks/interfaces/webhook-event.interface.ts),
+[OpenAPI contracts](https://github.com/resend/resend-openapi/blob/main/resend.yaml),
+[verification](https://resend.com/docs/webhooks/verify-webhooks-requests), and
+[retry schedule](https://resend.com/docs/webhooks/retries-and-replays).

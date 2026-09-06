@@ -116,6 +116,93 @@ refund states, and disputes are **Not supported**. Tests are in
 
 ## State, events, reset, Workbench, and proof
 
+### External Stripe webhooks
+
+WorldFixture sends Stripe snapshot events to an external HTTP or HTTPS receiver.
+The POST body is a Stripe `Event` object. It includes `id`, `object: "event"`,
+`api_version`, Unix `created` time, `data.object`, `livemode: false`,
+`pending_webhooks`, `request`, and `type`. API writes supply a `req_` request ID
+and the supplied `Idempotency-Key`. The same request ID is in the API response.
+Supported update events include `data.previous_attributes`. Nested objects contain
+the changed fields. A changed array contains the complete previous array.
+
+Each endpoint has a `whsec_` signing secret. The `Stripe-Signature` header uses
+HMAC-SHA256 over the timestamp, a period, and the exact JSON body. The official
+Stripe SDK verifies the received bytes. The body does not use Connector v1.
+
+Use the Stripe SDK to create a receiver:
+
+```js
+const endpoint = await stripe.webhookEndpoints.create({
+  url: "http://host.docker.internal:3000/webhooks/stripe",
+  enabled_events: ["invoice.paid", "customer.subscription.updated"],
+});
+// Keep endpoint.secret. Verify the raw received body before JSON parsing.
+const event = stripe.webhooks.constructEvent(rawBody, signature, endpoint.secret);
+```
+
+The receiver address must be reachable from the WorldFixture container. Local
+HTTP is permitted for tests. Stripe production webhook receivers use HTTPS.
+
+| Method and path | Supported behavior |
+| --- | --- |
+| `POST /v1/webhook_endpoints` | URL, event filter, description, metadata; returns the signing secret once |
+| `GET /v1/webhook_endpoints` | Endpoint list with limit and cursors; omits secrets |
+| `GET /v1/webhook_endpoints/:id` | Endpoint status and configuration; omits the secret |
+| `POST /v1/webhook_endpoints/:id` | Change URL, event filter, description, metadata, or `disabled`; metadata merges, empty values remove keys, and empty metadata removes all keys |
+| `DELETE /v1/webhook_endpoints/:id` | Delete the endpoint and stop later attempts |
+| `GET /v1/events` | Event list with `type` (including `*`), `types`, `delivery_success`, `created[gt/gte/lt/lte]`, limit, and cursors |
+| `GET /v1/events/:id` | Stored snapshot and current `pending_webhooks` count |
+
+Seed configuration also accepts `stripe.webhooks` entries with `url`, `events`
+(or `enabled_events`), and an optional `secret` and `id`. If the secret is absent,
+WorldFixture generates it. Use endpoint creation to obtain a generated secret.
+Only API version `2026-08-26.dahlia` is supported. An absent endpoint API version
+uses this version. A request for another version is rejected.
+The endpoint update API cannot change `api_version`. Event filters accept the
+event names in the pinned official Stripe schema. A valid event name does not
+mean that WorldFixture can generate that event.
+
+Webhook delivery does not hold the API write response open. A `2xx` response
+completes delivery. A timeout, network error, redirect, or other status causes
+up to two more attempts. Each attempt signs the unchanged event body with the
+current timestamp. Redirects are not followed. Local retry delays are 60 and
+120 seconds. These delays are a test schedule; they do not reproduce Stripe's
+production retry schedule. Delivery order is not guaranteed. Reset and stop
+cancel attempts that are still in progress. Endpoint and event records use the
+provider store.
+
+Existing customer, PaymentIntent, product, price, Checkout Session, billing,
+and refund mutations supply event snapshots. Invoice item creation and deletion,
+draft invoice deletion, and charge refunds also send their matching events.
+PaymentIntent and invoice snapshots include the local transaction fields. Charge
+snapshots include the fields required by the pinned schema for the local captured
+payment branch. An out-of-band invoice payment sends `invoice.paid`; it does not
+send `invoice.payment_succeeded`.
+This does not implement all Stripe event types. Connect, v2 thin events,
+cross-version object conversion, production retry timing, and durable retry
+recovery after a process restart are not supported. The resource fields remain
+limited to the API coverage described on this page.
+
+Product snapshots include empty image and marketing-feature lists and the stored
+update time. Prices use the supported `per_unit` branch. Checkout snapshots use
+the local card-only branch, with no tax, shipping options, or custom controls.
+Their default `expires_at` is 24 hours after creation. Custom expiry settings and
+automatic expiry events are not supported. These fields apply to event
+snapshots; the underlying emulate.dev resource responses remain partial.
+
+Known remaining differences: Related lifecycle events, including all invoice
+changes and subscription-generated invoice/payment events, are incomplete.
+The Events API does not enforce Stripe's 30-day retention period. Endpoint limits,
+all parameter errors, selection-required event generation, secret rotation,
+Stripe CLI resend, and production retry behavior are not reproduced.
+
+The contract follows the official [Event object](https://docs.stripe.com/api/events/object),
+[webhook endpoint API](https://docs.stripe.com/api/webhook_endpoints/create), and
+[webhook signature guide](https://docs.stripe.com/webhooks/signature).
+Event filters follow the official
+[Events list API](https://docs.stripe.com/api/events/list). Supported event names are described in the official [event types](https://docs.stripe.com/api/events/types).
+
 Provider writes change the store that API reads and the Workbench use. Invoice
 payment also creates local PaymentIntent and charge records. Reset restores the
 prepared starting state. Stop does not preserve later writes.

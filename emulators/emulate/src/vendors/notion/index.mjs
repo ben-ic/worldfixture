@@ -23,6 +23,7 @@ export const plugin = {
 };
 
 export function seedFromConfig(store, baseUrl, config) {
+  store.setData("notion_webhook_delivery_config", config?.webhooks ?? {});
   seedNotion(store, baseUrl, config);
   seedNotionAgents(store, config);
   seedNotionAdminApi(store, config);

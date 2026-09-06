@@ -16,10 +16,15 @@ Scheduled arrivals use the world-relative clock and the same provider APIs as a
 manual action. A causal rule can create a later action. For example, a Slack
 message can cause Local Mail notification delivery through SMTP.
 
-Provider webhooks are provider-specific. Do not assume that an implemented
-write produces a production-shaped outbound webhook. The
-[provider support index](../providers/index.md) and provider page state which
-webhook events are contract-tested, captured only, or not supported.
+Native provider webhooks use a separate delivery path. A successful provider
+write can send an HTTP request to the app without creating a runtime ledger
+event. The request uses that provider's event body, headers, and signature.
+It does not contain a WorldFixture Connector v1 envelope. Delivery runs
+asynchronously so that a slow receiver does not block a provider API write.
+
+Read [native webhook setup and coverage](./native-webhooks.md) before you
+select an event. Each provider page lists the tested events and remaining
+limits. Complete production event catalogs and timing are not verified.
 
 The connector event endpoint uses at-least-once delivery. A connector must make
 `event_id` idempotent.

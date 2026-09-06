@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { createNotionDelivery, notionDeliveryConfig, notionWebhookUrlError } from "./webhook-delivery.mjs";
 
 const EVENT_TYPES = new Set([
   "page.created", "page.properties_updated", "page.content_updated", "page.moved", "page.deleted", "page.undeleted", "page.locked", "page.unlocked",
@@ -131,15 +132,18 @@ export function createNotionAdmin(store) {
   const subscriptions = store.collection("notion_webhook_subscriptions", ["notion_id", "status"]);
   const deliveries = store.collection("notion_webhook_deliveries", ["notion_id", "subscription_id", "event_type"]);
   const verificationDeliveries = store.collection("notion_webhook_verification_deliveries", ["notion_id", "subscription_id"]);
+  const delivery = createNotionDelivery(store, subscriptions, notionWebhookSignature);
   return {
     subscriptions,
     deliveries,
     verificationDeliveries,
+    waitForIdle: delivery.waitForIdle,
+    close: delivery.close,
     captureVerification(subscription) {
       const payload = { verification_token: subscription.verification_token };
       const rawBody = JSON.stringify(payload);
       const signature = notionWebhookSignature(rawBody, subscription.verification_token);
-      return verificationDeliveries.insert({
+      const record = verificationDeliveries.insert({
         notion_id: `verification_${verificationDeliveries.count() + 1}`,
         subscription_id: subscription.notion_id,
         url: subscription.url,
@@ -150,6 +154,8 @@ export function createNotionAdmin(store) {
         status: "captured",
         live_delivery: false,
       });
+      delivery.send(verificationDeliveries, record, true);
+      return record;
     },
     captureChange(change) {
       const event = eventForTopic(change.topic);
@@ -163,8 +169,9 @@ export function createNotionAdmin(store) {
           workspace_name: workspace.name ?? "WorldFixture",
           subscription_id: subscription.notion_id,
           integration_id: subscription.integration_id,
-          authors: [{ id: change.actor_id, type: "person" }],
-          accessible_by: [{ id: change.actor_id, type: "person" }],
+          authors: [{ id: change.actor_id, type: recordBy(store, "notion_users", ["notion_id", "email"], change.actor_id)?.type ?? "person" }],
+          // accessible_by applies only to public integration connections. The
+          // local subscription controls model internal integrations.
           attempt_number: 1,
           api_version: "2026-03-11",
           type: event,
@@ -172,12 +179,14 @@ export function createNotionAdmin(store) {
         };
         const rawBody = JSON.stringify(payload);
         const signature = notionWebhookSignature(rawBody, subscription.verification_token);
-        deliveries.insert({
+        const record = deliveries.insert({
           notion_id: `delivery_${deliveries.count() + 1}`, subscription_id: subscription.notion_id, event_type: event,
+          url: subscription.url,
           captured_at: change.occurred_at, payload, raw_body: rawBody,
           headers: { "X-Notion-Signature": signature }, signature,
           status: "captured", live_delivery: false,
         });
+        delivery.send(deliveries, record);
       }
     },
   };
@@ -195,7 +204,7 @@ export function registerNotionAdminRoutes(app, store, tokenMap, admin) {
     webhook_subscriptions: admin.subscriptions.all().map((record) => ({ ...record, verification_token: record.status === "pending" ? record.verification_token : undefined })),
     webhook_verification_deliveries: admin.verificationDeliveries.all(),
     webhook_deliveries: admin.deliveries.all(),
-    live_webhook_delivery: false,
+    live_webhook_delivery: notionDeliveryConfig(store).live_delivery,
   });
 
   app.get("/__worldfixture/notion-admin", (c) => authorized(c) ? c.json(publicState()) : adminError(c, 401, "A REST inspection token is required."));
@@ -215,8 +224,8 @@ export function registerNotionAdminRoutes(app, store, tokenMap, admin) {
     if (!authorized(c)) return adminError(c, 401, "A REST inspection token is required.");
     const body = await c.req.json().catch(() => null);
     if (!body || typeof body.url !== "string") return adminError(c, 400, "url is required.");
-    try { if (new URL(body.url).protocol !== "https:") return adminError(c, 400, "The webhook URL must use HTTPS."); }
-    catch { return adminError(c, 400, "The webhook URL is not valid."); }
+    const urlError = notionWebhookUrlError(store, body.url);
+    if (urlError) return adminError(c, 400, urlError);
     if (!Array.isArray(body.event_types) || body.event_types.length === 0 || body.event_types.some((event) => !EVENT_TYPES.has(event))) return adminError(c, 400, "event_types must contain supported Notion webhook events.");
     const notionId = nextUuid(store, "notion_webhook_subscription_counter", "b1000000");
     const integrationId = nextUuid(store, "notion_webhook_integration_counter", "b3000000");
@@ -233,14 +242,27 @@ export function registerNotionAdminRoutes(app, store, tokenMap, admin) {
     admin.subscriptions.update(record.id, { status: "active", verified_at: new Date().toISOString() });
     return c.json({ id: record.notion_id, status: "active" });
   });
+  app.post("/__worldfixture/notion-admin/webhooks/:id/resend-token", (c) => {
+    if (!authorized(c)) return adminError(c, 401, "A REST inspection token is required.");
+    const record = admin.subscriptions.findOneBy("notion_id", c.req.param("id"));
+    if (!record || record.status !== "pending") return adminError(c, 400, "A pending webhook subscription is required.");
+    admin.captureVerification(record);
+    return c.json({ id: record.notion_id, status: record.status });
+  });
   app.patch("/__worldfixture/notion-admin/webhooks/:id", async (c) => {
     if (!authorized(c)) return adminError(c, 401, "A REST inspection token is required.");
     const record = admin.subscriptions.findOneBy("notion_id", c.req.param("id"));
     const body = await c.req.json().catch(() => null);
     if (!record || !body) return adminError(c, 404, "Webhook subscription not found.");
     if (body.url !== undefined && record.status !== "pending") return adminError(c, 400, "A verified webhook URL cannot be changed.");
+    if (body.url !== undefined) {
+      const urlError = notionWebhookUrlError(store, body.url);
+      if (urlError) return adminError(c, 400, urlError);
+    }
     if (body.event_types !== undefined && (!Array.isArray(body.event_types) || body.event_types.length === 0 || body.event_types.some((event) => !EVENT_TYPES.has(event)))) return adminError(c, 400, "event_types must contain supported Notion webhook events.");
-    const updated = admin.subscriptions.update(record.id, { url: body.url ?? record.url, event_types: body.event_types ?? record.event_types });
+    if (body.status !== undefined && (!["active", "paused"].includes(body.status) || !record.verified_at)) return adminError(c, 400, "Only verified subscriptions can be paused or activated.");
+    const updated = admin.subscriptions.update(record.id, { url: body.url ?? record.url, event_types: body.event_types ?? record.event_types, status: body.status ?? record.status });
+    if (body.url !== undefined && body.url !== record.url) admin.captureVerification(updated);
     return c.json({ id: updated.notion_id, url: updated.url, event_types: updated.event_types, status: updated.status });
   });
   app.delete("/__worldfixture/notion-admin/webhooks/:id", (c) => {

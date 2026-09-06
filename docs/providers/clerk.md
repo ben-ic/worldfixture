@@ -9,8 +9,7 @@ memberships, invitations, sessions, and a small OAuth/OIDC flow. Support label:
 ## What does not work
 
 Client management, phone numbers, OAuth application management, SAML and enterprise connections,
-billing, machines, M2M tokens, roles, permissions, sign-in tokens, and Clerk
-webhooks do not work. Complete production authorization, pagination, and errors
+billing, machines, M2M tokens, roles, permissions, and sign-in tokens do not work. Complete production authorization, pagination, and errors
 also do not work. These operations are **Not supported**. Production behavior
 and `@clerk/backend` are **Not verified against the production provider**.
 
@@ -62,3 +61,44 @@ Compiler tests cover the projection. No production recording or official SDK
 version has a WorldFixture test.
 
 Provider authority: [Clerk Backend API](https://clerk.com/docs/reference/backend-api).
+
+
+## Native webhook delivery
+
+Set `clerk.instance_id` and `clerk.webhooks` in the session seed overlay.
+Each webhook has `url`, `signing_secret`, and an `events` array. The signing
+secret uses Svix format: `whsec_` followed by a Base64 key. Set `enabled`
+to `false` to disable an endpoint.
+
+Supported triggers include user create, update, and delete; organization
+create, update, and delete; membership create and update; invitation create
+and revoke; and session create and revoke. Event bodies contain `data`,
+`object: "event"`, `type`, `timestamp`, `instance_id`, and
+`event_attributes.http_request`. The request attributes contain `user_agent`
+and `client_ip`. The IP uses `0.0.0.0` when no socket address is available.
+Event and resource timestamps use milliseconds. Svix header timestamps use
+seconds. Session events include the associated public API user snapshot and
+`actor: null`. User deletion events retain a stored `external_id`. Invitation
+events include the stored expiry time. Passwords are excluded from user data. Requests carry
+Svix signatures and use the published Svix retry schedule.
+
+Webhook support remains partial. The pinned emulator omits fields from the
+current Clerk resource types. User data lacks fields such as
+`organization_memberships`, `enterprise_accounts`, `password_last_updated_at`,
+`legal_accepted_at`, `locale`, lockout fields, and organization creation and
+self-deletion settings. Invitation data lacks `role_name`, metadata,
+and `url`. Organization and membership image and membership-limit values can
+retain the emulator's null values. Deletion data retains the emulator's
+`object: "deleted_object"`; `slug` is omitted when unavailable. Its exact production webhook
+shape has not been checked with a Clerk recording. No production recording
+or official Clerk SDK test establishes full payload compatibility.
+
+Membership deletion, bulk invitation creation, implicit membership creation,
+cascade events, and OAuth-created sessions do not emit native webhooks.
+Dashboard management APIs, billing events, and complete nested resource event
+coverage are not implemented.
+
+Sources: [Clerk webhooks](https://clerk.com/docs/guides/development/webhooks/overview)
+and [Svix retries](https://docs.svix.com/retries). See also
+Clerk's current [webhook event types](https://github.com/clerk/javascript/blob/main/packages/backend/src/api/resources/Webhooks.ts)
+and [resource JSON types](https://github.com/clerk/javascript/blob/main/packages/backend/src/api/resources/JSON.ts).

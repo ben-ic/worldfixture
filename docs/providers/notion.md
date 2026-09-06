@@ -1,6 +1,6 @@
 # Notion provider support
 
-Verification date: 2026-09-03
+Verification date: 2026-09-06
 
 Overall status: **Supported and contract-tested** for the named inventories
 below. This is not a claim for the complete Notion product.
@@ -22,14 +22,14 @@ is the only production-provider recording.
 | Public Agent API | All 13 methods in `@notionhq/client` 5.26.0 and their named branches | Deprecated alpha thread/chat and internal `external_agent_stub` routes | **Supported and contract-tested** by `notion-agent-branches.test.mjs` and `notion-agents.test.mjs` |
 | Admin API | All 39 operations in the pinned Admin OpenAPI inventory | Other Admin API versions and uncaptured production behavior | **Supported and contract-tested** by `notion-admin-api.test.mjs` |
 | Hosted MCP | Exact 41-tool Free Plan `tools/list`; every advertised local tool dispatches through shared world state | Hosted result-envelope parity; legacy SSE | Definitions are **Supported and contract-tested** by `hosted-contract.test.mjs`; results are **Not verified against the production provider** |
-| Webhooks | 31 event schemas, HMAC signatures, and local delivery capture | External network delivery | **Supported and contract-tested** by `notion-webhooks.test.mjs` and `notion-admin.test.mjs` |
+| Webhooks | 31 event schemas, signed HTTP POST delivery, verification, event filters, pause, and retries | Production aggregation timing and exact retry intervals | **Supported and contract-tested** by `notion-webhooks.test.mjs` and `notion-admin.test.mjs` |
 | Workers | Local deterministic adapter for `@notionhq/workers` 0.9.0 | Notion-hosted build, deployment, sandbox, secrets, logs, and remote commands | Local adapter is **Supported but partial** and tested by `notion-workers.test.mjs`; hosted behavior is **Not supported** |
 | Workbench | Live Notion state and selected provider writes; private subscription and secret controls | Live Workers runtime view | Provider views use shared state; private controls are **Workbench-only**; Workers view is **Not supported** |
 
 ## What does not work
 
 - Other Notion API versions are not covered.
-- External webhook delivery does not work.
+- External webhook delivery requires `webhooks.live_delivery: true` in the Notion seed configuration, or `WORLDFIXTURE_NOTION_WEBHOOK_DELIVERY=1`.
 - Notion-hosted Workers build, deployment, and sandbox behavior do not work.
 - Hosted MCP result envelopes are not verified.
 - Production REST and Admin request and response recordings are not available.
@@ -123,7 +123,7 @@ during negotiation.
 | REST content API | `Authorization: Bearer <integration-or-public-OAuth-token>` with route capabilities | `Notion-Version: 2026-03-11`; JSON mutation routes use `Content-Type: application/json`; File Upload send routes use their upload body contract | `notion-openapi-lifecycle.test.mjs`, `notion-sdk-all-methods.test.mjs`, `notion-block-contract.test.mjs`, `notion-exhaustive-gaps.test.mjs` | All 61 success/header paths are green. Multipart upload is lifecycle-tested, but its request body is not JSON-schema validated. Not every documented error status is forced for every operation. |
 | Public OAuth | Consent uses the registered client. Token, introspection, and revocation use HTTP Basic client credentials. Returned access tokens use bearer authentication on REST calls. | `/v1/oauth/authorize` uses query or form fields. `/v1/oauth/token`, `/v1/oauth/introspect`, and `/v1/oauth/revoke` require `Notion-Version: 2026-03-11` and JSON bodies. | `notion-admin.test.mjs`, `notion-openapi-lifecycle.test.mjs`, `notion-sdk-all-methods.test.mjs`; `@notionhq/client` 5.26.0 | Success schemas and SDK flows pass. Not every possible OAuth error response is forced. |
 | MCP Streamable HTTP and MCP OAuth | OAuth bearer access token. A 401 response includes `WWW-Authenticate` with protected-resource metadata. | MCP POST requires `Content-Type: application/json` and `Accept: application/json, text/event-stream`. Initialization returns `2025-11-25`. A later explicit `MCP-Protocol-Version` must be `2025-11-25`. `Mcp-Session-Id` is optional and opaque; missing or unknown values are accepted. OAuth token exchange and refresh use `application/x-www-form-urlencoded`, PKCE S256, and the MCP resource value. | `hosted-contract.test.mjs`, `notion.test.mjs`, `mcp-content.test.mjs`, `mcp-write.test.mjs`, `mcp-agents.test.mjs` | Legacy SSE is unsupported. The server returns JSON responses and `GET /mcp` returns 405. The 41 `tools/list` objects are exact for the captured Free Plan profile. Exact hosted tool result envelopes are unverified. |
-| Webhooks | Delivery has no bearer credential. The receiver verifies the per-subscription secret. The private local subscription control routes require a non-MCP REST bearer token. | Delivery body is JSON. `X-Notion-Signature` is `sha256=<HMAC-SHA256(raw-body, verification-token)>`. Verification uses the one-time token. | `notion-admin.test.mjs`, `notion-webhooks.test.mjs` | All 31 event schemas pass. Deliveries are signed and captured locally. External network delivery is disabled. |
+| Webhooks | Delivery has no bearer credential. The receiver verifies the per-subscription secret. The private local subscription control routes require a non-MCP REST bearer token. | Delivery body is JSON. `X-Notion-Signature` is `sha256=<HMAC-SHA256(raw-body, verification-token)>`. Verification uses the one-time token. | `notion-admin.test.mjs`, `notion-webhooks.test.mjs` | All 31 event schemas pass through a real HTTP receiver. External delivery requires explicit configuration. |
 | Public Agent API | REST bearer token with `interact:agents` capability | `Notion-Version: 2026-03-11`; JSON mutation bodies use `application/json`; the session stream response uses `text/event-stream` | `notion-agent-branches.test.mjs`, `notion-agents.test.mjs`; `@notionhq/client` 5.26.0 | Exhaustive documented Agent/session filter, event, lifecycle, access, pagination, and limit branches pass. Deprecated alpha thread/chat and internal `external_agent_stub` routes are unsupported. |
 | Workers | The local runtime injects configured OAuth access tokens into the SDK environment. Webhook handlers receive the manifest-defined request. | No public provider-wide header contract exists. Database, sync, tool, OAuth, and webhook contracts come from the pinned `@notionhq/workers` 0.9.0 manifest. | `notion-workers.test.mjs` | This is a local deterministic adapter. It is not the Notion-hosted runtime. |
 | Admin API | `Authorization: Bearer <organization-token>` with the operation-specific organization scope | `Notion-Version: 2026-06-01`; JSON mutations use `Content-Type: application/json` | `notion-admin-api.test.mjs`; vendored `admin-api-2026-06-01.openapi.json` | All 39 behavior and schema paths pass by default. An environment override can test another explicit snapshot. |
@@ -214,8 +214,53 @@ Webhook subscriptions are created and verified through the private
 `/__worldfixture/notion-admin` surface because Notion manages subscriptions in
 connection settings rather than through its public REST API. The emulator
 creates current event payloads and HMAC-SHA256 signatures. It captures delivery
-records locally. It does not send world data to an external URL unless that
-network action is enabled explicitly in a future delivery mode.
+records locally and can send the same raw JSON bytes to a configured receiver.
+The socket tests validate all 31 received event bodies against the pinned
+official schemas and check signatures over the received bytes.
+
+To enable delivery, add this object to the Notion service seed configuration:
+
+```json
+{
+  "webhooks": {
+    "live_delivery": true,
+    "allow_insecure_http": true
+  }
+}
+```
+
+`allow_insecure_http` permits an HTTP receiver in a local test. Omit it for
+HTTPS receivers. The receiver must be reachable from the emulator process.
+For a receiver on the Docker host, use `host.docker.internal` in the URL.
+The optional environment variable `WORLDFIXTURE_NOTION_WEBHOOK_DELIVERY=1`
+enables delivery without a seed change; it does not enable insecure HTTP.
+
+Use a REST inspection bearer token with these private setup routes:
+
+1. `POST /__worldfixture/notion-admin/webhooks` with
+   `{"url":"http://host.docker.internal:3000/notion","event_types":["page.created"]}`.
+2. Read the receiver's one-time POST body, which contains only
+   `verification_token`.
+3. `POST /__worldfixture/notion-admin/webhooks/<id>/verify` with that body.
+4. Create or change Notion content through REST or MCP. The receiver gets
+   subscribed events as JSON POSTs with `X-Notion-Signature`.
+
+The setup routes replace Notion's connection settings UI. They are not public
+Notion REST endpoints. Use `PATCH /__worldfixture/notion-admin/webhooks/<id>`
+to change `event_types` or set `status` to `paused` or `active`. An unverified
+subscription cannot be activated with PATCH. A verified URL cannot be changed.
+Use `DELETE` on that route to remove the subscription. For a pending
+subscription, `POST /__worldfixture/notion-admin/webhooks/<id>/resend-token`
+sends the verification POST again.
+
+A 2xx response completes delivery. Non-2xx responses, timeouts, and connection
+errors cause event retries. Redirects are not followed. Each retry keeps the
+event ID and timestamp, increases `attempt_number`, and signs the new bytes.
+Paused, deleted, or changed subscriptions stop pending retries. The inspection
+state records each attempt, HTTP status, error, and next attempt time.
+Verification requests have one attempt; use the resend route after a failure.
+For fast fixture tests, set `webhooks.retry_delay_scale` to `0`; the default
+is `1`. `webhooks.timeout_ms` defaults to `10000`.
 
 The subscription validator accepts 31 current event names: eight page events,
 six database events, six data-source events, three comment events, four File
@@ -223,8 +268,11 @@ Upload events, one transcript-deletion event, and three view events.
 Implemented mutations emit the matching current event, including lock,
 unlock, trash, restore, move, schema, content, and comment transitions. Event
 payloads include the current common fields, `api_version: "2026-03-11"`, UUID
-identifiers, the world workspace, integration, author, accessibility, entity,
+identifiers, the world workspace, integration, author, entity,
 and event-specific `data`. Evidence: `notion-admin.test.mjs`.
+The local subscription controls model internal integrations. They omit
+`accessible_by`, which belongs to public integration connections. Public
+connection ownership and per-integration webhook access filters are not modeled.
 
 ### Public Agent API
 
@@ -395,7 +443,7 @@ past or future SDK versions.
 | Public Agent API | Public OpenAPI and generated types in `@notionhq/client` 5.26.0 | All 13 SDK methods and exhaustive Agent/session branches pass |
 | Admin API | Vendored official Admin OpenAPI, SHA-256 `3379d21cf33cad65a5fe9719ebfaf66cc884bf26de6745e9bd542171a419a772` | All 39 operations pass behavior and default request/response schema validation. |
 | Workers | Real `@notionhq/workers` 0.9.0 manifest and validation builders | Nine runtime contract tests pass |
-| Webhooks | Official current event list, common payload fields, and HMAC-SHA256 rules | Current names, fields, signatures, and state transitions pass; external delivery is disabled |
+| Webhooks | Official current event list, common payload fields, and HMAC-SHA256 rules | All 31 received HTTP event bodies pass the pinned schemas; signatures, verification, state transitions, failed delivery, and retries pass |
 | Hosted MCP | Authenticated normalized 41-tool Free Plan capture and MCP `2025-11-25` | Exact `tools/list` JSON objects pass. Behavior dispatch is implemented. Exact hosted result envelopes are unverified. |
 
 ## Known differences
@@ -428,8 +476,11 @@ past or future SDK versions.
   response contains one selected verification token or one selected captured
   request, and it uses `Cache-Control: no-store`. The default product image
   sets the value to `0`.
-- Webhook delivery is signed and captured locally. External delivery is
-  disabled so world data cannot leave the local system.
+- External webhook delivery is optional. The default captures requests locally.
+- Events are sent immediately. Production aggregation delays are not reproduced.
+  Retry timers are in memory and do not survive a process restart. The fixture
+  uses eight total attempts with exponential delays over 24 hours. Notion does
+  not publish exact retry intervals; those intervals are not a parity claim.
 - Link preview blocks can be returned when present in fixture content. Notion
   documents them as read-only; create and append are not applicable.
 
@@ -446,3 +497,6 @@ past or future SDK versions.
 - [Notion MCP overview](https://developers.notion.com/guides/mcp/overview)
 - [Notion MCP client guide](https://developers.notion.com/guides/mcp/build-mcp-client)
 - [Notion MCP supported tools](https://developers.notion.com/guides/mcp/mcp-supported-tools)
+
+- [Notion webhook verification and signatures](https://developers.notion.com/reference/webhooks)
+- [Notion event types and delivery retries](https://developers.notion.com/reference/webhooks-events-delivery)

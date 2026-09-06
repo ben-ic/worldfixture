@@ -13,7 +13,7 @@ label: **Supported but partial**.
 ## What does not work
 
 Production builds, edge execution, Functions, DNS changes, certificates, Git
-provider work, real domain verification, webhooks, billing, marketplace,
+provider work, real domain verification, billing, marketplace,
 checks, logs, observability, security, and unlisted Vercel APIs do not work.
 These operations are **Not supported**. Production behavior and
 `@vercel/sdk` are **Not verified against the production provider**.
@@ -62,3 +62,36 @@ endpoint has a Vercel contract test or production recording. No official SDK
 version has a WorldFixture test.
 
 Provider authority: [Vercel REST API](https://vercel.com/docs/rest-api).
+
+
+## Native webhook delivery
+
+Set `vercel.webhooks` in the session seed overlay. Each endpoint needs `url`,
+`secret`, `owner_id`, and an `events` array. `owner_id` is the Vercel user or
+team ID from the local API. Optional `project_ids` limits deployment, domain,
+and environment-variable events to selected projects. Project create, rename, and removal events require
+all-project access. Set `enabled: false` to disable an endpoint.
+
+Implemented triggers include project create, rename, and removal;
+environment-variable create, update, and delete; domain addition; and deployment
+create, ready, and cancel. A deployment that creates a project also sends
+`project.created`. An environment-variable upsert sends `updated` for an
+existing variable and `created` for a new variable. Each HTTP POST uses the native
+`id`, `type`, `createdAt`, `region`, and `payload` body and an HMAC-SHA1
+`x-vercel-signature`. Environment-variable events contain IDs, not secret
+values. Delivery is asynchronous. A `2XX` response ends delivery. Other
+responses and network failures cause retries. Redirects are not followed.
+Each attempt has a 30-second timeout. Retry delays use a local increasing
+schedule; attempts stop after 24 hours. Vercel does not publish exact intervals.
+
+Deployments become `READY` immediately. Cancellation requires a deployment
+that is already `QUEUED` or `BUILDING` in the local store. The adapter accepts
+`deployment.error` subscriptions, but the local API cannot cause a failed
+build. No error event is sent during a normal local deployment. Team deployment
+plans use the upstream local value `hobby`. Delivery state is not persistent.
+Environment-variable events require an `/env` write. Variables included in a
+project creation request do not send separate environment-variable events.
+Other Vercel events and the webhook management API are not implemented.
+HTTP callback URLs are allowed for local tests.
+
+Source: [Vercel webhook contracts](https://vercel.com/docs/webhooks/webhooks-api).

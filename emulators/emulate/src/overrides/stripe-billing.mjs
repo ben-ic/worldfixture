@@ -365,7 +365,7 @@ export function registerStripeBilling(app, store, webhooks) {
     const updated = billing.invoices.update(invoice.id, { status: "paid", amount_paid: invoice.amount_due,
       attempt_count: 1, attempted: true, status_transitions: { ...invoice.status_transitions, paid_at: timestamp } });
     await webhooks.dispatch("invoice.paid", undefined, { type: "invoice.paid", data: { object: formatInvoice(updated, billing.invoiceItems.all(), stripe) } }, "stripe");
-    await webhooks.dispatch("invoice.payment_succeeded", undefined,
+    if (paymentIntent) await webhooks.dispatch("invoice.payment_succeeded", undefined,
       { type: "invoice.payment_succeeded", data: { object: formatInvoice(updated, billing.invoiceItems.all(), stripe) } }, "stripe");
     return c.json(formatInvoice(updated, billing.invoiceItems.all(), stripe));
   });

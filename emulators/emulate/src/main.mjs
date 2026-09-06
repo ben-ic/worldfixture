@@ -49,6 +49,10 @@ import { READY_PATH, withReadyEndpoint } from "./ready.mjs";
 import { ALL_VENDORS, LOCAL_VENDORS, VENDOR_NAMES } from "./registry.mjs";
 import { loadSeedConfig } from "./seed-config.mjs";
 import { seedWorldProvider, usesWorldSeed, withSeedReceipt } from "./world-provider-seed.mjs";
+import { installSlackWebhooks } from "./webhooks/slack.mjs";
+import { configureLinearWebhookDelivery } from "./webhooks/linear.mjs";
+import { configureTwilioWebhookDelivery } from "./webhooks/twilio.mjs";
+import { closeNotionWebhookDelivery } from "./vendors/notion/webhook-delivery.mjs";
 
 const log = (line) => console.log(`[emulator] ${line}`);
 const snapshotPath = process.env.WORLDFIXTURE_STATE_PATH
@@ -212,6 +216,14 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
   }) : undefined;
   if (seedReceipt) log(`${vendor}: accepted ${seedReceipt.messages?.length ?? seedReceipt.issues?.length ?? 0} source records through verified APIs`);
 
+  let providerDelivery;
+  if (vendor === "slack") {
+    providerDelivery = installSlackWebhooks({ store, webhooks, config: svcSeed?.events_api });
+    await providerDelivery.ready;
+  }
+  if (vendor === "linear") providerDelivery = configureLinearWebhookDelivery(store);
+  if (vendor === "twilio") providerDelivery = configureTwilioWebhookDelivery(store);
+
   let fetchHandler = withApiKeyAuth(app.fetch, { vendor, tokenMap: serverTokens, isKnownToken: token => loaded.isKnownToken?.(store, token) });
   let googlePrivateJwk;
   if (vendor === "google") {
@@ -230,7 +242,15 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
 
   checkSeedResolves(vendor, svcSeed, tokens, entry.fallback(svcSeed).login);
 
-  return { vendor, port, baseUrl, store, tokenMap: serverTokens, googlePrivateJwk, seedReceipt };
+  return { vendor, port, baseUrl, store, tokenMap: serverTokens, googlePrivateJwk, seedReceipt,
+    closeWebhooks() {
+      providerDelivery?.close();
+      webhooks.closeStripeWebhooks?.();
+      webhooks.closeGitHubWebhooks?.();
+      for (const name of ["google", "resend", "clerk", "vercel", "atlas", "apple", "okta", "microsoft"]) webhooks[`${name}Delivery`]?.close();
+      if (vendor === "notion") closeNotionWebhookDelivery(store);
+    },
+  };
 }
 
 // OAuth and Gmail must name the same seeded person. Token insertion order is
@@ -294,6 +314,12 @@ if (enabled.length === 0) {
 
 const tokens = tokenMap();
 const started = [];
+let stopGmailPush;
+for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => {
+  stopGmailPush?.();
+  for (const service of started) service.closeWebhooks?.();
+  process.exit(0);
+});
 
 const localNames = Object.keys(LOCAL_VENDORS);
 if (localNames.length > 0) log(`local vendors discovered: ${localNames.join(", ")}`);
@@ -333,7 +359,8 @@ if (google) {
   const pushUrl = process.env.WORLDFIXTURE_PUBSUB_PUSH_URL;
 
   if (pushUrl) {
-    startGmailPush({ store: google.store, getGoogleStore, pushUrl, log });
+    stopGmailPush = startGmailPush({ store: google.store, getGoogleStore, pushUrl,
+      subscription: process.env.WORLDFIXTURE_PUBSUB_SUBSCRIPTION, log });
     log(`gmail push → ${new URL(pushUrl).origin}${new URL(pushUrl).pathname}`);
   } else {
     log("gmail push not configured (no WORLDFIXTURE_PUBSUB_PUSH_URL) — watch will register and never deliver");

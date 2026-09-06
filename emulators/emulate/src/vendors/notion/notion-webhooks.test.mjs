@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createServer as createHttpServer } from "node:http";
+import { once } from "node:events";
+import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { verifyWebhookSignature as verifyWithNotionSdk } from "@notionhq/client";
 import { createServer } from "@emulators/core";
 
 import {
@@ -57,10 +61,11 @@ const OFFICIAL_EVENTS = [
   "view.created", "view.deleted", "view.updated",
 ];
 
-function fixture() {
+function fixture(webhooks) {
   const baseUrl = "http://notion.worldfixture.test";
   const server = createServer(plugin, { baseUrl, tokens: { inspector: { login: "maya@example.test", id: 1, scopes: ["read:content", "write:content"] } } });
   seedFromConfig(server.store, baseUrl, {
+    webhooks,
     workspace: { id: "60000000-0000-4000-8000-000000000001", name: "Webhook fixture" },
     users: [{ id: USER_ID, name: "Maya", email: "maya@example.test" }],
     pages: [{ id: PAGE_ID, title: "Plan", created_by: USER_ID, accessible_by: [USER_ID], children: [{ id: BLOCK_ID, type: "paragraph", text: "Review the plan." }] }],
@@ -91,6 +96,221 @@ function changeFor(type) {
 test("the webhook inventory matches all 31 events in the cached official OpenAPI", () => {
   assert.deepEqual([...NOTION_WEBHOOK_EVENT_TYPES].sort(), [...OFFICIAL_EVENTS].sort());
   assert.deepEqual([...webhookSchemas.keys()].sort(), [...OFFICIAL_EVENTS].sort());
+});
+
+async function receiver(t, status = () => 204) {
+  const requests = [];
+  const server = createHttpServer(async (req, res) => {
+    let rawBody = "";
+    for await (const chunk of req) rawBody += chunk;
+    const record = { method: req.method, headers: req.headers, rawBody, payload: JSON.parse(rawBody) };
+    requests.push(record);
+    res.writeHead(await status(record, requests));
+    res.end();
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
+  return { requests, url: `http://127.0.0.1:${server.address().port}/notion` };
+}
+
+async function until(predicate) {
+  const end = Date.now() + 3000;
+  while (!predicate()) {
+    assert.ok(Date.now() < end, "The webhook did not reach its expected state.");
+    await delay(5);
+  }
+}
+
+const adminHeaders = { Authorization: "Bearer inspector", "Content-Type": "application/json" };
+async function subscriptionRequest(app, path, method = "POST", body = {}) {
+  return app.request(`/__worldfixture/notion-admin/webhooks${path}`, { method, headers: adminHeaders, body: JSON.stringify(body) });
+}
+
+async function subscribe(app, url, eventTypes = OFFICIAL_EVENTS) {
+  const response = await subscriptionRequest(app, "", "POST", { url, event_types: eventTypes });
+  assert.equal(response.status, 201);
+  return response.json();
+}
+
+test("external Notion delivery sends the verification POST and all 31 signed native event bodies", async (t) => {
+  const endpoint = await receiver(t);
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const subscription = await subscribe(app, endpoint.url);
+  await admin.waitForIdle();
+  assert.equal(endpoint.requests.length, 1);
+  const verification = endpoint.requests[0];
+  assert.equal(verification.method, "POST");
+  assert.deepEqual(verification.payload, { verification_token: subscription.verification_token });
+  assert.equal(verification.headers["x-notion-signature"], notionWebhookSignature(verification.rawBody, subscription.verification_token));
+  assert.equal(admin.verificationDeliveries.all()[0].status, "delivered");
+  admin.captureChange(changeFor("page.created"));
+  assert.equal(admin.deliveries.count(), 0, "Pending subscriptions must not receive events.");
+  const verified = await subscriptionRequest(app, `/${subscription.id}/verify`, "POST", verification.payload);
+  assert.equal(verified.status, 200);
+  for (const event of OFFICIAL_EVENTS) admin.captureChange(changeFor(event));
+  await admin.waitForIdle();
+  assert.equal(endpoint.requests.length, 32);
+  for (const request of endpoint.requests.slice(1)) {
+    assert.equal(request.headers["content-type"], "application/json");
+    assert.equal(Object.hasOwn(request.payload, "accessible_by"), false, "Internal integrations omit public connection owners.");
+    assert.equal(request.headers["x-notion-signature"], notionWebhookSignature(request.rawBody, subscription.verification_token));
+    assert.equal(verifyNotionWebhookSignature(`${request.rawBody} `, request.headers["x-notion-signature"], subscription.verification_token), false);
+    const validate = webhookValidators.get(request.payload.type);
+    assert.ok(validate(request.payload), webhookAjv.errorsText(validate.errors));
+    const captured = admin.deliveries.all().find((record) => record.payload.id === request.payload.id);
+    assert.equal(captured.status, "delivered");
+    assert.equal(captured.raw_body, request.rawBody);
+    assert.equal(captured.attempts.length, 1);
+  }
+});
+
+test("Notion REST mutations obey event filters, pause, verification, and deletion", async (t) => {
+  const endpoint = await receiver(t);
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const sub = await subscribe(app, endpoint.url, ["page.properties_updated"]);
+  await admin.waitForIdle();
+  assert.equal((await subscriptionRequest(app, `/${sub.id}`, "PATCH", { status: "active" })).status, 400);
+  assert.equal((await subscriptionRequest(app, `/${sub.id}/verify`, "POST", { verification_token: "wrong" })).status, 400);
+  await subscriptionRequest(app, `/${sub.id}/verify`, "POST", { verification_token: sub.verification_token });
+  const changePage = () => app.request(`/v1/pages/${PAGE_ID}`, {
+    method: "PATCH", headers: { ...adminHeaders, "Notion-Version": "2026-03-11" },
+    body: JSON.stringify({ properties: { title: { title: [{ text: { content: "Updated by REST" } }] } } }),
+  });
+  assert.equal((await changePage()).status, 200);
+  await admin.waitForIdle();
+  assert.equal(endpoint.requests.length, 2);
+  assert.equal(endpoint.requests[1].payload.type, "page.properties_updated");
+  assert.deepEqual(endpoint.requests[1].payload.data.updated_properties, ["title"]);
+  admin.captureChange(changeFor("comment.created"));
+  await subscriptionRequest(app, `/${sub.id}`, "PATCH", { status: "paused" });
+  await changePage();
+  await admin.waitForIdle();
+  assert.equal(endpoint.requests.length, 2);
+  await subscriptionRequest(app, `/${sub.id}`, "PATCH", { status: "active", event_types: ["comment.created"] });
+  await changePage();
+  admin.captureChange(changeFor("comment.created"));
+  await admin.waitForIdle();
+  assert.equal(endpoint.requests.length, 3);
+  assert.equal((await subscriptionRequest(app, `/${sub.id}`, "PATCH", { url: `${endpoint.url}/new` })).status, 400);
+  await subscriptionRequest(app, `/${sub.id}`, "DELETE");
+  admin.captureChange(changeFor("comment.created"));
+  await admin.waitForIdle();
+  assert.equal(endpoint.requests.length, 3);
+});
+
+test("Notion sends the stored bot author type", async t => {
+  const endpoint = await receiver(t);
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const sub = await subscribe(app, endpoint.url, ["page.created"]);
+  await admin.waitForIdle();
+  await subscriptionRequest(app, `/${sub.id}/verify`, "POST", { verification_token: sub.verification_token });
+  const users = store.collection("notion_users", ["notion_id", "email"]);
+  users.update(users.findOneBy("notion_id", USER_ID).id, { type: "bot" });
+  admin.captureChange(changeFor("page.created"));
+  await admin.waitForIdle();
+  assert.deepEqual(endpoint.requests.at(-1).payload.authors, [{ id: USER_ID, type: "bot" }]);
+});
+
+test("Notion ignores an old response after reset reuses subscription and delivery IDs", async t => {
+  let release;
+  const endpoint = await receiver(t, ({ payload }) => {
+    if (!payload.verification_token && !release) return new Promise(resolve => { release = resolve; });
+    return 204;
+  });
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true, retry_delay_scale: 0 });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const sub = await subscribe(app, endpoint.url, ["page.created"]);
+  await admin.waitForIdle();
+  await subscriptionRequest(app, `/${sub.id}/verify`, "POST", { verification_token: sub.verification_token });
+  admin.captureChange(changeFor("page.created"));
+  await until(() => Boolean(release));
+  store.reset();
+  store.setData("notion_webhook_delivery_config", { live_delivery: true, allow_insecure_http: true, retry_delay_scale: 0 });
+  const replacement = await subscribe(app, endpoint.url, ["page.created"]);
+  assert.equal(replacement.id, sub.id);
+  await subscriptionRequest(app, `/${replacement.id}/verify`, "POST", { verification_token: replacement.verification_token });
+  admin.captureChange(changeFor("page.created"));
+  await until(() => admin.deliveries.all()[0]?.status === "delivered");
+  release(503);
+  await admin.waitForIdle();
+  await delay(30);
+  assert.equal(endpoint.requests.length, 4);
+  assert.equal(admin.deliveries.all()[0].status, "delivered");
+  assert.equal(admin.deliveries.all()[0].attempts.length, 1);
+});
+
+test("Notion retries non-2xx responses with stable event IDs and updated signed attempt numbers", async (t) => {
+  const endpoint = await receiver(t, ({ payload }) => payload.verification_token || payload.attempt_number === 3 ? 204 : 503);
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true, retry_delay_scale: 0 });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const sub = await subscribe(app, endpoint.url, ["page.created"]);
+  await admin.waitForIdle();
+  await subscriptionRequest(app, `/${sub.id}/verify`, "POST", { verification_token: sub.verification_token });
+  admin.captureChange(changeFor("page.created"));
+  await until(() => admin.deliveries.all()[0]?.status === "delivered");
+  const events = endpoint.requests.slice(1);
+  assert.deepEqual(events.map(({ payload }) => payload.attempt_number), [1, 2, 3]);
+  assert.equal(new Set(events.map(({ payload }) => payload.id)).size, 1);
+  assert.equal(new Set(events.map(({ payload }) => payload.timestamp)).size, 1);
+  for (const request of events) {
+    assert.equal(request.headers["x-notion-signature"], notionWebhookSignature(request.rawBody, sub.verification_token));
+    assert.equal(await verifyWithNotionSdk({ body: request.rawBody, signature: request.headers["x-notion-signature"], verificationToken: sub.verification_token }), true);
+  }
+  assert.deepEqual(admin.deliveries.all()[0].attempts.map((attempt) => attempt.status_code), [503, 503, 204]);
+});
+
+test("Notion stops failed deliveries after eight attempts and can resend a failed verification token", async (t) => {
+  let verificationStatus = 500;
+  const endpoint = await receiver(t, ({ payload }) => payload.verification_token ? verificationStatus : 302);
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true, retry_delay_scale: 0 });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const sub = await subscribe(app, endpoint.url, ["page.created"]);
+  await admin.waitForIdle();
+  assert.equal(admin.verificationDeliveries.all()[0].status, "failed");
+  assert.equal(endpoint.requests.length, 1);
+  verificationStatus = 204;
+  await subscriptionRequest(app, `/${sub.id}/resend-token`);
+  await admin.waitForIdle();
+  assert.equal(admin.verificationDeliveries.all()[1].status, "delivered");
+  assert.deepEqual(endpoint.requests[1].payload, endpoint.requests[0].payload);
+  await subscriptionRequest(app, `/${sub.id}/verify`, "POST", endpoint.requests[1].payload);
+  admin.captureChange(changeFor("page.created"));
+  await until(() => admin.deliveries.all()[0]?.status === "failed");
+  assert.deepEqual(endpoint.requests.slice(2).map(({ payload }) => payload.attempt_number), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.equal(admin.deliveries.all()[0].next_attempt_at, null);
+});
+
+test("Notion cancels a scheduled retry when the subscription is deleted", async (t) => {
+  const endpoint = await receiver(t, ({ payload }) => payload.verification_token ? 204 : 503);
+  const { app, store } = fixture({ live_delivery: true, allow_insecure_http: true, retry_delay_scale: 0.0001 });
+  const admin = createNotionAdmin(store);
+  t.after(() => admin.close());
+  const sub = await subscribe(app, endpoint.url, ["page.created"]);
+  await admin.waitForIdle();
+  await subscriptionRequest(app, `/${sub.id}/verify`, "POST", { verification_token: sub.verification_token });
+  admin.captureChange(changeFor("page.created"));
+  await until(() => admin.deliveries.all()[0]?.status === "retrying");
+  await subscriptionRequest(app, `/${sub.id}`, "DELETE");
+  await until(() => admin.deliveries.all()[0]?.status === "canceled");
+  assert.equal(endpoint.requests.length, 2);
+});
+
+test("Notion local HTTP delivery requires explicit configuration and pending URL changes are checked", async () => {
+  const { app } = fixture();
+  assert.equal((await subscriptionRequest(app, "", "POST", { url: "http://127.0.0.1:1/hook", event_types: ["page.created"] })).status, 400);
+  const sub = await subscribe(app, "https://hooks.worldfixture.test/notion", ["page.created"]);
+  assert.equal((await subscriptionRequest(app, `/${sub.id}`, "PATCH", { url: "file:///tmp/hook" })).status, 400);
+  assert.equal((await subscriptionRequest(app, `/${sub.id}`, "PATCH", { url: "http://127.0.0.1:1/hook" })).status, 400);
 });
 
 test("every official webhook event gets its exact entity kind and required event data", () => {

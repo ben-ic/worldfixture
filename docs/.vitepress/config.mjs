@@ -35,6 +35,7 @@ export default defineConfig({
           { text: "Workbench", link: "/guides/workbench" },
           { text: "Bindings", link: "/guides/bindings" },
           { text: "Events and webhooks", link: "/guides/events-and-webhooks" },
+          { text: "Native provider webhooks", link: "/guides/native-webhooks" },
           { text: "Reset and persistence", link: "/guides/reset-and-persistence" },
           { text: "HTTP targets and RSS", link: "/guides/http-targets" },
         ],

@@ -9,9 +9,9 @@ local form of the retired Atlas Data API v1 for old tests. Support label:
 ## What does not work
 
 Production authentication, API version negotiation, project update,
-database-user update, private endpoints, network access, backups, alerts,
+database-user update, private endpoints, network access, backups, alert configuration,
 events, logs, search, billing, and unlisted Atlas APIs do not work. Atlas
-events and webhooks do not work. The local Data API does not support the full
+automatic monitoring events do not work. The local Data API does not support the full
 MongoDB query or aggregation language. These operations are **Not supported**.
 Production behavior, Atlas CLI, official SDKs, and MongoDB drivers are
 **Not verified against the production provider**.
@@ -78,3 +78,27 @@ version has a WorldFixture test.
 
 Provider authority: [MongoDB Atlas Administration API](https://www.mongodb.com/docs/atlas/api/) and
 [Atlas App Services end of life](https://www.mongodb.com/docs/atlas/app-services/).
+
+
+## Native alert webhook delivery
+
+Atlas webhooks contain monitoring alerts. They are not database CRUD events.
+Set `mongoatlas.webhooks` in the session seed overlay. Each endpoint contains
+`group_id`, `url`, and optional `secret`. Set `enabled: false` to disable it.
+
+To supply a monitoring event, send an authenticated `POST` to
+`/__worldfixture/mongoatlas/alerts` with `{ "event": "alert.open", "alert": ... }`.
+The `alert` must contain native Atlas fields, including an existing project
+`groupId`, alert `id`, `eventTypeName`, `status`, `created`, `updated`, and
+`humanReadable`. Supported headers are `alert.open`, `alert.update`,
+`alert.close`, `alert.cancel`, `alert.acknowledge`, and `alert.inform`; the
+alert status must agree with the event. This private control simulates a
+monitoring fact. It does not run a metrics collector.
+
+The receiver gets the Atlas alert body, `X-MMS-Event`, and an optional
+Base64 HMAC-SHA1 `X-MMS-Signature`. Alerts can then be read at the native
+`/api/atlas/v2/groups/:groupId/alerts` and `.../alerts/:alertId` paths.
+No connector envelope is added. Automatic retries, alert configuration,
+FreeMarker templates, and monitoring thresholds are not implemented.
+
+Source: [Atlas webhook integration](https://www.mongodb.com/docs/atlas/tutorial/webhook-integration/).

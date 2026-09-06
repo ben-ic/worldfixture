@@ -59,7 +59,7 @@ function currentHistoryId(gs, userEmail) {
 
 // Whether anything the watch actually asked about changed. A watch with no `labelIds`
 // asks about everything, which is Gmail's own default.
-function matchesFilter(gs, userEmail, sinceId, labelIds) {
+function matchesFilter(gs, userEmail, sinceId, labelIds, behavior) {
   const events = gs.history
     .findBy("user_email", userEmail)
     .filter((e) => compareHistoryIds(e.gmail_id, sinceId) > 0);
@@ -67,14 +67,14 @@ function matchesFilter(gs, userEmail, sinceId, labelIds) {
   if (events.length === 0) return false;
   if (!labelIds || labelIds.length === 0) return true;
 
-  return events.some((e) => (e.label_ids ?? []).some((id) => labelIds.includes(id)));
+  return events.some((e) => {
+    const matches = (e.label_ids ?? []).some((id) => labelIds.includes(id));
+    return String(behavior).toLowerCase() === "exclude" ? !matches : matches;
+  });
 }
 
-// A push subscription belongs to the same project as the topic it is attached to,
-// so the client's own `topicName` decides the name -- `projects/P/topics/T` gives
-// `projects/P/subscriptions/gmail-push`. Deriving it beats naming a project here:
-// the envelope now agrees with what the app registered instead of asserting a
-// project nothing else has heard of.
+// Default local subscription name. Real Pub/Sub also permits subscriptions in a
+// different project; the explicit subscription option supplies that full name.
 export function subscriptionFor(topicName) {
   const project = /^projects\/([^/]+)\/topics\//.exec(topicName ?? "")?.[1];
   return project ? `projects/${project}/subscriptions/gmail-push` : "projects/worldfixture/subscriptions/gmail-push";
@@ -103,76 +103,59 @@ function envelope({ emailAddress, historyId, subscription, deliveryId }) {
  * two-second tick is imperceptible next to a fifteen-minute session and costs a map
  * lookup per user.
  */
-export function startGmailPush({ store, getGoogleStore, pushUrl, intervalMs = 2000, log = () => {} }) {
+export function startGmailPush({ store, getGoogleStore, pushUrl, subscription, intervalMs = 2000, fetchImpl = fetch, log = () => {} }) {
   if (!pushUrl) return () => {};
-
   const gs = getGoogleStore(store);
   const delivered = new Map();
-  let deliveryId = 1;
+  let deliveryId = BigInt(Date.now()) * 1000n;
   let inFlight = false;
-
+  let closed = false;
+  const abort = new AbortController();
 
   async function tick() {
-    if (inFlight) return;
+    if (inFlight || closed) return;
     inFlight = true;
-
     try {
-      const states = store.getData(WATCH_STATE_KEY);
-      if (!states || states.size === 0) return;
-
+      const states = store.getData(WATCH_STATE_KEY) ?? new Map();
+      for (const email of delivered.keys()) if (!states.has(email)) delivered.delete(email);
       for (const [emailAddress, state] of states) {
+        if (closed) break;
+        // A stop, watch renewal, or store reset can occur during the previous POST.
+        if (store.getData(WATCH_STATE_KEY)?.get(emailAddress) !== state) continue;
+        if (Number(state.expiration) <= Date.now()) { delivered.delete(emailAddress); continue; }
         const historyId = currentHistoryId(gs, emailAddress);
-
-        // The FIRST tick after a watch registers only records where the mailbox
-        // already was. Delivering then would push the whole seeded backlog at a
-        // visitor the moment they sign in, which is not what a real mailbox does.
-        if (!delivered.has(emailAddress)) {
-          delivered.set(emailAddress, historyId);
-          continue;
+        let cursor = delivered.get(emailAddress);
+        if (!cursor || cursor.state !== state) {
+          // A successful Gmail watch sends an initial Pub/Sub notification.
+          cursor = { state, historyId: null, pending: null };
+          delivered.set(emailAddress, cursor);
         }
-
-        const since = delivered.get(emailAddress);
-        if (compareHistoryIds(historyId, since) <= 0) continue;
-        if (!matchesFilter(gs, emailAddress, since, state.labelIds)) {
-          delivered.set(emailAddress, historyId);
-          continue;
-        }
-
-        const body = envelope({
-          emailAddress,
-          historyId,
-          subscription: subscriptionFor(state.topicName),
-          deliveryId: deliveryId++,
-        });
-
-        try {
-          const response = await fetch(pushUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(10_000),
-          });
-
-          // Pub/Sub redelivers what is not acknowledged. We advance only on a 2xx, so
-          // an app that is still starting gets the notification on the next tick
-          // rather than losing it.
-          if (response.ok) {
-            delivered.set(emailAddress, historyId);
-            log(`gmail push delivered: ${emailAddress} historyId=${historyId}`);
-          } else {
-            log(`gmail push rejected: ${response.status} — will retry`);
+        if (!cursor.pending) {
+          if (cursor.historyId !== null && compareHistoryIds(historyId, cursor.historyId) <= 0) continue;
+          if (cursor.historyId !== null && !matchesFilter(gs, emailAddress, cursor.historyId, state.labelIds, state.labelFilterBehavior)) {
+            cursor.historyId = historyId;
+            continue;
           }
-        } catch (err) {
-          log(`gmail push failed: ${err?.message ?? err} — will retry`);
+          const body = envelope({ emailAddress, historyId, subscription: subscription ?? subscriptionFor(state.topicName), deliveryId: String(deliveryId++) });
+          cursor.pending = { historyId, rawBody: JSON.stringify(body) };
         }
+        try {
+          const response = await fetchImpl(pushUrl, { method: "POST", redirect: "manual",
+            headers: { "Content-Type": "application/json" }, body: cursor.pending.rawBody,
+            signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]) });
+          await response.body?.cancel();
+          if ([102, 200, 201, 202, 204].includes(response.status)) {
+            cursor.historyId = cursor.pending.historyId;
+            cursor.pending = null;
+            log(`gmail push delivered: ${emailAddress} historyId=${cursor.historyId}`);
+          } else log(`gmail push rejected: ${response.status} — will retry`);
+        } catch (err) { if (!closed) log(`gmail push failed: ${err?.message ?? err} — will retry`); }
       }
-    } finally {
-      inFlight = false;
-    }
+    } finally { inFlight = false; }
   }
-
   const timer = setInterval(tick, intervalMs);
   timer.unref?.();
-
-  return () => clearInterval(timer);
+  const stop = () => { closed = true; abort.abort(); clearInterval(timer); };
+  stop.tick = tick;
+  return stop;
 }

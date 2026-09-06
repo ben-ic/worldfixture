@@ -33,6 +33,18 @@ import { wrapDeclaredOAuthExtra } from "./overrides/declared-oauth-extra.mjs";
 import { extendClerkUsers, extendMicrosoftUsers } from "./overrides/identity-lists.mjs";
 import { extendStripePlugin, seedStripeBilling } from "./overrides/stripe-billing.mjs";
 import { extendStripeTransactionsPlugin, seedStripeTransactions } from "./overrides/stripe-transactions.mjs";
+import { extendResendWebhooksPlugin, seedResendWebhooks } from "./webhooks/resend.mjs";
+import { extendClerkWebhooksPlugin, seedClerkWebhooks } from "./webhooks/clerk.mjs";
+import { extendStripeWebhooksPlugin, seedStripeWebhooks } from "./webhooks/stripe.mjs";
+import { extendVercelWebhooksPlugin, seedVercelWebhooks } from "./webhooks/vercel.mjs";
+import { loadLinearWithWebhooks } from "./webhooks/linear.mjs";
+import { extendGitHubWebhooksPlugin } from "./webhooks/github.mjs";
+import { extendAtlasWebhooksPlugin, seedAtlasWebhooks } from "./webhooks/mongoatlas.mjs";
+import { wrapGoogleWebhooks } from "./webhooks/google.mjs";
+import { extendAppleWebhooksPlugin, seedAppleWebhooks } from "./webhooks/apple.mjs";
+import { loadTwilioWithWebhooks } from "./webhooks/twilio.mjs";
+import { extendOktaWebhooksPlugin, seedOktaWebhooks } from "./webhooks/okta.mjs";
+import { wrapMicrosoftWebhooks } from "./webhooks/microsoft.mjs";
 
 // Linear and Twilio are bundled in the pinned `emulate` package but are not
 // package exports. Resolve them beside the public entry point so they can use
@@ -46,7 +58,8 @@ export const VENDORS = {
   microsoft: {
     async load() {
       const mod = await import("@emulators/microsoft");
-      return wrapDeclaredOAuthExtra("microsoft", extendMicrosoftUsers(mod.microsoftPlugin), mod.seedFromConfig);
+      const notifications = wrapMicrosoftWebhooks(extendMicrosoftUsers(mod.microsoftPlugin), mod.seedFromConfig);
+      return wrapDeclaredOAuthExtra("microsoft", notifications.plugin, notifications.seedFromConfig);
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "testuser@outlook.com";
@@ -58,7 +71,7 @@ export const VENDORS = {
     async load() {
       const mod = await import("@emulators/github");
       return {
-        ...wrapDeclaredOAuthExtra("github", extendGitHubWorldApi(mod.githubPlugin), mod.seedFromConfig),
+        ...wrapDeclaredOAuthExtra("github", extendGitHubWebhooksPlugin(extendGitHubWorldApi(mod.githubPlugin)), mod.seedFromConfig),
         // Materializes GitHub App private keys out of the seed. Present on the
         // programmatic API and NOT on the CLI's start command, so an artifact that
         // copied `start.ts` alone would silently serve apps with no key.
@@ -92,7 +105,8 @@ export const VENDORS = {
     async load() {
       const mod = await import("@emulators/google");
       const calendars = wrapDeclaredGoogleCalendars(mod.googlePlugin, mod.seedFromConfig);
-      return wrapDeclaredOAuthExtra("google", calendars.plugin, calendars.seedFromConfig);
+      const push = wrapGoogleWebhooks(calendars.plugin, calendars.seedFromConfig);
+      return wrapDeclaredOAuthExtra("google", push.plugin, push.seedFromConfig);
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "testuser@gmail.com";
@@ -103,7 +117,10 @@ export const VENDORS = {
   vercel: {
     async load() {
       const mod = await import("@emulators/vercel");
-      return wrapDeclaredOAuthExtra("vercel", mod.vercelPlugin, mod.seedFromConfig);
+      return wrapDeclaredOAuthExtra("vercel", extendVercelWebhooksPlugin(mod.vercelPlugin), (store, baseUrl, config, webhooks) => {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedVercelWebhooks(store, config);
+      });
     },
     fallback(cfg) {
       const firstLogin = cfg?.users?.[0]?.username ?? "admin";
@@ -124,7 +141,10 @@ export const VENDORS = {
   apple: {
     async load() {
       const mod = await import("@emulators/apple");
-      return wrapDeclaredOAuth("apple", mod.applePlugin, mod.seedFromConfig);
+      return wrapDeclaredOAuth("apple", extendAppleWebhooksPlugin(mod.applePlugin), (store, baseUrl, config, webhooks) => {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedAppleWebhooks(store, config);
+      });
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "testuser@icloud.com";
@@ -135,7 +155,10 @@ export const VENDORS = {
   okta: {
     async load() {
       const mod = await import("@emulators/okta");
-      return wrapDeclaredOAuth("okta", mod.oktaPlugin, mod.seedFromConfig);
+      return wrapDeclaredOAuth("okta", extendOktaWebhooksPlugin(mod.oktaPlugin), (store, baseUrl, config, webhooks) => {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedOktaWebhooks(store, config);
+      });
     },
     fallback(cfg) {
       const firstLogin = cfg?.users?.[0]?.login ?? cfg?.users?.[0]?.email ?? "testuser@okta.local";
@@ -159,7 +182,10 @@ export const VENDORS = {
   resend: {
     async load() {
       const mod = await import("@emulators/resend");
-      return { plugin: mod.resendPlugin, seedFromConfig: mod.seedFromConfig };
+      return { plugin: extendResendWebhooksPlugin(mod.resendPlugin), seedFromConfig(store, baseUrl, config, webhooks) {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedResendWebhooks(store, config);
+      } };
     },
     fallback() {
       return { login: "re_test_admin", id: 1, scopes: [] };
@@ -169,10 +195,11 @@ export const VENDORS = {
   stripe: {
     async load() {
       const mod = await import("@emulators/stripe");
-      return { plugin: extendStripeTransactionsPlugin(extendStripePlugin(mod.stripePlugin)), seedFromConfig(store, baseUrl, config, webhooks) {
-        mod.seedFromConfig(store, baseUrl, config, webhooks);
+      return { plugin: extendStripeWebhooksPlugin(extendStripeTransactionsPlugin(extendStripePlugin(mod.stripePlugin))), seedFromConfig(store, baseUrl, config, webhooks) {
+        mod.seedFromConfig(store, baseUrl, { ...config, webhooks: undefined }, webhooks);
         seedStripeBilling(store, config);
         seedStripeTransactions(store, config);
+        seedStripeWebhooks(store, webhooks, config);
       } };
     },
     fallback() {
@@ -183,7 +210,10 @@ export const VENDORS = {
   mongoatlas: {
     async load() {
       const mod = await import("@emulators/mongoatlas");
-      return { plugin: mod.mongoatlasPlugin, seedFromConfig: mod.seedFromConfig };
+      return { plugin: extendAtlasWebhooksPlugin(mod.mongoatlasPlugin), seedFromConfig(store, baseUrl, config, webhooks) {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedAtlasWebhooks(store, config);
+      } };
     },
     fallback() {
       return { login: "admin", id: 1, scopes: [] };
@@ -193,7 +223,10 @@ export const VENDORS = {
   clerk: {
     async load() {
       const mod = await import("@emulators/clerk");
-      return wrapDeclaredOAuth("clerk", extendClerkUsers(mod.clerkPlugin), mod.seedFromConfig);
+      return wrapDeclaredOAuth("clerk", extendClerkWebhooksPlugin(extendClerkUsers(mod.clerkPlugin)), (store, baseUrl, config, webhooks) => {
+        mod.seedFromConfig(store, baseUrl, config, webhooks);
+        seedClerkWebhooks(store, config);
+      });
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email_addresses?.[0] ?? "test@example.com";
@@ -203,7 +236,7 @@ export const VENDORS = {
 
   linear: {
     async load() {
-      const mod = await import(bundled("dist-7HIQBPU6.js"));
+      const mod = await loadLinearWithWebhooks(bundled("dist-7HIQBPU6.js"));
       return {
         ...wrapDeclaredOAuthExtra("linear", mod.linearPlugin, mod.seedFromConfig, { getStore: mod.getLinearStore }),
         isKnownToken: (store, token) => Boolean(mod.getLinearStore(store).tokens.findOneBy("token", token)),
@@ -217,7 +250,7 @@ export const VENDORS = {
 
   twilio: {
     async load() {
-      const mod = await import(bundled("dist-RJB3ANOP.js"));
+      const mod = await loadTwilioWithWebhooks(bundled("dist-RJB3ANOP.js"));
       return { plugin: mod.twilioPlugin, seedFromConfig: mod.seedFromConfig };
     },
     fallback(cfg) {
