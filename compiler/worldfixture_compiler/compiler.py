@@ -6,11 +6,14 @@ import hashlib
 import io
 import json
 import re
+import shutil
 import tarfile
 import tempfile
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+
+from .oauth import oauth_projection
 
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9.-]+$")
 LOGIN_PATTERN = re.compile(r"^[a-z][a-z0-9-]+$")
@@ -117,8 +120,9 @@ def load_world(source_path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         world = _merge_fragment(world, contributes, "")
         source_files[normalized] = {"sha256": sha256(body), "size": len(body)}
 
+    _validate_authored_timeline(world)
     world["timeline"] = sorted(
-        world.get("timeline", []),
+        world["timeline"],
         key=lambda event: (event.get("after_seconds", -1), event.get("id", "")),
     )
     validate_world(world)
@@ -134,8 +138,10 @@ def _require(condition: bool, message: str) -> None:
 
 
 def _unique(items: list[dict[str, Any]], field: str, label: str) -> dict[str, dict[str, Any]]:
+    _require(isinstance(items, list), f"{label} must be an array")
     result: dict[str, dict[str, Any]] = {}
     for item in items:
+        _require(isinstance(item, dict), f"{label} must contain records")
         value = item.get(field)
         _require(isinstance(value, str) and bool(value), f"{label} has no {field}")
         _require(value not in result, f"duplicate {label} {field}: {value}")
@@ -161,12 +167,24 @@ def _check_reserved_test_domain(value: Any, label: str) -> None:
 
 
 def validate_world(world: dict[str, Any]) -> None:
-    """Validate the core world envelope, then the declared world profile."""
+    """Validate the envelope, declared sections, and compatible provider adapters."""
+    from .sections import legacy_business_shape, provider_world, validate_sections, validate_structure
+
+    _require(isinstance(world, dict), "world must be an object")
     _validate_envelope(world)
+    validate_structure(world)
+    try:
+        oauth_projection(world)
+    except ValueError as error:
+        raise WorldError(str(error)) from error
     profile = world.get("profile")
-    _require(profile is None or profile in PROFILES, f"unsupported world profile: {profile!r}")
-    if profile is not None:
-        PROFILES[profile]["validate"](world)
+    _require(profile is None or (isinstance(profile, str) and profile in PROFILES), f"unsupported world profile: {profile!r}")
+    if legacy_business_shape(world):
+        view = provider_world(world)
+        view["software"].setdefault("repositories", [])
+        view["work"].setdefault("time_entries", [])
+        PROFILES[profile]["validate"](view)
+    validate_sections(world)
 
 
 def _validate_envelope(world: dict[str, Any]) -> None:
@@ -176,23 +194,27 @@ def _validate_envelope(world: dict[str, Any]) -> None:
     primary person. A world profile adds those requirements when a world
     declares one.
     """
+    _require(isinstance(world.get("title"), str) and bool(world["title"].strip()), "world needs a title")
     _require(world.get("api_version") == "worldfixture.world-source/v1", "unsupported api_version")
     _check_id(world.get("id"), "world id")
     _require(re.fullmatch(r"v[0-9]+", str(world.get("version", ""))) is not None, "invalid world version")
     _require(len(str(world.get("synthetic_notice", ""))) >= 20, "synthetic_notice is too short")
     scenario = world.get("scenario", {})
+    _require(isinstance(scenario, dict), "scenario must be an object")
     _check_id(scenario.get("id"), "scenario id")
     _require(
-        scenario.get("class") in {"normal", "data-quality", "bad-actor", "fraud", "operational-failure"},
+        isinstance(scenario.get("class"), str) and scenario.get("class") in {"normal", "data-quality", "bad-actor", "fraud", "operational-failure"},
         "unsupported scenario class",
     )
     _require(bool(scenario.get("title")), "scenario needs a title")
 
+    _require(isinstance(world.get("clock"), dict) and isinstance(world["clock"].get("anchor"), str), "clock.anchor must be an ISO-8601 timestamp")
     try:
         anchor = datetime.fromisoformat(world["clock"]["anchor"].replace("Z", "+00:00"))
     except (KeyError, TypeError, ValueError) as error:
         raise WorldError("clock.anchor must be an ISO-8601 timestamp") from error
     _require(anchor.tzinfo is not None, "clock.anchor must include a timezone")
+    _finance_history_clock(world, anchor.astimezone(UTC).date())
     rebase = world["clock"].get("rebase", {})
     _require(isinstance(rebase, dict), "clock.rebase must be an object")
     relative_paths = rebase.get("relative_paths", [])
@@ -202,14 +224,38 @@ def _validate_envelope(world: dict[str, Any]) -> None:
         "clock.rebase.relative_paths must name scenario-relative branches",
     )
 
+    _validate_authored_timeline(world)
+
+
+def _validate_authored_timeline(world: dict[str, Any]) -> None:
+    """Validate authored input before fragment sorting or provider transforms.
+
+    A selected runtime schedule can be empty after capability filtering. That
+    derived schedule is separate from the authored world contract checked here.
+    """
+    context = f"world {world.get('id', '<missing id>')}:{world.get('version', '<missing version>')}"
+    timeline = world.get("timeline")
+    _require(
+        isinstance(timeline, list) and bool(timeline),
+        f"{context} timeline must be a nonempty authored array; add at least one scheduled arrival",
+    )
     timeline_ids: set[str] = set()
-    for event in world.get("timeline", []):
-        _check_id(event.get("id"), "timeline id")
-        _require(event["id"] not in timeline_ids, f"duplicate timeline id: {event['id']}")
+    for index, event in enumerate(timeline):
+        _require(isinstance(event, dict), f"{context} timeline entry {index} must be a record")
+        _check_id(event.get("id"), f"{context} timeline id at entry {index}")
+        _require(event["id"] not in timeline_ids, f"{context} duplicate timeline id: {event['id']}")
         timeline_ids.add(event["id"])
         _require(
-            isinstance(event.get("after_seconds"), int) and event["after_seconds"] >= 0,
-            f"invalid timeline offset: {event['id']}",
+            isinstance(event.get("kind"), str) and bool(event["kind"]),
+            f"{context} timeline {event['id']} needs a kind string",
+        )
+        _require(
+            isinstance(event.get("payload"), dict),
+            f"{context} timeline {event['id']} needs a payload object",
+        )
+        _require(
+            type(event.get("after_seconds")) is int and event["after_seconds"] >= 0,
+            f"{context} invalid timeline offset: {event['id']}",
         )
 
 
@@ -300,6 +346,7 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
         slack_ids.add(slack_id)
         primary_count += int(person.get("primary", False))
     _require(primary_count == 1, "world must have exactly one primary person")
+    _validate_aws_operators(world)
 
     finance = world.get("finance", {})
     customers = _unique(finance.get("customers", []), "id", "customer")
@@ -309,7 +356,9 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
         _check_id(customer["id"], "customer id")
         _require(customer.get("organization_id") in organizations, f"customer {customer['id']} has unknown organization")
         _require(customer.get("contact_id") in people, f"customer {customer['id']} has unknown contact")
-        _require(int(customer.get("monthly_amount_cents", 0)) > 0, f"customer {customer['id']} has invalid amount")
+        if _billing_mode(customer) == "recurring_monthly":
+            _finance_amount(customer.get("monthly_amount_cents"), f"customer {customer['id']} amount")
+        _revenue_account({}, customer)
     for supplier in suppliers.values():
         _check_id(supplier["id"], "supplier id")
         _require(supplier.get("organization_id") in organizations, f"supplier {supplier['id']} has unknown organization")
@@ -321,6 +370,7 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
         _require(int(invoice.get("amount_cents", 0)) > 0, f"invoice {invoice['id']} has invalid amount")
 
     products, orders = _validate_commerce(world, people)
+    _expand_finance(world, datetime.fromisoformat(world["clock"]["anchor"].replace("Z", "+00:00")).date())
     _validate_social(world, people, products, orders)
 
     repositories = _unique(world.get("software", {}).get("repositories", []), "id", "repository")
@@ -345,7 +395,7 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
         _require(task.get("project_id") in projects, f"task {task['id']} has unknown project")
         _require(task.get("assignee_id") in people, f"task {task['id']} has unknown assignee")
         _require(task.get("reporter_id") in people, f"task {task['id']} has unknown reporter")
-        _require(task.get("status") in {"backlog", "ready", "in-progress", "blocked", "review", "done"}, f"task {task['id']} has invalid status")
+        _require(isinstance(task.get("status"), str) and bool(task["status"]), f"task {task['id']} has invalid status")
     for entry in time_entries.values():
         _check_id(entry["id"], "time entry id")
         _require(entry.get("task_id") in tasks, f"time entry {entry['id']} has unknown task")
@@ -361,9 +411,16 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
             _check_id(message.get("id"), "chat message id")
             _require(message.get("author_id") in people, f"chat message {message.get('id')} has unknown author")
 
+    def validate_mail_labels(labels: Any, context: str) -> None:
+        _require(isinstance(labels, list), f"world {world['id']} {context} labels must be an array")
+        _require(all(isinstance(label, str) and label.strip() for label in labels), f"world {world['id']} {context} labels must contain nonempty strings")
+        _require(len(labels) == len(set(labels)), f"world {world['id']} {context} labels contains duplicates")
+
     mail = _unique(world.get("communication", {}).get("mail", []), "id", "mail")
     for message in mail.values():
         _check_id(message["id"], "mail id")
+        validate_mail_labels(message.get("labels"), f"communication.mail {message['id']}")
+        _require(isinstance(message.get("to_ids"), list) and bool(message["to_ids"]), f"world {world['id']} communication.mail {message['id']} to_ids must be a nonempty array")
         _require(message.get("from_id") in people, f"mail {message['id']} has unknown sender")
         for recipient_id in message.get("to_ids", []):
             _require(recipient_id in people, f"mail {message['id']} has unknown recipient {recipient_id}")
@@ -372,10 +429,17 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
         related_order = message.get("order_id")
         _require(related_order is None or related_order in orders, f"mail {message['id']} has unknown order")
 
+    _validate_google_mailbox_declarations(world, people)
+    if "mailboxes" in world.get("communication", {}):
+        _validate_google_mailbox_references(world, world["communication"]["mailboxes"], list(mail.values()))
+
     documents = _unique(world.get("communication", {}).get("documents", []), "id", "document")
     for document in documents.values():
         _check_id(document["id"], "document id")
         _require(document.get("owner_id") in people, f"document {document['id']} has unknown owner")
+
+    if "mailboxes" in world.get("communication", {}):
+        _validate_google_content_owners(world, world["communication"]["mailboxes"])
 
     support_cases = _unique(world.get("support", {}).get("cases", []), "id", "support case")
     for support_case in support_cases.values():
@@ -397,13 +461,16 @@ def _validate_business_operations(world: dict[str, Any]) -> None:
     }
     for event in world.get("timeline", []):
         _require(
-            event.get("kind") in TIMELINE_KINDS,
+            event.get("kind") in TIMELINE_KINDS | {"domain-operation"},
             f"unsupported timeline kind: {event.get('kind')}",
         )
         payload = event.get("payload", {})
         if event["kind"] == "incoming-email":
-            _require(payload.get("from_id") in people, f"timeline {event['id']} has unknown sender")
-            _require(payload.get("to_id") in people, f"timeline {event['id']} has unknown recipient")
+            validate_mail_labels(payload.get("labels", ["INBOX", "UNREAD"]), f"timeline {event['id']} payload.labels")
+            _require(payload.get("via", "smtp") in {"smtp", "gmail"}, f"world {world['id']} timeline {event['id']} payload.via is unsupported")
+            context = f"world {world['id']}:{world['version']} timeline {event['id']} payload"
+            _require(isinstance(payload.get("from_id"), str) and payload["from_id"] in people, f"{context}.from_id has unknown sender")
+            _require(isinstance(payload.get("to_id"), str) and payload["to_id"] in people, f"{context}.to_id has unknown recipient")
         if event["kind"] == "chat-message":
             _require(payload.get("author_id") in people, f"timeline {event['id']} has unknown author")
             _require(payload.get("channel_id") in channels, f"timeline {event['id']} has unknown channel")
@@ -459,7 +526,7 @@ def _validate_commerce(
     for product in products.values():
         _check_id(product["id"], "product id")
         _require(bool(product.get("name")), f"product {product['id']} has no name")
-        _require(int(product.get("price_cents", 0)) > 0, f"product {product['id']} has invalid price")
+        _require(type(product.get("price_cents")) is int and product["price_cents"] > 0, f"product {product['id']} has invalid price")
         _require(
             product.get("status") in PRODUCT_STATES,
             f"product {product['id']} has invalid status: {product.get('status')!r}",
@@ -476,6 +543,7 @@ def _validate_commerce(
         _require(isinstance(items, list) and bool(items), f"order {order['id']} has no items")
         subtotal = 0
         for item in items:
+            _require(isinstance(item, dict), f"order {order['id']} items must be records")
             _require(item.get("product_id") in products, f"order {order['id']} has unknown product {item.get('product_id')}")
             quantity = item.get("quantity")
             unit = item.get("unit_amount_cents")
@@ -486,7 +554,9 @@ def _validate_commerce(
             order.get("subtotal_cents") == subtotal,
             f"order {order['id']} states subtotal {order.get('subtotal_cents')} and its lines come to {subtotal}",
         )
-        total = subtotal + int(order.get("shipping_cents", 0)) - int(order.get("discount_cents", 0))
+        for field in ("shipping_cents", "discount_cents"):
+            _require(type(order.get(field, 0)) is int and order.get(field, 0) >= 0, f"order {order['id']} has invalid {field}")
+        total = subtotal + order.get("shipping_cents", 0) - order.get("discount_cents", 0)
         _require(
             order.get("total_cents") == total,
             f"order {order['id']} states total {order.get('total_cents')} and its lines come to {total}",
@@ -671,7 +741,7 @@ _DATE_FIELDS = frozenset({
     "opened_at", "modified_at", "date", "start_on", "target_on", "anchor",
     # A world that sells to people carries these four as well. They name whole
     # dates for the same reason the ones above do, so they shift the same way.
-    "placed_on", "shipped_on", "posted_at", "launched_on",
+    "placed_on", "shipped_on", "posted_at", "launched_on", "paid_on", "refunded_on",
 })
 
 
@@ -713,6 +783,7 @@ def rebase_world(source: dict[str, Any], target: datetime) -> dict[str, Any]:
     relative_paths = {tuple(path.split(".")) for path in source["clock"]["rebase"]["relative_paths"]}
     rebased = _rebase_values(copy.deepcopy(source), anchor, delta, relative_paths)
     rebased["clock"]["anchor"] = (anchor_at + delta).isoformat().replace("+00:00", "Z")
+    _record_finance_rebase_context(source, rebased, delta)
     validate_world(rebased)
 
     rebased_anchor = anchor + delta
@@ -764,137 +835,248 @@ def _money(cents: int) -> str:
 
 
 def _person_maps(world: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
-    people = {person["id"]: person for person in world["people"]}
-    organizations = {organization["id"]: organization for organization in world["organizations"]}
+    people = {person["id"]: person for person in world.get("people", [])}
+    organizations = {organization["id"]: organization for organization in world.get("organizations", [])}
     return people, organizations
+
+
+def _finance_history_clock(world: dict[str, Any], anchor: date) -> tuple[date, timedelta]:
+    context = world["clock"].get("rebase", {}).get("finance_history")
+    if context is None and "finance_history" not in world["clock"].get("rebase", {}):
+        return anchor, timedelta()
+    _require(isinstance(context, dict) and set(context) == {"origin_anchor", "day_shift"}, "clock.rebase.finance_history needs origin_anchor and day_shift")
+    _require(isinstance(context["origin_anchor"], str) and type(context["day_shift"]) is int, "invalid finance_history origin_anchor/day_shift types")
+    try:
+        original = datetime.fromisoformat(context["origin_anchor"].replace("Z", "+00:00"))
+        _require(original.tzinfo is not None, "finance_history.origin_anchor needs a timezone")
+        origin = original.astimezone(UTC).date()
+        shift = timedelta(days=context["day_shift"])
+        _require(origin + shift == anchor, "finance_history origin_anchor plus day_shift must equal the current anchor date")
+    except (ValueError, OverflowError) as error:
+        raise WorldError("invalid finance_history origin_anchor/day_shift") from error
+    return origin, shift
+
+
+def _record_finance_rebase_context(source: dict[str, Any], rebased: dict[str, Any], delta: timedelta) -> None:
+    if "finance" not in source:
+        return
+    prior = source["clock"].get("rebase", {}).get("finance_history")
+    rebased["clock"].setdefault("rebase", {})["finance_history"] = {
+        "origin_anchor": prior["origin_anchor"] if prior else source["clock"]["anchor"],
+        "day_shift": (prior["day_shift"] if prior else 0) + delta.days,
+    }
+
+
+def _billing_mode(customer: dict[str, Any]) -> str:
+    mode = customer["billing_mode"] if "billing_mode" in customer else "recurring_monthly"
+    _require(isinstance(mode, str) and mode in {"recurring_monthly", "one_time"}, f"customer {customer['id']} has invalid billing_mode")
+    return mode
+
+
+def _finance_currency(record: dict[str, Any], fallback: str) -> str:
+    value = record["currency"] if "currency" in record else fallback
+    _require(isinstance(value, str) and re.fullmatch(r"[A-Za-z]{3}", value), "finance currency must be a three-letter code")
+    return value.upper()
+
+
+def _finance_amount(value: Any, label: str) -> int:
+    _require(type(value) is int and 0 < value <= 9007199254740991, f"{label} must be a positive safe integer")
+    return value
+
+
+def _finance_date(value: Any, label: str) -> str:
+    try:
+        _require(isinstance(value, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", value), f"{label} must be an authored ISO date")
+        date.fromisoformat(value)
+    except ValueError as error:
+        raise WorldError(f"{label} must be an authored ISO date") from error
+    return value
+
+
+def _revenue_account(record: dict[str, Any], customer: dict[str, Any]) -> str:
+    value = record.get("revenue_account", customer.get("revenue_account"))
+    if value is None and "revenue_account" not in record and "revenue_account" not in customer:
+        _require(_billing_mode(customer) == "recurring_monthly", f"one-time customer {customer['id']} needs revenue_account")
+        value = "subscription-revenue"
+    _require(isinstance(value, str) and bool(value), f"customer {customer['id']} has invalid revenue_account")
+    _require(value not in {"accounts-receivable", "operating-cash", "operating-expense"}, "revenue_account cannot use a reserved balance/expense account")
+    return value
 
 
 def _expand_finance(world: dict[str, Any], anchor: date) -> dict[str, list[dict[str, Any]]]:
     finance = world["finance"]
-    months = int(finance["history_months"])
+    currency = _finance_currency(finance, "")
+    months = finance["history_months"]
+    history_anchor, history_shift = _finance_history_clock(world, anchor)
+    _require(type(months) is int and months >= 0, "finance.history_months must be a nonnegative integer")
+    customers = {row["id"]: row for row in finance["customers"]}
+    orders = {row["id"]: row for row in world.get("commerce", {}).get("orders", [])}
     invoices = copy.deepcopy(finance["anchor_invoices"])
     bills: list[dict[str, Any]] = []
     payments: list[dict[str, Any]] = []
     ledger: list[dict[str, Any]] = []
-
+    authored = finance["payments"] if "payments" in finance else []
+    refunds = copy.deepcopy(finance["refunds"] if "refunds" in finance else [])
+    _require(isinstance(authored, list) and isinstance(refunds, list), "finance payments/refunds must be arrays")
+    _require(all(isinstance(row, dict) for row in authored + refunds), "finance payment/refund entries must be objects")
+    for row in authored:
+        for field in ("id", "customer_id"):
+            _check_id(row.get(field), f"payment {field}")
+        for field in ("invoice_id", "order_id"):
+            if field in row:
+                _check_id(row[field], f"payment {field}")
+    for row in refunds:
+        for field in ("id", "payment_id"):
+            _check_id(row.get(field), f"refund {field}")
+    _unique(authored, "id", "payment")
+    _unique(refunds, "id", "refund")
+    # An authored settlement replaces the generated default for its invoice.
+    # Empty authored arrays add no records; monthly history remains its own policy.
+    overridden = {row.get("invoice_id") for row in authored}
     anchor_ids = {invoice["id"] for invoice in invoices}
     for offset in range(months, 0, -1):
-        month = _month_before(anchor, offset)
-        for customer in finance["customers"]:
+        month = _month_before(history_anchor, offset)
+        for customer in customers.values():
+            if _billing_mode(customer) == "one_time":
+                continue
             invoice_id = f"inv-{month:%Y%m}-{customer['id']}"
             if invoice_id in anchor_ids:
                 continue
-            issued = _date_in_month(month, int(customer.get("invoice_day", 5)))
-            due = _date_in_month(_month_before(month, -1), int(customer.get("due_day", 5)))
-            amount = int(customer["monthly_amount_cents"])
-            invoice = {
-                "id": invoice_id,
-                "number": f"{month:%y%m}-{customer['number_suffix']}",
-                "customer_id": customer["id"],
-                "issued_on": _iso_day(issued),
-                "due_on": _iso_day(due),
-                "amount_cents": amount,
-                "currency": finance["currency"],
-                "status": "paid",
-                "description": customer["service"],
-            }
-            invoices.append(invoice)
-            paid = due
-            payments.append(
-                {
-                    "id": f"pay-{invoice_id}",
-                    "invoice_id": invoice_id,
-                    "customer_id": customer["id"],
-                    "paid_on": _iso_day(paid),
-                    "amount_cents": amount,
-                    "currency": finance["currency"],
-                }
-            )
+            issued = _date_in_month(month, int(customer.get("invoice_day", 5))) + history_shift
+            due = _date_in_month(_month_before(month, -1), int(customer.get("due_day", 5))) + history_shift
+            amount = _finance_amount(customer["monthly_amount_cents"], f"customer {customer['id']} amount")
+            record_currency = _finance_currency(customer, currency)
+            invoices.append({"id": invoice_id, "number": f"{month:%y%m}-{customer['number_suffix']}",
+                "customer_id": customer["id"], "issued_on": _iso_day(issued), "due_on": _iso_day(due),
+                "amount_cents": amount, "currency": record_currency, "status": "paid", "description": customer["service"]})
+            if invoice_id not in overridden:
+                payments.append({"id": f"pay-{invoice_id}", "invoice_id": invoice_id, "customer_id": customer["id"],
+                    "paid_on": _iso_day(due), "amount_cents": amount, "currency": record_currency})
         for supplier in finance["suppliers"]:
-            issued = _date_in_month(month, int(supplier.get("bill_day", 12)))
-            amount = int(supplier["monthly_amount_cents"])
-            bills.append(
-                {
-                    "id": f"bill-{month:%Y%m}-{supplier['id']}",
-                    "supplier_id": supplier["id"],
-                    "issued_on": _iso_day(issued),
-                    "amount_cents": amount,
-                    "currency": finance["currency"],
-                    "status": "paid",
-                    "description": supplier["service"],
-                }
-            )
-
+            issued = _date_in_month(month, int(supplier.get("bill_day", 12))) + history_shift
+            bills.append({"id": f"bill-{month:%Y%m}-{supplier['id']}", "supplier_id": supplier["id"],
+                "issued_on": _iso_day(issued), "amount_cents": _finance_amount(supplier["monthly_amount_cents"], "supplier amount"),
+                "currency": _finance_currency(supplier, currency), "status": "paid", "description": supplier["service"]})
+    invoice_map = _unique(invoices, "id", "invoice")
+    order_invoices = {}
     for invoice in invoices:
-        ledger.extend(
-            [
-                {
-                    "id": f"entry-{invoice['id']}-receivable",
-                    "record_id": invoice["id"],
-                    "date": invoice["issued_on"],
-                    "account": "accounts-receivable",
-                    "debit_cents": invoice["amount_cents"],
-                    "credit_cents": 0,
-                },
-                {
-                    "id": f"entry-{invoice['id']}-revenue",
-                    "record_id": invoice["id"],
-                    "date": invoice["issued_on"],
-                    "account": "subscription-revenue",
-                    "debit_cents": 0,
-                    "credit_cents": invoice["amount_cents"],
-                },
-            ]
-        )
+        customer = customers[invoice["customer_id"]]
+        invoice["currency"] = _finance_currency(invoice, _finance_currency(customer, currency))
+        _finance_amount(invoice["amount_cents"], f"invoice {invoice['id']} amount")
+        _finance_date(invoice["issued_on"], f"invoice {invoice['id']} issued_on")
+        _finance_date(invoice["due_on"], f"invoice {invoice['id']} due_on")
+        if "order_id" in invoice:
+            _check_id(invoice["order_id"], "invoice order_id")
+            order = orders.get(invoice["order_id"])
+            _require(order is not None, f"invoice {invoice['id']} has unknown order")
+            _require(order["shopper_id"] == customer["contact_id"], f"invoice {invoice['id']} order/customer mismatch")
+            _require(invoice["currency"] == _finance_currency(order, currency), f"invoice {invoice['id']} order currency mismatch")
+            _require(invoice["amount_cents"] == order["total_cents"], f"invoice {invoice['id']} order amount mismatch")
+            _require(order["id"] not in order_invoices, f"order {order['id']} has duplicate purchase invoices")
+            order_invoices[order["id"]] = invoice["id"]
+    for original in authored:
+        payment = copy.deepcopy(original)
+        _check_id(payment["id"], "payment id")
+        _require(payment.get("status") == "succeeded", f"payment {payment['id']} must explicitly declare status succeeded")
+        customer = customers.get(payment.get("customer_id"))
+        _require(customer is not None, f"payment {payment['id']} has unknown customer")
+        _require("invoice_id" in payment or "order_id" in payment, f"payment {payment['id']} needs invoice_id or order_id")
+        invoice = invoice_map.get(payment.get("invoice_id"))
+        _require("invoice_id" not in payment or invoice is not None, f"payment {payment['id']} has unknown invoice")
+        payment["currency"] = _finance_currency(payment, invoice["currency"] if invoice else _finance_currency(customer, currency))
+        _finance_amount(payment.get("amount_cents"), f"payment {payment['id']} amount")
+        _finance_date(payment.get("paid_on"), f"payment {payment['id']} paid_on")
+        _require(payment["paid_on"] <= _iso_day(anchor), f"payment {payment['id']} is after the world anchor")
+        if invoice:
+            _require(invoice["customer_id"] == customer["id"], f"payment {payment['id']} invoice/customer mismatch")
+            _require(invoice["currency"] == payment["currency"], f"payment {payment['id']} invoice currency mismatch")
+            _require(payment["paid_on"] >= invoice["issued_on"], f"payment {payment['id']} predates invoice")
+            if "order_id" in invoice:
+                _require(payment.get("order_id", invoice["order_id"]) == invoice["order_id"], f"payment {payment['id']} order/invoice mismatch")
+                payment["order_id"] = invoice["order_id"]
+        if "order_id" in payment:
+            order = orders.get(payment["order_id"])
+            _require(order is not None, f"payment {payment['id']} has unknown order")
+            _require(order["shopper_id"] == customer["contact_id"], f"payment {payment['id']} order/customer mismatch")
+            _require(order["status"] != "cancelled" and order.get("payment_status") not in {"unpaid", "cancelled"}, f"payment {payment['id']} settles an unpaid/cancelled order")
+            _require(payment["currency"] == _finance_currency(order, currency), f"payment {payment['id']} order currency mismatch")
+            _require(payment["paid_on"] >= order["placed_on"], f"payment {payment['id']} predates order")
+            _require(invoice is None or invoice.get("order_id") == order["id"], f"payment {payment['id']} invoice must declare the same order")
+            _require(order["id"] not in order_invoices or payment.get("invoice_id") == order_invoices[order["id"]], f"payment {payment['id']} must use the order's invoice to avoid double counting")
+        payments.append(payment)
+    payment_map = _unique(payments, "id", "payment")
     for payment in payments:
-        ledger.extend(
-            [
-                {
-                    "id": f"entry-{payment['id']}-cash",
-                    "record_id": payment["id"],
-                    "date": payment["paid_on"],
-                    "account": "operating-cash",
-                    "debit_cents": payment["amount_cents"],
-                    "credit_cents": 0,
-                },
-                {
-                    "id": f"entry-{payment['id']}-receivable",
-                    "record_id": payment["id"],
-                    "date": payment["paid_on"],
-                    "account": "accounts-receivable",
-                    "debit_cents": 0,
-                    "credit_cents": payment["amount_cents"],
-                },
-            ]
-        )
+        _finance_date(payment.get("paid_on"), f"payment {payment['id']} paid_on")
+        _require(payment["paid_on"] <= _iso_day(anchor), f"payment {payment['id']} is after the world anchor")
+        if payment.get("invoice_id"):
+            _require(payment["paid_on"] >= invoice_map[payment["invoice_id"]]["issued_on"], f"payment {payment['id']} predates invoice")
+    for invoice in invoices:
+        total = sum(row["amount_cents"] for row in payments if row.get("invoice_id") == invoice["id"])
+        if invoice["status"] == "paid":
+            _require(total == invoice["amount_cents"], f"paid invoice {invoice['id']} needs explicit authored settlements with paid_on (expected {invoice['amount_cents']}, got {total})")
+        else:
+            _require(total < invoice["amount_cents"], f"invoice {invoice['id']} is fully settled but not paid")
+            _require(invoice["status"] in {"open", "overdue"} or total == 0, f"invoice {invoice['id']} cannot receive payments")
+    for order in orders.values():
+        _require("payment_status" not in order or (isinstance(order["payment_status"], str) and order["payment_status"] in {"unpaid", "cancelled", "paid", "partially_refunded", "refunded"}), f"order {order['id']} has invalid payment_status")
+        total = sum(row["amount_cents"] for row in payments if row.get("order_id") == order["id"])
+        _require(total <= order["total_cents"], f"order {order['id']} is charged more than once")
+        if order.get("payment_status") in {"paid", "partially_refunded", "refunded"}:
+            _require(total == order["total_cents"], f"order {order['id']} has unmatched explicit payments")
+        if order.get("payment_status") in {"unpaid", "cancelled"}:
+            _require(total == 0, f"order {order['id']} must have no successful payments")
+        if order["status"] == "refunded" and (order["id"] in order_invoices or total > 0 or "payment_status" in order):
+            _require(total == order["total_cents"], f"finance-linked refunded order {order['id']} needs its original payment")
+    refunded = {}
+    for refund in refunds:
+        _check_id(refund["id"], "refund id")
+        _require(refund.get("status") == "succeeded", f"refund {refund['id']} must explicitly declare status succeeded")
+        payment = payment_map.get(refund.get("payment_id"))
+        _require(payment is not None, f"refund {refund['id']} has unknown payment")
+        refund["currency"] = _finance_currency(refund, payment["currency"])
+        _require(refund["currency"] == payment["currency"], f"refund {refund['id']} currency mismatch")
+        _finance_amount(refund.get("amount_cents"), f"refund {refund['id']} amount")
+        _finance_date(refund.get("refunded_on"), f"refund {refund['id']} refunded_on")
+        _require(refund["refunded_on"] <= _iso_day(anchor), f"refund {refund['id']} is after the world anchor")
+        _require(refund["refunded_on"] >= payment["paid_on"], f"refund {refund['id']} predates payment")
+        refunded[payment["id"]] = refunded.get(payment["id"], 0) + refund["amount_cents"]
+        _require(refunded[payment["id"]] <= payment["amount_cents"], f"refunds exceed payment {payment['id']}")
+    for order in orders.values():
+        refund_total = sum(refunded.get(row["id"], 0) for row in payments if row.get("order_id") == order["id"])
+        linked = order["id"] in order_invoices or any(row.get("order_id") == order["id"] for row in payments) or "payment_status" in order
+        if order["status"] == "refunded" and linked:
+            _require(refund_total == order["total_cents"], f"finance-linked refunded order {order['id']} needs a full refund")
+        if order.get("payment_status") == "partially_refunded":
+            _require(0 < refund_total < order["total_cents"], f"order {order['id']} needs a partial refund")
+        if order.get("payment_status") == "refunded":
+            _require(refund_total == order["total_cents"], f"order {order['id']} needs a full refund")
+        if order.get("payment_status") == "paid":
+            _require(refund_total == 0, f"order {order['id']} status must declare its refund")
+    def pair(record, day, debit, credit):
+        for side, account in (("debit", debit), ("credit", credit)):
+            suffix = "receivable" if account == "accounts-receivable" else "cash" if account == "operating-cash" else "expense" if account == "operating-expense" else "revenue"
+            ledger.append({"id": f"entry-{record['id']}-{suffix}", "record_id": record["id"], "date": day,
+                "account": account, "currency": record["currency"], "debit_cents": record["amount_cents"] if side == "debit" else 0,
+                "credit_cents": record["amount_cents"] if side == "credit" else 0})
+    for invoice in invoices:
+        if invoice["status"] not in {"draft", "void", "cancelled"}:
+            pair(invoice, invoice["issued_on"], "accounts-receivable", _revenue_account(invoice, customers[invoice["customer_id"]]))
+    for payment in payments:
+        customer = customers[payment["customer_id"]]
+        pair(payment, payment["paid_on"], "operating-cash", "accounts-receivable" if payment.get("invoice_id") else _revenue_account(payment, customer))
     for bill in bills:
-        ledger.extend(
-            [
-                {
-                    "id": f"entry-{bill['id']}-expense",
-                    "record_id": bill["id"],
-                    "date": bill["issued_on"],
-                    "account": "operating-expense",
-                    "debit_cents": bill["amount_cents"],
-                    "credit_cents": 0,
-                },
-                {
-                    "id": f"entry-{bill['id']}-cash",
-                    "record_id": bill["id"],
-                    "date": bill["issued_on"],
-                    "account": "operating-cash",
-                    "debit_cents": 0,
-                    "credit_cents": bill["amount_cents"],
-                },
-            ]
-        )
+        pair(bill, bill["issued_on"], "operating-expense", "operating-cash")
+    for refund in refunds:
+        payment = payment_map[refund["payment_id"]]
+        origin = invoice_map[payment["invoice_id"]] if payment.get("invoice_id") else payment
+        pair(refund, refund["refunded_on"], _revenue_account(origin, customers[payment["customer_id"]]), "operating-cash")
+    _unique(ledger, "id", "ledger entry")
+    return {"invoices": sorted(invoices, key=lambda row: (row["issued_on"], row["id"])),
+        "bills": sorted(bills, key=lambda row: (row["issued_on"], row["id"])),
+        "payments": sorted(payments, key=lambda row: (row["paid_on"], row["id"])),
+        "refunds": sorted(refunds, key=lambda row: (row["refunded_on"], row["id"])),
+        "ledger_entries": sorted(ledger, key=lambda row: (row["date"], row["id"]))}
 
-    return {
-        "invoices": sorted(invoices, key=lambda item: (item["issued_on"], item["id"])),
-        "bills": sorted(bills, key=lambda item: (item["issued_on"], item["id"])),
-        "payments": sorted(payments, key=lambda item: (item["paid_on"], item["id"])),
-        "ledger_entries": sorted(ledger, key=lambda item: (item["date"], item["id"])),
-    }
 
 
 def _invoice_mail(world: dict[str, Any], finance: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
@@ -928,48 +1110,204 @@ def _invoice_mail(world: dict[str, Any], finance: dict[str, list[dict[str, Any]]
     return result
 
 
+GOOGLE_SYSTEM_LABELS = frozenset({
+    "INBOX", "SENT", "UNREAD", "STARRED", "IMPORTANT", "TRASH", "SPAM", "DRAFT",
+    "CATEGORY_PERSONAL", "CATEGORY_SOCIAL", "CATEGORY_PROMOTIONS", "CATEGORY_UPDATES", "CATEGORY_FORUMS",
+})
+
+
+def _google_message_owners(message: dict[str, Any]) -> set[str]:
+    owners = set(message["to_ids"])
+    if "SENT" in message["labels"]:
+        owners.add(message["from_id"])
+    return owners
+
+
+def _google_mailboxes(world: dict[str, Any], resolved_mail: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    communication = world.get("communication", {})
+    if "mailboxes" in communication:
+        # An explicit empty array or subset is authoritative. Never infer a new
+        # owner or label from a message when the author declared mailboxes.
+        return copy.deepcopy(communication["mailboxes"])
+    # Compatibility for old sources without this field: every person receives a
+    # mailbox, with custom labels derived from current mail and Gmail arrivals.
+    labels = {person["id"]: set() for person in world["people"]}
+    for message in resolved_mail:
+        for owner in _google_message_owners(message):
+            labels[owner].update(set(message["labels"]) - GOOGLE_SYSTEM_LABELS)
+    for event in world.get("timeline", []):
+        payload = event.get("payload", {})
+        if event["kind"] == "incoming-email" and payload.get("via", "smtp") == "gmail":
+            labels[payload["to_id"]].update(set(payload.get("labels", ["INBOX", "UNREAD"])) - GOOGLE_SYSTEM_LABELS)
+    return [{"owner_id": person["id"], "labels": sorted(labels[person["id"]])} for person in world["people"]]
+
+
+def _validate_google_mailbox_declarations(world: dict[str, Any], people: dict[str, Any]) -> None:
+    communication = world.get("communication", {})
+    if "mailboxes" not in communication:
+        return
+    context = f"world {world['id']}:{world['version']} communication.mailboxes"
+    rows = communication["mailboxes"]
+    _require(isinstance(rows, list), f"{context} must be an array")
+    owners = set()
+    for row in rows:
+        _require(isinstance(row, dict), f"{context} entries must be objects")
+        owner = row.get("owner_id")
+        _require(isinstance(owner, str) and owner in people, f"{context} has unknown owner {owner!r}")
+        _require(owner not in owners, f"{context} has duplicate owner {owner}")
+        owners.add(owner)
+        labels = row.get("labels")
+        _require(isinstance(labels, list), f"{context} owner {owner} labels must be an array")
+        _require(all(isinstance(label, str) and bool(label.strip()) for label in labels), f"{context} owner {owner} labels must contain nonempty strings")
+        _require(len(labels) == len(set(labels)), f"{context} owner {owner} labels contains duplicates")
+        _require(not set(labels) & GOOGLE_SYSTEM_LABELS, f"{context} owner {owner} declares system labels as custom labels")
+
+
+def _validate_google_mailbox_references(world: dict[str, Any], mailboxes: list[dict[str, Any]], resolved_mail: list[dict[str, Any]]) -> None:
+    declared = {row["owner_id"]: set(row["labels"]) for row in mailboxes}
+
+    def check(owner: str, labels: list[str], context: str) -> None:
+        field = f"world {world['id']}:{world['version']} {context} labels"
+        _require(isinstance(labels, list), f"{field} must be an array")
+        _require(all(isinstance(label, str) and bool(label.strip()) for label in labels), f"{field} must contain nonempty strings")
+        _require(len(labels) == len(set(labels)), f"{field} contains duplicates")
+        missing = set(labels) - GOOGLE_SYSTEM_LABELS - declared[owner]
+        _require(not missing, f"world {world['id']}:{world['version']} {context} owner {owner} has undeclared Gmail custom labels: {sorted(missing)}")
+
+    for message in resolved_mail:
+        for owner in _google_message_owners(message) & declared.keys():
+            check(owner, message["labels"], f"communication.mail {message['id']}")
+    for event in world.get("timeline", []):
+        payload = event.get("payload", {})
+        if event["kind"] != "incoming-email" or payload.get("via", "smtp") != "gmail":
+            continue
+        owner = payload.get("to_id")
+        _require(isinstance(owner, str) and owner in declared, f"world {world['id']}:{world['version']} timeline {event['id']} payload.to_id Gmail recipient {owner} has no declared mailbox")
+        check(owner, payload.get("labels", ["INBOX", "UNREAD"]), f"timeline {event['id']}")
+
+
+def _validate_google_content_owners(world: dict[str, Any], mailboxes: list[dict[str, Any]]) -> None:
+    people, _ = _person_maps(world)
+    owner_ids = {row["owner_id"] for row in mailboxes}
+    emails = {people[owner]["email"] for owner in owner_ids}
+    primary = next((person for person in world["people"] if person.get("primary")), {})
+    context = f"world {world['id']}:{world['version']} communication"
+    communication = world.get("communication", {})
+    calendar_owners = {}
+    for row in communication.get("calendars", []):
+        email = row.get("user_email", primary.get("email"))
+        _require(isinstance(email, str) and email in emails, f"{context}.calendars {row.get('id')} user_email {email!r} has no declared Google mailbox/account")
+        calendar_owners[row["id"]] = email
+    for row in communication.get("calendar_events", []):
+        email = row.get("user_email", calendar_owners.get(row.get("calendar_id"), primary.get("email")))
+        _require(isinstance(email, str) and email in emails, f"{context}.calendar_events {row.get('id')} user_email {email!r} has no declared Google mailbox/account")
+    for row in communication.get("documents", []):
+        owner = row.get("owner_id")
+        _require(isinstance(owner, str) and owner in owner_ids, f"{context}.documents {row.get('id')} owner_id {owner!r} has no declared Google mailbox/account")
+        content = row.get("content", row.get("body_md", row.get("body", "")))
+        _require(isinstance(content, str), f"{context}.documents {row.get('id')} content must be a string")
+
+
 def _google_projection(world: dict[str, Any], resolved_mail: list[dict[str, Any]]) -> dict[str, Any]:
     people, _ = _person_maps(world)
-    primary = next(person for person in world["people"] if person.get("primary"))
+    primary = next((person for person in world["people"] if person.get("primary")), {})
+    mailboxes = _google_mailboxes(world, resolved_mail)
+    _validate_google_mailbox_references(world, mailboxes, resolved_mail)
+    _validate_google_content_owners(world, mailboxes)
+    selected_owners = {row["owner_id"] for row in mailboxes}
     messages: list[dict[str, Any]] = []
     for message in resolved_mail:
         sender = people[message["from_id"]]
         recipients = [people[person_id] for person_id in message["to_ids"]]
-        is_primary_sender = sender["id"] == primary["id"]
-        is_primary_recipient = any(person["id"] == primary["id"] for person in recipients)
-        if not is_primary_sender and not is_primary_recipient:
-            continue
-        messages.append(
-            {
-                "id": message["id"],
-                "thread_id": message["thread_id"],
-                "from": f"{sender['name']} <{sender['email']}>",
-                "to": ", ".join(f"{person['name']} <{person['email']}>" for person in recipients),
-                "subject": message["subject"],
-                "snippet": message["snippet"],
-                "body_text": message["body_text"],
-                "label_ids": message["labels"],
-                "date": message["sent_at"],
-                "worldfixture_entity_refs": {
-                    key: message[key]
-                    for key in ("invoice_id", "customer_id", "order_id")
-                    if key in message
-                },
-            }
-        )
+        for owner_id in sorted(_google_message_owners(message) & selected_owners):
+            provider_id = "wf_" + sha256(json.dumps(
+                [world["id"], world["version"], owner_id, message["id"]],
+                separators=(",", ":"), ensure_ascii=False,
+            ).encode())[:32]
+            messages.append(
+                {
+                    "id": provider_id,
+                    "worldfixture_message_id": message["id"],
+                    "worldfixture_owner_id": owner_id,
+                    "user_email": people[owner_id]["email"],
+                    "thread_id": message["thread_id"],
+                    "from": f"{sender['name']} <{sender['email']}>",
+                    "to": ", ".join(f"{person['name']} <{person['email']}>" for person in recipients),
+                    "subject": message["subject"],
+                    "snippet": message["snippet"],
+                    "body_text": message["body_text"],
+                    "label_ids": message["labels"],
+                    "date": message["sent_at"],
+                    "worldfixture_entity_refs": {
+                        key: message[key]
+                        for key in ("invoice_id", "customer_id", "order_id")
+                        if key in message
+                    },
+                }
+            )
+    labels = [
+        {"id": label, "name": label, "user_email": people[row["owner_id"]]["email"], "type": "user"}
+        for row in mailboxes for label in row["labels"]
+    ]
     communication = world["communication"]
+    # World authoring uses calendar names, ISO start/end strings, and attendee
+    # email strings. The upstream Google seed API uses summary, split temporal
+    # fields, and attendee objects. Passing authoring records through unchanged
+    # produces undefined summaries (calendarList returns 500) and loses event
+    # times and attendees. Normalize at the projection boundary, not in routes.
+    calendars = copy.deepcopy(communication.get("calendars", []))
+    for calendar_row in calendars:
+        calendar_row["summary"] = (
+            calendar_row.get("summary") or calendar_row.get("name") or calendar_row.get("title") or calendar_row["id"]
+        )
+        calendar_row.setdefault("user_email", primary.get("email"))
+        calendar_row.pop("name", None)
+        calendar_row.pop("title", None)
+    calendar_owners = {calendar["id"]: calendar["user_email"] for calendar in calendars if "id" in calendar}
+    calendar_events = copy.deepcopy(communication.get("calendar_events", []))
+    for event in calendar_events:
+        event.setdefault("summary", event.get("title") or event.get("name") or event["id"])
+        event.setdefault("user_email", calendar_owners.get(event.get("calendar_id"), primary.get("email")))
+        for boundary in ("start", "end"):
+            value = event.pop(boundary, None)
+            if isinstance(value, str):
+                field = f"{boundary}_date" if len(value) == 10 else f"{boundary}_date_time"
+                event.setdefault(field, value)
+            elif isinstance(value, dict):
+                if "dateTime" in value:
+                    event.setdefault(f"{boundary}_date_time", value["dateTime"])
+                elif "date" in value:
+                    event.setdefault(f"{boundary}_date", value["date"])
+        event["attendees"] = [
+            {"email": attendee} if isinstance(attendee, str) else copy.deepcopy(attendee)
+            for attendee in event.get("attendees", [])
+        ]
     return {
         "users": [
             {
-                "email": primary["email"],
-                "name": primary["name"],
+                "email": person["email"],
+                "name": person["name"],
                 "email_verified": True,
+                "worldfixture_person_id": person["id"],
             }
+            for person in world["people"] if person["id"] in selected_owners
         ],
         "messages": sorted(messages, key=lambda item: (item["date"], item["id"])),
-        "calendars": copy.deepcopy(communication.get("calendars", [])),
-        "calendar_events": copy.deepcopy(communication.get("calendar_events", [])),
-        "drive_items": copy.deepcopy(communication.get("documents", [])),
+        "labels": labels,
+        "calendars": calendars,
+        "calendar_events": calendar_events,
+        "drive_items": [
+            {
+                **copy.deepcopy(document),
+                "worldfixture_document_id": document["id"],
+                "worldfixture_owner_id": document["owner_id"],
+                "user_email": people[document["owner_id"]]["email"],
+                "name": document.get("name") or document.get("title") or document["id"],
+                "mime_type": document.get("mime_type", "text/markdown"),
+                "data": document.get("content", document.get("body_md", document.get("body", ""))),
+            }
+            for document in communication.get("documents", [])
+        ],
     }
 
 
@@ -982,7 +1320,7 @@ def _microsoft_projection(world: dict[str, Any]) -> dict[str, Any]:
                 "email": person["email"],
                 "name": person["name"],
                 "given_name": person["name"].split(maxsplit=1)[0],
-                "family_name": person["name"].split(maxsplit=1)[1],
+                "family_name": " ".join(person["name"].split(maxsplit=1)[1:]),
                 "tenant_id": main_org["id"],
                 "worldfixture_person_id": person["id"],
             }
@@ -1293,15 +1631,14 @@ def _notion_projection(world: dict[str, Any]) -> dict[str, Any]:
 
 
 def _apple_projection(world: dict[str, Any]) -> dict[str, Any]:
-    main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
-    members = [person for person in world["people"] if person["organization_id"] == main_org["id"]]
+    members = world["people"]
     return {
         "users": [
             {
                 "email": person["email"],
                 "name": person["name"],
                 "given_name": person["name"].split(maxsplit=1)[0],
-                "family_name": person["name"].split(maxsplit=1)[1],
+                "family_name": " ".join(person["name"].split(maxsplit=1)[1:]),
                 "is_private_email": False,
                 "worldfixture_person_id": person["id"],
             }
@@ -1319,27 +1656,18 @@ def _document_object_key(document: dict[str, Any]) -> str:
     already unique, already readable, and already stable across builds. The
     suffix is the name's own, so the extension a reader sees is the world's.
     """
-    name = document["name"]
+    name = document.get("name") or document.get("title") or document["id"]
     tail = name.rsplit("/", 1)[-1]
     suffix = tail[tail.rfind(".") :] if "." in tail else ""
     return f"documents/{document['id']}{suffix}"
 
 
-# The cloud vocabulary of `business.saas-company`, which was the only world when
-# this projection was written. Each is now a declared value with the reviewed
-# literal as its default, the same way `LEGACY_SLACK_BOTS` below is, so a second
-# world can own its cloud without moving the parity fixture's bytes.
-#
-# `LEGACY_OPERATOR_TEAMS` is the one that was measured wrong. The selector was
-# the bare literal `person["team"] == "engineering"`, and the v3 world names its
-# 16 internal teams `platform`, `reliability`, `exports`, `console` and so on --
-# none of them `engineering`. Its IAM users therefore collapsed to the single
-# primary person out of 99 organization members, and the `[:4]` cap below never
-# engaged at all.
+# The exported PROFILES["business.operations/v1"]["compile"] callback retains
+# the reviewed cloud defaults for callers of that original adapter. The normal
+# compile_world path removes undeclared IAM/SQS records from its output. New
+# authored policies select their own operators, queues and roles.
 LEGACY_OPERATOR_TEAMS = ["engineering"]
-# A queue and a role are named after what the first world's product does. A world
-# that sells goods to people has neither an export pipeline nor a billing webhook,
-# and inherited both.
+LEGACY_OPERATOR_LIMIT = 4
 LEGACY_QUEUES = [
     {"name": "billing-events", "visibility_timeout": 30},
     {"name": "export-jobs", "visibility_timeout": 120},
@@ -1351,15 +1679,59 @@ LEGACY_SERVICE_ROLES = [
 ]
 
 
+def _validate_aws_operators(world: dict[str, Any]) -> None:
+    software = world.get("software", {})
+    label = f"{world['id']}:{world['version']} software"
+    organizations = {organization["id"] for organization in world["organizations"] if organization.get("primary")}
+    members = [person for person in world["people"] if person["organization_id"] in organizations]
+    if "operator_teams" in software:
+        teams = software["operator_teams"]
+        _require(isinstance(teams, list), f"{label}.operator_teams must be an array")
+        _require(all(isinstance(team, str) and bool(team) for team in teams),
+                 f"{label}.operator_teams must contain nonempty team names")
+        _require(len(teams) == len(set(teams)), f"{label}.operator_teams contains duplicate teams")
+        known = {person.get("team") for person in members}
+        unknown = sorted(set(teams) - known)
+        _require(not unknown, f"{label}.operator_teams names unknown primary-organization teams: {unknown}")
+    if "operator_ids" in software:
+        ids = software["operator_ids"]
+        _require(isinstance(ids, list), f"{label}.operator_ids must be an array")
+        _require(all(isinstance(person_id, str) and bool(person_id) for person_id in ids),
+                 f"{label}.operator_ids must contain nonempty person IDs")
+        _require(len(ids) == len(set(ids)), f"{label}.operator_ids contains duplicate person IDs")
+        known = {person["id"] for person in world["people"]}
+        unknown = sorted(set(ids) - known)
+        _require(not unknown, f"{label}.operator_ids names unknown people: {unknown}")
+        external = sorted(set(ids) - {person["id"] for person in members})
+        _require(not external, f"{label}.operator_ids names people outside the primary organization: {external}")
+    if "operator_limit" in software:
+        limit = software["operator_limit"]
+        _require(limit is None or (type(limit) is int and limit >= 0),
+                 f"{label}.operator_limit must be null or a nonnegative integer")
+
+
 def _aws_projection(world: dict[str, Any]) -> dict[str, Any]:
+    from .sections import provider_world
+
+    world = provider_world(world)
     people, _ = _person_maps(world)
     software = world.get("software", {})
     main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
     members = [person for person in world["people"] if person["organization_id"] == main_org["id"]]
     # `.get("team")`, not `person["team"]`: a person without a team is not an
     # operator, and used to be an unhandled KeyError raised from a projection.
-    operator_teams = set(software.get("operator_teams") or LEGACY_OPERATOR_TEAMS)
-    operators = [person for person in members if person.get("primary") or person.get("team") in operator_teams][:4]
+    explicit_selection = "operator_teams" in software or "operator_ids" in software
+    operator_teams = set(software.get("operator_teams", [] if explicit_selection else LEGACY_OPERATOR_TEAMS))
+    operator_ids = set(software.get("operator_ids", []))
+    operator_limit = software.get("operator_limit", LEGACY_OPERATOR_LIMIT)
+    operators = [person for person in members if (
+        person.get("team") in operator_teams or person["id"] in operator_ids
+        or (not explicit_selection and person.get("primary"))
+    )]
+    if explicit_selection or "operator_limit" in software:
+        operators.sort(key=lambda person: person["id"])
+    if operator_limit is not None:
+        operators = operators[:operator_limit]
     documents_bucket = f"{main_org['slug']}-documents"
     # Only documents the world actually declares become objects. The exports
     # bucket stays empty here because no world record declares anything in it.
@@ -1392,13 +1764,13 @@ def _aws_projection(world: dict[str, Any]) -> dict[str, Any]:
             ],
             "objects": objects,
         },
-        "sqs": {"queues": copy.deepcopy(software.get("queues") or LEGACY_QUEUES)},
+        "sqs": {"queues": copy.deepcopy(software.get("queues", LEGACY_QUEUES))},
         "iam": {
             "users": [
                 {"user_name": person["github_login"], "path": "/people/", "create_access_key": False}
                 for person in operators
             ],
-            "roles": copy.deepcopy(software.get("service_roles") or LEGACY_SERVICE_ROLES),
+            "roles": copy.deepcopy(software.get("service_roles", LEGACY_SERVICE_ROLES)),
         },
         "worldfixture_organization_id": main_org["id"],
     }
@@ -1414,7 +1786,7 @@ def _resend_projection(world: dict[str, Any]) -> dict[str, Any]:
             {
                 "email": person["email"],
                 "first_name": person["name"].split(maxsplit=1)[0],
-                "last_name": person["name"].split(maxsplit=1)[1],
+                "last_name": " ".join(person["name"].split(maxsplit=1)[1:]),
                 "audience": "Customers",
                 "worldfixture_person_id": person["id"],
                 "worldfixture_customer_id": customer["id"],
@@ -1426,24 +1798,15 @@ def _resend_projection(world: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-# The names below belong to `business.saas-company`, which was the only world
-# when these projections were written. A second world inherits them unless it
-# says otherwise, which is why each one is now a declared value with the
-# reviewed literal as its default: a world may own its Slack bot, its issue
-# tracker team and its database without changing the parity fixture's bytes.
+# The original business adapter retains these reviewed defaults. compile_world
+# removes undeclared Slack bots; the legacy tracker team remains overridable by
+# work.team. Independent section adapters derive their team from the world.
 LEGACY_SLACK_BOTS = [{"name": "northstar-helper"}]
 LEGACY_TRACKER_TEAM = {"key": "NSTAR", "name": "Northstar"}
-LEGACY_DATABASE = {
-    "cluster": "northstar-production",
-    "name": "northstar",
-    "collections": ["customers", "invoices", "support_cases", "tasks"],
-}
-
-
 def _mongoatlas_projection(world: dict[str, Any]) -> dict[str, Any]:
     main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
     primary = next(person for person in world["people"] if person.get("primary"))
-    database = world.get("software", {}).get("database") or LEGACY_DATABASE
+    database = world["software"]["database"]
     return {
         "projects": [{"name": main_org["name"], "org_id": main_org["id"]}],
         "clusters": [
@@ -1471,35 +1834,6 @@ def _mongoatlas_projection(world: dict[str, Any]) -> dict[str, Any]:
                 "collections": list(database["collections"]),
             }
         ],
-        "worldfixture_organization_id": main_org["id"],
-    }
-
-
-def _twilio_projection(world: dict[str, Any]) -> dict[str, Any]:
-    main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
-    return {
-        "account": {
-            "sid": "AC00000000000000000000000000000000",
-            "auth_token": "worldfixture_twilio_test_token",
-            "friendly_name": main_org["name"],
-        },
-        "api_keys": [
-            {
-                "sid": "SK00000000000000000000000000000000",
-                "secret": "twilio_test_api_secret",
-                "friendly_name": f"{main_org['name']} application",
-            }
-        ],
-        "phone_numbers": [
-            {"phone_number": "+15550102028", "friendly_name": f"{main_org['name']} Support"}
-        ],
-        "messaging_services": [
-            {"friendly_name": f"{main_org['name']} Notifications", "phone_numbers": ["+15550102028"]}
-        ],
-        "verify_services": [
-            {"friendly_name": f"{main_org['name']} Sign-in", "code": "123456", "default_channel": "sms"}
-        ],
-        "conversations": {"services": [{"friendly_name": f"{main_org['name']} Support"}]},
         "worldfixture_organization_id": main_org["id"],
     }
 
@@ -1546,22 +1880,21 @@ def _slack_projection(world: dict[str, Any]) -> dict[str, Any]:
         "team": {"name": main_org["name"], "domain": main_org["domain"].split(".", 1)[0]},
         "users": users,
         "channels": channels,
-        "bots": copy.deepcopy(world["communication"].get("bots") or LEGACY_SLACK_BOTS),
+        "bots": copy.deepcopy(world["communication"].get("bots", LEGACY_SLACK_BOTS)),
         "strict_scopes": False,
     }
 
 
 def _github_projection(world: dict[str, Any]) -> dict[str, Any]:
     people, organizations = _person_maps(world)
-    main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
-    members = [person for person in world["people"] if person["organization_id"] == main_org["id"]]
+    members = world["people"]
     users = [
         {
             "login": person["github_login"],
             "name": person["name"],
             "email": person["email"],
             "bio": person["role"],
-            "company": main_org["name"],
+            "company": organizations[person["organization_id"]]["name"],
             "location": person.get("location", "Remote"),
             "worldfixture_person_id": person["id"],
         }
@@ -1580,11 +1913,18 @@ def _github_projection(world: dict[str, Any]) -> dict[str, Any]:
                 "topics": repository["topics"],
                 "auto_init": True,
                 "issues": copy.deepcopy(repository.get("issues", [])),
+                "collaborators": [
+                    {"username": people[person_id]["github_login"], "permission": "push"}
+                    for person_id in repository.get("member_ids", [])
+                ],
             }
         )
     return {
         "users": users,
-        "orgs": [{"login": main_org["slug"], "name": main_org["name"], "description": main_org["summary"]}],
+        "orgs": [
+            {"login": organization["slug"], "name": organization["name"], "description": organization.get("summary", "")}
+            for organization in world["organizations"]
+        ],
         "repos": repos,
     }
 
@@ -1596,7 +1936,7 @@ def _clerk_projection(world: dict[str, Any]) -> dict[str, Any]:
         "users": [
             {
                 "first_name": person["name"].split(maxsplit=1)[0],
-                "last_name": person["name"].split(maxsplit=1)[1],
+                "last_name": " ".join(person["name"].split(maxsplit=1)[1:]),
                 "email_addresses": [person["email"]],
                 "password": "worldfixture_test_password",
                 "worldfixture_person_id": person["id"],
@@ -1647,7 +1987,7 @@ def _okta_projection(world: dict[str, Any]) -> dict[str, Any]:
                 "login": person["email"],
                 "email": person["email"],
                 "first_name": person["name"].split(maxsplit=1)[0],
-                "last_name": person["name"].split(maxsplit=1)[1],
+                "last_name": " ".join(person["name"].split(maxsplit=1)[1:]),
                 "worldfixture_person_id": person["id"],
             }
             for person in members
@@ -1685,7 +2025,7 @@ def _linear_projection(world: dict[str, Any]) -> dict[str, Any]:
                 "team": team["key"],
                 "title": task["title"],
                 "description": f"{task['description']}\n\nProject: {project['name']} · Due: {task['due_on']}",
-                "state": state_names[task["status"]],
+                "state": state_names.get(task["status"], task["status"]),
                 "assignee": people[task["assignee_id"]]["email"],
                 "labels": labels,
                 "worldfixture_task_id": task["id"],
@@ -1712,6 +2052,7 @@ def _linear_projection(world: dict[str, Any]) -> dict[str, Any]:
                     {"name": "Todo", "type": "unstarted"},
                     {"name": "In Progress", "type": "started"},
                     {"name": "Done", "type": "completed"},
+                    *[{"name": status, "type": "unstarted"} for status in sorted({task["status"] for task in world["work"]["tasks"]} - state_names.keys())],
                 ],
             }
         ],
@@ -1725,96 +2066,76 @@ def _linear_projection(world: dict[str, Any]) -> dict[str, Any]:
 
 
 def _stripe_projection(world: dict[str, Any]) -> dict[str, Any]:
-    """Project the billing relationships, and the catalog when a world has one.
-
-    A world that bills companies has one product per plan and one price per
-    customer, which is what this always projected. A world that sells goods to
-    people has a catalog as well, and a catalog item is a Stripe product with a
-    one-off price -- the same two record types, not a parallel set. A world with
-    no `commerce.products` produces byte-identical output to before.
-    """
     people, _ = _person_maps(world)
-    customers = world["finance"]["customers"]
-    plans = sorted({customer["service"] for customer in customers})
+    finance = world["finance"]
+    customers = finance["customers"]
+    recurring = [customer for customer in customers if _billing_mode(customer) == "recurring_monthly"]
+    plans = sorted({customer["service"] for customer in recurring})
     catalog = world.get("commerce", {}).get("products", [])
     for product in catalog:
-        _require(
-            product["name"] not in plans,
-            f"catalog product {product['id']} is named after subscription plan {product['name']!r}",
-        )
-    def stripe_fragment(value):
-        """A Stripe object id fragment: the world id with anything else replaced."""
+        _require(product["name"] not in plans, f"catalog product {product['id']} is named after subscription plan")
+    def fragment(value):
         return re.sub(r"[^a-zA-Z0-9]", "_", value)
-    customer_ids = {customer["id"]: f"cus_{stripe_fragment(customer['id'])}" for customer in customers}
-    product_ids = {name: f"prod_{stripe_fragment(name).lower()}" for name in plans}
-    price_ids = {customer["id"]: f"price_{stripe_fragment(customer['id'])}" for customer in customers}
-    return {
-        "customers": [
-            {
-                "id": customer_ids[customer["id"]],
-                "email": people[customer["contact_id"]]["email"],
-                "name": customer["name"],
-                "worldfixture_customer_id": customer["id"],
-            }
-            for customer in customers
-        ],
-        "products": [{"id": product_ids[name], "name": name, "description": f"Monthly {name} subscription"} for name in plans]
-        + [
-            {
-                "id": f"prod_{stripe_fragment(product['id'])}",
-                "name": product["name"],
-                "description": product.get("summary", product["name"]),
-                "worldfixture_product_id": product["id"],
-            }
-            for product in catalog
-        ],
-        "prices": [
-            {
-                "id": price_ids[customer["id"]],
-                "product_name": customer["service"],
-                "currency": "usd",
-                "unit_amount": customer["monthly_amount_cents"],
-                "recurring": {"interval": "month"},
-                "worldfixture_customer_id": customer["id"],
-            }
-            for customer in customers
-        ]
-        + [
-            {
-                "id": f"price_{stripe_fragment(product['id'])}",
-                "product_name": product["name"],
-                "currency": str(product.get("currency", "USD")).lower(),
-                "unit_amount": product["price_cents"],
-                "worldfixture_product_id": product["id"],
-            }
-            for product in catalog
-        ],
-        "subscriptions": [
-            {
-                "id": f"sub_{stripe_fragment(customer['id'])}",
-                "customer": customer_ids[customer["id"]],
-                "price": price_ids[customer["id"]],
-                "status": "active",
-                "metadata": {"worldfixture_customer_id": customer["id"]},
-            }
-            for customer in customers
-        ],
-        "invoices": [
-            {
-                "id": f"in_{stripe_fragment(invoice['id'])}",
-                "number": invoice["number"],
-                "customer": customer_ids[invoice["customer_id"]],
-                "description": invoice["description"],
-                "currency": invoice["currency"].lower(),
-                "status": "open" if invoice["status"] == "overdue" else invoice["status"],
-                "created": int(datetime.fromisoformat(invoice["issued_on"]).replace(tzinfo=UTC).timestamp()),
-                "due_date": int(datetime.fromisoformat(invoice["due_on"]).replace(tzinfo=UTC).timestamp()),
-                "amount_due": invoice["amount_cents"],
-                "metadata": {"worldfixture_invoice_id": invoice["id"], "worldfixture_status": invoice["status"]},
-            }
-            for invoice in world["finance"]["anchor_invoices"]
-        ],
+    seen = set()
+    def provider_id(prefix, source_id):
+        value = f"{prefix}_{fragment(source_id)}"
+        _require(value not in seen, f"Stripe ID collision for source record {source_id}: {value}")
+        seen.add(value)
+        return value
+    def seconds(day):
+        return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp())
+    customer_ids = {row["id"]: provider_id("cus", row["id"]) for row in customers}
+    product_ids = {name: provider_id("prod", fragment(name).lower()) for name in plans}
+    price_ids = {row["id"]: provider_id("price", row["id"]) for row in recurring}
+    result = {
+        "customers": [{"id": customer_ids[row["id"]], "email": people[row["contact_id"]]["email"],
+            "name": row["name"], "worldfixture_customer_id": row["id"]} for row in customers],
+        "products": [{"id": product_ids[name], "name": name, "description": f"Monthly {name} subscription"} for name in plans],
+        "prices": [{"id": price_ids[row["id"]], "product_name": row["service"],
+            "currency": _finance_currency(row, finance["currency"]).lower(), "unit_amount": row["monthly_amount_cents"],
+            "recurring": {"interval": "month"}, "worldfixture_customer_id": row["id"]} for row in recurring],
+        "subscriptions": [{"id": provider_id("sub", row["id"]), "customer": customer_ids[row["id"]],
+            "price": price_ids[row["id"]], "status": "active", "metadata": {"worldfixture_customer_id": row["id"]}} for row in recurring],
+        "invoices": [],
+        "transactions": {"payments": [], "refunds": []},
     }
+    for product in catalog:
+        result["products"].append({"id": provider_id("prod", product["id"]), "name": product["name"],
+            "description": product.get("summary", product["name"]), "worldfixture_product_id": product["id"]})
+        result["prices"].append({"id": provider_id("price", product["id"]), "product_name": product["name"],
+            "currency": _finance_currency(product, finance["currency"]).lower(), "unit_amount": product["price_cents"],
+            "worldfixture_product_id": product["id"]})
+    invoice_ids = {}
+    for invoice in finance["resolved"]["invoices"]:
+        invoice_ids[invoice["id"]] = provider_id("in", invoice["id"])
+        metadata = {"worldfixture_invoice_id": invoice["id"], "worldfixture_status": invoice["status"]}
+        if "order_id" in invoice:
+            metadata["worldfixture_order_id"] = invoice["order_id"]
+        result["invoices"].append({"id": invoice_ids[invoice["id"]], "number": invoice["number"],
+            "customer": customer_ids[invoice["customer_id"]], "description": invoice["description"],
+            "currency": invoice["currency"].lower(), "status": "open" if invoice["status"] == "overdue" else invoice["status"],
+            "created": seconds(invoice["issued_on"]), "due_date": seconds(invoice["due_on"]),
+            "amount_due": invoice["amount_cents"], "metadata": metadata})
+    payment_ids = {}
+    for payment in finance["resolved"]["payments"]:
+        payment_ids[payment["id"]] = provider_id("pi", payment["id"])
+        metadata = {"worldfixture_payment_id": payment["id"], "worldfixture_customer_id": payment["customer_id"]}
+        for name in ("invoice_id", "order_id"):
+            if name in payment:
+                metadata[f"worldfixture_{name}"] = payment[name]
+        row = {"id": payment_ids[payment["id"]], "charge": provider_id("ch", payment["id"]),
+            "customer": customer_ids[payment["customer_id"]], "amount": payment["amount_cents"],
+            "currency": payment["currency"].lower(), "created": seconds(payment["paid_on"]), "metadata": metadata}
+        if "invoice_id" in payment:
+            row.update(invoice=invoice_ids[payment["invoice_id"]], invoice_payment=provider_id("inpay", payment["id"]))
+        result["transactions"]["payments"].append(row)
+    for refund in finance["resolved"]["refunds"]:
+        result["transactions"]["refunds"].append({"id": provider_id("re", refund["id"]),
+            "payment_intent": payment_ids[refund["payment_id"]], "amount": refund["amount_cents"],
+            "currency": refund["currency"].lower(), "created": seconds(refund["refunded_on"]),
+            "metadata": {"worldfixture_refund_id": refund["id"], "worldfixture_payment_id": refund["payment_id"]}})
+    return result
+
 
 
 def _web_repository(world: dict[str, Any]) -> dict[str, Any]:
@@ -1846,7 +2167,7 @@ def _vercel_projection(world: dict[str, Any]) -> dict[str, Any] | None:
     main_org = next(organization for organization in world["organizations"] if organization.get("primary"))
     primary = next(person for person in world["people"] if person.get("primary"))
     web = _web_repository(world)
-    if web is None:
+    if web is None and "vercel" not in world.get("software", {}).get("oauth_clients", {}):
         return None
     return {
         "users": [
@@ -1864,7 +2185,7 @@ def _vercel_projection(world: dict[str, Any]) -> dict[str, Any] | None:
                 "worldfixture_organization_id": main_org["id"],
             }
         ],
-        "projects": [
+        "projects": [] if web is None else [
             {
                 "name": web["name"],
                 "team": main_org["slug"],
@@ -1967,22 +2288,28 @@ def _agent_projection(world: dict[str, Any], finance: dict[str, list[dict[str, A
 def _arrival_projection(world: dict[str, Any]) -> list[dict[str, Any]]:
     people, _ = _person_maps(world)
     arrivals = []
-    for event in world["timeline"]:
+    for event in world.get("timeline", []):
         if event["kind"] != "incoming-email":
             continue
         payload = event["payload"]
+        if payload.get("via", "smtp") != "gmail":
+            continue
         sender = people[payload["from_id"]]
         recipient = people[payload["to_id"]]
         arrivals.append(
             {
                 "after_seconds": event["after_seconds"],
+                "via": "gmail",
+                "worldfixture_owner_id": recipient["id"],
+                "user": recipient["email"],
+                "token_ref": f"google_token_{recipient['id']}",
                 "message": {
                     "id": event["id"],
                     "thread_id": payload.get("thread_id", f"thread-{event['id']}"),
                     "from": f"{sender['name']} <{sender['email']}>",
                     "to": recipient["email"],
                     "subject": payload["subject"],
-                    "snippet": payload["snippet"],
+                    "snippet": payload.get("snippet", payload["body_text"][:160]),
                     "body_text": payload["body_text"],
                     "label_ids": payload.get("labels", ["INBOX", "UNREAD"]),
                 },
@@ -2154,273 +2481,6 @@ def _http_targets_from_site(
     }
 
 
-def _http_targets_projection(
-    world: dict[str, Any], finance: dict[str, list[dict[str, Any]]]
-) -> dict[str, Any]:
-    """Build planted HTTP targets from the same reviewed company story.
-
-    TWO PATHS, AND WHY BOTH EXIST. A world may declare a `site` block, in which
-    case the pages, feed items, probes and metrics come from the world -- which
-    is where they belong, and what lets a second world have a different site
-    without editing this file.
-
-    A world that declares none keeps the path below. That path reads one world's
-    story ids, one world's invoice number and one world's arrival ids, and it
-    cannot serve any other world. It is kept, unchanged, for exactly one reason:
-    `business.saas-company:v2` is the parity fixture, and its artifact bytes are
-    the evidence that this extraction reproduces the original world. Rewriting
-    the code that produces those bytes would destroy the evidence in order to
-    tidy the code. New worlds declare a `site`; v2 does not, and stays byte-identical.
-    """
-    site = world.get("site")
-    if site is not None:
-        return _http_targets_from_site(world, finance, site)
-
-    organization = next(item for item in world["organizations"] if item.get("primary"))
-    stories = {item["id"]: item for item in world["stories"]}
-    support_cases = world["support"]["cases"]
-    # Every id below belongs to the reviewed v2 world. A world that declares no
-    # `site` and is not that world used to die here on a bare `KeyError:
-    # 'story-lumen-renewal'` or a bare `StopIteration` -- an unhandled Python
-    # exception raised from a projection, which the CLI does not catch, for world
-    # data the schema allows. The reader of that traceback had no way to know the
-    # answer was to declare a `site`. Naming that is free: the bytes below are
-    # unchanged for the one world that reaches them.
-    try:
-        release_issues = [
-            issue
-            for repository in world["software"]["repositories"]
-            for issue in repository["issues"]
-            if "release-2.8" in issue["labels"] and issue["state"] == "open"
-        ]
-        invoice = next(item for item in finance["invoices"] if item["id"] == "inv-4471")
-        lumen = stories["story-lumen-renewal"]
-        release = stories["story-release-28"]
-        onboarding = stories["story-theo-onboarding"]
-        timeline = {item["id"]: item for item in world["timeline"]}
-        priya_arrival = timeline["arrival-priya-sample-result"]
-        lucas_arrival = timeline["arrival-lucas-load-test"]
-        payment_arrival = timeline["arrival-lumen-payment"]
-    except (KeyError, StopIteration) as error:
-        raise WorldError(
-            f"world {world['id']}:{world['version']} declares no `site`, and the fallback HTTP "
-            f"targets are built from records only `business.saas-company:v2` has "
-            f"({error!r} is missing). Declare a `site` block to serve this world's own pages, "
-            "feed, probes and metrics."
-        ) from error
-    priya_update = priya_arrival["payload"]
-    lucas_update = lucas_arrival["payload"]
-
-    api_responses = {
-        "/api/v1/company": {
-            "id": organization["id"],
-            "name": organization["name"],
-            "summary": organization["summary"],
-            "synthetic": True,
-        },
-        "/api/v1/stories": {
-            "items": copy.deepcopy(world["stories"]),
-            "count": len(world["stories"]),
-        },
-        "/api/v1/status": {
-            "status": "degraded",
-            "incident": "Scheduled exports above 50,000 rows can exceed the worker limit.",
-            "workaround": "Use an interactive retry while cancellation testing continues.",
-            "issue": 318,
-        },
-    }
-    summaries = {
-        "/api/v1/company": "Get the synthetic company",
-        "/api/v1/stories": "List active company stories",
-        "/api/v1/status": "Get the current service status",
-    }
-    openapi_paths = {
-        path: {
-            "get": {
-                "summary": summaries[path],
-                "responses": {
-                    "200": {
-                        "description": "Successful response",
-                        "content": {"application/json": {"example": copy.deepcopy(response)}},
-                    }
-                },
-            }
-        }
-        for path, response in api_responses.items()
-    }
-
-    return {
-        "api_version": "worldfixture.http-targets/v1",
-        "world_id": world["id"],
-        "world_version": world["version"],
-        "synthetic_notice": world["synthetic_notice"],
-        "organization": {
-            "id": organization["id"],
-            "name": organization["name"],
-            "summary": organization["summary"],
-        },
-        "feeds": [
-            {
-                "path": "/feeds/company.xml",
-                "title": f"{organization['name']} operating notes",
-                "description": "Release, customer, and company updates from the synthetic Northstar world.",
-                "items": [
-                    {
-                        "id": "feed-release-28",
-                        "path": "/notes/release-2-8",
-                        "title": release["title"],
-                        "summary": release["summary"],
-                        "published_at": "2026-08-21T08:15:00Z",
-                    },
-                    {
-                        "id": "feed-lumen-export",
-                        "path": "/notes/lumen-export",
-                        "title": lumen["title"],
-                        "summary": lumen["summary"],
-                        "published_at": "2026-08-20T14:30:00Z",
-                    },
-                    {
-                        "id": "feed-theo-onboarding",
-                        "path": "/notes/theo-onboarding",
-                        "title": onboarding["title"],
-                        "summary": onboarding["summary"],
-                        "published_at": "2026-08-19T15:42:00Z",
-                    },
-                    {
-                        "id": "feed-arrival-priya-sample-result",
-                        "path": "/notes/lumen-export",
-                        "title": "A fresh Lumen sample confirms the scheduled-path boundary",
-                        "summary": priya_update["snippet"],
-                        "published_at": "2026-08-22T07:30:10Z",
-                        "available_after_seconds": priya_arrival["after_seconds"],
-                    },
-                    {
-                        "id": "feed-arrival-lucas-load-test",
-                        "path": "/notes/release-2-8",
-                        "title": "Cancellation cleanup still blocks release 2.8",
-                        "summary": lucas_update["text"],
-                        "published_at": "2026-08-22T07:30:20Z",
-                        "available_after_seconds": lucas_arrival["after_seconds"],
-                    },
-                    {
-                        "id": "feed-arrival-lumen-payment",
-                        "path": "/notes/lumen-export",
-                        "title": "Lumen invoice 4471 is paid",
-                        "summary": "A synthetic payment event closed the open August invoice while the export incident remains active.",
-                        "published_at": "2026-08-22T07:30:30Z",
-                        "available_after_seconds": payment_arrival["after_seconds"],
-                    },
-                ],
-            }
-        ],
-        "pages": [
-            {
-                "path": "/",
-                "title": organization["name"],
-                "heading": "Operational data exports with an audit trail",
-                "summary": organization["summary"],
-                "sections": [
-                    {"heading": "Current work", "body": release["summary"]},
-                    {"heading": "Customer focus", "body": lumen["summary"]},
-                ],
-            },
-            {
-                "path": "/notes/release-2-8",
-                "title": release["title"],
-                "heading": "Release 2.8 readiness",
-                "summary": release["summary"],
-                "sections": [
-                    {
-                        "heading": "Exit criteria",
-                        "body": "Run the 50k, 75k, and cancelled-job cases before merge.",
-                    }
-                ],
-            },
-            {
-                "path": "/notes/lumen-export",
-                "title": lumen["title"],
-                "heading": "Scheduled export incident",
-                "summary": lumen["summary"],
-                "sections": [
-                    {
-                        "heading": "Billing context",
-                        "body": f"Invoice {invoice['number']} is open for {_money(invoice['amount_cents'])} {invoice['currency']} and is not overdue.",
-                    }
-                ],
-                "request_variants": [
-                    "The scheduled path still uses the legacy two-minute worker limit.",
-                    "The timeout source is isolated. The 75k and cancellation tests are still pending.",
-                ],
-            },
-            {
-                "path": "/notes/theo-onboarding",
-                "title": onboarding["title"],
-                "heading": "Theo's first week",
-                "summary": onboarding["summary"],
-                "sections": [
-                    {"heading": "Open item", "body": "Staging access still needs an owner."}
-                ],
-            },
-        ],
-        "probes": [
-            {
-                "path": "/health/api",
-                "name": "Public API",
-                "mode": "stable",
-                "statuses": [200],
-                "body": "ok",
-            },
-            {
-                "path": "/health/export-worker",
-                "name": "Scheduled export worker",
-                "mode": "failing",
-                "statuses": [503],
-                "body": "degraded: scheduled exports above 50,000 rows can time out",
-            },
-            {
-                "path": "/health/webhook-delivery",
-                "name": "Webhook delivery",
-                "mode": "flapping",
-                "statuses": [200, 200, 503, 200],
-                "body": "request-sequenced synthetic health",
-            },
-        ],
-        "metrics": [
-            {
-                "name": "northstar_support_cases_open",
-                "help": "Open support cases in the synthetic Northstar world.",
-                "type": "gauge",
-                "value": len(support_cases),
-            },
-            {
-                "name": "northstar_release_blockers",
-                "help": "Open issues that block release 2.8.",
-                "type": "gauge",
-                "value": len(release_issues),
-            },
-            {
-                "name": "northstar_lumen_invoice_cents",
-                "help": "Open Lumen invoice value in cents.",
-                "type": "gauge",
-                "value": invoice["amount_cents"],
-            },
-        ],
-        "api": {
-            "openapi_path": "/openapi.json",
-            "responses": api_responses,
-            "document": {
-                "openapi": "3.0.3",
-                "info": {
-                    "title": f"{organization['name']} synthetic operations API",
-                    "version": "1.0.0",
-                    "description": world["synthetic_notice"],
-                },
-                "paths": openapi_paths,
-            },
-        },
-    }
-
-
 def _canonical_packs(
     world: dict[str, Any],
     finance: dict[str, list[dict[str, Any]]],
@@ -2464,7 +2524,7 @@ def _canonical_packs(
         "work": copy.deepcopy(world.get("work", {"projects": [], "tasks": [], "time_entries": []})),
     }
     for name in ("commerce", "social"):
-        if world.get(name):
+        if name in world:
             packs[name] = copy.deepcopy(world[name])
     return packs
 
@@ -2541,10 +2601,10 @@ def _emulator_slack_channels(slack: dict[str, Any]) -> list[dict[str, Any]]:
 # source. `_canonical_packs` projects exactly these.
 PACK_SOURCES: dict[str, list[tuple[str, ...]]] = {
     "identity": [("organizations",), ("people",)],
-    "communication": [("communication", "channels"), ("communication", "mail"),
+    "communication": [("communication", "channels"), ("communication", "mail"), ("communication", "mailboxes"),
                       ("communication", "documents"), ("communication", "calendars"),
                       ("communication", "calendar_events")],
-    "finance": [("finance", "customers"), ("finance", "suppliers"), ("finance", "anchor_invoices")],
+    "finance": [("finance", "customers"), ("finance", "suppliers"), ("finance", "anchor_invoices"), ("finance", "payments"), ("finance", "refunds")],
     "software": [("software", "repositories")],
     "support": [("support", "cases")],
     "work": [("work", "projects"), ("work", "tasks"), ("work", "time_entries")],
@@ -2637,6 +2697,25 @@ def prune_world(source: dict[str, Any], keep: set[str]) -> dict[str, Any]:
         if all(item.get("product_id") in products for item in order.get("items", []))
     ]
     orders = {item["id"] for item in commerce.get("orders", [])}
+
+    # An invoice remains a financial record without its optional order link.
+    # Only an order-only payment loses its required origin with the order.
+    finance = world.get("finance", {})
+    for invoice in finance.get("anchor_invoices", []):
+        if invoice.get("order_id") not in orders:
+            invoice.pop("order_id", None)
+    if "payments" in finance:
+        removed_payments = {row["id"] for row in finance["payments"]
+                            if "order_id" in row and row["order_id"] not in orders and "invoice_id" not in row}
+        finance["payments"] = [row for row in finance["payments"] if row["id"] not in removed_payments]
+        for payment in finance["payments"]:
+            if payment.get("order_id") not in orders:
+                payment.pop("order_id", None)
+        if "refunds" in finance:
+            finance["refunds"] = [row for row in finance["refunds"] if row["payment_id"] not in removed_payments]
+    if "finance" in dropped:
+        for order in commerce.get("orders", []):
+            order.pop("payment_status", None)
     social = world.get("social", {})
     social["reviews"] = [
         review for review in social.get("reviews", []) if review.get("product_id") in products
@@ -2730,44 +2809,95 @@ def prune_world(source: dict[str, Any], keep: set[str]) -> dict[str, Any]:
             or reference.get("entity_id") in present
         ]
 
+    # Keep only canonical references that survive the selected source closure.
+    surviving_ids = set()
+    def index_selected(value):
+        if isinstance(value, dict):
+            if isinstance(value.get("id"), str):
+                surviving_ids.add(value["id"])
+            for child in value.values():
+                index_selected(child)
+        elif isinstance(value, list):
+            for child in value:
+                index_selected(child)
+    index_selected(world)
+    def prune_metadata(value):
+        if isinstance(value, dict):
+            for field in ("support_case_id", "repository_id", "issue_id", "document_id", "story_id"):
+                if field in value and value[field] not in surviving_ids:
+                    value.pop(field)
+            references = value.get("entity_refs")
+            if isinstance(references, list):
+                value["entity_refs"] = [item for item in references if item in surviving_ids]
+            elif isinstance(references, dict):
+                value["entity_refs"] = {key: item for key, item in references.items() if isinstance(item, str) and item in surviving_ids}
+            for child in value.values():
+                prune_metadata(child)
+        elif isinstance(value, list):
+            for child in value:
+                prune_metadata(child)
+    prune_metadata(world)
+    if isinstance(world.get("agentic", {}).get("grounding"), list):
+        world["agentic"]["grounding"] = [row for row in world["agentic"]["grounding"] if "entity_id" not in row or row["entity_id"] in surviving_ids]
     validate_world(world)
     return world
 
 
-def packs_for_services(manifests: list[dict[str, Any]]) -> set[str]:
-    """The world domains a set of services needs, from what they declare.
-
-    This is the point of `world.requires`. A service names the collections it
-    reads as `<pack>.<collection>.v1`, so the domain is the prefix, and the
-    domains a run needs are the union across the services it starts. Nobody has
-    to name a pack by hand, and nobody has to know that seeding a mailbox also
-    needs the finance records because invoice mail is delivered into it.
-
-    `identity` is always included: every other domain names people and
-    organizations, and the profile refuses a world without them.
-    """
-    packs = set(REQUIRED_PACKS)
-    for manifest in manifests:
-        for requirement in manifest.get("world", {}).get("requires", []):
-            pack = str(requirement).split(".")[0]
-            if pack in PACK_SOURCES:
-                packs.add(pack)
-    return packs
-
-
 def compile_world(source: dict[str, Any]) -> dict[str, Any]:
-    """Compile one world into packs and projections for its declared profile.
+    """Compile each declared canonical section and its applicable adapters."""
+    from .sections import compile_sections, domain_projection, legacy_business_shape, provider_world
 
-    A world without a profile compiles to its records and timeline only. That is
-    the minimal world in the system design: data with no service projection and
-    no driver.
-    """
     validate_world(source)
-    profile = source.get("profile")
-    if profile is None:
-        world = copy.deepcopy(source)
-        return {"world": world, "timeline": copy.deepcopy(world.get("timeline", [])), "packs": {}, "projections": {}}
-    return PROFILES[profile]["compile"](source)
+    if not legacy_business_shape(source):
+        return compile_sections(source)
+    view = provider_world(source)
+    view["software"].setdefault("repositories", [])
+    view["work"].setdefault("time_entries", [])
+    compiled = _compile_business_operations(view)
+    # Native identity defaults belong only in provider projections.
+    for name in ("people", "organizations"):
+        compiled["world"][name] = copy.deepcopy(source[name])
+        compiled["packs"]["identity"][name] = copy.deepcopy(source[name])
+    for section, field in (("software", "repositories"), ("work", "time_entries")):
+        if field not in source[section]:
+            compiled["world"][section].pop(field, None)
+            compiled["packs"][section].pop(field, None)
+    projections = compiled["projections"]
+    overlay = projections["emulator-overlay"]
+    software = source.get("software", {})
+    communication = source.get("communication", {})
+    clients = source.get("software", {}).get("oauth_clients", {})
+    if not clients.get("apple"):
+        projections.pop("apple", None)
+        overlay.pop("apple", None)
+        overlay["tokens"].pop("apple_token", None)
+    if "repositories" not in software:
+        for provider in ("github", "vercel"):
+            if provider not in clients:
+                projections.pop(provider, None)
+                overlay.pop(provider, None)
+                overlay["tokens"].pop(f"{provider}_token", None)
+    if "bots" not in communication:
+        projections["slack"].pop("bots", None)
+        overlay["slack"].pop("bots", None)
+    if "queues" not in software:
+        projections["aws"].pop("sqs", None)
+        overlay["aws"].pop("sqs", None)
+    if "service_roles" not in software:
+        projections["aws"]["iam"].pop("roles", None)
+        overlay["aws"]["iam"].pop("roles", None)
+    if not {"operator_ids", "operator_teams"}.intersection(software):
+        projections["aws"]["iam"].pop("users", None)
+        overlay["aws"]["iam"].pop("users", None)
+        if "service_roles" not in software:
+            projections["aws"].pop("iam", None)
+            overlay["aws"].pop("iam", None)
+    for source_field, projection_field in (("calendars", "calendars"), ("calendar_events", "calendar_events"), ("documents", "drive_items")):
+        if source_field not in communication:
+            projections["google"].pop(projection_field, None)
+            overlay["google"].pop(projection_field, None)
+    compiled["projections"]["domain"] = domain_projection(compiled["world"], compiled["packs"])
+    return compiled
 
 
 def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
@@ -2785,8 +2915,8 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
     apple = _apple_projection(world)
     aws = _aws_projection(world)
     resend = _resend_projection(world)
-    mongoatlas = _mongoatlas_projection(world)
-    twilio = _twilio_projection(world)
+    mongoatlas = _mongoatlas_projection(world) if "database" in world["software"] else None
+    twilio = copy.deepcopy(world["communication"].get("twilio"))
     slack = _slack_projection(world)
     github = _github_projection(world)
     clerk = _clerk_projection(world)
@@ -2797,9 +2927,10 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
     mail = _mail_projection(world, resolved_mail)
     model = _model_projection(world, finance)
     agent = _agent_projection(world, finance)
-    http_targets = _http_targets_projection(world, finance)
+    http_targets = _http_targets_from_site(world, finance, world["site"]) if "site" in world else None
     primary = next(person for person in world["people"] if person.get("primary"))
     emulator_google = copy.deepcopy(google)
+    emulator_google["worldfixture_seed_version"] = 1
     for message in emulator_google["messages"]:
         message.pop("worldfixture_entity_refs", None)
     emulator_microsoft = {
@@ -2838,7 +2969,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         "orgs": copy.deepcopy(github["orgs"]),
         "repos": [
             {
-                **{key: copy.deepcopy(repository[key]) for key in ("owner", "name", "description", "language", "topics", "auto_init")},
+                **{key: copy.deepcopy(repository[key]) for key in ("owner", "name", "description", "language", "topics", "auto_init", "collaborators")},
                 # `GitHubSeedConfig` has no issues field, so the composer inserts
                 # these through the emulator's public store after seeding. The world
                 # points at one of them by number from Slack, so a repository that
@@ -2851,6 +2982,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
                         "state": issue["state"],
                         "author": issue["author"],
                         "assignees": [issue["assignee"]] if issue.get("assignee") else [],
+                        **({"labels": copy.deepcopy(issue["labels"])} if "labels" in issue else {}),
                     }
                     for issue in repository.get("issues", [])
                 ],
@@ -2883,6 +3015,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         "groups": copy.deepcopy(okta["groups"]),
     }
     emulator_linear = {
+        "worldfixture_seed_version": 1,
         "organization": copy.deepcopy(linear["organization"]),
         "users": [
             {key: copy.deepcopy(user[key]) for key in ("email", "name", "admin")}
@@ -2891,7 +3024,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         "teams": copy.deepcopy(linear["teams"]),
         "labels": copy.deepcopy(linear["labels"]),
         "issues": [
-            {key: copy.deepcopy(issue[key]) for key in ("team", "title", "description", "state", "assignee", "labels")}
+            {key: copy.deepcopy(issue[key]) for key in ("team", "title", "description", "state", "assignee", "labels", "worldfixture_task_id", "worldfixture_project_id")}
             for issue in linear["issues"]
         ],
         "strict_scopes": False,
@@ -2912,6 +3045,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         ],
         "subscriptions": copy.deepcopy(stripe["subscriptions"]),
         "invoices": copy.deepcopy(stripe["invoices"]),
+        "transactions": copy.deepcopy(stripe["transactions"]),
     }
     # A world with no software projects no web deployment, so the composer's
     # Vercel vendor is given nothing to seed rather than an invented project.
@@ -2951,12 +3085,12 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         ],
     }
     emulator_mongoatlas = copy.deepcopy(mongoatlas)
-    for project in emulator_mongoatlas["projects"]:
-        project.pop("worldfixture_organization_id", None)
-    for user in emulator_mongoatlas["database_users"]:
-        user.pop("worldfixture_person_id", None)
+    if emulator_mongoatlas is not None:
+        for project in emulator_mongoatlas["projects"]:
+            project.pop("worldfixture_organization_id", None)
+        for user in emulator_mongoatlas["database_users"]:
+            user.pop("worldfixture_person_id", None)
     emulator_twilio = copy.deepcopy(twilio)
-    emulator_twilio["account"].pop("worldfixture_organization_id", None)
     slack_name_by_person = {user["worldfixture_person_id"]: user["name"] for user in slack["users"]}
     primary_slack_name = slack_name_by_person[primary["id"]]
     person_slack_tokens = {
@@ -2967,6 +3101,14 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
     notion_members = {
         user["worldfixture_person_id"]: user
         for user in notion["users"]
+    }
+    google_owner_ids = {user["worldfixture_person_id"] for user in google["users"]}
+    person_google_tokens = {
+        f"google_token_{person['id']}": {
+            "login": person["email"],
+            "scopes": ["openid", "email", "profile", "https://www.googleapis.com/auth/gmail.modify"],
+        }
+        for person in world["people"] if person["id"] in google_owner_ids
     }
     person_notion_tokens = {
         f"notion_token_{person_id}": {
@@ -2979,8 +3121,10 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         "tokens": {
             **person_slack_tokens,
             **person_notion_tokens,
-            "demo_token": {"login": primary["email"], "scopes": ["openid", "email", "profile", "https://www.googleapis.com/auth/gmail.modify"]},
-            "microsoft_token": {"login": primary["email"], "scopes": ["openid", "email", "profile", "User.Read"]},
+            **person_google_tokens,
+            **({"demo_token": {"login": primary["email"], "scopes": ["openid", "email", "profile", "https://www.googleapis.com/auth/gmail.modify"]}}
+               if primary["id"] in google_owner_ids else {}),
+            "microsoft_token": {"login": primary["email"], "scopes": ["openid", "email", "profile", "User.Read", "User.ReadBasic.All"]},
             "notion_token": {"login": primary["email"], "scopes": ["read:user", "read:content", "write:content", "read:comment", "insert:comment", "interact:agents"]},
             "notion_admin_token": {
                 "login": primary["email"],
@@ -2997,7 +3141,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
             "clerk_token": {"login": primary["email"], "scopes": []},
             "github_token": {"login": primary["github_login"], "scopes": ["repo", "user", "admin:org"]},
             "linear_token": {"login": primary["email"], "scopes": []},
-            "mongoatlas_token": {"login": primary["github_login"], "scopes": []},
+            **({"mongoatlas_token": {"login": primary["github_login"], "scopes": []}} if mongoatlas is not None else {}),
             "okta_token": {"login": primary["email"], "scopes": ["openid", "profile", "email", "groups"]},
             "resend_token": {"login": "re_test_admin", "scopes": []},
             # The Slack emulator resolves a token by its own user id or user name.
@@ -3006,7 +3150,7 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
             # person instead, which the emulator matches and the world owns.
             "slack_token": {"login": primary_slack_name, "scopes": []},
             "stripe_token": {"login": "sk_test_admin", "scopes": []},
-            "twilio_token": {"login": twilio["account"]["sid"], "scopes": []},
+            **({"twilio_token": {"login": twilio["account"]["sid"], "scopes": []}} if twilio and twilio.get("account", {}).get("sid") else {}),
             "vercel_token": {"login": primary["github_login"], "scopes": []},
         },
         "microsoft": emulator_microsoft,
@@ -3014,8 +3158,8 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         "apple": emulator_apple,
         "aws": emulator_aws,
         "resend": emulator_resend,
-        "mongoatlas": emulator_mongoatlas,
-        "twilio": emulator_twilio,
+        **({"mongoatlas": emulator_mongoatlas} if mongoatlas is not None else {}),
+        **({"twilio": emulator_twilio} if twilio is not None else {}),
         "clerk": emulator_clerk,
         "google": emulator_google,
         "slack": emulator_slack,
@@ -3026,6 +3170,8 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
         "vercel": emulator_vercel,
         "worldfixture": {"arrivals": _arrival_projection(world)},
     }
+    for provider, clients in oauth_projection(world).items():
+        overlay[provider].update(clients)
     return {
         "world": world,
         "timeline": copy.deepcopy(world["timeline"]),
@@ -3037,8 +3183,8 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
             "apple": apple,
             "aws": aws,
             "resend": resend,
-            "mongoatlas": mongoatlas,
-            "twilio": twilio,
+            **({"mongoatlas": mongoatlas} if mongoatlas is not None else {}),
+            **({"twilio": twilio} if twilio is not None else {}),
             "slack": slack,
             "github": github,
             "clerk": clerk,
@@ -3046,11 +3192,6 @@ def _compile_business_operations(source: dict[str, Any]) -> dict[str, Any]:
             "okta": okta,
             "stripe": stripe,
             "vercel": vercel,
-            # `aws`, `resend`, `mongoatlas` and `twilio` were each listed a
-            # second time here. Python keeps the last value for a repeated key,
-            # so the duplicates were invisible while both entries named the same
-            # variable, and the next edit to one of the first four would have
-            # been silently discarded by the copy below it.
             "mail": mail,
             "model": model,
             "agent": agent,
@@ -3066,6 +3207,59 @@ PROFILES: dict[str, dict[str, Any]] = {
         "compile": _compile_business_operations,
     },
 }
+
+
+def _replace_artifact_directory(output: Path, files: dict[str, bytes]) -> None:
+    """Publish a complete generation; keep the prior artifact if staging fails."""
+    if output.is_symlink() or output.exists() and not output.is_dir():
+        raise WorldError(f"Artifact output must be a directory, not a file or symlink: {output}")
+    if output.exists() and any(output.iterdir()):
+        try:
+            previous = json.loads((output / "manifest.json").read_text())
+        except (OSError, ValueError) as error:
+            raise WorldError(f"Refusing to replace non-artifact output directory: {output}") from error
+        if not isinstance(previous, dict) or previous.get("api_version") != "worldfixture.world-artifact/v1":
+            raise WorldError(f"Refusing to replace non-artifact output directory: {output}")
+        # Rebuilding may remove obsolete generated JSON, including files left by
+        # older compiler versions. It must not delete unrelated user files.
+        for path in output.rglob("*"):
+            relative = path.relative_to(output)
+            generated = (relative.as_posix() in {"manifest.json", "world.json", "timeline.json"}
+                         or len(relative.parts) == 2 and relative.parts[0] in {"packs", "projections"}
+                         and path.suffix == ".json")
+            if path.is_symlink() or (not path.is_dir() and not generated):
+                raise WorldError(f"Refusing to remove unrelated artifact output entry: {path}")
+            if path.is_dir() and relative.as_posix() not in {"packs", "projections"}:
+                raise WorldError(f"Refusing to remove unrelated artifact output directory: {path}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    workspace = Path(tempfile.mkdtemp(prefix=f".{output.name}-build-", dir=output.parent))
+    backup = workspace / "previous"
+    try:
+        staged = workspace / "artifact"
+        staged.mkdir()
+        for name, data in files.items():
+            target = staged / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        existed = output.exists()
+        if existed:
+            output.rename(backup)
+        try:
+            staged.rename(output)
+        except OSError:
+            if existed:
+                try:
+                    backup.rename(output)
+                except OSError as error:
+                    raise WorldError(f"Artifact replacement and rollback failed; previous artifact retained at {backup}") from error
+            raise
+        if existed:
+            shutil.rmtree(backup)
+    finally:
+        # A failed rollback must not erase the only surviving prior artifact.
+        # Leave that backup at its named path for recovery.
+        if not backup.exists():
+            shutil.rmtree(workspace)
 
 
 def _build_world(source: dict[str, Any], source_provenance: dict[str, Any], output: Path) -> dict[str, Any]:
@@ -3104,10 +3298,7 @@ def _build_world(source: dict[str, Any], source_provenance: dict[str, Any], outp
     }
     files["manifest.json"] = canonical_json(manifest)
 
-    for name, data in files.items():
-        target = output / name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(data)
+    _replace_artifact_directory(output, files)
     return manifest
 
 

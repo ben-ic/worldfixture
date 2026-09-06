@@ -15,6 +15,10 @@ history and membership data from the selected world.
 “Partial” has a specific meaning here: only the methods in the next table are
 registered. Slack has many other APIs, and WorldFixture does not implement them.
 
+OAuth applications must be [declared in world source](../guides/worlds.md#declare-oauth-clients).
+The local flow checks the declared client, exact callback URL, and selected
+world user. Undeclared sample clients are rejected.
+
 ## What works
 
 You can read and write messages, channels, DMs, users, files, reactions, pins,

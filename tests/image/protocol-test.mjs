@@ -1,3 +1,6 @@
+import { s3Fetch } from "../../runtime/src/s3-signing.mjs";
+import { probe } from "../../runtime/src/readiness.mjs";
+import { SINGLE_CONTAINER_PORTS } from "../../runtime/src/ports.mjs";
 // The all-in-one image gate, through real protocols and real processes.
 //
 // Build `worldfixture:local` first. This test starts exactly one WorldFixture
@@ -18,7 +21,9 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const run = promisify(execFile);
 const image = process.env.WORLDFIXTURE_IMAGE ?? "worldfixture:local";
 const container = process.env.TEST_CONTAINER_NAME ?? `worldfixture-image-protocol-${process.pid}`;
-const providerPorts = [4701, 4702, 4703, 4704, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4713, 4714];
+const providerPorts = Object.entries(SINGLE_CONTAINER_PORTS)
+  .filter(([key]) => key.startsWith('emulate/') || key.startsWith('domain/'))
+  .map(([, port]) => port);
 const ports = [...providerPorts, 8080, 2525, 1143, 61006];
 const hostPorts = new Map();
 
@@ -107,6 +112,9 @@ try {
     child.once("exit", (code) => reject(new Error(`image exited ${code}:\n${output}`)));
   });
 
+  const lock = JSON.parse((await docker(['exec', container, 'cat', '/state/environment.lock.json'])).stdout);
+  await docker(['exec', container, 'node', 'runtime/bin/worldfixture.mjs', 'clock', 'pause', '--state', '/state']);
+
   const mappings = JSON.parse((await docker(["inspect", container, "--format", "{{json .NetworkSettings.Ports}}"])).stdout);
   for (const port of ports) hostPorts.set(port, Number(mappings[`${port}/tcp`][0].HostPort));
 
@@ -121,25 +129,19 @@ try {
   const github = await fetch("http://127.0.0.1:4704/meta");
   assert.equal(github.status, 200);
 
-  // Each published composer listener is checked from the host. These repeat
-  // the service-owned readiness checks at the product boundary and compare a
-  // response body, so the composer's generic JSON 404 cannot pass the gate.
-  for (const [port, path, expected] of [
-    [4701, "/v1/customers", '"type":"authentication_error"'],
-    [4702, "/v2/user", "not_authenticated"],
-    [4705, "/.well-known/openid-configuration", "authorization_endpoint"],
-    [4706, "/v1.0/me", "InvalidAuthenticationToken"],
-    [4707, "/api/atlas/v2/groups", '"errorCode":"UNAUTHORIZED"'],
-    [4708, "/api/v1/users", "E0000004"],
-    [4709, "/domains", '"name":"authentication_error"'],
-    [4710, "/auth/keys", '"keys"'],
-    [4712, "/v1/users", "UNAUTHORIZED"],
-    [4713, "/graphql", "UNAUTHENTICATED"],
-    [4714, "/2010-04-01/Accounts.json", "20003"],
-  ]) {
-    const response = await fetch(`http://127.0.0.1:${port}${path}`);
-    assert.match(await response.text(), new RegExp(expected), `${port}${path}`);
+  // Check every selected provider's declared HTTP contract from the host.
+  // Absent source sections do not create listeners for sample providers.
+  const checkedProviders = new Set();
+  for (const service of lock.services.filter(row => ['emulate', 'domain'].includes(row.name))) {
+    for (const check of service.readiness.filter(row => row.protocol === 'http')) {
+      const internal = SINGLE_CONTAINER_PORTS[`${service.name}/${check.port}`];
+      assert.ok(hostPorts.has(internal), `No published check port for ${service.name}/${check.port}`);
+      const result = await probe(check, { host: '127.0.0.1', port: hostPorts.get(internal) });
+      assert.equal(result.ok, true, `${service.name}/${check.port}: ${result.detail}`);
+      checkedProviders.add(`${service.name}/${check.port}`);
+    }
   }
+  console.log(`Checked ${checkedProviders.size} selected provider HTTP surfaces`);
 
   const site = await fetch("http://127.0.0.1:8080/readyz");
   assert.equal(site.status, 200);
@@ -166,32 +168,26 @@ try {
     buckets: aws.s3.buckets.length,
     objects: aws.s3.objects.length,
   });
-  const list = await fetch("http://127.0.0.1:61006/");
+  const s3Credentials = JSON.parse((await docker(["exec", container, "cat", "/state/bindings.json"])).stdout);
+  const list = await s3Fetch(`http://127.0.0.1:${hostPorts.get(61006)}/`, {}, s3Credentials);
   assert.equal(list.status, 200);
   assert.match(await list.text(), /ListAllMyBucketsResult/);
 
   const status = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "status", "--state", "/state", "--verbose",
   ]);
-  for (const service of ["emulate", "http-targets", "mail", "s3"]) {
+  for (const { name: service } of lock.services) {
     assert.match(status.stdout, new RegExp(`^${service}\\s+ready`, "m"));
   }
-  assert.match(status.stdout, /emulate\/aws stays shut/);
-
-  await docker([
-    "exec", container, "node", "-e",
-    "fetch('http://127.0.0.1:4711/').then(()=>process.exit(1),e=>process.exit(e.cause?.code==='ECONNREFUSED'?0:2))",
-  ]);
+  const awsReady = await fetch("http://127.0.0.1:4711/iam/?Action=ListUsers", { method: "POST" });
+  assert.equal(awsReady.status, 403);
+  assert.match(await awsReady.text(), /InvalidClientTokenId/);
 
   const environment = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "env", "--state", "/state",
   ]);
-  for (const name of [
-    "APPLE", "CLERK", "GITHUB", "GOOGLE", "LINEAR", "MICROSOFT", "MONGOATLAS",
-    "OKTA", "RESEND", "SLACK", "STRIPE", "TWILIO", "VERCEL",
-  ]) {
-    assert.match(environment.stdout, new RegExp(`^export ${name}_BASE_URL=`, "m"), name);
-    assert.match(environment.stdout, new RegExp(`^export ${name}_TOKEN=`, "m"), name);
+  for (const name of Object.keys(lock.bindings)) {
+    assert.match(environment.stdout, new RegExp(`^export ${name}=`, 'm'), name);
   }
   const googleToken = /^export GOOGLE_TOKEN='([^']+)'$/m.exec(environment.stdout)?.[1];
   assert.ok(googleToken);
@@ -220,27 +216,29 @@ try {
   const changingUrl = `http://127.0.0.1:8080${changing.path}`;
   const initialPage = await fetch(changingUrl).then((response) => response.text());
   const initialJwks = await fetch("http://127.0.0.1:4705/oauth2/v3/certs").then((response) => response.text());
-  const objectUrl = "http://127.0.0.1:61006/northstar-relay-documents/?list-type=2";
-  const initialObjects = await fetch(objectUrl).then((response) => response.text());
+  const objectUrl = `http://127.0.0.1:${hostPorts.get(61006)}/northstar-relay-documents/?list-type=2`;
+  const initialObjects = await s3Fetch(objectUrl, {}, s3Credentials).then((response) => response.text());
 
   const sent = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "send",
     "--as", "maya-chen", "--channel", "release-3-2", "--state", "/state", "Image gate passed",
   ]);
-  assert.match(sent.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
+  assert.match(sent.stdout, /Queued mail.notification.requested.v1/);
+  await docker(['exec', container, 'node', 'runtime/bin/worldfixture.mjs', 'clock', 'advance', '1s', '--state', '/state']);
   const changedPage = await fetch(changingUrl).then((response) => response.text());
   assert.notEqual(changedPage, initialPage);
-  const put = await fetch(
-    "http://127.0.0.1:61006/northstar-relay-documents/reset-mutation.txt",
+  const put = await s3Fetch(
+    `http://127.0.0.1:${hostPorts.get(61006)}/northstar-relay-documents/reset-mutation.txt`,
     { method: "PUT", body: "reset removes this object\n" },
+    s3Credentials,
   );
   assert.ok(put.ok, `S3 mutation failed with ${put.status}`);
-  assert.notEqual(await fetch(objectUrl).then((response) => response.text()), initialObjects);
+  assert.notEqual(await s3Fetch(objectUrl, {}, s3Credentials).then((response) => response.text()), initialObjects);
 
   const reset = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "reset", "--state", "/state",
   ], { timeout: 180_000 });
-  assert.match(reset.stdout, /World restored exactly across 4 services/);
+  assert.ok(reset.stdout.includes(`World restored exactly across ${lock.services.length} services`));
   const restoredEnvironment = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "env", "--state", "/state",
   ]);
@@ -264,7 +262,7 @@ try {
     await fetch("http://127.0.0.1:4705/oauth2/v3/certs").then((response) => response.text()),
     initialJwks,
   );
-  assert.equal(await fetch(objectUrl).then((response) => response.text()), initialObjects);
+  assert.equal(await s3Fetch(objectUrl, {}, s3Credentials).then((response) => response.text()), initialObjects);
   const restoredSeed = await docker([
     "exec", container, "curl", "-fsS", "http://127.0.0.1:61004/worldfixture/ready",
   ]);
@@ -286,7 +284,8 @@ try {
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "slack", "send",
     "--as", "maya-chen", "--channel", "release-3-2", "--state", "/state", "Image gate passed after reset",
   ]);
-  assert.match(sentAfterReset.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
+  assert.match(sentAfterReset.stdout, /Queued mail.notification.requested.v1/);
+  await docker(['exec', container, 'node', 'runtime/bin/worldfixture.mjs', 'clock', 'advance', '1s', '--state', '/state']);
   const inboxAfterReset = await docker([
     "exec", container, "node", "runtime/bin/worldfixture.mjs", "mail", "inbox",
     "--as", "jon-bell", "--state", "/state",
@@ -296,7 +295,7 @@ try {
   const second = await docker([
     "run", "--rm", "--network", `container:${container}`, "--entrypoint", "node", image,
     "-e",
-    "Promise.all([fetch('http://127.0.0.1:4703/api/auth.test',{method:'POST'}).then(r=>r.json()),fetch('http://127.0.0.1:61006/northstar-relay-documents/?list-type=2').then(r=>r.text())]).then(([slack,s3])=>{if(slack.error!=='not_authed'||!s3.includes('documents/doc-lumen-renewal.md'))process.exit(1)})",
+    "Promise.all([fetch('http://127.0.0.1:4703/api/auth.test',{method:'POST'}).then(r=>r.json()),fetch('http://127.0.0.1:61006/').then(async r=>({status:r.status,body:await r.text()}))]).then(([slack,s3])=>{if(slack.error!=='not_authed'||s3.status!==403||!s3.body.includes('AccessDenied'))process.exit(1)})",
   ]);
   assert.equal(second.stderr, "");
 

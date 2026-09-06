@@ -116,7 +116,32 @@
           "pointer": "/users",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/mail.json",
+            "verified": false
+          },
+          {
+            "file": "world.json",
+            "verified": false
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "fields": [
+              "id",
+              "email"
+            ],
+            "scope": "all"
+          }
+        ]
+      }
     },
     {
       "profile": "mail.imap.v1",
@@ -138,7 +163,32 @@
           "pointer": "/users",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/mail.json",
+            "verified": false
+          },
+          {
+            "file": "world.json",
+            "verified": false
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "fields": [
+              "id",
+              "email"
+            ],
+            "scope": "all"
+          }
+        ]
+      }
     },
     {
       "profile": "mail.lmtp-delivery.v1",
@@ -160,16 +210,36 @@
           "pointer": "/users",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/mail.json",
+            "verified": false
+          },
+          {
+            "file": "world.json",
+            "verified": false
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "fields": [
+              "id",
+              "email"
+            ],
+            "scope": "all"
+          }
+        ]
+      }
     }
   ],
   "world": {
-    "requires": [
-      "identity.people.v1",
-      "identity.organizations.v1",
-      "communication.mail.v1",
-      "finance.invoices.v1"
-    ],
+    "requires": [],
     "projections": [
       {
         "file": "projections/mail.json",

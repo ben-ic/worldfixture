@@ -1,5 +1,9 @@
 #!/bin/sh
 set -eu
+if [ -z "${WORLDFIXTURE_WORLD_PATH:-}" ]; then
+  echo "worldfixture: missing world: WORLDFIXTURE_WORLD_PATH is required" >&2
+  exit 64
+fi
 
 state=/tmp/worldfixture-mysql
 data=$state/data

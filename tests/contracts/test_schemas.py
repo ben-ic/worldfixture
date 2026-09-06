@@ -125,10 +125,9 @@ class SchemaContractTest(unittest.TestCase):
         for key in ("organizations", "people", "finance", "software", "work", "communication"):
             self.assertNotIn(key, schema["required"], key)
 
-        branch = schema["allOf"][0]
-        self.assertEqual("business.operations/v1", branch["if"]["properties"]["profile"]["const"])
-        self.assertIn("organizations", branch["then"]["required"])
-        self.assertIn("people", branch["then"]["required"])
+        self.assertNotIn("allOf", schema)
+        self.assertNotIn("github_login", schema["properties"]["people"]["items"]["required"])
+        self.assertNotIn("slack_id", schema["properties"]["people"]["items"]["required"])
 
     def test_the_service_manifest_schema_refuses_a_mutable_image_reference(self) -> None:
         schema = load_schema("service-manifest")
@@ -185,10 +184,7 @@ class SchemaContractTest(unittest.TestCase):
             schema["properties"]["world"]["properties"]["projection"]["pattern"],
         )
 
-        try:
-            import jsonschema
-        except ImportError:
-            self.skipTest("jsonschema is not installed; structural checks above still ran")
+        import jsonschema
         jsonschema.validate(manifest, schema)
 
 

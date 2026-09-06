@@ -24,7 +24,8 @@ for (const [name, port] of [["TEST_S3_PORT", s3Port], ["TEST_FILER_PORT", filerP
 }
 assert.notEqual(s3Port, filerPort, "the S3 and filer ports must differ");
 
-const image = process.env.WORLDFIXTURE_S3_IMAGE ?? "worldfixture-s3:test";
+const manifest = JSON.parse(readFileSync(join(here, '../service.json'), 'utf8'));
+const image = process.env.WORLDFIXTURE_S3_IMAGE ?? manifest.runtime.container.tag;
 const container = process.env.TEST_CONTAINER_NAME ?? `worldfixture-s3-protocol-${process.pid}`;
 const s3 = `http://127.0.0.1:${s3Port}`;
 const filer = `http://127.0.0.1:${filerPort}`;
@@ -115,7 +116,8 @@ const exportsBucket = buckets[1].name;
 // ---------------------------------------------------------------- lifecycle
 
 function docker(args, {check = true} = {}) {
-  const result = spawnSync("docker", args, {encoding: "utf8"});
+  const result = spawnSync("docker", args, {
+    env: { ...process.env, AWS_ACCESS_KEY_ID: accessKeyId, AWS_SECRET_ACCESS_KEY: secretAccessKey },encoding: "utf8"});
   if (check && result.status !== 0) {
     throw new Error(`docker ${args.join(" ")} failed (${result.status})\n${result.stderr}${result.stdout}`);
   }
@@ -140,15 +142,19 @@ async function startContainer() {
   for (const url of [`${s3}/`, `${filer}/healthz`]) {
     assert.ok(await nothingIsListening(url), `something is already listening on ${url}`);
   }
-  docker(["rm", "-f", container], {check: false});
+  assert.notEqual(docker(["inspect", container], {check: false}).status, 0, "refusing to reuse an existing container name");
+  const immutableImage = docker(["image", "inspect", image, "--format", "{{.Id}}"]).stdout.trim();
+  assert.match(immutableImage, /^sha256:[0-9a-f]{64}$/);
   docker([
     "run", "-d", "--name", container, "--platform=linux/amd64",
     "-v", `${artifact}:/world:ro`,
     "-e", "WORLDFIXTURE_WORLD_PATH=/world",
+    "-e", "AWS_ACCESS_KEY_ID", "-e", "AWS_SECRET_ACCESS_KEY",
     "-p", `127.0.0.1:${s3Port}:61006`,
     "-p", `127.0.0.1:${filerPort}:61004`,
-    image,
+    immutableImage,
   ]);
+  console.log(`S3 image: ${image} -> ${immutableImage}`);
   containerId = docker(["inspect", "-f", "{{.Id}}", container]).stdout.trim();
   assert.match(containerId, /^[0-9a-f]{64}$/, "did not get a container id back");
 
@@ -204,16 +210,12 @@ try {
   const missing = await signed("HEAD", "/no-such-bucket-in-this-world");
   assert.equal(missing.status, 404, "a bucket the world never declared answered as if it existed");
 
-  // ListBuckets is scoped to the caller's identity, and this build has none, so it
-  // answers with an empty bucket list even though the buckets are there and every
-  // other operation on them works. Asserted rather than skipped: it is the shape
-  // of the limitation, and a build that starts answering properly should say so.
+  // The signed run identity owns every source-declared bucket.
   const listBuckets = await signed("GET", "/");
   assert.equal(listBuckets.status, 200);
   const bucketXml = await listBuckets.text();
-  assert.ok(bucketXml.length > 0);
-  assert.match(bucketXml, /<Buckets><\/Buckets>/,
-    "ListBuckets returned buckets; the identity limitation this test records has changed");
+  const listedBuckets = [...bucketXml.matchAll(/<Bucket>([\s\S]*?)<\/Bucket>/g)].map(match => match[1].match(/<Name>([^<]*)<\/Name>/)?.[1]);
+  assert.deepEqual(listedBuckets.sort(), buckets.map(bucket => bucket.name).sort());
 
   // 2. Every seeded object lists and fetches with the world's own bytes.
   const list = await signed("GET", `/${documentsBucket}`, {query: "list-type=2"});
@@ -277,17 +279,13 @@ try {
   const afterDelete = await signed("GET", `/${exportsBucket}`, {query: "list-type=2"});
   assert.match(await afterDelete.text(), /<KeyCount>0<\/KeyCount>/);
 
-  // 5. WHAT THE SIGNATURE ACTUALLY BUYS, asserted rather than assumed.
-  //
-  //    This build runs `-s3.iam=false` with no identity file, which leaves the S3
-  //    endpoint with no identity at all. A correctly signed request works, and so
-  //    does every other kind. These assertions exist so the limitation is a
-  //    measured, failing-if-it-changes fact instead of a sentence in a README.
+  // Correct signatures pass. Unsigned and forged requests fail. The last
+  // request is both expired and forged; it does not isolate expiry validation.
   const object = objects[0];
   const url = `${s3}/${object.bucket}/${object.key}`;
 
   const unsigned = await fetch(url);
-  assert.equal(unsigned.status, 200, "an unsigned request was refused; the auth story has changed");
+  assert.equal(unsigned.status, 403, "unsigned S3 access must be refused");
 
   const tampered = await fetch(url, {
     headers: {
@@ -297,19 +295,18 @@ try {
         "SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=" + "f".repeat(64),
     },
   });
-  assert.equal(tampered.status, 200, "a forged signature was refused; the auth story has changed");
+  assert.equal(tampered.status, 403, "forged S3 signatures must be refused");
 
   const presigned = await fetch(
     `${url}?X-Amz-Algorithm=AWS4-HMAC-SHA256` +
     `&X-Amz-Credential=${encodeURIComponent(`${accessKeyId}/20200101/${region}/s3/aws4_request`)}` +
     "&X-Amz-Date=20200101T000000Z&X-Amz-Expires=1&X-Amz-SignedHeaders=host&X-Amz-Signature=" + "f".repeat(64),
   );
-  assert.equal(presigned.status, 200,
-    "an expired, forged presigned URL was refused; the auth story has changed");
+  assert.equal(presigned.status, 403, "expired, forged S3 signatures must be refused");
 
   console.log(
     `S3 protocol checks passed: ${buckets.length} buckets, ${objects.length} seeded objects, ` +
-    "put/get/delete round-trip, and no signature enforcement (see README.md)",
+    "exact bucket listing, put/get/delete round-trip, and signature enforcement",
   );
 } finally {
   stopContainer();

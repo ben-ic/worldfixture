@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -37,6 +37,24 @@ function seedRoot() {
   writeFileSync(join(root, "seed.yaml"), "google:\n  messages:\n    - id: baked\n");
   return root;
 }
+
+test("the exported standalone YAML loader preserves explicit config without a world identity", () => {
+  const root = seedRoot();
+  try {
+    const seed = loadSeedConfig({
+      seedPath: join(root, "seed.yaml"),
+      sessionOverlay: JSON.stringify({ google: { users: [{ email: "declared@example.test" }] } }),
+    });
+    assert.deepEqual(seed.google, {
+      messages: [{ id: "baked" }], users: [{ email: "declared@example.test" }],
+    });
+    assert.equal(seed.worldfixture_world, undefined);
+    assert.deepEqual(seed.worldfixture_providers, []);
+    assert.equal(seed.tokens, undefined);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
 
 test("the verified world replaces content and the session overlay adds its OAuth client", () => {
   const root = seedRoot();
@@ -93,7 +111,7 @@ test("each world owns its complete Notion fixture", () => {
   writeFileSync(join(noNotionRoot, "seed.yaml"), readFileSync(join(root, "seed.yaml")));
   const withoutProjection = writeWorld(noNotionRoot, { tokens: { another_token: { login: "other" } } });
   const empty = loadSeedConfig({ seedPath: join(noNotionRoot, "seed.yaml"), worldPath: withoutProjection });
-  assert.deepEqual(empty.notion, {});
+  assert.equal(empty.notion, undefined);
   assert.equal(empty.tokens.notion_token, undefined);
   assert.equal(empty.tokens["notion_token_sample-person"], undefined);
 });

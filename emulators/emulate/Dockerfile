@@ -50,6 +50,7 @@ WORKDIR /opt/emulator
 # bind address. That is the one real cost of composing, and it is confined to one
 # vendor. `npm ci` fails rather than resolving anything the lockfile does not name.
 COPY package.json package-lock.json ./
+COPY scripts/patch-core-rate-limit.mjs ./scripts/patch-core-rate-limit.mjs
 
 # --ignore-scripts is deliberate and load-bearing. An npm lifecycle script is arbitrary
 # code executing at image-build time with the network available, which is precisely the
@@ -57,6 +58,7 @@ COPY package.json package-lock.json ./
 # that is a review decision and not something to discover from a silently different
 # image.
 RUN npm ci --omit=dev --ignore-scripts \
+    && node scripts/patch-core-rate-limit.mjs \
     && npm cache clean --force \
     && rm -rf /root/.npm
 

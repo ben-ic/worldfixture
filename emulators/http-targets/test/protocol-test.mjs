@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import {mkdtempSync, mkdirSync, copyFileSync, rmSync} from "node:fs";
+import {tmpdir} from "node:os";
 import {spawn} from "node:child_process";
 import {dirname, join} from "node:path";
 import {fileURLToPath} from "node:url";
@@ -25,6 +27,9 @@ const publicOrigin = process.env.WORLDFIXTURE_HTTP_TARGETS_PUBLIC_URL ??
   process.env.TEST_ORIGIN ??
   "http://http-targets.session.worldfixture.test";
 
+const fixtureRoot = mkdtempSync(join(tmpdir(), "worldfixture-http-protocol-"));
+mkdirSync(join(fixtureRoot, "projections"));
+copyFileSync(join(here, "self-test.json"), join(fixtureRoot, "projections/http-targets.json"));
 let child = null;
 let stderr = "";
 let stdout = "";
@@ -33,7 +38,7 @@ async function startServer() {
   const environment = {...process.env};
   // A world path would replace the protocol fixture with a session projection and
   // every assertion below names the fixture's own data.
-  delete environment.WORLDFIXTURE_WORLD_PATH;
+  environment.WORLDFIXTURE_WORLD_PATH = fixtureRoot;
   environment.WORLDFIXTURE_HTTP_TARGETS_LISTEN = `127.0.0.1:${port}`;
   environment.WORLDFIXTURE_HTTP_TARGETS_PUBLIC_URL = `${publicOrigin}/`;
 
@@ -65,8 +70,9 @@ async function startServer() {
         // fixture can answer 200 at this path with something else entirely.
         const body = await probe.json();
         assert.equal(body.ready, true, `unexpected /readyz body: ${JSON.stringify(body)}`);
-        assert.equal(body.source, "build-self-test",
+        assert.equal(body.source, "verified-world",
           `something other than this protocol fixture is listening on ${port}: ${JSON.stringify(body)}`);
+        assert.equal(body.world_id, "build.self-test");
         return `http://127.0.0.1:${port}`;
       }
     } catch {
@@ -158,7 +164,7 @@ try {
   assert.equal(result.status, 503);
   const failedProbe = await result.text();
   assert.match(failedProbe, /Status: unavailable/);
-  assert.match(failedProbe, /monitored by Uptime Kuma and Gatus/);
+  assert.match(failedProbe, /degraded/);
 
   result = await response("/metrics");
   assert.equal(result.status, 200);
@@ -181,4 +187,5 @@ try {
   console.log("HTTP target protocol checks passed");
 } finally {
   await stopServer();
+  rmSync(fixtureRoot, {recursive: true, force: true});
 }

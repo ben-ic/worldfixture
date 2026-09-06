@@ -30,6 +30,7 @@ export default defineConfig({
         collapsed: true,
         items: [
           { text: "How worlds work", link: "/guides/worlds" },
+          { text: "Control world time", link: "/guides/timeline" },
           { text: "How it fits your workflow", link: "/architecture" },
           { text: "Workbench", link: "/guides/workbench" },
           { text: "Bindings", link: "/guides/bindings" },
@@ -44,6 +45,7 @@ export default defineConfig({
         items: [
           { text: "Support index", link: "/providers/" },
           { text: "How support is measured", link: "/providers/support-policy" },
+          { text: "World records API", link: "/providers/domain" },
           {
             text: "Provider pages",
             collapsed: true,

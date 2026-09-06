@@ -259,3 +259,79 @@ test("days_until_due zero is refused on a charge_automatically invoice, in eithe
   assert.equal(dueToday.response.status, 200);
   assert.equal(dueToday.value.due_date, dueToday.value.created);
 });
+
+function recurringFixture() {
+  const config = {
+    customers: [{ id: 'cus_authored', name: 'Authored buyer', email: 'buyer@authored.test' }],
+    products: [{ id: 'prod_schedule', name: 'Authored schedule' }, { id: 'prod_single', name: 'Authored single purchase' }],
+    prices: [
+      { id: 'price_year', product_name: 'Authored schedule', currency: 'sek', unit_amount: 240000, recurring: { interval: 'year', interval_count: 2 } },
+      { id: 'price_week', product_name: 'Authored schedule', currency: 'sek', unit_amount: 900, recurring: { interval: 'week', interval_count: 3, usage_type: 'metered', trial_period_days: 7 } },
+      { id: 'price_day', product_name: 'Authored schedule', currency: 'sek', unit_amount: 200, recurring: { interval: 'day' } },
+      { id: 'price_single', product_name: 'Authored single purchase', currency: 'sek', unit_amount: 5000 },
+    ],
+    subscriptions: ['year', 'week', 'day'].map(interval => ({ id: `sub_${interval}`, customer: 'cus_authored', price: `price_${interval}` })),
+  };
+  const server = createServer(extendStripePlugin(stripePlugin), { tokens: { sk_test_worldfixture: { login: 'billing', id: 1, scopes: [] } } });
+  seedFromConfig(server.store, server.baseUrl, config, server.webhooks);
+  seedStripeBilling(server.store, config);
+  return { ...server, config };
+}
+
+test('source recurrence is identical in paginated prices, single-price reads and nested subscription price/plan', async () => {
+  const { app, config } = recurringFixture();
+  const seen = [];
+  let cursor;
+  for (;;) {
+    const page = await request(app, `/v1/prices?limit=1${cursor ? `&starting_after=${cursor}` : ''}`);
+    assert.equal(page.response.status, 200);
+    seen.push(...page.value.data);
+    if (!page.value.has_more) break;
+    cursor = page.value.data.at(-1).id;
+    assert.ok(seen.length <= config.prices.length, 'Price pagination repeated a page');
+  }
+  assert.deepEqual(seen.map(price => price.id).sort(), config.prices.map(price => price.id).sort());
+  for (const source of config.prices) {
+    const expected = source.recurring ? { interval: source.recurring.interval, interval_count: source.recurring.interval_count ?? 1, trial_period_days: source.recurring.trial_period_days ?? null, usage_type: source.recurring.usage_type ?? 'licensed' } : null;
+    const price = await request(app, `/v1/prices/${source.id}`);
+    assert.deepEqual(price.value.recurring, expected);
+    assert.deepEqual(seen.find(row => row.id === source.id).recurring, expected);
+    assert.equal(price.value.currency, 'sek');
+    if (expected) {
+      const sub = await request(app, `/v1/subscriptions/sub_${source.recurring.interval}`);
+      const item = sub.value.items.data[0];
+      assert.deepEqual(item.price.recurring, expected);
+      for (const key of ['interval', 'interval_count', 'trial_period_days', 'usage_type']) assert.equal(item.plan[key], expected[key]);
+    } else assert.equal(price.value.type, 'one_time');
+  }
+});
+
+test('recurrence response keeps native product filtering, product expansion, errors, and serialized reset state', async () => {
+  const { app, store } = recurringFixture();
+  const filtered = await request(app, '/v1/prices?product=prod_single');
+  assert.deepEqual(filtered.value.data.map(price => price.id), ['price_single']);
+  assert.equal(filtered.value.data[0].recurring, null);
+  const expanded = await request(app, '/v1/prices/price_year?expand[]=product');
+  assert.equal(expanded.value.product.id, 'prod_schedule');
+  assert.equal(expanded.value.recurring.interval, 'year');
+  const missing = await request(app, '/v1/prices/price_missing');
+  assert.equal(missing.response.status, 404);
+  assert.equal(missing.value.error.code, 'resource_missing');
+  assert.equal(Object.hasOwn(missing.value, 'recurring'), false);
+  const before = (await request(app, '/v1/prices/price_week')).value;
+  store.restore(JSON.parse(JSON.stringify(store.snapshot())));
+  assert.deepEqual((await request(app, '/v1/prices/price_week')).value, before);
+});
+
+test('malformed authored recurrence fails before any seeded price is changed', async () => {
+  for (const recurring of [{ interval: 'quarter' }, { interval: 'month', interval_count: 0 }, { interval: 'month', interval_count: '2' }, { interval: 'year', usage_type: 'unknown' }]) {
+    const config = { products: [{ id: 'prod_authored', name: 'Authored product' }], prices: [
+      { id: 'price_valid', product_name: 'Authored product', currency: 'sek', unit_amount: 1000, recurring: { interval: 'year' } },
+      { id: 'price_invalid', product_name: 'Authored product', currency: 'sek', unit_amount: 2000, recurring },
+    ] };
+    const server = createServer(extendStripePlugin(stripePlugin), { tokens: { sk_test_worldfixture: { login: 'billing', id: 1, scopes: [] } } });
+    seedFromConfig(server.store, server.baseUrl, config, server.webhooks);
+    assert.throws(() => seedStripeBilling(server.store, config), /price price_invalid has invalid recurring fields/);
+    assert.equal((await request(server.app, '/v1/prices/price_valid')).value.type, 'one_time');
+  }
+});

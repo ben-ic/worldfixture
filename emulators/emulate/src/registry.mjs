@@ -24,7 +24,15 @@
 
 import { existsSync } from "node:fs";
 import { readdir } from "node:fs/promises";
+import { wrapDeclaredGoogleCalendars } from "./overrides/google-calendars.mjs";
+import { extendGitHubWorldApi } from "./overrides/github-world-api.mjs";
+import { seedSlackWorld } from "./overrides/slack-world-seed.mjs";
+import { awsControlPlanePlugin, seedAwsControlPlane } from "./overrides/aws-control-plane.mjs";
+import { wrapDeclaredOAuth } from "./overrides/declared-oauth.mjs";
+import { wrapDeclaredOAuthExtra } from "./overrides/declared-oauth-extra.mjs";
+import { extendClerkUsers, extendMicrosoftUsers } from "./overrides/identity-lists.mjs";
 import { extendStripePlugin, seedStripeBilling } from "./overrides/stripe-billing.mjs";
+import { extendStripeTransactionsPlugin, seedStripeTransactions } from "./overrides/stripe-transactions.mjs";
 
 // Linear and Twilio are bundled in the pinned `emulate` package but are not
 // package exports. Resolve them beside the public entry point so they can use
@@ -38,7 +46,7 @@ export const VENDORS = {
   microsoft: {
     async load() {
       const mod = await import("@emulators/microsoft");
-      return { plugin: mod.microsoftPlugin, seedFromConfig: mod.seedFromConfig };
+      return wrapDeclaredOAuthExtra("microsoft", extendMicrosoftUsers(mod.microsoftPlugin), mod.seedFromConfig);
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "testuser@outlook.com";
@@ -50,8 +58,7 @@ export const VENDORS = {
     async load() {
       const mod = await import("@emulators/github");
       return {
-        plugin: mod.githubPlugin,
-        seedFromConfig: mod.seedFromConfig,
+        ...wrapDeclaredOAuthExtra("github", extendGitHubWorldApi(mod.githubPlugin), mod.seedFromConfig),
         // Materializes GitHub App private keys out of the seed. Present on the
         // programmatic API and NOT on the CLI's start command, so an artifact that
         // copied `start.ts` alone would silently serve apps with no key.
@@ -84,7 +91,8 @@ export const VENDORS = {
   google: {
     async load() {
       const mod = await import("@emulators/google");
-      return { plugin: mod.googlePlugin, seedFromConfig: mod.seedFromConfig };
+      const calendars = wrapDeclaredGoogleCalendars(mod.googlePlugin, mod.seedFromConfig);
+      return wrapDeclaredOAuthExtra("google", calendars.plugin, calendars.seedFromConfig);
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "testuser@gmail.com";
@@ -95,7 +103,7 @@ export const VENDORS = {
   vercel: {
     async load() {
       const mod = await import("@emulators/vercel");
-      return { plugin: mod.vercelPlugin, seedFromConfig: mod.seedFromConfig };
+      return wrapDeclaredOAuthExtra("vercel", mod.vercelPlugin, mod.seedFromConfig);
     },
     fallback(cfg) {
       const firstLogin = cfg?.users?.[0]?.username ?? "admin";
@@ -106,7 +114,7 @@ export const VENDORS = {
   slack: {
     async load() {
       const mod = await import("@emulators/slack");
-      return { plugin: mod.slackPlugin, seedFromConfig: mod.seedFromConfig };
+      return wrapDeclaredOAuthExtra("slack", mod.slackPlugin, (store, baseUrl, config, webhooks) => seedSlackWorld(mod.seedFromConfig, store, baseUrl, config, webhooks));
     },
     fallback() {
       return { login: "U000000001", id: 1, scopes: [] };
@@ -116,7 +124,7 @@ export const VENDORS = {
   apple: {
     async load() {
       const mod = await import("@emulators/apple");
-      return { plugin: mod.applePlugin, seedFromConfig: mod.seedFromConfig };
+      return wrapDeclaredOAuth("apple", mod.applePlugin, mod.seedFromConfig);
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email ?? "testuser@icloud.com";
@@ -127,7 +135,7 @@ export const VENDORS = {
   okta: {
     async load() {
       const mod = await import("@emulators/okta");
-      return { plugin: mod.oktaPlugin, seedFromConfig: mod.seedFromConfig };
+      return wrapDeclaredOAuth("okta", mod.oktaPlugin, mod.seedFromConfig);
     },
     fallback(cfg) {
       const firstLogin = cfg?.users?.[0]?.login ?? cfg?.users?.[0]?.email ?? "testuser@okta.local";
@@ -138,7 +146,10 @@ export const VENDORS = {
   aws: {
     async load() {
       const mod = await import("@emulators/aws");
-      return { plugin: mod.awsPlugin, seedFromConfig: mod.seedFromConfig };
+      return {
+        plugin: awsControlPlanePlugin(mod.awsPlugin),
+        seedFromConfig: (store, baseUrl, config) => seedAwsControlPlane(mod.seedFromConfig, store, baseUrl, config),
+      };
     },
     fallback() {
       return { login: "admin", id: 1, scopes: ["s3:*", "sqs:*", "iam:*", "sts:*"] };
@@ -158,9 +169,10 @@ export const VENDORS = {
   stripe: {
     async load() {
       const mod = await import("@emulators/stripe");
-      return { plugin: extendStripePlugin(mod.stripePlugin), seedFromConfig(store, baseUrl, config, webhooks) {
+      return { plugin: extendStripeTransactionsPlugin(extendStripePlugin(mod.stripePlugin)), seedFromConfig(store, baseUrl, config, webhooks) {
         mod.seedFromConfig(store, baseUrl, config, webhooks);
         seedStripeBilling(store, config);
+        seedStripeTransactions(store, config);
       } };
     },
     fallback() {
@@ -181,7 +193,7 @@ export const VENDORS = {
   clerk: {
     async load() {
       const mod = await import("@emulators/clerk");
-      return { plugin: mod.clerkPlugin, seedFromConfig: mod.seedFromConfig };
+      return wrapDeclaredOAuth("clerk", extendClerkUsers(mod.clerkPlugin), mod.seedFromConfig);
     },
     fallback(cfg) {
       const firstEmail = cfg?.users?.[0]?.email_addresses?.[0] ?? "test@example.com";
@@ -193,7 +205,7 @@ export const VENDORS = {
     async load() {
       const mod = await import(bundled("dist-7HIQBPU6.js"));
       return {
-        plugin: mod.linearPlugin, seedFromConfig: mod.seedFromConfig,
+        ...wrapDeclaredOAuthExtra("linear", mod.linearPlugin, mod.seedFromConfig, { getStore: mod.getLinearStore }),
         isKnownToken: (store, token) => Boolean(mod.getLinearStore(store).tokens.findOneBy("token", token)),
       };
     },

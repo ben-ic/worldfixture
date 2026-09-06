@@ -1379,15 +1379,87 @@ AGENTIC = {
         "Do not promise a date that no test supports",
     ],
     "causal_rules": [
-        {"emits": ["finance.ledger.updated", "finance.bank-transaction.created", "mail.payment-receipt.available"],
-         "id": "rule-invoice-payment", "requires": ["invoice_id", "payment_id", "amount_cents"],
-         "when": "finance.invoice.paid"},
-        {"emits": ["support.case.updated", "slack.customer-channel.notified"],
-         "id": "rule-support-reply", "requires": ["customer_id", "thread_id"],
-         "when": "mail.customer-reply.received"},
-        {"emits": ["software.issue.updated", "slack.release-channel.notified"],
-         "id": "rule-issue-comment", "requires": ["issue_id"],
-         "when": "software.issue.commented"},
+        {
+            "emits": [
+                "finance.ledger.updated",
+                "finance.bank-transaction.created",
+                "mail.payment-receipt.available"
+            ],
+            "id": "rule-invoice-payment",
+            "requires": [
+                "invoice_id",
+                "payment_id",
+                "amount_cents"
+            ],
+            "when": "finance.invoice.paid",
+            "execution": "descriptive",
+            "reason": "Describes a story consequence. No executable provider operation is declared for this rule."
+        },
+        {
+            "emits": [
+                "support.case.updated",
+                "slack.customer-channel.notified"
+            ],
+            "id": "rule-support-reply",
+            "requires": [
+                "customer_id",
+                "thread_id"
+            ],
+            "when": "mail.customer-reply.received",
+            "execution": "descriptive",
+            "reason": "Describes a story consequence. No executable provider operation is declared for this rule."
+        },
+        {
+            "emits": [
+                "software.issue.updated",
+                "slack.release-channel.notified"
+            ],
+            "id": "rule-issue-comment",
+            "requires": [
+                "issue_id"
+            ],
+            "when": "software.issue.commented",
+            "execution": "descriptive",
+            "reason": "Describes a story consequence. No executable provider operation is declared for this rule."
+        },
+        {
+            "api_version": "worldfixture.causal-rule/v1",
+            "id": "rule-slack-channel-notification",
+            "when": "communication.message.sent.v1",
+            "requires": [
+                "provider_evidence.channel_name",
+                "actor_id"
+            ],
+            "emit": [
+                {
+                    "type": "mail.notification.requested.v1",
+                    "after": "1s",
+                    "with": {
+                        "recipients": {
+                            "lookup": {
+                                "collection": "communication.channels",
+                                "match": {
+                                    "field": "name",
+                                    "value": {
+                                        "copy": "provider_evidence.channel_name"
+                                    }
+                                },
+                                "select": "member_ids"
+                            }
+                        },
+                        "author": {
+                            "copy": "actor_id"
+                        },
+                        "channel": {
+                            "copy": "provider_evidence.channel_name"
+                        },
+                        "text": {
+                            "copy": "provider_evidence.text"
+                        }
+                    }
+                }
+            ]
+        }
     ],
     "goals": [
         {"id": "goal-renewal-brief",

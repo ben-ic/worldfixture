@@ -34,10 +34,9 @@ function stateDir() {
 // A command that refuses is a normal outcome with a non-zero exit, and its
 // message is the thing under test, so the output is returned either way.
 async function cli(args, options = {}) {
-  // Every command that reads the world reads the same world these tests start.
-  // Without this a `slack send` would resolve its channel against the default
-  // world while the running instance served another one.
-  const withWorld = args.includes("--world-path") ? args : [...args, "--world-path", TEST_WORLD];
+  // Running commands follow the accepted session artifact, which can have
+  // rebased dates. Offline reads still select the fixture explicitly.
+  const withWorld = args.includes("--world-path") || args.includes('--state') ? args : [...args, "--world-path", TEST_WORLD];
   try {
     return await run(process.execPath, [BIN, ...withWorld], { cwd: ROOT, ...options });
   } catch (error) {
@@ -203,6 +202,10 @@ test("the suggested action works, and the message is really there", async () => 
     const suggested = instance.output().match(/worldfixture(?:\.mjs)? (slack send [^\n]+)/);
     assert.ok(suggested, "the first screen suggests a Slack action");
 
+    const refused = await cli(['slack', 'history', '--state', state, '--world-path', TEST_WORLD]);
+    assert.equal(refused.code, 1);
+    assert.match(refused.stdout, /not the active world generation.*Omit the world selector/);
+
     const { stdout } = await cli(["slack", "send", "--as", "maya", "--channel", "release-2-8",
       "--state", state, "Mobile tests passed"]);
     assert.match(stdout, /Sent as mayac to #release-2-8/);
@@ -231,7 +234,7 @@ test("reset restores the running world through the supervisor control socket", a
     assert.match(changed.stdout, /CLI reset removes this/);
 
     const result = await cli(["reset", "--state", state], { timeout: 180_000 });
-    assert.match(result.stdout, /World restored exactly across 3 services/);
+    assert.match(result.stdout, /World restored exactly across 2 services/);
 
     const restored = await cli([
       "slack", "history", "--channel", "release-2-8", "--as", "jon", "--state", state,
@@ -298,7 +301,7 @@ test("up writes the environment and the lock before anything starts", async () =
 
   const lock = JSON.parse(readFileSync(join(state, "environment.lock.json"), "utf8"));
   assert.equal(lock.api_version, "worldfixture.environment-lock/v1");
-  assert.deepEqual(lock.services.map((service) => service.name).sort(), ["emulate", "http-targets", "mail"]);
+  assert.deepEqual(lock.services.map((service) => service.name).sort(), ["emulate", "mail"]);
   // Slack and GitHub are both the composer, so it appears once however many
   // capabilities it provides.
   assert.deepEqual(
@@ -319,20 +322,44 @@ test("Maya sends on Slack and a channel member reads the result over IMAP", asyn
   const instance = await up(state);
 
   try {
+    await cli(['clock', 'pause', '--state', state]);
     const sent = await cli(["slack", "send", "--as", "maya", "--channel", "release-2-8",
       "--state", state, "Mobile tests passed"]);
 
     assert.match(sent.stdout, /Sent as mayac to #release-2-8/);
+    assert.equal(sent.code, undefined, sent.stderr);
     // Notified from the world's own channel membership, and never the author.
-    assert.match(sent.stdout, /rule-slack-channel-notification → Local Mail to jon@/);
+    assert.match(sent.stdout, /Queued mail.notification.requested.v1/);
     assert.ok(!/mail to maya@/.test(sent.stdout), "the author is not notified of their own message");
+
+    const before = await cli(['mail', 'inbox', '--as', 'jon', '--state', state]);
+    assert.doesNotMatch(before.stdout, /\[#release-2-8\] Maya Chen posted/);
+    await cli(['clock', 'advance', '1s', '--state', state]);
 
     const read = await cli(["mail", "inbox", "--as", "jon", "--state", state]);
     assert.match(read.stdout, /\[#release-2-8\] Maya Chen posted/);
+    const authorMail = await cli(['mail', 'inbox', '--as', 'maya', '--state', state]);
+    assert.doesNotMatch(authorMail.stdout, /\[#release-2-8\] Maya Chen posted/);
 
     // And it really is in Slack, read back by a third person through the API.
     const history = await cli(["slack", "history", "--channel", "release-2-8", "--as", "elena", "--state", state]);
     assert.match(history.stdout, /Mobile tests passed/);
+
+    const bindings = JSON.parse((await cli(['env', '--json', '--state', state])).stdout);
+    const session = await (await fetch(`${bindings.WORKBENCH_URL}/api/session`)).json();
+    const channels = await (await fetch(`${bindings.SLACK_BASE_URL}/api/conversations.list`, {
+      method: 'POST', headers: { authorization: `Bearer ${bindings.SLACK_TOKEN}` },
+    })).json();
+    const response = await fetch(`${bindings.WORKBENCH_URL}/api/actions/slack`, { method: 'POST',
+      headers: { 'content-type': 'application/json', 'X-WorldFixture-Generation': session.generation },
+      body: JSON.stringify({ person_id: 'maya-chen', channel: channels.channels.find(row => row.name === 'general').id, text: 'Workbench delayed notification' }),
+    });
+    const accepted = await response.json(); assert.equal(response.status, 200);
+    assert.match(accepted.message, /queued 1 scheduled effect/);
+    assert.equal(accepted.effects[0].status, 'queued');
+    await cli(['clock', 'advance', '1s', '--state', state]);
+    const notified = await cli(['mail', 'inbox', '--as', 'jon', '--state', state]);
+    assert.match(notified.stdout, /\[#general\] Maya Chen posted/);
   } finally {
     await instance.stop();
   }
@@ -343,7 +370,11 @@ test("the ledger records the fact and everything it caused", async () => {
   const instance = await up(state);
 
   try {
+    await cli(['clock', 'pause', '--state', state]);
     await cli(["slack", "send", "--as", "maya", "--channel", "general", "--state", state, "Morning"]);
+    const before = await cli(['events', '--state', state]);
+    assert.doesNotMatch(before.stdout, /mail\.notification\.delivered\.v1/);
+    await cli(['clock', 'advance', '1s', '--state', state]);
     const { stdout } = await cli(["events", "--state", state]);
 
     assert.match(stdout, /communication\.message\.sent\.v1/);
@@ -378,14 +409,15 @@ test("a person reads their own authored mail over IMAP", async () => {
   }
 });
 
-test("the checkout development path starts five surfaces from one command", async () => {
+test("the checkout development path starts the fixture's four declared surfaces", async () => {
   const state = stateDir();
   const instance = await up(state);
   const screen = await instance.stop();
 
-  for (const surface of ["Slack", "GitHub", "Site", "IMAP", "SMTP"]) {
+  for (const surface of ["Slack", "GitHub", "IMAP", "SMTP"]) {
     assert.match(screen, new RegExp(`^${surface}\\s+\\S+`, "m"), surface);
   }
+  assert.doesNotMatch(screen, /^Site\s+\S+/m);
 });
 
 test("status probes every running service and reports the world", async () => {
@@ -397,7 +429,7 @@ test("status probes every running service and reports the world", async () => {
 
     assert.match(stdout, /World\s+business\.saas-company:v2/);
     assert.match(stdout, /emulate\s+ready\s+2 capabilities/);
-    assert.match(stdout, /http-targets\s+ready\s+1 capability/);
+    assert.doesNotMatch(stdout, /http-targets\s+ready/);
     assert.match(stdout, /mail\s+ready\s+2 capabilities/);
     assert.match(stdout, /ok\s+seed_gate\s+health/);
     assert.match(stdout, /ok\s+protocol\s+smtp/);
@@ -421,6 +453,11 @@ test("env prints shell-safe bindings for the running instance", async () => {
     assert.match(stdout, /^export IMAP_USERNAME='maya@northstar-relay\.worldfixture\.test'$/m);
     const { stdout: json } = await cli(["env", "--state", state, "--json"]);
     const bindings = JSON.parse(json);
+    const stored = JSON.parse(readFileSync(join(state, 'bindings.json'), 'utf8'));
+    assert.equal(bindings.WORLDFIXTURE_TOKEN, stored.WORLDFIXTURE_TOKEN);
+    assert.equal(bindings.WORKBENCH_URL, stored.WORKBENCH_URL);
+    assert.ok(stdout.includes(`export WORLDFIXTURE_TOKEN='${stored.WORLDFIXTURE_TOKEN}'`));
+    assert.ok(!stdout.includes('<redacted>'));
     const slack = await fetch(`${bindings.SLACK_BASE_URL}/api/auth.test`, { method: "POST", headers: { Authorization: `Bearer ${bindings.SLACK_TOKEN}` } }).then(response => response.json());
     assert.equal(slack.ok, true);
     assert.equal(slack.user, "mayac");
@@ -429,8 +466,21 @@ test("env prints shell-safe bindings for the running instance", async () => {
     assert.notEqual(bindings.IMAP_PASSWORD, "maya-chen");
     const { stdout: secondTerminal } = await cli(["env", "--state", state, "--json"], { cwd: stateDir() });
     assert.deepEqual(JSON.parse(secondTerminal), bindings);
+    const { stdout: application, code } = await cli(['run', '--state', state, '--', process.execPath, '-e',
+      `console.log(JSON.stringify(Object.fromEntries(${JSON.stringify(Object.keys(bindings))}.map(name => [name, process.env[name]]))))`]);
+    assert.equal(code, undefined, application);
+    assert.deepEqual(JSON.parse(application), bindings, 'run and env must pass the same current connection values');
+    for (const command of [
+      ['env', '--json'],
+      ['run', '--', process.execPath, '-e', 'console.log("APPLICATION_STARTED")'],
+    ]) {
+      const rejected = await cli([command[0], '--state', state, '--world-path', join(ROOT, 'dist/consumer.retail-brand.v1'), ...command.slice(1)]);
+      assert.notEqual(rejected.code, undefined);
+      assert.match(rejected.stdout + rejected.stderr, /not the active world generation/);
+      assert.doesNotMatch(rejected.stdout, /APPLICATION_STARTED/);
+    }
     assert.match(stdout, /^export SMTP_HOST_PORT='127\.0\.0\.1:\d+'$/m);
-    assert.match(stdout, /# GITHUB_TOKEN is a shared token, not maya-chen's/);
+    assert.doesNotMatch(stdout, /# GITHUB_TOKEN is a shared token/);
     assert.ok(!stdout.includes("could not be resolved"));
   } finally {
     await instance.stop();

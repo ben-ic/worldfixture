@@ -6,9 +6,11 @@
       "runtime/bin/**",
       "runtime/workbench-ui/src/**",
       "emulators/**/src/**",
+      "emulators/http-targets/**/*.mjs",
       "examples/**/*.mjs",
       "examples/**/*.js",
       "scripts/**",
+      "tests/image/*.mjs",
       "!**/node_modules/**",
       "!**/dist/**"
     ]

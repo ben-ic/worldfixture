@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/runtime-event.v1.schema.json",
+  "title": "WorldFixture completed runtime event",
+  "type": "object",
+  "required": ["id", "type", "source", "occurred_at", "provider_evidence", "caused_by"],
+  "properties": {
+    "id": {"type": "string"},
+    "type": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+\\.v[1-9][0-9]*$"},
+    "source": {"type": "string"},
+    "actor_id": {"type": "string"},
+    "occurred_at": {"type": "string", "format": "date-time"},
+    "provider_evidence": {"type": "object"},
+    "caused_by": {"type": "string"}
+  }
+}

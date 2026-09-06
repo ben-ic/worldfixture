@@ -1,5 +1,9 @@
 # Linear
 
+OAuth applications must be [declared in world source](../guides/worlds.md#declare-oauth-clients).
+The local flow checks the declared client, exact callback URL, and selected
+world user. Undeclared sample clients are rejected.
+
 ## What works
 
 WorldFixture supports a small Linear GraphQL schema, a local OAuth flow, and
@@ -16,8 +20,9 @@ Linear SDK are **Not verified against the production provider**.
 ## Connect
 
 Use `LINEAR_BASE_URL` and `LINEAR_TOKEN`. Send
-`Authorization: Bearer TOKEN_VALUE`. Standard worlds do not apply strict
-scope checks. Some anonymous requests can work. Do not depend on this.
+`Authorization: Bearer TOKEN_VALUE`. The token identifies the selected world
+person. Missing or unknown tokens return GraphQL errors without viewer data.
+Production scope behavior is not verified.
 
 WorldFixture uses the internal Linear module from `emulate` 0.10.0.
 

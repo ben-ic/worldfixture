@@ -15,6 +15,10 @@ declared-user, Gmail batch, and Gmail push behavior.
 “Partial” means that WorldFixture implements only the route groups below. It
 does not implement all Google APIs or all operations in these APIs.
 
+OAuth applications must be [declared in world source](../guides/worlds.md#declare-oauth-clients).
+The local flow checks the declared client, exact callback URL, and selected
+world user. Undeclared sample clients are rejected.
+
 ## What works
 
 You can read and send Gmail messages, manage common Gmail records, use a small
@@ -32,6 +36,10 @@ do not work. Google APIs that are not on this page do not work.
 Use `GOOGLE_BASE_URL` and `GOOGLE_TOKEN`. Send
 `Authorization: Bearer <token>`. Gmail routes use the authenticated world
 user. The `:userId` path can be `me` or the authenticated user.
+
+Gmail, Calendar, and Drive share the same [local request budget](./index.md#local-request-limits).
+New source-built images use 100,000 counts per token per hour. Older images
+retain their previous limit. This is not Google's production quota model.
 
 ## OAuth and OpenID Connect
 
@@ -103,7 +111,7 @@ provider**.
 ## Evidence and authority
 
 Tests: `google-signing.test.mjs`, `google-batch.test.mjs`,
-`google-users.test.mjs`, `gmail-push.test.mjs`, and compiler contract tests
+`declared-oauth-extra.test.mjs`, `gmail-push.test.mjs`, and compiler contract tests
 under `tests/contracts/`.
 
 Authority: [Google OAuth 2.0](https://developers.google.com/identity/protocols/oauth2),

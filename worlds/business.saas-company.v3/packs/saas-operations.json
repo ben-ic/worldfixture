@@ -51825,6 +51825,9 @@
       ]
     },
     "software": {
+      "operator_teams": ["console", "data", "exports", "platform", "reliability", "security"],
+      "operator_ids": ["amara-diallo", "jon-bell", "maya-chen"],
+      "operator_limit": null,
       "repositories": [
         {
           "description": "Job orchestration and connector runtime",

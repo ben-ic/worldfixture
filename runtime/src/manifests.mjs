@@ -71,10 +71,8 @@ export function providersOf(manifests) {
 // profile -> [{service, port, reason}] for every surface a service serves and
 // does not own.
 //
-// `provides` is a declaration, and a resolver cannot see a route no manifest
-// mentions. `@emulators/aws` serves a live, writable `/s3/` while SeaweedFS is
-// the S3 owner, so the composer names it here. Without this the lock would
-// conclude S3 has one owner and be wrong.
+// Extra routes for a capability owned by another service must be declared.
+// Index those routes so the resolver can close their ports or reject a conflict.
 export function disclaimersOf(manifests) {
   const index = new Map();
 
@@ -102,12 +100,4 @@ export function readinessChecks(manifest) {
   const declared = manifest.runtime.readiness;
   const checks = Array.isArray(declared) ? declared : [declared];
   return checks.map((check) => ({ kind: "protocol", ...check }));
-}
-
-// Same normalization for `world.projection` (one string) and `world.projections`.
-export function projectionsOf(manifest) {
-  const world = manifest.world ?? {};
-  if (Array.isArray(world.projections)) return world.projections;
-  if (typeof world.projection === "string") return [{ file: world.projection }];
-  return [];
 }

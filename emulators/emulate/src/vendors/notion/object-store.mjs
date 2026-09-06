@@ -1,3 +1,5 @@
+import { signS3Request } from "../../plugins/s3-signing.mjs";
+
 function objectUrl(baseUrl, bucket, key) {
   const path = String(key).split("/").map(encodeURIComponent).join("/");
   return `${String(baseUrl).replace(/\/$/, "")}/${encodeURIComponent(bucket)}/${path}`;
@@ -10,7 +12,12 @@ function storageError(operation, response) {
   return error;
 }
 
-export function createNotionObjectStore(baseUrl, fetchImpl = globalThis.fetch) {
+export function createNotionObjectStore(baseUrl, fetchImpl = globalThis.fetch, credentials = {
+  accessKeyId: process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_ACCESS_KEY_ID,
+  secretAccessKey: process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_SECRET_ACCESS_KEY,
+  region: process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_REGION,
+}) {
+  const request = (url, init = {}) => fetchImpl(url, signS3Request(url, init, credentials));
   const available = typeof baseUrl === "string" && baseUrl.length > 0;
   const requireStore = () => {
     if (available) return;
@@ -23,7 +30,7 @@ export function createNotionObjectStore(baseUrl, fetchImpl = globalThis.fetch) {
     available,
     async put({ bucket, key, bytes, contentType, owner }) {
       requireStore();
-      const response = await fetchImpl(objectUrl(baseUrl, bucket, key), {
+      const response = await request(objectUrl(baseUrl, bucket, key), {
         method: "PUT",
         headers: {
           "content-type": contentType || "application/octet-stream",
@@ -36,7 +43,7 @@ export function createNotionObjectStore(baseUrl, fetchImpl = globalThis.fetch) {
     },
     async get({ bucket, key }) {
       requireStore();
-      const response = await fetchImpl(objectUrl(baseUrl, bucket, key));
+      const response = await request(objectUrl(baseUrl, bucket, key));
       if (response.status === 404) return null;
       if (!response.ok) throw storageError("GetObject", response);
       return {
@@ -46,7 +53,7 @@ export function createNotionObjectStore(baseUrl, fetchImpl = globalThis.fetch) {
     },
     async delete({ bucket, key }) {
       requireStore();
-      const response = await fetchImpl(objectUrl(baseUrl, bucket, key), { method: "DELETE" });
+      const response = await request(objectUrl(baseUrl, bucket, key), { method: "DELETE" });
       if (!response.ok && response.status !== 404) throw storageError("DeleteObject", response);
     },
   };

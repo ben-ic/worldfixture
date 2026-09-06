@@ -2,12 +2,8 @@ import { useState } from "react";
 import { copy } from "../api.js";
 
 export function Button({ children, kind = "", className = "", type, ...props }) {
-  // A <button> with no type submits the form it is inside. Every Button here had
-  // no type, so the thirty-four that exist to run an onClick were also
-  // submitting whichever form they happened to sit in -- firing the form's
-  // handler as well as their own. The fourteen that carry no onClick ARE the
-  // submit buttons, so the presence of a handler is the honest signal, and an
-  // explicit `type` still wins.
+  // Action buttons must not also submit their enclosing form. An explicit
+  // type wins; buttons without an onClick handler retain form submission.
   return (
     <button type={type ?? (props.onClick ? "button" : "submit")} className={`button ${kind} ${className}`.trim()} {...props}>
       {children}
@@ -15,10 +11,11 @@ export function Button({ children, kind = "", className = "", type, ...props }) 
   );
 }
 
-export function CopyButton({ value, children = "Copy", kind = "small" }) {
+export function CopyButton({ value, children = "Copy", kind = "small", onCopy }) {
   const [copied, setCopied] = useState(false);
   async function onClick() {
     await copy(value);
+    onCopy?.();
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1200);
   }

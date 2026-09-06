@@ -45,14 +45,20 @@ test("the S3 adapter sends bytes to an opaque world object key", async () => {
   const adapter = createNotionObjectStore("http://127.0.0.1:61006", async (url, init = {}) => {
     requests.push({ url, init });
     return new Response(null, { status: 200, headers: { etag: "stored" } });
-  });
+  }, { accessKeyId: "test-access", secretAccessKey: "test-secret", region: "us-east-1" });
   await adapter.put({
     bucket: "northstar-relay-documents", key: "notion/uploads/upload 1/notes.txt",
     bytes: new TextEncoder().encode("content"), contentType: "text/plain", owner: USER_ID,
   });
   assert.equal(requests[0].url, "http://127.0.0.1:61006/northstar-relay-documents/notion/uploads/upload%201/notes.txt");
   assert.equal(requests[0].init.method, "PUT");
+  assert.match(requests[0].init.headers.authorization, /^AWS4-HMAC-SHA256 Credential=test-access\//);
+  assert.match(requests[0].init.headers.authorization, /x-amz-meta-worldfixture-owner/);
   assert.equal(requests[0].init.headers["x-amz-meta-worldfixture-owner"], USER_ID);
+  await adapter.get({ bucket: "northstar-relay-documents", key: "notion/uploads/upload 1/notes.txt" });
+  await adapter.delete({ bucket: "northstar-relay-documents", key: "notion/uploads/upload 1/notes.txt" });
+  assert.deepEqual(requests.map(row => row.init.method), ["PUT", "GET", "DELETE"]);
+  assert.ok(requests.every(row => /^AWS4-HMAC-SHA256 Credential=test-access\//.test(row.init.headers.authorization)));
 });
 
 async function createUpload(app, input) {

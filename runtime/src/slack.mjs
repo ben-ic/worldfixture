@@ -67,12 +67,12 @@ export function forgetSlackCaches() {
 }
 
 async function channelId(baseUrl, token, channelName, options) {
-  const key = `${baseUrl}\u0000${channelName}`;
+  const key = `${options?.generation ?? "legacy"}\u0000${baseUrl}\u0000${token}\u0000${channelName}`;
   const cached = channelCache.get(key);
   if (cached) return cached;
 
   const channels = await listChannels(baseUrl, token, options);
-  for (const entry of channels) channelCache.set(`${baseUrl}\u0000${entry.name}`, entry.id);
+  for (const entry of channels) channelCache.set(`${options?.generation ?? "legacy"}\u0000${baseUrl}\u0000${token}\u0000${entry.name}`, entry.id);
   const channel = channels.find((entry) => entry.name === channelName || entry.id === channelName);
 
   if (!channel) {
@@ -86,7 +86,7 @@ async function channelId(baseUrl, token, channelName, options) {
 }
 
 export async function identity(baseUrl, token, options = {}) {
-  const key = `${baseUrl}\u0000${token}`;
+  const key = `${options.generation ?? "legacy"}\u0000${baseUrl}\u0000${token}`;
   if (!identityCache.has(key)) identityCache.set(key, await whoAmI(baseUrl, token, options));
   return identityCache.get(key);
 }

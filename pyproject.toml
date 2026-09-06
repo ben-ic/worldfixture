@@ -3,11 +3,15 @@ name = "worldfixture-compiler"
 version = "0.1.0"
 description = "Deterministic compiler for WorldFixture world artifacts"
 requires-python = ">=3.11"
+dependencies = ["jsonschema>=4.10,<5"]
 license = "Apache-2.0"
 
 [tool.setuptools]
 package-dir = {"" = "compiler"}
 packages = ["worldfixture_compiler"]
+
+[tool.setuptools.data-files]
+"share/worldfixture/schemas" = ["schemas/*.schema.json"]
 
 # Lint rules chosen for the problems they actually catch here, not for style.
 # Line length is not enforced: this code favours one long, readable expression

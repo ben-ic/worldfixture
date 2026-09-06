@@ -1,8 +1,8 @@
 // The composer's aggregate readiness endpoint.
 //
 // Three of these are unit tests over `readiness()` with a stub fetch, because
-// what has to be pinned is the shape of the report and the AWS refusal, and
-// starting fourteen listeners to assert that would test Node's scheduler. The
+// what has to be pinned is the shape of the report and the selected vendor checks, and
+// starting all vendor listeners to assert that would test Node's scheduler. The
 // fourth starts the composer for real and knocks on the endpoint through the
 // same listener an application uses, because whether the wrapper actually
 // reaches a vendor's fetch handler cannot be answered from a unit test.
@@ -106,25 +106,13 @@ test("a vendor whose listener refuses the connection is reported with the reason
   assert.match(okta.detail, /ECONNREFUSED/);
 });
 
-test("AWS is reported as excluded and is never probed", async () => {
-  const fetchImpl = answering({ 4703: bodyFor("slack"), 4711: "anything at all" });
+test("AWS readiness probes its IAM Query route beside the other selected vendors", async () => {
+  const fetchImpl = answering({ 4703: bodyFor("slack"), 4711: bodyFor("aws") });
   const report = await readiness([{ vendor: "slack", port: 4703 }, { vendor: "aws", port: 4711 }], { fetchImpl });
 
-  // Excluded, with the reason, rather than silently dropped: a run that somehow
-  // gave AWS a port has a resolver problem, and the report has to show it.
-  assert.deepEqual(report.excluded, [{
-    vendor: "aws",
-    port: 4711,
-    reason: "the `@emulators/aws` listener serves live, writable S3 routes that SeaweedFS owns, so it is never selected and never probed",
-  }]);
-  assert.equal(report.vendors.some((entry) => entry.vendor === "aws"), false);
-
-  // The whole point: no request was made to it. A readiness check on the AWS
-  // listener is the first thing that would make a second S3 owner look startable.
-  assert.deepEqual(fetchImpl.calls, ["http://127.0.0.1:4703/api/auth.test"]);
-  assert.equal(CHECKS.has("aws"), false, "service.json must not declare an AWS check");
-
-  // The remaining vendor still passes, so the report is ready.
+  assert.deepEqual(report.excluded, []);
+  assert.equal(report.vendors.find(entry => entry.vendor === "aws").ready, true);
+  assert.deepEqual(fetchImpl.calls.sort(), ["http://127.0.0.1:4703/api/auth.test", "http://127.0.0.1:4711/iam/?Action=ListUsers"]);
   assert.equal(report.ready, true);
 });
 

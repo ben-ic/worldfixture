@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { once } from "node:events";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
@@ -8,12 +8,14 @@ import { join } from "node:path";
 import test from "node:test";
 import { createLocalJWKSet, jwtVerify } from "jose";
 import { credential, prepareCredentials } from "../../../runtime/src/credentials.mjs";
+import { defaultEnvironment } from "../../../runtime/src/environments.mjs";
+import { loadManifests } from "../../../runtime/src/manifests.mjs";
+import { resolveEnvironment, serializeLock } from "../../../runtime/src/resolve.mjs";
+import { resolveBindings } from "../../../runtime/src/bindings.mjs";
 import { loadSeedConfig } from "./seed-config.mjs";
 
 const ROOT = join(import.meta.dirname, "../../..");
 const artifactPath = join(ROOT, "dist/business.saas-company.v2");
-const overlay = JSON.parse(readFileSync(join(artifactPath, "projections/emulator-overlay.json")));
-const lock = { world: { id: "business.saas-company", version: "v2" }, services: [] };
 const vendors = ["slack", "github", "google", "notion", "stripe", "resend", "mongoatlas", "twilio", "microsoft", "vercel", "clerk", "okta", "linear"];
 
 async function freePort() {
@@ -25,13 +27,13 @@ async function freePort() {
   return port;
 }
 
-async function startComposer(t, root) {
+async function startComposer(t, root, worldPath = artifactPath) {
   const ports = Object.fromEntries(await Promise.all(vendors.map(async vendor => [vendor, await freePort()])));
   const child = spawn(process.execPath, [join(import.meta.dirname, "main.mjs")], {
     cwd: join(import.meta.dirname, ".."),
     env: {
       ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("WORLDFIXTURE_"))),
-      WORLDFIXTURE_WORLD_PATH: artifactPath,
+      WORLDFIXTURE_WORLD_PATH: worldPath,
       WORLDFIXTURE_CREDENTIALS: join(root, "run/credentials.json"),
       WORLDFIXTURE_TIMELINE_OWNER: "runtime",
       ...Object.fromEntries(Object.entries(ports).map(([vendor, port]) => [`WORLDFIXTURE_PORT_${vendor.toUpperCase()}`, String(port)])),
@@ -64,13 +66,48 @@ async function startComposer(t, root) {
 
 test("managed provider tokens preserve identity and scopes, and reject old or other-project credentials", async t => {
   const root = mkdtempSync(join(tmpdir(), "worldfixture-provider-credentials-"));
+  const artifactPath = join(root, "artifact");
+  execFileSync("python3", ["-c", `
+import json, sys
+from pathlib import Path
+from worldfixture_compiler.compiler import load_world, build_world
+world, _ = load_world(Path(sys.argv[1]))
+world['software']['database'] = {'cluster': 'credential-check', 'name': 'credential-check', 'collections': ['records']}
+world['communication']['twilio'] = {
+    'account': {'sid': 'AC12345678901234567890123456789012', 'auth_token': 'credential-test-account', 'friendly_name': 'Credential test'},
+    'api_keys': [{'sid': 'SK12345678901234567890123456789012', 'secret': 'credential-test-key', 'friendly_name': 'Credential test key'}],
+}
+world['software']['oauth_clients'] = {'google': [{'client_id': 'part-b-app', 'name': 'Credential test application',
+    'redirect_uris': ['http://127.0.0.1:1/callback'], 'scopes': ['openid', 'email', 'profile']}]}
+source = Path(sys.argv[2]) / 'world.json'
+source.write_text(json.dumps(world))
+build_world(source, Path(sys.argv[3]))
+`, join(ROOT, "worlds/business.saas-company.v2/world.json"), root, artifactPath], {
+    env: { ...process.env, PYTHONPATH: join(ROOT, "compiler") },
+  });
+  const overlay = JSON.parse(readFileSync(join(artifactPath, "projections/emulator-overlay.json")));
+  const world = JSON.parse(readFileSync(join(artifactPath, "world.json")));
+  const manifests = loadManifests(join(ROOT, "emulators"));
+  const spec = defaultEnvironment(`${world.id}:${world.version}`, {
+    includeProviders: true, identity: world.people.find(person => person.primary).id,
+    oauthClients: world.software.oauth_clients, artifactPath, manifests,
+  });
+  const lock = resolveEnvironment(spec, { artifactPath, manifests });
   // Cleanup hooks run in registration order: remove files only after children exit.
   const prepare = project => prepareCredentials({ lock, artifactPath, stateDir: join(root, project, "run"), generatedSecretsPath: join(root, project, "secrets.json") });
   const credentials = await prepare("first");
   const other = await prepare("second");
-  const request = await startComposer(t, join(root, "first"));
+  const request = await startComposer(t, join(root, "first"), artifactPath);
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const token = reference => credential(credentials, `token:${reference}`);
+  const bindings = resolveBindings(lock, { artifactPath, credentials, addressOf: () => ({ host: "127.0.0.1", port: 1 }) });
+  assert.deepEqual(bindings.unresolved, []);
+  assert.equal(bindings.resolved.GOOGLE_CLIENT_ID.value, "part-b-app");
+  const clientSecret = bindings.resolved.GOOGLE_CLIENT_SECRET.value;
+  assert.equal(clientSecret, credential(credentials, "oauth-client-secret:google:part-b-app"));
+  assert.notEqual(clientSecret, credential(other, "oauth-client-secret:google:part-b-app"));
+  assert.ok(!serializeLock(lock).includes(clientSecret));
+  assert.ok(!readFileSync(join(artifactPath, "projections/emulator-overlay.json"), "utf8").includes(clientSecret));
   const seeded = loadSeedConfig({ seedPath: join(import.meta.dirname, "../seed.yaml"), worldPath: artifactPath, credentialsPath: join(root, "first/run/credentials.json") });
   assert.deepEqual(Object.values(seeded.tokens), Object.values(overlay.tokens));
   assert.deepEqual(Object.keys(seeded.tokens), Object.keys(overlay.tokens).map(token));
@@ -144,6 +181,12 @@ test("managed provider tokens preserve identity and scopes, and reject old or ot
   // OAuth must issue a separate access token for the selected person. It must
   // not replace that person's identity with the application's seeded token.
   const redirect_uri = "http://127.0.0.1:1/callback";
+  const unknown = await request("google", "/o/oauth2/v2/auth/callback", undefined, {
+    method: "POST", redirect: "manual", body: new URLSearchParams({
+      email: "maya@northstar-relay.worldfixture.test", client_id: "undeclared-app", redirect_uri,
+    }),
+  });
+  assert.equal(unknown.status, 401);
   const consent = await request("google", "/o/oauth2/v2/auth/callback", undefined, {
     method: "POST", redirect: "manual", body: new URLSearchParams({
       email: "maya@northstar-relay.worldfixture.test", client_id: "part-b-app",
@@ -155,7 +198,7 @@ test("managed provider tokens preserve identity and scopes, and reject old or ot
   const grant = await (await request("google", "/oauth2/token", undefined, {
     method: "POST", body: new URLSearchParams({
       grant_type: "authorization_code", code: callback.searchParams.get("code"),
-      client_id: "part-b-app", redirect_uri,
+      client_id: bindings.resolved.GOOGLE_CLIENT_ID.value, client_secret: clientSecret, redirect_uri,
     }),
   })).json();
   assert.ok(grant.access_token);

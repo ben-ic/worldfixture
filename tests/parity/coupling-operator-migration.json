@@ -1,0 +1,468 @@
+{
+  "allowed_artifact_files": [
+    "manifest.json",
+    "world.json",
+    "packs/software.json",
+    "projections/aws.json",
+    "projections/emulator-overlay.json"
+  ],
+  "api_version": "worldfixture.coupling-operator-migration/v1",
+  "reason": "Make shipped AWS operator membership an explicit primary-organization team/person union with unlimited count. Retain legacy order and cap only when all policy fields are absent. No access keys or policies are added.",
+  "recorded_on": "2026-09-05",
+  "worlds": [
+    {
+      "artifact": "dist/business.saas-company.v2",
+      "bundle": {
+        "from": {
+          "bundle_sha256": "380c7506815680bdd6a8b39a5ecb014b520dff765fa17e9cc30af28f0e1eba4a",
+          "bundle_size": 542720,
+          "content_sha256": "a472947d1b81261bf01577fe3919b6a66f0f95225cf52a3eeb2520aaa606b988"
+        },
+        "to": {
+          "bundle_sha256": "20fc750c8593184f789ea5a8681d36d5c9b0d87daf8e20bde000a1f02e1d6af1",
+          "bundle_size": 542720,
+          "content_sha256": "fae5a9a2a324cfccfa05f5f75f43ab41de159b6c392d33d100e84f145c608559"
+        }
+      },
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "47df65a6a73df44f47dc7b003c143aa78edc66dc8b416ab6c80bfeccad5912a9",
+            "size": 4558
+          },
+          "to": {
+            "sha256": "170eee26f40ec21eca8474f99d1fcf3f3f0f9c53deeca329bf4d52f914123e7d",
+            "size": 4558
+          }
+        },
+        "packs/software.json": {
+          "from": {
+            "sha256": "cd35e6ff8958611b89bf28d5d36c606263c5458e3160df2a1ffacbd4c00520f6",
+            "size": 1848
+          },
+          "to": {
+            "sha256": "906c9cd0f1230306786b5e07b6b485509f156016dfa23f4b13aa09dc908cd612",
+            "size": 1932
+          }
+        },
+        "projections/aws.json": {
+          "from": {
+            "sha256": "c0e2854650866cb15a955044e604806bdfca421b90fc8575aabd3968c519d6c5",
+            "size": 1901
+          },
+          "to": {
+            "sha256": "1bba0f11c8d85b2ae96df9ac86ea0087bc723cc3c38d38f041e6481c181a8ff8",
+            "size": 1972
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "cf9a04d74ad6719e5309c13ba204beff2dd8df8f76bfe94351b00a6cf983edfc",
+            "size": 69903
+          },
+          "to": {
+            "sha256": "2898cbcc424438e56bd910c394d515778f90edbef60fef2b16c96e0f877f59d9",
+            "size": 69974
+          }
+        },
+        "world.json": {
+          "from": {
+            "sha256": "b15142170b687f395ac736ad794518a43412faaaf788a1609feb3d2cc97fad44",
+            "size": 140971
+          },
+          "to": {
+            "sha256": "2a96256628341c68f2127ba54ff22d8ff1eea10037a43c3c6770afe1d563bbb3",
+            "size": 141055
+          }
+        }
+      },
+      "from_artifact_sha256": "a472947d1b81261bf01577fe3919b6a66f0f95225cf52a3eeb2520aaa606b988",
+      "from_source_sha256": "f563ebef34f08d71586535005b42d520fa34005932742856b6d3479cacf34397",
+      "id": "business.saas-company",
+      "policy": {
+        "operator_ids": [
+          "maya-chen"
+        ],
+        "operator_limit": null,
+        "operator_teams": [
+          "engineering"
+        ]
+      },
+      "reason": "Make shipped AWS operator membership an explicit primary-organization team/person union with unlimited count. Retain legacy order and cap only when all policy fields are absent. No access keys or policies are added.",
+      "selected_person_ids": [
+        "hana-ito",
+        "jon-bell",
+        "lucas-meyer",
+        "maya-chen",
+        "theo-martin"
+      ],
+      "source": "worlds/business.saas-company.v2/world.json",
+      "source_files": {
+        "backbones/northstar-relay.json": {
+          "sha256": "5cb42703bbd6dbacf5d763e4f76414b0d01079b7c8acb3aeeb4bdf49233ee731",
+          "size": 8355
+        },
+        "packs/saas-operations.json": {
+          "sha256": "e04886062dc8bcb4363d4d8dccdf61e843452fe61c6f1cd3e663d15ce3c3d97a",
+          "size": 44808
+        },
+        "stories/lumen-renewal.json": {
+          "sha256": "508ad83d568c444fa269758057b803e646cba326bf057a9a4a2217b8b69ac786",
+          "size": 4935
+        },
+        "stories/release-28.json": {
+          "sha256": "69a58567425502290b4c5f5bdc6cdb769f1fc7edbff355c0004d38bff30e5ba9",
+          "size": 3773
+        },
+        "stories/theo-onboarding.json": {
+          "sha256": "c6c564fff1c2e9669ae179bd049b5d7462ad4e09fb245152ce1d0796b7e58f07",
+          "size": 514
+        },
+        "world.json": {
+          "sha256": "edc1349cf4335f2a122cba73fc6653e58e342ee2784bb50bd1bba8c3d4ae6597",
+          "size": 1121
+        }
+      },
+      "source_migrations": {
+        "packs/saas-operations.json": {
+          "added_fields": {
+            "operator_ids": [
+              "maya-chen"
+            ],
+            "operator_limit": null,
+            "operator_teams": [
+              "engineering"
+            ]
+          },
+          "from": {
+            "sha256": "e04886062dc8bcb4363d4d8dccdf61e843452fe61c6f1cd3e663d15ce3c3d97a",
+            "size": 44808
+          },
+          "inserted_text": "      \"operator_teams\": [\"engineering\"],\n      \"operator_ids\": [\"maya-chen\"],\n      \"operator_limit\": null,\n",
+          "json_pointer": "/contributes/software",
+          "to": {
+            "sha256": "e90927b414488b00625b8bee1a24f31e9adbc8e8d4b31353f3ce03098a273f46",
+            "size": 44916
+          }
+        }
+      },
+      "to_artifact_sha256": "fae5a9a2a324cfccfa05f5f75f43ab41de159b6c392d33d100e84f145c608559",
+      "to_source_sha256": "db6fb91c7f6fd1760e1bce7281564566c587eef9bba7874824d4d1759000aa0f",
+      "version": "v2"
+    },
+    {
+      "artifact": "dist/business.saas-company.v3",
+      "bundle": {
+        "from": {
+          "bundle_sha256": "7c78b89ccd99e3d2a06ec925739956eea7638496132bebafdd8624ebdf460f50",
+          "bundle_size": 10864640,
+          "content_sha256": "c3d54032e6950a44ea3094583a4f817b07eb49b0ff205221f7ed3961fc5b87b0"
+        },
+        "to": {
+          "bundle_sha256": "6aa5ef357779380051739c060a321c4d4ee3ef55eca397fda3f3d2904b5ee669",
+          "bundle_size": 10864640,
+          "content_sha256": "fbbc4f22b6806197e7ebfaa4189c8114ef205137f1cc5da120be41207eae8847"
+        }
+      },
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "07f20f2cf916c8d179034471f49984505c87fb5c05070bf010547216511e5a54",
+            "size": 4393
+          },
+          "to": {
+            "sha256": "40fa00fb8ce8427ddee107f2bf5d5ce878720e71d5a419d8c9ccceb53eceabc0",
+            "size": 4393
+          }
+        },
+        "packs/software.json": {
+          "from": {
+            "sha256": "481126ea0eec32070512b92a7ce1fa0e5497ecc021c53985d9ca3db8f9b91e19",
+            "size": 48727
+          },
+          "to": {
+            "sha256": "1f6326a2e39febb03966390072b211895109aa6d1498a24e8f21a4a3cfee639a",
+            "size": 48886
+          }
+        },
+        "projections/aws.json": {
+          "from": {
+            "sha256": "bae67bdabc5d67efa95783da67b4e3f98b97ee83609bc55071709143697d2fcc",
+            "size": 5959
+          },
+          "to": {
+            "sha256": "313063d207630e23f9835293f57963ad5858a434ace1fdbf03263e88602b861f",
+            "size": 8908
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "f7bb4718d652a13fdfef29bd3ef5ada81e6a815a3f1c77ba7271f0be266af153",
+            "size": 769303
+          },
+          "to": {
+            "sha256": "51d01d11431ab2f2da1e98329dc7bdfe2a35cd285d0d4daabfcbc96735ac491b",
+            "size": 772252
+          }
+        },
+        "world.json": {
+          "from": {
+            "sha256": "68766f6c449daec36c6c5c6648df2be8af763017d0171d05dc207e3c1aa31e5e",
+            "size": 3596516
+          },
+          "to": {
+            "sha256": "ed3d681f57d7cfdb08851223da7a11575de16ada79ec52b6483946d8d0c41387",
+            "size": 3596675
+          }
+        }
+      },
+      "from_artifact_sha256": "c3d54032e6950a44ea3094583a4f817b07eb49b0ff205221f7ed3961fc5b87b0",
+      "from_source_sha256": "97d7f031302533d8f0ea92e3ab8e6764cf0f1741d6c2144b7a89b3cd662b79db",
+      "id": "business.saas-company",
+      "policy": {
+        "operator_ids": [
+          "amara-diallo",
+          "jon-bell",
+          "maya-chen"
+        ],
+        "operator_limit": null,
+        "operator_teams": [
+          "console",
+          "data",
+          "exports",
+          "platform",
+          "reliability",
+          "security"
+        ]
+      },
+      "reason": "Make shipped AWS operator membership an explicit primary-organization team/person union with unlimited count. Retain legacy order and cap only when all policy fields are absent. No access keys or policies are added.",
+      "selected_person_ids": [
+        "ada-lindqvist",
+        "amara-diallo",
+        "arjun-mehta",
+        "daniel-osei",
+        "erik-johansson",
+        "farida-bello",
+        "fatima-haddad",
+        "gustavo-herrera",
+        "hana-ito",
+        "helena-novak",
+        "idris-coulibaly",
+        "ingrid-solberg",
+        "jenna-whitlock",
+        "jon-bell",
+        "kasper-nielsen",
+        "kwame-mensah",
+        "lena-fischer",
+        "lucas-meyer",
+        "mateo-vargas",
+        "maya-chen",
+        "maya-osei",
+        "mei-zhang",
+        "nikolai-petrov",
+        "nils-andersson",
+        "nour-khalil",
+        "omar-bakri",
+        "ophelia-hart",
+        "oscar-ruiz",
+        "paloma-ortiz",
+        "pavel-dvorak",
+        "priyanka-nair",
+        "rafael-costa",
+        "rosa-delgado",
+        "sean-murphy",
+        "stefan-weber",
+        "tessa-lindholm",
+        "theo-martin",
+        "tomas-novak",
+        "uma-krishnan",
+        "viktor-horvath",
+        "yuki-tanaka",
+        "zara-ahmed"
+      ],
+      "source": "worlds/business.saas-company.v3/world.json",
+      "source_files": {
+        "backbones/northstar-relay.json": {
+          "sha256": "ea7bbd5c93c3135b10e0a60c29ed75c72b8855097bccc49bc11a5943f2248a63",
+          "size": 66662
+        },
+        "packs/saas-operations.json": {
+          "sha256": "76265dd566095c364c851edd2b9797b68bc8f2c60a2b280e8d2f02433e1a58dc",
+          "size": 2353421
+        },
+        "stories/live-timeline.json": {
+          "sha256": "2e5e7c6240431b52b4088d65a5cb3a45f094948e0307deff9b340160654d9e8f",
+          "size": 67358
+        },
+        "world.json": {
+          "sha256": "bbef2fc1b800c92f40eae214eac0f860120b04ca4f3adbf9cbbce1ed6caae54c",
+          "size": 1104
+        }
+      },
+      "source_migrations": {
+        "packs/saas-operations.json": {
+          "added_fields": {
+            "operator_ids": [
+              "amara-diallo",
+              "jon-bell",
+              "maya-chen"
+            ],
+            "operator_limit": null,
+            "operator_teams": [
+              "console",
+              "data",
+              "exports",
+              "platform",
+              "reliability",
+              "security"
+            ]
+          },
+          "from": {
+            "sha256": "76265dd566095c364c851edd2b9797b68bc8f2c60a2b280e8d2f02433e1a58dc",
+            "size": 2353421
+          },
+          "inserted_text": "      \"operator_teams\": [\"console\", \"data\", \"exports\", \"platform\", \"reliability\", \"security\"],\n      \"operator_ids\": [\"amara-diallo\", \"jon-bell\", \"maya-chen\"],\n      \"operator_limit\": null,\n",
+          "json_pointer": "/contributes/software",
+          "to": {
+            "sha256": "e7fdd0a7f73dd6e060ce039dc0ee1edbd0b90316f7ba0cf2904a4f87f9d17d36",
+            "size": 2353611
+          }
+        }
+      },
+      "to_artifact_sha256": "fbbc4f22b6806197e7ebfaa4189c8114ef205137f1cc5da120be41207eae8847",
+      "to_source_sha256": "6f4fe5f367d7c7dc1745a9e4ba498ab9769908a47ba7dd9fec9aac06e6046832",
+      "version": "v3"
+    },
+    {
+      "artifact": "dist/consumer.retail-brand.v1",
+      "bundle": {
+        "from": {
+          "bundle_sha256": "6113510315c59e0d3216bfc00fe8617288d771e0feb0aa5d9e60840b11d1d219",
+          "bundle_size": 1136640,
+          "content_sha256": "9f9e2df83ec0d377d5a81a190c7e6caaf099c96c17049fd8556edcb442ea8bb9"
+        },
+        "to": {
+          "bundle_sha256": "1cc72ca463f6dfe0d9aa0f838d19add550769567600636829c01fd03cc6ff905",
+          "bundle_size": 1136640,
+          "content_sha256": "276536644a0d766ddb0d8c2dd5467fb4c38b69f23f04247698e96f6d19b81f8a"
+        }
+      },
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "143a9bda994bea21f0b9fa0eb1a847977deca2d4b2455648bda7752730440b55",
+            "size": 4641
+          },
+          "to": {
+            "sha256": "59963c61f34e7df8cf02b8c1e5e9c2d4d708a157996c89520ddc4933006c7dfe",
+            "size": 4641
+          }
+        },
+        "packs/software.json": {
+          "from": {
+            "sha256": "914d80e6b7d950ba0c5a66ceed2106823179b52eeb3d3619171f614fb7eb16e9",
+            "size": 4311
+          },
+          "to": {
+            "sha256": "d8ff87e9acd23af6a4352f8b8f0fe7f1c9900d999d800cd7f3e3a1bb16125926",
+            "size": 4397
+          }
+        },
+        "projections/aws.json": {
+          "from": {
+            "sha256": "8071d027b221e03d2f6b7b9ec80d47f6e3c8a6ccdf4daa8e9c592698bf9b84c5",
+            "size": 4035
+          },
+          "to": {
+            "sha256": "b309458bc2413a66196f529b546457ac2bcb3358f149c18ee44c4f2969cef2ae",
+            "size": 4035
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "465e1e52387010508e0fd8651b6c4913e1dc7bf09c5068ab91f996b675d99176",
+            "size": 104555
+          },
+          "to": {
+            "sha256": "fab571d9b963421e5de60f87bdde2d51b4339b9ac4ee9359cbfe59ded1cd55c3",
+            "size": 104555
+          }
+        },
+        "world.json": {
+          "from": {
+            "sha256": "a2ee64de4ecfd2d18ea45467512cc59a8e8fc1416c9269b2b749f6dc2b662f85",
+            "size": 352716
+          },
+          "to": {
+            "sha256": "beac9c8e64d5e5b443494fd5bf1d0c50e20319d109c3e1c6e6c21e3c24f776bc",
+            "size": 352802
+          }
+        }
+      },
+      "from_artifact_sha256": "9f9e2df83ec0d377d5a81a190c7e6caaf099c96c17049fd8556edcb442ea8bb9",
+      "from_source_sha256": "ecc575ed89af839a371ff2432e2b02b44d58581bcae7f9715f94b7ab56f7e9ad",
+      "id": "consumer.retail-brand",
+      "policy": {
+        "operator_ids": [
+          "iris-mendel"
+        ],
+        "operator_limit": null,
+        "operator_teams": [
+          "engineering"
+        ]
+      },
+      "reason": "Make shipped AWS operator membership an explicit primary-organization team/person union with unlimited count. Retain legacy order and cap only when all policy fields are absent. No access keys or policies are added.",
+      "selected_person_ids": [
+        "anya-kowalski",
+        "gus-ferreira",
+        "iris-mendel",
+        "tomas-brekke"
+      ],
+      "source": "worlds/consumer.retail-brand.v1/world.json",
+      "source_files": {
+        "backbones/marlow-pine.json": {
+          "sha256": "32a6efeb3eec35edf9623674faa1d90ffff343bda25a9315ddf9e2306994e32c",
+          "size": 17123
+        },
+        "packs/retail-operations.json": {
+          "sha256": "02578a0fe49157bc1aa494b1449dc549d8f977a9c03774f6276f421bdf6ee193",
+          "size": 154226
+        },
+        "stories/spring-drop.json": {
+          "sha256": "d2ce94866e2ad8e75f7a01cef332d63b5ddee72d64fd710943f0d21f0597fd94",
+          "size": 26008
+        },
+        "world.json": {
+          "sha256": "59e29b13be6ae47c20015683b498d5cb9d031ec6de9289075491e75a66b8dd6e",
+          "size": 1190
+        }
+      },
+      "source_migrations": {
+        "packs/retail-operations.json": {
+          "added_fields": {
+            "operator_ids": [
+              "iris-mendel"
+            ],
+            "operator_limit": null,
+            "operator_teams": [
+              "engineering"
+            ]
+          },
+          "from": {
+            "sha256": "02578a0fe49157bc1aa494b1449dc549d8f977a9c03774f6276f421bdf6ee193",
+            "size": 154226
+          },
+          "inserted_text": "      \"operator_teams\": [\"engineering\"],\n      \"operator_ids\": [\"iris-mendel\"],\n      \"operator_limit\": null,\n",
+          "json_pointer": "/contributes/software",
+          "to": {
+            "sha256": "1bee5dde1fbdaffa6b53595bd1d4031bbb805b6bbd6dc3e56f33663086ecc967",
+            "size": 154336
+          }
+        }
+      },
+      "to_artifact_sha256": "276536644a0d766ddb0d8c2dd5467fb4c38b69f23f04247698e96f6d19b81f8a",
+      "to_source_sha256": "f0400213c9eb990a4f927d6a2d367eed91c38747dbef27959017397e51d73973",
+      "version": "v1"
+    }
+  ]
+}

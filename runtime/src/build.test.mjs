@@ -11,7 +11,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, test } from "node:test";
@@ -63,6 +63,12 @@ function recorder(code = 0) {
     calls,
     runner: async (args) => {
       calls.push(args);
+      const output = args.find(value => value.endsWith(',target=/output'))?.slice('type=bind,source='.length, -',target=/output'.length);
+      if (output && code === 0) {
+        const artifact = join(output, 'artifact');
+        rmSync(artifact, { recursive: true, force: true }); mkdirSync(artifact);
+        writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({ api_version: 'worldfixture.world-artifact/v1' }));
+      }
       return code;
     },
   };
@@ -156,7 +162,7 @@ test("build mounts the source read-only and the output read-write", () => {
   assert.ok(args.includes("type=bind,source=/home/ada/my-world,target=/world,readonly"));
   assert.ok(args.includes("type=bind,source=/home/ada/dist/demo.v1,target=/output"));
   assert.deepEqual(args.slice(-7), [
-    "worldfixture:local", "-m", "worldfixture_compiler", "build", "/world/world.json", "--output", "/output",
+    "worldfixture:local", "-m", "worldfixture_compiler", "build", "/world/world.json", "--output", "/output/artifact",
   ]);
   assert.ok(args.includes("--user"));
   assert.ok(args.includes("501:20"));
@@ -191,7 +197,9 @@ test("a build writes to the directory it reports", async () => {
   const built = await buildWorldSource({ source, image: "worldfixture:local", runner, directory: workspace });
 
   assert.equal(built.outputDir, join(workspace, "dist/demo.two-people.v2"));
-  assert.ok(calls[0].includes(`type=bind,source=${built.outputDir},target=/output`));
+  assert.ok(calls[0].some(value => value.startsWith(`type=bind,source=${join(workspace, 'dist/.demo.two-people.v2-build-')}`) && value.endsWith(',target=/output')));
+  assert.equal(existsSync(join(built.outputDir, 'manifest.json')), true);
+  assert.deepEqual(readdirSync(join(workspace, 'dist')), ['demo.two-people.v2']);
 });
 
 // A relative --output is relative to where the user is standing, not to the
@@ -230,11 +238,29 @@ test("a previous artifact in the output directory is replaced", async () => {
   const output = join(workspace, "dist/demo.two-people.v2");
   mkdirSync(output, { recursive: true });
   writeFileSync(join(output, "manifest.json"), JSON.stringify({ api_version: "worldfixture.world-artifact/v1" }));
-  writeFileSync(join(output, "stale-pack.json"), "{}");
+  mkdirSync(join(output, 'packs'));
+  writeFileSync(join(output, "packs/stale.json"), "{}");
 
   await buildWorldSource({ source, image: "worldfixture:local", runner: recorder().runner, directory: workspace });
 
-  assert.deepEqual(readdirSync(output), []);
+  assert.deepEqual(readdirSync(output), ['manifest.json']);
+});
+
+test('a failed or absent compiler output preserves the previous artifact and removes staging', async () => {
+  const source = worldSource(), workspace = directory(), output = join(workspace, 'artifact');
+  mkdirSync(output);
+  const manifest = JSON.stringify({ api_version: 'worldfixture.world-artifact/v1' });
+  writeFileSync(join(output, 'manifest.json'), manifest);
+  writeFileSync(join(output, 'world.json'), '{"id":"previous"}');
+  for (const runner of [recorder(1).runner, async args => {
+    const staged = args.find(value => value.endsWith(',target=/output')).slice('type=bind,source='.length, -',target=/output'.length);
+    rmSync(join(staged, 'artifact'), { recursive: true }); return 0;
+  }]) {
+    await assert.rejects(buildWorldSource({ source, output, image: 'worldfixture:local', runner }));
+    assert.equal(readFileSync(join(output, 'manifest.json'), 'utf8'), manifest);
+    assert.equal(readFileSync(join(output, 'world.json'), 'utf8'), '{"id":"previous"}');
+    assert.deepEqual(readdirSync(workspace), ['artifact']);
+  }
 });
 
 test("an output directory holding anything else is refused rather than deleted", async () => {

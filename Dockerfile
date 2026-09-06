@@ -7,7 +7,7 @@ ARG NODE_IMAGE=docker.io/library/node:26-bookworm-slim@sha256:367679cf9792759492
 FROM ${NODE_IMAGE} AS compiler
 WORKDIR /source
 RUN apt-get update \
- && apt-get install -y --no-install-recommends python3=3.11.2-1+b1 \
+ && apt-get install -y --no-install-recommends python3=3.11.2-1+b1 python3-jsonschema=4.10.3-1 \
  && rm -rf /var/lib/apt/lists/*
 COPY compiler ./compiler
 COPY schemas ./schemas
@@ -29,7 +29,9 @@ RUN PYTHONPATH=compiler python3 -m worldfixture_compiler build \
 FROM ${NODE_IMAGE} AS emulate-dependencies
 WORKDIR /opt/worldfixture/emulators/emulate
 COPY emulators/emulate/package.json emulators/emulate/package-lock.json ./
+COPY emulators/emulate/scripts/patch-core-rate-limit.mjs ./scripts/patch-core-rate-limit.mjs
 RUN npm ci --omit=dev --ignore-scripts \
+ && node scripts/patch-core-rate-limit.mjs \
  && npm cache clean --force \
  && rm -rf /root/.npm
 
@@ -100,6 +102,7 @@ RUN apt-get update \
       libsasl2-modules=2.1.28+dfsg-10 \
       mariadb-server=1:10.11.18-0+deb12u1 \
       python3=3.11.2-1+b1 \
+      python3-jsonschema=4.10.3-1 \
       postgresql-15=15.19-0+deb12u1 \
       sasl2-bin=2.1.28+dfsg-10 \
       tini=0.19.0-1+b3 \
@@ -129,6 +132,7 @@ COPY emulators/emulate ./emulators/emulate
 COPY --from=emulate-dependencies /opt/worldfixture/emulators/emulate/node_modules \
      ./emulators/emulate/node_modules
 COPY emulators/http-targets ./emulators/http-targets
+COPY emulators/domain ./emulators/domain
 COPY emulators/mail/service.json ./emulators/mail/service.json
 COPY emulators/s3/service.json ./emulators/s3/service.json
 COPY emulators/postgres/service.json ./emulators/postgres/service.json
@@ -166,10 +170,10 @@ RUN chmod 0555 \
 
 # Only application surfaces are mapped by the run command. Private readiness,
 # filer, mailbox, gRPC, master, and volume ports stay inside the container.
-EXPOSE 4701 4702 4703 4704 4705 4706 4707 4708 4709 4710 4712 4713 4714 4715 4716 \
+EXPOSE 4701 4702 4703 4704 4705 4706 4707 4708 4709 4710 4711 4712 4713 4714 4715 4716 4717 \
        8080 2525 1143 3306 5432 61006
 
 HEALTHCHECK --start-period=60s --interval=15s --timeout=10s --retries=4 \
   CMD ["node", "runtime/bin/worldfixture.mjs", "status", "--state", "/state"]
 
-ENTRYPOINT ["/usr/bin/tini", "--", "node", "runtime/bin/worldfixture.mjs", "up", "--world-path", "/opt/worldfixture/dist/business.saas-company.v3", "--service-root", "/opt/worldfixture/emulators", "--state", "/state"]
+ENTRYPOINT ["/usr/bin/tini", "--", "node", "runtime/bin/worldfixture.mjs", "up", "--service-root", "/opt/worldfixture/emulators", "--state", "/state"]

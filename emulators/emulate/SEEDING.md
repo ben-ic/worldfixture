@@ -2,11 +2,10 @@
 
 The provider composer builds one seed object in this order:
 
-1. Read the base YAML file from `WORLDFIXTURE_SEED`, or `seed.yaml`.
-2. Merge the verified world projection from
+1. Require a world artifact and read its verified projection from
    `$WORLDFIXTURE_WORLD_PATH/projections/emulator-overlay.json`.
-3. Merge the JSON object in `WORLDFIXTURE_SEED_OVERLAY`, when present.
-4. In a managed run, replace credential references with values from
+2. Merge the JSON object in `WORLDFIXTURE_SEED_OVERLAY`, when present.
+3. In a managed run, replace credential references with values from
    `WORLDFIXTURE_CREDENTIALS`. A missing value stops startup.
 
 Later values replace earlier values. Objects merge recursively. Arrays replace
@@ -20,8 +19,12 @@ digest. A missing, changed, or invalid overlay stops startup before a provider
 listener opens.
 
 The prepared world artifact owns provider users, identities, messages, repositories,
-customers, and other provider records. The base seed is only a standalone
-development fallback.
+customers, and other provider records. An absent source section cannot inherit
+sample records from a base seed. The service refuses startup without a world.
+
+The exported `loadSeedConfig` helper retains YAML parsing for library callers
+and parser tests that supply no `worldPath`. `seed.yaml` is its explicit legacy
+test fixture. This helper path cannot start the service without a world.
 
 ## Tokens
 
@@ -61,7 +64,7 @@ their provider lifecycle; this scheme does not replace them with a seed token.
 The API-key boundary for Stripe, Resend, and MongoDB Atlas refuses unknown and
 anonymous requests. Linear GraphQL also refuses an unknown caller instead of
 using the first admin. This does not add production-grade provider authorization
-or change the separate S3 authentication limitation.
+or replace the separate S3 service's signature checks.
 
 ## Session overlay
 

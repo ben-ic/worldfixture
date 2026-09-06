@@ -4,9 +4,17 @@
   "title": "WorldFixture environment lock v1",
   "description": "The immutable resolution of one environment specification. It is written before startup and never follows a newer world or service release. It carries no port numbers and no timestamps: ports are allocated per run, so the same specification, artifact and manifests must resolve to byte-identical bytes.",
   "type": "object",
-  "required": ["api_version", "environment_sha256", "world", "services", "capabilities"],
+  "required": [
+    "api_version",
+    "environment_sha256",
+    "world",
+    "services",
+    "capabilities"
+  ],
   "properties": {
-    "api_version": {"const": "worldfixture.environment-lock/v1"},
+    "api_version": {
+      "const": "worldfixture.environment-lock/v1"
+    },
     "environment_sha256": {
       "description": "Digest of the canonical environment specification this lock resolves. A changed specification is a new lock, never an edit of this one.",
       "type": "string",
@@ -14,24 +22,59 @@
     },
     "world": {
       "type": "object",
-      "required": ["id", "version", "artifact_sha256", "projections"],
+      "required": [
+        "id",
+        "version",
+        "artifact_sha256",
+        "projections"
+      ],
       "properties": {
-        "id": {"type": "string"},
-        "version": {"type": "string"},
-        "profile": {"type": "string"},
-        "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-        "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "content_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
         "projections": {
           "description": "Every artifact file a selected service reads, with the digest it must have. A service that verifies its projection checks this; one that does not at least has the value recorded against it.",
           "type": "object",
           "additionalProperties": {
             "type": "object",
-            "required": ["sha256", "size"],
+            "required": [
+              "sha256",
+              "size"
+            ],
             "properties": {
-              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-              "size": {"type": "integer"},
-              "read_by": {"type": "array", "items": {"type": "string"}},
-              "verified_by": {"type": "array", "items": {"type": "string"}}
+              "sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "size": {
+                "type": "integer"
+              },
+              "read_by": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "verified_by": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         }
@@ -42,35 +85,97 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["name", "version", "manifest_sha256", "profiles", "ports", "readiness"],
+        "required": [
+          "name",
+          "version",
+          "manifest_sha256",
+          "profiles",
+          "ports",
+          "readiness"
+        ],
         "properties": {
-          "name": {"type": "string"},
-          "version": {"type": "string"},
-          "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-          "image": {"type": "string"},
-          "command": {"type": "array", "items": {"type": "string"}},
-          "container": {"type": "object"},
-          "profiles": {"type": "array", "items": {"type": "string"}},
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "manifest_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "image": {
+            "type": "string"
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "container": {
+            "type": "object"
+          },
+          "profiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "ports": {
             "description": "Only the ports this run opens. A port serving no selected capability and no readiness check stays closed, which is how a disclaimed surface is kept off the network.",
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "protocol", "env", "published"],
+              "required": [
+                "name",
+                "protocol",
+                "env",
+                "published"
+              ],
               "properties": {
-                "name": {"type": "string"},
-                "protocol": {"type": "string"},
-                "env": {"type": "string"},
-                "env_format": {"type": "string"},
-                "bind_env": {"type": "string"},
-                "published": {"type": "boolean"}
+                "name": {
+                  "type": "string"
+                },
+                "protocol": {
+                  "type": "string"
+                },
+                "env": {
+                  "type": "string"
+                },
+                "env_format": {
+                  "type": "string"
+                },
+                "bind_env": {
+                  "type": "string"
+                },
+                "published": {
+                  "type": "boolean"
+                }
               }
             }
           },
-          "readiness": {"type": "array", "items": {"type": "object"}},
-          "environment": {"type": "array", "items": {"type": "object"}},
-          "projections": {"type": "array", "items": {"type": "object"}},
-          "lifecycle": {"type": "object"}
+          "readiness": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "environment": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "projections": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "lifecycle": {
+            "type": "object"
+          }
         }
       }
     },
@@ -79,10 +184,17 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["service", "port"],
+        "required": [
+          "service",
+          "port"
+        ],
         "properties": {
-          "service": {"type": "string"},
-          "port": {"type": "string"}
+          "service": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          }
         }
       }
     },
@@ -91,23 +203,58 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["service", "profile", "attribute", "from"],
+        "required": [
+          "service",
+          "profile",
+          "attribute",
+          "from"
+        ],
         "properties": {
-          "service": {"type": "string"},
-          "profile": {"type": "string"},
-          "attribute": {"type": "string"},
-          "from": {"type": "string"},
-          "port": {"type": "string"},
-          "pointer": {"type": "string"},
-          "value": {"type": "string"},
-          "key": {"type": "string"},
-          "scheme": {"type": "string"},
-          "username": {"type": "string"},
-          "password": {"type": "string"},
-          "password_from": {"type": "string"},
-          "password_key": {"type": "string"},
-          "database": {"type": "string"},
-          "person": {"type": "string"}
+          "service": {
+            "type": "string"
+          },
+          "profile": {
+            "type": "string"
+          },
+          "attribute": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          },
+          "pointer": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "scheme": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "password_from": {
+            "type": "string"
+          },
+          "password_key": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          },
+          "person": {
+            "type": "string"
+          }
         }
       }
     },
@@ -116,29 +263,84 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["profile", "owner", "disclaimed_by", "action"],
+        "required": [
+          "profile",
+          "owner",
+          "disclaimed_by",
+          "action"
+        ],
         "properties": {
-          "profile": {"type": "string"},
-          "owner": {"type": "string"},
-          "disclaimed_by": {"type": "string"},
-          "port": {"type": "string"},
-          "action": {"enum": ["port_closed"]},
-          "reason": {"type": "string"}
+          "profile": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "disclaimed_by": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          },
+          "action": {
+            "enum": [
+              "port_closed"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
         }
       }
     },
     "rules": {
       "description": "Every causal rule this run applies, from the world and from the environment, pinned together. A rule added later is a new lock.",
       "type": "array",
-      "items": {"type": "object"}
+      "items": {
+        "type": "object"
+      }
     },
     "target": {
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": {"type": "string"},
-        "command": {"type": "array", "items": {"type": "string"}},
-        "identity": {"type": "string"}
+        "kind": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "identity": {
+          "type": "string"
+        },
+        "application_url": {
+          "type": "string",
+          "pattern": "^https?://",
+          "description": "Explicit connector transport target required by application-event arrivals."
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "application_connection": {
+          "description": "A switched setup has a real application dependency but no confirmed connector yet. Delivery remains blocked until the session manager confirms a new mapping.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "required", "arrival_ids", "rule_ids", "reason"],
+          "properties": {
+            "status": { "const": "pending" },
+            "required": { "const": true },
+            "arrival_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "rule_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        }
       }
     }
   }

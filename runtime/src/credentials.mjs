@@ -2,6 +2,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, writeFileSy
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { ensureGeneratedSecrets } from "./generated-secrets.mjs";
+import { oauthClientEntries } from "../../emulators/emulate/src/oauth-client-config.mjs";
 
 export const CREDENTIALS_VERSION = "worldfixture.credentials/v1";
 export const CREDENTIALS_FILE = "credentials.json";
@@ -33,13 +34,17 @@ export function readRunCredentials(stateDir, world) {
 // The compiler and tests/parity are outside this credential scheme. Readable
 // artifact keys retain identities and permissions. Only startup resolves them
 // to project secrets, then publishes a fixed credential set for this run.
-export async function prepareCredentials({ lock, artifactPath, stateDir, generatedSecretsPath }) {
+export async function prepareCredentials({ lock, artifactPath, stateDir, generatedSecretsPath, generation, preservedCredentials = {} }) {
   const references = new Map();
-  const add = reference => references.set(reference, `world:${lock.world.id}:${reference}`);
+  const scope = key => generation ? `generation:${generation}:${key}` : key;
+  const add = reference => references.set(reference, scope(`world:${lock.world.id}:${reference}`));
   const overlayPath = join(artifactPath, "projections/emulator-overlay.json");
   if (existsSync(overlayPath)) {
     const overlay = JSON.parse(readFileSync(overlayPath, "utf8"));
     for (const reference of Object.keys(overlay.tokens ?? {})) add(`token:${reference}`);
+    for (const client of oauthClientEntries(overlay)) {
+      if (client.client_secret_ref) add(client.client_secret_ref);
+    }
     if (overlay.twilio?.account) add("twilio:account:auth_token");
     for (const key of overlay.twilio?.api_keys ?? []) add(`twilio:api_key:${key.sid}`);
     for (const user of overlay.clerk?.users ?? []) {
@@ -56,13 +61,14 @@ export async function prepareCredentials({ lock, artifactPath, stateDir, generat
   const sources = [...Object.values(lock.bindings ?? {}), ...lock.services.flatMap(service => service.environment ?? [])];
   for (const source of sources) {
     const key = source.from === "generated" ? source.key : source.password_from === "generated" ? source.password_key : null;
-    if (key) references.set(key, key);
+    if (key) references.set(key, scope(key));
   }
   const stored = await ensureGeneratedSecrets(generatedSecretsPath, references.values());
   const credentials = {
     api_version: CREDENTIALS_VERSION,
     world: { id: lock.world.id, version: String(lock.world.version) },
-    values: Object.fromEntries([...references].map(([reference, key]) => [reference, stored[key]])),
+    ...(generation ? { generation } : {}),
+    values: Object.fromEntries([...references].map(([reference, key]) => [reference, preservedCredentials[reference] ?? stored[key]])),
   };
   mkdirSync(stateDir, { recursive: true, mode: 0o700 });
   const path = join(stateDir, CREDENTIALS_FILE);

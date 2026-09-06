@@ -33,27 +33,22 @@
 // re-measure those internal filenames. This keeps both vendors on the same visible
 // Store path as the published packages, which exact reset requires.
 
-import { createServer, restoreTokenMap, serializeTokenMap, serve } from "@emulators/core";
-import { getGoogleStore } from "@emulators/google";
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-
-import { ALL_VENDORS, LOCAL_VENDORS, VENDOR_NAMES } from "./registry.mjs";
+import { createServer, restoreTokenMap, serializeTokenMap, serve } from "@emulators/core";
+import { getGoogleStore } from "@emulators/google";
 import { resolveBaseUrl } from "./base-url.mjs";
-import { createGoogleSigningOverride } from "./overrides/google-signing.mjs";
-import { wrapGoogleBatch } from "./overrides/google-batch.mjs";
-import { removeInjectedGoogleDefault } from "./overrides/google-users.mjs";
-import { removeInjectedMicrosoftDefault } from "./overrides/microsoft-users.mjs";
-import { removeInjectedClerkDefault } from "./overrides/clerk-users.mjs";
-import { removeInjectedAtlasDefault } from "./overrides/mongoatlas-projects.mjs";
-import { removeInjectedAccounts } from "./overrides/injected-accounts.mjs";
-import { seedSlackHistory } from "./overrides/slack-history.mjs";
-import { seedGitHubIssues } from "./overrides/github-issues.mjs";
 import { withApiKeyAuth } from "./overrides/api-key-auth.mjs";
-import { startGmailPush } from "./plugins/gmail-push.mjs";
+import { seedGitHubIssues } from "./overrides/github-issues.mjs";
+import { wrapGoogleBatch } from "./overrides/google-batch.mjs";
+import { createGoogleSigningOverride } from "./overrides/google-signing.mjs";
+import { seedSlackHistory } from "./overrides/slack-history.mjs";
 import { scheduleArrivals } from "./plugins/arrivals.mjs";
-import { loadSeedConfig } from "./seed-config.mjs";
+import { startGmailPush } from "./plugins/gmail-push.mjs";
 import { READY_PATH, withReadyEndpoint } from "./ready.mjs";
+import { ALL_VENDORS, LOCAL_VENDORS, VENDOR_NAMES } from "./registry.mjs";
+import { loadSeedConfig } from "./seed-config.mjs";
+import { seedWorldProvider, usesWorldSeed, withSeedReceipt } from "./world-provider-seed.mjs";
 
 const log = (line) => console.log(`[emulator] ${line}`);
 const snapshotPath = process.env.WORLDFIXTURE_STATE_PATH
@@ -69,15 +64,17 @@ function loadSnapshot() {
   return value;
 }
 
+if (!process.env.WORLDFIXTURE_WORLD_PATH) {
+  console.error("worldfixture: missing world: WORLDFIXTURE_WORLD_PATH is required");
+  process.exit(64);
+}
 const acceptedSnapshot = loadSnapshot();
 
 // ---- configuration -------------------------------------------------------
 
-const seedPath = process.env.WORLDFIXTURE_SEED ?? "seed.yaml";
 let seedConfig;
 try {
   seedConfig = loadSeedConfig({
-    seedPath,
     worldPath: process.env.WORLDFIXTURE_WORLD_PATH,
     sessionOverlay: process.env.WORLDFIXTURE_SEED_OVERLAY,
     credentialsPath: process.env.WORLDFIXTURE_CREDENTIALS,
@@ -85,7 +82,7 @@ try {
   });
 } catch (err) {
   console.error(`[emulator] ${err.message}`);
-  process.exit(1);
+  process.exit(64);
 }
 
 // Which vendors to start, and where. A vendor is enabled by being given a port —
@@ -112,12 +109,6 @@ function tokenMap() {
     for (const [token, user] of Object.entries(seedConfig.tokens)) {
       tokens[token] = { login: user.login, id: tokenId++, scopes: user.scopes };
     }
-  } else {
-    tokens["test_token_admin"] = {
-      login: "admin",
-      id: 2,
-      scopes: ["repo", "user", "admin:org", "admin:repo_hook"],
-    };
   }
 
   return tokens;
@@ -186,26 +177,17 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
   });
   cachedResolver = loaded.createAppKeyResolver?.(store);
 
-  loaded.plugin.seed?.(store, baseUrl);
+  const managedSeed = usesWorldSeed(vendor, svcSeed, seedConfig.worldfixture_world);
+  const saved = acceptedSnapshot?.vendors?.[vendor];
+  if (acceptedSnapshot && !saved) throw new Error(`composer snapshot has no ${vendor} store`);
+  if (managedSeed && saved && !saved.seed_receipt) throw new Error(`composer snapshot has no ${vendor} seed receipt`);
 
-  // BETWEEN the two, deliberately. Upstream's `seedFromConfig` attributes the
-  // world's own content to whichever user happens to be first, so an injected
-  // account removed afterwards has already signed the world's Slack channels,
-  // Linear issues and Vercel team. See `injected-accounts.mjs`.
-  const swept = removeInjectedAccounts(vendor, store, svcSeed);
-  if (swept.removed) {
-    log(`${vendor}: removed ${swept.removed} account(s) the world never declared` +
-      (swept.cascaded ? `, and ${swept.cascaded} row(s) that only referenced them` : ""));
-  }
-
-  if (svcSeed && loaded.seedFromConfig) {
+  // Seed only declared records. Provider lifecycle helpers supply required
+  // infrastructure without invoking built-in sample seed hooks.
+  if (!managedSeed && svcSeed && loaded.seedFromConfig) {
     loaded.seedFromConfig(store, baseUrl, svcSeed, webhooks);
   }
 
-  if (vendor === "google") removeInjectedGoogleDefault(store, svcSeed);
-  if (vendor === "microsoft") removeInjectedMicrosoftDefault(store, svcSeed);
-  if (vendor === "clerk") removeInjectedClerkDefault(store, svcSeed);
-  if (vendor === "mongoatlas") removeInjectedAtlasDefault(store, svcSeed);
   if (vendor === "github") {
     const seeded = seedGitHubIssues(store, svcSeed);
     if (seeded.issues) log(`github issues: ${seeded.issues} seeded`);
@@ -217,12 +199,18 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
     }
   }
 
-  const saved = acceptedSnapshot?.vendors?.[vendor];
-  if (acceptedSnapshot && !saved) throw new Error(`composer snapshot has no ${vendor} store`);
   if (saved) {
     store.restore(saved.store);
     restoreTokenMap(serverTokens, saved.tokens);
   }
+
+  const seedReceipt = managedSeed ? await seedWorldProvider({
+    vendor, config: svcSeed, world: seedConfig.worldfixture_world, loaded,
+    server: { app, store, webhooks, tokenMap: serverTokens }, baseUrl,
+    tokenReferences: seedConfig.worldfixture_token_references,
+    arrivals: seedConfig.worldfixture?.arrivals, receipt: saved?.seed_receipt,
+  }) : undefined;
+  if (seedReceipt) log(`${vendor}: accepted ${seedReceipt.messages?.length ?? seedReceipt.issues?.length ?? 0} source records through verified APIs`);
 
   let fetchHandler = withApiKeyAuth(app.fetch, { vendor, tokenMap: serverTokens, isKnownToken: token => loaded.isKnownToken?.(store, token) });
   let googlePrivateJwk;
@@ -237,12 +225,12 @@ async function startComposed({ vendor, port, bind }, tokens, started) {
   // Every listener answers the aggregate readiness endpoint, so a caller needs
   // any one composer address rather than the right one. `started` is shared by
   // reference and is complete before the first request can arrive.
-  serve({ fetch: withReadyEndpoint(fetchHandler, started), port, hostname: bind });
+  serve({ fetch: withReadyEndpoint(withSeedReceipt(fetchHandler, { receipt: seedReceipt, tokenMap: serverTokens }), started), port, hostname: bind });
   log(`${vendor} → ${baseUrl} (listening on ${bind}:${port})`);
 
   checkSeedResolves(vendor, svcSeed, tokens, entry.fallback(svcSeed).login);
 
-  return { vendor, port, baseUrl, store, tokenMap: serverTokens, googlePrivateJwk };
+  return { vendor, port, baseUrl, store, tokenMap: serverTokens, googlePrivateJwk, seedReceipt };
 }
 
 // OAuth and Gmail must name the same seeded person. Token insertion order is
@@ -311,6 +299,10 @@ const localNames = Object.keys(LOCAL_VENDORS);
 if (localNames.length > 0) log(`local vendors discovered: ${localNames.join(", ")}`);
 
 for (const target of enabled) {
+  if (!seedConfig.worldfixture_providers.includes(target.vendor)) {
+    console.error(`worldfixture: missing world projection: ${target.vendor} is not declared by the selected artifact`);
+    process.exit(64);
+  }
   started.push(await startComposed(target, tokens, started));
 }
 
@@ -322,6 +314,7 @@ if (!acceptedSnapshot && snapshotPath) {
     vendors: Object.fromEntries(started.map((entry) => [entry.vendor, {
       store: entry.store.snapshot(),
       tokens: serializeTokenMap(entry.tokenMap),
+      ...(entry.seedReceipt ? { seed_receipt: entry.seedReceipt } : {}),
     }])),
     google_signing_key: started.find((entry) => entry.vendor === "google")?.googlePrivateJwk,
   };
@@ -346,19 +339,18 @@ if (google) {
     log("gmail push not configured (no WORLDFIXTURE_PUBSUB_PUSH_URL) — watch will register and never deliver");
   }
 
-  const firstToken = googleSeedToken(seedConfig);
-
   // The runtime scheduler plays every timeline arrival when there is a runtime
   // above this process. Playing them here as well would deliver each one twice.
   if (process.env.WORLDFIXTURE_TIMELINE_OWNER === "runtime") {
     log("timeline arrivals are played by the runtime scheduler, not here");
-  } else scheduleArrivals({
+  } else if (seedConfig?.worldfixture?.arrivals?.length) scheduleArrivals({
     arrivals: seedConfig?.worldfixture?.arrivals,
     // Loopback rather than `baseUrl`: the advertised origin is the session's public
     // edge, and going out and back to insert our own mail would be absurd.
     origin: `http://127.0.0.1:${google.port}`,
-    token: firstToken,
-    defaultUser: seedConfig?.tokens?.[firstToken]?.login,
+    token: googleSeedToken(seedConfig),
+    tokenReferences: seedConfig.worldfixture_token_references,
+    defaultUser: seedConfig?.google?.users?.[0]?.email,
     log,
   });
 }

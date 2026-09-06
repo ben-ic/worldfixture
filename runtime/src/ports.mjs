@@ -12,6 +12,7 @@
 import { createServer } from "node:net";
 
 import { credential } from "./credentials.mjs";
+import { resolveProjection } from "./bindings.mjs";
 
 // A port the kernel says is free right now. There is an unavoidable race between
 // releasing it and a child binding it; holding the listener until the moment of
@@ -37,6 +38,7 @@ export async function allocate(lock, {
   publicHost = "0.0.0.0",
   runner = "container",
   fixedPorts,
+  preservedAllocation = new Map(),
 } = {}) {
   const reservations = [];
   const allocation = new Map();
@@ -51,6 +53,12 @@ export async function allocate(lock, {
 
       for (const port of service.ports) {
         const key = `${service.name}/${port.name}`;
+        const retained = preservedAllocation.get(key);
+        if (retained) {
+          if (retained.protocol !== port.protocol || retained.published !== port.published || retained.contained !== contained) throw new Error(`Preserved application port changed: ${key}`);
+          if (fixedPorts?.[key] !== undefined && fixedPorts[key] !== retained.number) throw new Error(`Preserved application port cannot move: ${key}`);
+          allocation.set(key, retained); continue;
+        }
         const fixed = fixedPorts?.[key];
         if (fixedPorts && !Number.isInteger(fixed)) {
           throw new Error(`the single-container image assigns no port to ${key}`);
@@ -101,6 +109,7 @@ export async function allocate(lock, {
 // entries. Private back channels remain in the same network namespace and need
 // no host mapping. These numbers belong to one run topology, not to the lock.
 export const SINGLE_CONTAINER_PORTS = {
+  "domain/http": 4717,
   "emulate/apple": 4710,
   "emulate/aws": 4711,
   "emulate/clerk": 4712,
@@ -182,7 +191,9 @@ export function environmentFor(service, allocation, {
       ? value.value
       : value.from === "generated"
         ? credential(credentials, value.key)
-        : sources[value.from];
+        : value.from === "projection"
+          ? resolveProjection(worldPath, value)
+          : sources[value.from];
     if (value.from === "capability.port.url" || value.from === "capability.port.host_port") {
       const assigned = allocation.get(`${value.service}/${value.port}`);
       if (assigned) {

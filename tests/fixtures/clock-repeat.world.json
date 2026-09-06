@@ -1,0 +1,21 @@
+{
+  "api_version": "worldfixture.world-source/v1",
+  "id": "test.clock-repeat",
+  "version": "v1",
+  "title": "Clock repeat test",
+  "synthetic_notice": "All records are synthetic and describe no real person.",
+  "scenario": {"id": "clock-repeat", "class": "normal", "title": "Provider replay with a preserved application"},
+  "clock": {"anchor": "2031-01-01T00:00:00Z", "timezone": "UTC", "locale": "en"},
+  "people": [{"id": "person.one", "name": "Tavi"}],
+  "social": {"posts": []},
+  "timeline": [
+    {"id": "arrival.post", "after_seconds": 1, "kind": "domain-operation", "payload": {
+      "api_version": "worldfixture.runtime-operation/v1", "type": "social.post.publish.v1", "actor_id": "person.one",
+      "record": {"id": "post.scheduled", "author_id": "person.one", "title": "Scheduled post", "body": "Applied through the domain API."}
+    }},
+    {"id": "arrival.application", "after_seconds": 2, "kind": "application-event", "payload": {
+      "kind": "application.review.requested", "data": {"request": "review-scheduled-post"}
+    }},
+    {"id": "arrival.optional", "after_seconds": 3, "kind": "webhook", "payload": {"event": "review.available"}}
+  ]
+}

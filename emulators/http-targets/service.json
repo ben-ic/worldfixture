@@ -48,7 +48,16 @@
           "name": "base_url",
           "from": "port.url"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/http-targets.json",
+            "verified": false
+          }
+        ]
+      }
     },
     {
       "profile": "http.feed.v1",
@@ -58,7 +67,16 @@
           "name": "base_url",
           "from": "port.url"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/http-targets.json",
+            "verified": false
+          }
+        ]
+      }
     },
     {
       "profile": "http.probes.v1",
@@ -68,7 +86,16 @@
           "name": "base_url",
           "from": "port.url"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/http-targets.json",
+            "verified": false
+          }
+        ]
+      }
     },
     {
       "profile": "http.metrics.v1",
@@ -78,7 +105,16 @@
           "name": "base_url",
           "from": "port.url"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/http-targets.json",
+            "verified": false
+          }
+        ]
+      }
     },
     {
       "profile": "http.openapi.v1",
@@ -88,17 +124,20 @@
           "name": "base_url",
           "from": "port.url"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/http-targets.json",
+            "verified": false
+          }
+        ]
+      }
     }
   ],
   "world": {
-    "requires": [
-      "identity.organizations.v1",
-      "software.repositories.v1",
-      "communication.channels.v1",
-      "finance.invoices.v1",
-      "support.cases.v1"
-    ],
+    "requires": [],
     "projections": [
       {
         "file": "projections/http-targets.json",

@@ -26,63 +26,26 @@
 // Times are relative to process start, which is close enough to session start: the
 // artifact is launched with the session and the µVM dies with it.
 //
-// SO THIS MODULE LOOKS DEAD AND IS NOT. `scheduleArrivals` returns immediately
-// unless a seed declares `worldfixture.arrivals`, and `main.mjs` skips it entirely
-// when `WORLDFIXTURE_TIMELINE_OWNER=runtime`, which is how it is started under the
-// runtime scheduler. Neither gate is satisfied by anything in this repository, so
-// a sweep for unreachable code finds nothing calling the timer path. Do not remove
-// it on that evidence: the seed block and the environment variable ARE the
-// callers, and this is the only way a demo mailbox ever receives a message
-// somebody is watching for.
-
-function encodeMessage(message) {
-  const { label_ids, labelIds, ...rest } = message;
-
-  return {
-    ...rest,
-    // The seed writes `label_ids`, matching how a seeded message is declared; the API
-    // takes `labelIds`. Accept either so an arrival can be copy-pasted from the seed.
-    // INBOX + UNREAD is the default because `messages.insert` files a message under NO
-    // labels at all when none are given — it would arrive invisibly.
-    labelIds: labelIds ?? label_ids ?? ["INBOX", "UNREAD"],
-  };
-}
+// Standalone deployments can use this seed timer. Managed sessions select the
+// runtime scheduler with WORLDFIXTURE_TIMELINE_OWNER=runtime.
+import { insertGmailMessage } from "./gmail-delivery.mjs";
 
 /**
  * Schedule every arrival declared in the seed. Returns a cancel function.
  */
-export function scheduleArrivals({ arrivals, origin, token, defaultUser, log = () => {} }) {
+export function scheduleArrivals({ arrivals, origin, token, tokenReferences = {}, defaultUser, log = () => {}, fetchImpl = fetch }) {
   if (!Array.isArray(arrivals) || arrivals.length === 0) return () => {};
-
-  if (!token) {
-    log("arrivals declared but the seed has no token to insert them with — skipping");
-    return () => {};
-  }
 
   const timers = arrivals.map((arrival, index) => {
     const delayMs = Math.max(0, Number(arrival.after_seconds ?? 0)) * 1000;
-    const user = arrival.user ?? defaultUser ?? "me";
+    const user = arrival.user ?? defaultUser;
+    const recipientToken = arrival.token_ref ? tokenReferences[arrival.token_ref] : token;
 
     const timer = setTimeout(async () => {
       try {
-        const response = await fetch(
-          `${origin}/gmail/v1/users/${encodeURIComponent(user)}/messages`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify(encodeMessage(arrival.message ?? {})),
-            signal: AbortSignal.timeout(10_000),
-          },
-        );
-
-        if (response.ok) {
-          log(`arrival ${index + 1}/${arrivals.length} delivered to ${user}`);
-        } else {
-          log(`arrival ${index + 1} rejected: HTTP ${response.status} ${await response.text()}`);
-        }
+        const accepted = await insertGmailMessage({ baseUrl: origin, token: recipientToken, user,
+          message: arrival.message ?? {}, fetchImpl });
+        log(`arrival ${index + 1}/${arrivals.length} delivered to ${user}, message ${accepted.id}`);
       } catch (err) {
         log(`arrival ${index + 1} failed: ${err?.message ?? err}`);
       }

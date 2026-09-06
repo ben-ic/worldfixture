@@ -1,0 +1,24 @@
+{
+  "api_version": "worldfixture.world-source/v1",
+  "id": "test.clock-interruption",
+  "version": "v1",
+  "title": "Interrupted application review",
+  "synthetic_notice": "All records are synthetic test data.",
+  "scenario": { "id": "review-handoff", "class": "operational-failure", "title": "A review is accepted before a later publication" },
+  "clock": { "anchor": "2031-01-01T00:00:00Z", "timezone": "UTC", "locale": "en-GB" },
+  "people": [{ "id": "person.one", "name": "One Reviewer", "email": "one@interruption.worldfixture.test" }],
+  "social": { "posts": [] },
+  "timeline": [
+    { "id": "arrival.first", "after_seconds": 0, "kind": "domain-operation", "payload": {
+      "api_version": "worldfixture.runtime-operation/v1", "type": "social.post.publish.v1", "actor_id": "person.one",
+      "record": { "id": "post.first", "title": "Ready for review", "author_id": "person.one", "body": "The review is ready for the application." }
+    } },
+    { "id": "arrival.application", "after_seconds": 1, "kind": "application-event", "payload": {
+      "kind": "review.requested", "data": { "review": "review.one", "message": "Review the first publication" }
+    } },
+    { "id": "arrival.next", "after_seconds": 2, "kind": "domain-operation", "payload": {
+      "api_version": "worldfixture.runtime-operation/v1", "type": "social.post.publish.v1", "actor_id": "person.one",
+      "record": { "id": "post.next", "title": "Later publication", "author_id": "person.one", "body": "This later publication must remain pending after interruption." }
+    } }
+  ]
+}

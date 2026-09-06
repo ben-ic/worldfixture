@@ -32,7 +32,10 @@ MINIMAL_WORLD = {
         {"id": "user-1", "role": "buyer", "experience": "new"},
         {"id": "user-2", "role": "seller", "experience": "expert"},
     ],
-    "timeline": [],
+    "timeline": [{
+        "id": "arrival-population-review", "after_seconds": 1, "kind": "application-event",
+        "payload": {"kind": "marketplace.population.review.requested", "data": {"record_ids": ["user-1", "user-2"]}},
+    }],
 }
 
 
@@ -71,12 +74,12 @@ class CompilerCoreTest(unittest.TestCase):
         with self.assertRaisesRegex(WorldError, "unsupported world profile"):
             validate_world(world)
 
-    def test_only_the_declared_profile_requires_business_records(self) -> None:
+    def test_profile_does_not_require_unrelated_business_records(self) -> None:
         world = copy.deepcopy(MINIMAL_WORLD)
         world["profile"] = "business.operations/v1"
 
-        with self.assertRaisesRegex(WorldError, "world needs an organization"):
-            validate_world(world)
+        validate_world(world)
+        self.assertEqual({}, compile_world(world)["packs"])
 
     def test_the_core_still_enforces_the_world_envelope(self) -> None:
         for key, value, message in (
@@ -106,6 +109,31 @@ class CompilerCoreTest(unittest.TestCase):
         # extension interface needs before that interface is designed.
         self.assertEqual({"business.operations/v1"}, set(PROFILES))
         self.assertEqual({"validate", "compile"}, set(PROFILES["business.operations/v1"]))
+
+    def test_exported_legacy_compile_callback_preserves_reviewed_provider_contracts(self) -> None:
+        from worldfixture_compiler import load_world
+        from worldfixture_compiler.compiler import canonical_json, sha256
+
+        root = Path(__file__).resolve().parents[2]
+        world, _ = load_world(root / "worlds/business.saas-company.v2/world.json")
+        for field in ("operator_teams", "operator_ids", "operator_limit", "queues", "service_roles"):
+            world["software"].pop(field, None)
+        world["communication"].pop("bots", None)
+        world["work"].pop("team", None)
+        original = copy.deepcopy(world)
+        projections = PROFILES["business.operations/v1"]["compile"](world)["projections"]
+        self.assertEqual(original, world)
+        baseline = json.loads((root / "tests/parity/coupling-artifacts.baseline.json").read_text())
+        reviewed = next(row for row in baseline["worlds"] if row["id"] == "business.saas-company" and row["version"] == "v2")
+        # Compare complete provider bytes with the independent, original audit
+        # record. This covers the old operator cap, queues, roles and team.
+        for provider in ("aws", "linear"):
+            with self.subTest(provider=provider):
+                body = canonical_json(projections[provider])
+                self.assertEqual(reviewed["files"][f"projections/{provider}.json"],
+                                 {"sha256": sha256(body), "size": len(body)})
+        self.assertEqual([{"name": "northstar-helper"}], projections["slack"]["bots"])
+        self.assertEqual(projections["slack"]["bots"], projections["emulator-overlay"]["slack"]["bots"])
 
 
 
@@ -360,10 +388,9 @@ class CapabilityOwnershipTest(unittest.TestCase):
         # vendor must not receive buckets and become a second owner.
         self.assertNotIn("s3", self.projections["emulator-overlay"]["aws"])
 
-    def test_the_aws_vendor_keeps_what_nothing_else_implements(self) -> None:
-        overlay = self.projections["emulator-overlay"]["aws"]
-        for capability in ("iam", "sqs"):
-            self.assertIn(capability, overlay)
+    def test_the_aws_vendor_keeps_declared_iam_and_omits_undeclared_sqs(self) -> None:
+        self.assertIn("iam", self.projections["emulator-overlay"]["aws"])
+        self.assertNotIn("sqs", self.projections["emulator-overlay"]["aws"])
 
     def test_the_s3_service_still_gets_buckets_and_objects(self) -> None:
         s3 = self.projections["aws"]["s3"]
@@ -409,7 +436,7 @@ class MinimalWorldTest(unittest.TestCase):
 
         self.assertEqual(digests[0], digests[1])
 
-    def test_a_world_missing_a_compiled_domain_is_refused_by_name(self) -> None:
+    def test_independent_empty_domains_can_be_omitted(self) -> None:
         """Validation answers "will this build?", so it has to know what build needs.
 
         The validator read these domains with `.get(...)` and the compiler indexed
@@ -424,13 +451,22 @@ class MinimalWorldTest(unittest.TestCase):
             with self.subTest(domain=domain):
                 without = copy.deepcopy(fragment)
                 del without["contributes"][domain]
+                if domain == "communication":
+                    # A source with no channel cannot retain its chat arrival.
+                    # This independent fixture asks the connected application
+                    # to review the existing project instead.
+                    without["contributes"]["timeline"] = [{
+                        "id": "arrival-project-review", "after_seconds": 30, "kind": "application-event",
+                        "payload": {"kind": "project.review.requested", "data": {"project_id": "project-exports"}},
+                    }]
                 with tempfile.TemporaryDirectory() as directory:
                     written = Path(directory)
                     (written / "fragments").mkdir()
                     (written / "fragments/core.json").write_text(json.dumps(without))
                     (written / "world.json").write_text(json.dumps(source))
-                    with self.assertRaisesRegex(WorldError, domain):
-                        build_world(written / "world.json", written / "artifact")
+                    build_world(written / "world.json", written / "artifact")
+                    compiled = json.loads((written / "artifact/world.json").read_text())
+                    self.assertNotIn(domain, compiled)
 
 
 class ProseRebaseTest(unittest.TestCase):

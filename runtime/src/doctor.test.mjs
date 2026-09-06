@@ -11,13 +11,14 @@
 // act on it: what failed, why, and the next command.
 
 import assert from "node:assert/strict";
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { SUPPORTED_ARCHITECTURES, diagnose, formatReport, validateArtifact } from "./doctor.mjs";
+import { diagnose, formatReport, SUPPORTED_ARCHITECTURES, validateArtifact } from "./doctor.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
@@ -195,7 +196,7 @@ test("an image built for the other architecture is a warning, not a failure", as
   assert.equal(report.healthy, true);
 });
 
-test("a corrupt artifact names the file, both digests, and the rebuild", () => {
+test("a corrupt artifact names the file and both digests without guessing its source", () => {
   const artifact = scratchDir("worldfixture-artifact-");
   mkdirSync(join(artifact, "packs"), { recursive: true });
   writeFileSync(join(artifact, "packs/work.json"), "{}");
@@ -209,9 +210,13 @@ test("a corrupt artifact names the file, both digests, and the rebuild", () => {
 
   const check = validateArtifact(artifact);
   assert.equal(check.state, "failed");
-  assert.match(check.summary, /1 of 1 artifact files do not match/);
-  assert.match(check.cause, /packs\/work\.json hashes to \w{12}…, the manifest says ffffffffffff…/);
-  assert.match(check.repair, /worldfixture_compiler build/);
+  assert.match(check.summary, /fails artifact validation/);
+  assert.match(check.cause, /packs\/work\.json/);
+  assert.match(check.cause, /hash|digest|sha-?256/i);
+  assert.match(check.cause, /ffffffffffff/);
+  assert.match(check.cause, /44136fa355b3/);
+  assert.match(check.repair, /Source path is unavailable/);
+  assert.doesNotMatch(check.repair, /business\.saas-company\.v3|worldfixture(?:_compiler)? build/);
 });
 
 test("a missing artifact file is reported as missing rather than as a digest mismatch", () => {
@@ -224,20 +229,123 @@ test("a missing artifact file is reported as missing rather than as a digest mis
     files: { "packs/work.json": { sha256: "f".repeat(64), size: 2 } },
   }));
 
-  assert.match(validateArtifact(artifact).cause, /packs\/work\.json is missing/);
+  assert.match(validateArtifact(artifact).cause, /packs\/work\.json/);
+  assert.match(validateArtifact(artifact).cause, /missing|ENOENT/);
 });
 
-test("no artifact at all names the compiler command", () => {
+test("no artifact at all reports unavailable source information", () => {
   const check = validateArtifact(join(scratchDir(), "not-built"));
   assert.equal(check.state, "failed");
   assert.match(check.summary, /no world artifact at/);
-  assert.match(check.repair, /worldfixture_compiler build/);
+  assert.match(check.repair, /Source path is unavailable/);
+  assert.doesNotMatch(check.repair, /business\.saas-company\.v3|worldfixture(?:_compiler)? build/);
 });
 
 test("the real artifact validates against its own manifest", () => {
   const check = validateArtifact(ARTIFACT);
   assert.equal(check.state, "ok", check.cause);
   assert.match(check.summary, /business\.saas-company:v2 validates/);
+});
+
+function copiedArtifact({ sourceName = "source", artifactName = "renamed-artifact" } = {}) {
+  const root = scratchDir();
+  const sourceRoot = join(root, "sources");
+  const source = join(sourceRoot, sourceName);
+  const artifact = join(root, artifactName);
+  cpSync(join(ROOT, "worlds/business.saas-company.v2"), source, { recursive: true });
+  cpSync(ARTIFACT, artifact, { recursive: true });
+  return { source: realpathSync(join(source, "world.json")), sourceRoot, artifact };
+}
+
+function repairArguments(repair) {
+  const command = repair.replace(/^Rebuild the artifact: /, "");
+  // Capture shell arguments without running a build. This also proves that
+  // shell substitutions in source and output paths remain literal text.
+  const script = `worldfixture() { printf '%s\\0' "$@"; }; ${command}`;
+  return execFileSync("/bin/sh", ["-c", script], { encoding: "utf8" }).split("\0").slice(0, -1);
+}
+
+test("a renamed damaged v2 artifact repairs from its verified source into its actual output", () => {
+  const { source, sourceRoot, artifact } = copiedArtifact();
+  writeFileSync(join(artifact, "packs/work.json"), "{}");
+  const check = validateArtifact(artifact, { sourceRoots: [sourceRoot] });
+  assert.equal(check.state, "failed");
+  assert.deepEqual(repairArguments(check.repair), ["build", source, "--output", artifact]);
+  assert.doesNotMatch(check.repair, /business\.saas-company\.v3/);
+});
+
+test("repair paths preserve spaces, quotes, dollar substitutions and backticks", () => {
+  const { source, sourceRoot, artifact } = copiedArtifact({
+    sourceName: "source ' $(printf replaced) `printf replaced`",
+    artifactName: "output ' $(printf replaced) `printf replaced`",
+  });
+  rmSync(join(artifact, "packs/work.json"));
+  const check = validateArtifact(artifact, { sourceRoots: [sourceRoot] });
+  assert.equal(check.state, "failed");
+  assert.deepEqual(repairArguments(check.repair), ["build", source, "--output", artifact]);
+});
+
+test("a damaged artifact without source provenance does not guess from a matching source tree", () => {
+  const { sourceRoot, artifact } = copiedArtifact();
+  const path = join(artifact, "manifest.json");
+  const manifest = JSON.parse(readFileSync(path, "utf8"));
+  delete manifest.source_files;
+  delete manifest.source_sha256;
+  writeFileSync(path, JSON.stringify(manifest));
+  writeFileSync(join(artifact, "packs/work.json"), "{}");
+  const check = validateArtifact(artifact, { sourceRoots: [sourceRoot] });
+  assert.equal(check.state, "failed");
+  assert.match(check.repair, /Source path is unavailable/);
+  assert.doesNotMatch(check.repair, /worldfixture build/);
+});
+
+test("a matching source identity without matching provenance cannot produce repair advice", () => {
+  const { source, sourceRoot, artifact } = copiedArtifact();
+  writeFileSync(source, readFileSync(source, "utf8") + "\n");
+  writeFileSync(join(artifact, "packs/work.json"), "{}");
+  const check = validateArtifact(artifact, { sourceRoots: [sourceRoot] });
+  assert.equal(check.state, "failed");
+  assert.match(check.repair, /Source path is unavailable/);
+  assert.doesNotMatch(check.repair, /worldfixture build/);
+});
+
+test("doctor reports aggregate digest, identity and unsafe-path inspection failures", async (t) => {
+  const cases = [
+    ["aggregate digest", (manifest) => { manifest.artifact_sha256 = "0".repeat(64); }],
+    ["world identity", (manifest) => { manifest.world_id = "changed.identity"; }],
+    ["unsafe path", (manifest) => {
+      manifest.files["../outside.json"] = { sha256: "0".repeat(64), size: 2 };
+    }],
+  ];
+  for (const [name, damage] of cases) {
+    await t.test(name, () => {
+      const { artifact } = copiedArtifact();
+      const path = join(artifact, "manifest.json");
+      const manifest = JSON.parse(readFileSync(path, "utf8"));
+      damage(manifest);
+      writeFileSync(path, JSON.stringify(manifest));
+      const check = validateArtifact(artifact, { sourceRoots: [] });
+      assert.equal(check.state, "failed");
+      assert.ok(check.cause);
+      assert.match(check.repair, /Source path is unavailable/);
+    });
+  }
+});
+
+test("diagnose passes custom source roots to the shared artifact inspector", async () => {
+  const { source, sourceRoot, artifact } = copiedArtifact();
+  writeFileSync(join(artifact, "packs/work.json"), "{}");
+  const report = await diagnose({
+    artifactPath: artifact,
+    sourceRoots: [sourceRoot],
+    stateDir: scratchDir(),
+    arch: "arm64",
+    dockerRunner: fakeDocker(HEALTHY_DOCKER),
+    probeImpl: neverProbed,
+    fetchImpl: neverFetched,
+  });
+  assert.equal(report.healthy, false);
+  assert.deepEqual(repairArguments(find(report, "World artifact").repair), ["build", source, "--output", artifact]);
 });
 
 test("an unwritable state directory is found by writing, not by reading mode bits", async () => {

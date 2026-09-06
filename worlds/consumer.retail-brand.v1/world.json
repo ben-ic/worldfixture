@@ -39,6 +39,8 @@
   "fragments": [
     "backbones/marlow-pine.json",
     "packs/retail-operations.json",
-    "stories/spring-drop.json"
+    "stories/spring-drop.json",
+    "packs/google-mailboxes.json",
+    "packs/finance-settlements.json"
   ]
 }

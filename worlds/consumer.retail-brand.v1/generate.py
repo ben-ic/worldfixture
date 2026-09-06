@@ -23,6 +23,11 @@ out longhand below, because that prose is the world. Only the order lines and
 one marketing send are composed, and they are composed from one seeded
 generator, so running this twice produces byte-identical fragments.
 
+This generator writes the three base fragments only. The manifest and the
+hand-authored google-mailboxes.json and finance-settlements.json fragments stay
+unchanged. Explicit payment dates, refunds, and one-time orders live in the
+finance fragment; generated order and Club totals do not include them.
+
 WHAT MAKES IT COHERENT RATHER THAN MERELY POPULATED. Five storylines run through
 it: a collection launching a week from the anchor with one item short, a glaze
 fault in a discontinued mug that the brand decided to announce before anyone
@@ -189,8 +194,6 @@ def people_records() -> list[dict]:
                 "id": person_id,
                 "name": name,
                 "email": f"{name.split()[0].lower()}@{BRAND_DOMAIN}",
-                "github_login": person_id,
-                "slack_id": f"U{index:09d}",
                 "organization_id": "marlow-pine",
                 "role": role,
                 "team": team,
@@ -207,8 +210,6 @@ def people_records() -> list[dict]:
                 "id": person_id,
                 "name": name,
                 "email": f"{name.split()[0].lower()}@{domain}",
-                "github_login": person_id,
-                "slack_id": f"U1{index:08d}",
                 "organization_id": organization_id,
                 "role": role,
                 "team": "partner",
@@ -223,8 +224,6 @@ def people_records() -> list[dict]:
                 "id": person_id,
                 "name": name,
                 "email": f"{person_id.replace('-', '.')}@{domain}",
-                "github_login": person_id,
-                "slack_id": f"U2{index:08d}",
                 "organization_id": organization_id,
                 "role": "Shopper",
                 "team": "shopper",
@@ -1085,152 +1084,6 @@ ANCHOR_INVOICES = [
 # Software
 # ---------------------------------------------------------------------------
 
-REPOSITORIES = [
-    {
-        "id": "repo-storefront",
-        "name": "storefront",
-        "owner_id": "marlow-pine",
-        "description": "The public storefront, product pages, reviews and checkout.",
-        "language": "TypeScript",
-        "topics": ["web", "commerce", "storefront"],
-        "member_ids": ["gus-ferreira", "anya-kowalski", "mira-halvorsen"],
-        "issues": [
-            {
-                "id": "issue-210",
-                "number": 210,
-                "title": "Preorder badge does not render on collection tiles",
-                "body": (
-                    "The product page shows the preorder state correctly. The collection grid reads a "
-                    "cached availability flag written before the status changed, so the Fieldstone bowl "
-                    "looks in stock until you open it. The drop is on 25 March."
-                ),
-                "state": "open",
-                "author": "mira-halvorsen",
-                "assignee": "gus-ferreira",
-                "labels": ["bug", "fieldstone", "storefront"],
-            },
-            {
-                "id": "issue-211",
-                "number": 211,
-                "title": "Verified-buyer badge misses orders placed as a guest",
-                "body": (
-                    "The badge is granted by matching a review author's account id to an order. A guest "
-                    "order has no account id, so a genuine buyer shows unbadged. Matching on the order "
-                    "email is the obvious fix and needs a decision about case and plus-addressing."
-                ),
-                "state": "open",
-                "author": "anya-kowalski",
-                "assignee": "anya-kowalski",
-                "labels": ["bug", "reviews"],
-            },
-            {
-                "id": "issue-212",
-                "number": 212,
-                "title": "Review list sorts by newest with no way to change it",
-                "body": "Most helpful first is the useful default on a product with more than ten reviews.",
-                "state": "open",
-                "author": "yuki-tanabe",
-                "assignee": "anya-kowalski",
-                "labels": ["enhancement", "reviews"],
-            },
-            {
-                "id": "issue-217",
-                "number": 217,
-                "title": "Product pages ship 1.4 MB of unused CSS",
-                "body": "The whole design system loads on every route. Splitting it would halve first paint on mobile.",
-                "state": "open",
-                "author": "gus-ferreira",
-                "assignee": "gus-ferreira",
-                "labels": ["performance", "storefront"],
-            },
-        ],
-    },
-    {
-        "id": "repo-order-service",
-        "name": "order-service",
-        "owner_id": "marlow-pine",
-        "description": "Orders, allocation, fulfilment webhooks and returns.",
-        "language": "Go",
-        "topics": ["orders", "fulfilment", "api"],
-        "member_ids": ["gus-ferreira", "callum-reid", "tomas-brekke"],
-        "issues": [
-            {
-                "id": "issue-213",
-                "number": 213,
-                "title": "Shipment webhook accepts a scan with no tracking number",
-                "body": (
-                    "Swiftline sent eleven scans on 12 March with an empty tracking field. The service "
-                    "marked all eleven orders shipped and told eleven people their parcel was on its way. "
-                    "A scan with no tracking number is not a shipment and should be rejected."
-                ),
-                "state": "open",
-                "author": "callum-reid",
-                "assignee": "gus-ferreira",
-                "labels": ["bug", "fulfilment"],
-                "support_case_id": "case-missing-tracking",
-            },
-            {
-                "id": "issue-214",
-                "number": 214,
-                "title": "Return label request times out above twenty items",
-                "body": "Fixed by batching the carrier call. Closed after the wholesale return in February.",
-                "state": "closed",
-                "author": "otto-lindqvist",
-                "assignee": "gus-ferreira",
-                "labels": ["bug", "returns"],
-            },
-            {
-                "id": "issue-218",
-                "number": 218,
-                "title": "Backorder allocation ignores preorder quantity",
-                "body": (
-                    "Preordered bowls are not held against the second kiln run, so a walk-up order placed "
-                    "after the drop could take stock a preorder has already paid for."
-                ),
-                "state": "open",
-                "author": "kit-nwosu",
-                "assignee": "gus-ferreira",
-                "labels": ["bug", "fieldstone", "inventory"],
-            },
-        ],
-    },
-    {
-        "id": "repo-club-billing",
-        "name": "club-billing",
-        "owner_id": "marlow-pine",
-        "description": "Pantry Club renewals, credit notes and the monthly billing run.",
-        "language": "Python",
-        "topics": ["billing", "subscriptions"],
-        "member_ids": ["tomas-brekke", "rosa-delgado"],
-        "issues": [
-            {
-                "id": "issue-215",
-                "number": 215,
-                "title": "Renewal retry can charge twice when the first attempt times out",
-                "body": (
-                    "The charge succeeds at the provider, the response times out locally, and the retry "
-                    "sends a second charge without an idempotency key. Two members paid twice in March. "
-                    "The key exists in the provider call and is not being set."
-                ),
-                "state": "open",
-                "author": "rosa-delgado",
-                "assignee": "tomas-brekke",
-                "labels": ["bug", "billing", "pantry-club"],
-                "support_case_id": "case-double-charge",
-            },
-            {
-                "id": "issue-216",
-                "number": 216,
-                "title": "Credit notes are not linked to the invoice they correct",
-                "body": "A member sees a credit with no reference, which reads like an unrelated refund.",
-                "state": "open",
-                "author": "rosa-delgado",
-                "assignee": "tomas-brekke",
-                "labels": ["bug", "billing"],
-            },
-        ],
-    },
-]
 
 
 # ---------------------------------------------------------------------------
@@ -1411,18 +1264,6 @@ TASK_SOURCE = [
 ]
 
 # (id, task, person, days before anchor, minutes, note)
-TIME_SOURCE = [
-    ("time-001", "task-preorder-badge", "gus-ferreira", 1, 145, "Traced the stale availability flag to the collection cache."),
-    ("time-002", "task-preorder-badge", "gus-ferreira", 0, 90, "Cache invalidation on status change; still writing the test."),
-    ("time-003", "task-bowl-count", "kit-nwosu", 2, 60, "Counted the second-run rejects with Harriet on a call."),
-    ("time-004", "task-replacement-list", "otto-lindqvist", 2, 180, "Matched affected orders to current addresses."),
-    ("time-005", "task-review-replies", "sana-devi", 1, 75, "Four review replies written and posted."),
-    ("time-006", "task-idempotency-key", "tomas-brekke", 1, 120, "Reproduced the double charge against the provider sandbox."),
-    ("time-007", "task-credit-notes", "rosa-delgado", 1, 55, "First credit note issued and reconciled."),
-    ("time-008", "task-pallet-trace", "callum-reid", 0, 165, "Yard log pulled; eight of eleven located."),
-    ("time-009", "task-tracking-guard", "gus-ferreira", 3, 40, "Wrote the rejection rule; waiting on the pallet trace to confirm the shape."),
-    ("time-010", "task-drop-email", "bea-morrow", 2, 110, "Draft one of the drop announcement."),
-]
 
 
 def task_records() -> list[dict]:
@@ -1443,18 +1284,6 @@ def task_records() -> list[dict]:
     ]
 
 
-def time_records() -> list[dict]:
-    return [
-        {
-            "id": entry_id,
-            "task_id": task_id,
-            "person_id": person_id,
-            "date": day(-days_before),
-            "minutes": minutes,
-            "note": note,
-        }
-        for entry_id, task_id, person_id, days_before, minutes, note in TIME_SOURCE
-    ]
 
 
 # ---------------------------------------------------------------------------
@@ -2086,47 +1915,6 @@ TIMELINE = [
         },
     },
     {
-        "id": "arrival-issue-210-fixed",
-        "after_seconds": 260,
-        "kind": "github-comment",
-        "payload": {
-            "author_id": "gus-ferreira",
-            "issue_id": "issue-210",
-            "body": (
-                "Fixed. The collection grid now reads the same availability source as the product page, "
-                "and the cache is invalidated on any status change. Added a test that flips a product to "
-                "preorder and asserts the grid within one request."
-            ),
-        },
-    },
-    {
-        "id": "arrival-issue-215-fixed",
-        "after_seconds": 300,
-        "kind": "github-comment",
-        "payload": {
-            "author_id": "tomas-brekke",
-            "issue_id": "issue-215",
-            "body": (
-                "Idempotency key is now set from the renewal id, so a retry after a timeout returns the "
-                "original charge instead of creating a second one. Test kills the connection mid-charge "
-                "and asserts one charge at the provider."
-            ),
-        },
-    },
-    {
-        "id": "arrival-issue-213-comment",
-        "after_seconds": 340,
-        "kind": "github-comment",
-        "payload": {
-            "author_id": "callum-reid",
-            "issue_id": "issue-213",
-            "body": (
-                "Swiftline has agreed not to send a scan without a tracking number, but the guard still "
-                "belongs here. A partner's promise is not a validation rule."
-            ),
-        },
-    },
-    {
         "id": "arrival-orla-payment",
         "after_seconds": 385,
         "kind": "stripe-payment",
@@ -2215,7 +2003,7 @@ STORIES = [
         "title": "A collection launching with one piece short",
         "summary": "Fieldstone opens on 25 March. The serving bowl's first two kiln runs produced 93 sellable pieces against about 140 units of demand, so it opens as a preorder rather than as stock that does not exist.",
         "state": "active",
-        "entity_refs": ["prod-fieldstone-bowl", "issue-210", "issue-218", "project-fieldstone-drop", "doc-fieldstone-launch"],
+        "entity_refs": ["prod-fieldstone-bowl", "project-fieldstone-drop", "doc-fieldstone-launch"],
     },
     {
         "id": "story-harbour-crazing",
@@ -2229,21 +2017,21 @@ STORIES = [
         "title": "Two members charged twice, found in reconciliation",
         "summary": "A renewal retry with no idempotency key charged two Pantry Club members twice in March. Finance found it, not the members. One credit note is issued and the second follows.",
         "state": "active",
-        "entity_refs": ["issue-215", "issue-216", "case-double-charge", "inv-2033", "inv-2034", "doc-club-billing"],
+        "entity_refs": ["case-double-charge", "inv-2033", "inv-2034", "doc-club-billing"],
     },
     {
         "id": "story-pallet-trace",
         "title": "Eleven orders that said shipped and were not",
         "summary": "Swiftline scanned a pallet outbound with no tracking numbers and the order service believed it. Eleven people were told their parcel was on its way. Support is holding the message until there is a true one.",
         "state": "active",
-        "entity_refs": ["issue-213", "case-missing-tracking", "project-fulfilment-recovery", "post-shipping-honestly"],
+        "entity_refs": ["case-missing-tracking", "project-fulfilment-recovery", "post-shipping-honestly"],
     },
     {
         "id": "story-verified-badges",
         "title": "A badge that is honest about what it cannot prove",
         "summary": "Verified-buyer badges match a review to an order by account id, so guest buyers stay unbadged. The team shipped the gap rather than badging everyone.",
         "state": "active",
-        "entity_refs": ["issue-211", "issue-212", "post-verified-reviews", "doc-review-badges"],
+        "entity_refs": ["post-verified-reviews", "doc-review-badges"],
     },
 ]
 
@@ -2362,21 +2150,84 @@ AGENTIC = {
         {
             "id": "rule-order-paid",
             "when": "commerce.order.paid",
-            "requires": ["order_id", "amount_cents"],
-            "emits": ["finance.ledger.updated", "mail.order-confirmation.available"],
+            "requires": [
+                "order_id",
+                "amount_cents"
+            ],
+            "emits": [
+                "finance.ledger.updated",
+                "mail.order-confirmation.available"
+            ],
+            "execution": "descriptive",
+            "reason": "Describes a story consequence. No executable provider operation is declared for this rule."
         },
         {
             "id": "rule-review-published",
             "when": "social.review.published",
-            "requires": ["review_id", "product_id"],
-            "emits": ["social.product-rating.updated", "support.case.considered"],
+            "requires": [
+                "review_id",
+                "product_id"
+            ],
+            "emits": [
+                "social.product-rating.updated",
+                "support.case.considered"
+            ],
+            "execution": "descriptive",
+            "reason": "Describes a story consequence. No executable provider operation is declared for this rule."
         },
         {
             "id": "rule-invoice-payment",
             "when": "finance.invoice.paid",
-            "requires": ["invoice_id", "payment_id", "amount_cents"],
-            "emits": ["finance.ledger.updated", "mail.payment-receipt.available"],
+            "requires": [
+                "invoice_id",
+                "payment_id",
+                "amount_cents"
+            ],
+            "emits": [
+                "finance.ledger.updated",
+                "mail.payment-receipt.available"
+            ],
+            "execution": "descriptive",
+            "reason": "Describes a story consequence. No executable provider operation is declared for this rule."
         },
+        {
+            "api_version": "worldfixture.causal-rule/v1",
+            "id": "rule-slack-channel-notification",
+            "when": "communication.message.sent.v1",
+            "requires": [
+                "provider_evidence.channel_name",
+                "actor_id"
+            ],
+            "emit": [
+                {
+                    "type": "mail.notification.requested.v1",
+                    "after": "1s",
+                    "with": {
+                        "recipients": {
+                            "lookup": {
+                                "collection": "communication.channels",
+                                "match": {
+                                    "field": "name",
+                                    "value": {
+                                        "copy": "provider_evidence.channel_name"
+                                    }
+                                },
+                                "select": "member_ids"
+                            }
+                        },
+                        "author": {
+                            "copy": "actor_id"
+                        },
+                        "channel": {
+                            "copy": "provider_evidence.channel_name"
+                        },
+                        "text": {
+                            "copy": "provider_evidence.text"
+                        }
+                    }
+                }
+            ]
+        }
     ],
 }
 
@@ -2622,7 +2473,6 @@ def main() -> None:
     reviews = review_records()
     comments = comment_records()
     tasks = task_records()
-    times = time_records()
 
     write(
         HERE / "backbones/marlow-pine.json",
@@ -2664,19 +2514,20 @@ def main() -> None:
                 },
                 "social": {"posts": POSTS, "reviews": reviews, "comments": comments},
                 "software": {
+                    "operator_teams": ["engineering"],
+                    "operator_ids": ["iris-mendel"],
+                    "operator_limit": None,
                     "database": {
                         "cluster": "marlow-pine-production",
                         "name": "marlowpine",
                         "collections": ["customers", "orders", "products", "reviews", "support_cases"],
                     },
-                    "repositories": REPOSITORIES,
                 },
                 "support": {"cases": CASES},
                 "work": {
                     "team": {"key": "MP", "name": "Marlow & Pine"},
                     "projects": PROJECTS,
                     "tasks": tasks,
-                    "time_entries": times,
                 },
             },
         },
@@ -2711,12 +2562,9 @@ def main() -> None:
         "club members": len(CUSTOMERS),
         "suppliers": len(SUPPLIERS),
         "anchor invoices": len(ANCHOR_INVOICES),
-        "repositories": len(REPOSITORIES),
-        "issues": sum(len(repository["issues"]) for repository in REPOSITORIES),
         "support cases": len(CASES),
         "projects": len(PROJECTS),
         "tasks": len(tasks),
-        "time entries": len(times),
         "documents": len(DOCUMENTS),
         "calendar events": len(CALENDAR_EVENTS),
         "timeline arrivals": len(TIMELINE),

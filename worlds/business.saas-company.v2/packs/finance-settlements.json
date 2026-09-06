@@ -1,0 +1,26 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "id": "pack.finance-settlements",
+  "contributes": {
+    "finance": {
+      "payments": [
+        {
+          "id": "pay-inv-202607-lumen",
+          "invoice_id": "inv-202607-lumen",
+          "customer_id": "lumen",
+          "paid_on": "2026-08-20",
+          "amount_cents": 41200,
+          "currency": "USD",
+          "status": "succeeded"
+        }
+      ]
+    },
+    "clock": {
+      "rebase": {
+        "relative_paths": [
+          "finance.payments"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,638 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "id": "pack.paid-anchor-settlements",
+  "contributes": {
+    "finance": {
+      "payments": [
+        {
+          "id": "pay-inv-5101",
+          "invoice_id": "inv-5101",
+          "customer_id": "lumen",
+          "amount_cents": 412000,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5102",
+          "invoice_id": "inv-5102",
+          "customer_id": "harbor",
+          "amount_cents": 413100,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5103",
+          "invoice_id": "inv-5103",
+          "customer_id": "ember",
+          "amount_cents": 414200,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5104",
+          "invoice_id": "inv-5104",
+          "customer_id": "kestrel",
+          "amount_cents": 415300,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5105",
+          "invoice_id": "inv-5105",
+          "customer_id": "tidewater",
+          "amount_cents": 172400,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5106",
+          "invoice_id": "inv-5106",
+          "customer_id": "brightwell",
+          "amount_cents": 173500,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5107",
+          "invoice_id": "inv-5107",
+          "customer_id": "fieldnote",
+          "amount_cents": 174600,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5108",
+          "invoice_id": "inv-5108",
+          "customer_id": "marlow",
+          "amount_cents": 175700,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5109",
+          "invoice_id": "inv-5109",
+          "customer_id": "orchard",
+          "amount_cents": 105200,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5110",
+          "invoice_id": "inv-5110",
+          "customer_id": "pinecrest",
+          "amount_cents": 106300,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5111",
+          "invoice_id": "inv-5111",
+          "customer_id": "quarry",
+          "amount_cents": 107400,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5112",
+          "invoice_id": "inv-5112",
+          "customer_id": "riverbend",
+          "amount_cents": 108500,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5113",
+          "invoice_id": "inv-5113",
+          "customer_id": "summit",
+          "amount_cents": 54400,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5114",
+          "invoice_id": "inv-5114",
+          "customer_id": "thistle",
+          "amount_cents": 55500,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5115",
+          "invoice_id": "inv-5115",
+          "customer_id": "umbra",
+          "amount_cents": 56600,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5116",
+          "invoice_id": "inv-5116",
+          "customer_id": "vantage",
+          "amount_cents": 57700,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5117",
+          "invoice_id": "inv-5117",
+          "customer_id": "willow",
+          "amount_cents": 42400,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5118",
+          "invoice_id": "inv-5118",
+          "customer_id": "cobalt",
+          "amount_cents": 43500,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5119",
+          "invoice_id": "inv-5119",
+          "customer_id": "dunmore",
+          "amount_cents": 44600,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5120",
+          "invoice_id": "inv-5120",
+          "customer_id": "elmgrove",
+          "amount_cents": 45700,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5121",
+          "invoice_id": "inv-5121",
+          "customer_id": "foxglove",
+          "amount_cents": 34600,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5122",
+          "invoice_id": "inv-5122",
+          "customer_id": "gantry",
+          "amount_cents": 35700,
+          "currency": "USD",
+          "paid_on": "2027-06-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5123",
+          "invoice_id": "inv-5123",
+          "customer_id": "halcyon",
+          "amount_cents": 36800,
+          "currency": "USD",
+          "paid_on": "2027-07-01",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5124",
+          "invoice_id": "inv-5124",
+          "customer_id": "ironvale",
+          "amount_cents": 37900,
+          "currency": "USD",
+          "paid_on": "2027-07-05",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5125",
+          "invoice_id": "inv-5125",
+          "customer_id": "lumen",
+          "amount_cents": 412000,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5126",
+          "invoice_id": "inv-5126",
+          "customer_id": "harbor",
+          "amount_cents": 413100,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5127",
+          "invoice_id": "inv-5127",
+          "customer_id": "ember",
+          "amount_cents": 414200,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5128",
+          "invoice_id": "inv-5128",
+          "customer_id": "kestrel",
+          "amount_cents": 415300,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5129",
+          "invoice_id": "inv-5129",
+          "customer_id": "tidewater",
+          "amount_cents": 172400,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5130",
+          "invoice_id": "inv-5130",
+          "customer_id": "brightwell",
+          "amount_cents": 173500,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5131",
+          "invoice_id": "inv-5131",
+          "customer_id": "fieldnote",
+          "amount_cents": 174600,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5133",
+          "invoice_id": "inv-5133",
+          "customer_id": "orchard",
+          "amount_cents": 105200,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5134",
+          "invoice_id": "inv-5134",
+          "customer_id": "pinecrest",
+          "amount_cents": 106300,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5136",
+          "invoice_id": "inv-5136",
+          "customer_id": "riverbend",
+          "amount_cents": 108500,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5137",
+          "invoice_id": "inv-5137",
+          "customer_id": "summit",
+          "amount_cents": 54400,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5138",
+          "invoice_id": "inv-5138",
+          "customer_id": "thistle",
+          "amount_cents": 55500,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5139",
+          "invoice_id": "inv-5139",
+          "customer_id": "umbra",
+          "amount_cents": 56600,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5140",
+          "invoice_id": "inv-5140",
+          "customer_id": "vantage",
+          "amount_cents": 57700,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5141",
+          "invoice_id": "inv-5141",
+          "customer_id": "willow",
+          "amount_cents": 42400,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5142",
+          "invoice_id": "inv-5142",
+          "customer_id": "cobalt",
+          "amount_cents": 43500,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5143",
+          "invoice_id": "inv-5143",
+          "customer_id": "dunmore",
+          "amount_cents": 44600,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5144",
+          "invoice_id": "inv-5144",
+          "customer_id": "elmgrove",
+          "amount_cents": 45700,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5146",
+          "invoice_id": "inv-5146",
+          "customer_id": "gantry",
+          "amount_cents": 35700,
+          "currency": "USD",
+          "paid_on": "2027-07-28",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5147",
+          "invoice_id": "inv-5147",
+          "customer_id": "halcyon",
+          "amount_cents": 36800,
+          "currency": "USD",
+          "paid_on": "2027-07-31",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-5148",
+          "invoice_id": "inv-5148",
+          "customer_id": "ironvale",
+          "amount_cents": 37900,
+          "currency": "USD",
+          "paid_on": "2027-08-04",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-brightwell",
+          "invoice_id": "inv-202707-brightwell",
+          "customer_id": "brightwell",
+          "paid_on": "2027-08-19",
+          "amount_cents": 173500,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-cobalt",
+          "invoice_id": "inv-202707-cobalt",
+          "customer_id": "cobalt",
+          "paid_on": "2027-08-18",
+          "amount_cents": 43500,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-dunmore",
+          "invoice_id": "inv-202707-dunmore",
+          "customer_id": "dunmore",
+          "paid_on": "2027-08-17",
+          "amount_cents": 44600,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-elmgrove",
+          "invoice_id": "inv-202707-elmgrove",
+          "customer_id": "elmgrove",
+          "paid_on": "2027-08-19",
+          "amount_cents": 45700,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-ember",
+          "invoice_id": "inv-202707-ember",
+          "customer_id": "ember",
+          "paid_on": "2027-08-18",
+          "amount_cents": 414200,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-fieldnote",
+          "invoice_id": "inv-202707-fieldnote",
+          "customer_id": "fieldnote",
+          "paid_on": "2027-08-17",
+          "amount_cents": 174600,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-foxglove",
+          "invoice_id": "inv-202707-foxglove",
+          "customer_id": "foxglove",
+          "paid_on": "2027-08-19",
+          "amount_cents": 34600,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-gantry",
+          "invoice_id": "inv-202707-gantry",
+          "customer_id": "gantry",
+          "paid_on": "2027-08-18",
+          "amount_cents": 35700,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-halcyon",
+          "invoice_id": "inv-202707-halcyon",
+          "customer_id": "halcyon",
+          "paid_on": "2027-08-17",
+          "amount_cents": 36800,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-harbor",
+          "invoice_id": "inv-202707-harbor",
+          "customer_id": "harbor",
+          "paid_on": "2027-08-19",
+          "amount_cents": 413100,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-ironvale",
+          "invoice_id": "inv-202707-ironvale",
+          "customer_id": "ironvale",
+          "paid_on": "2027-08-18",
+          "amount_cents": 37900,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-kestrel",
+          "invoice_id": "inv-202707-kestrel",
+          "customer_id": "kestrel",
+          "paid_on": "2027-08-17",
+          "amount_cents": 415300,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-lumen",
+          "invoice_id": "inv-202707-lumen",
+          "customer_id": "lumen",
+          "paid_on": "2027-08-19",
+          "amount_cents": 412000,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-marlow",
+          "invoice_id": "inv-202707-marlow",
+          "customer_id": "marlow",
+          "paid_on": "2027-08-18",
+          "amount_cents": 175700,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-orchard",
+          "invoice_id": "inv-202707-orchard",
+          "customer_id": "orchard",
+          "paid_on": "2027-08-17",
+          "amount_cents": 105200,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-pinecrest",
+          "invoice_id": "inv-202707-pinecrest",
+          "customer_id": "pinecrest",
+          "paid_on": "2027-08-19",
+          "amount_cents": 106300,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-quarry",
+          "invoice_id": "inv-202707-quarry",
+          "customer_id": "quarry",
+          "paid_on": "2027-08-18",
+          "amount_cents": 107400,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-riverbend",
+          "invoice_id": "inv-202707-riverbend",
+          "customer_id": "riverbend",
+          "paid_on": "2027-08-17",
+          "amount_cents": 108500,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-summit",
+          "invoice_id": "inv-202707-summit",
+          "customer_id": "summit",
+          "paid_on": "2027-08-19",
+          "amount_cents": 54400,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-thistle",
+          "invoice_id": "inv-202707-thistle",
+          "customer_id": "thistle",
+          "paid_on": "2027-08-18",
+          "amount_cents": 55500,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-tidewater",
+          "invoice_id": "inv-202707-tidewater",
+          "customer_id": "tidewater",
+          "paid_on": "2027-08-17",
+          "amount_cents": 172400,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-umbra",
+          "invoice_id": "inv-202707-umbra",
+          "customer_id": "umbra",
+          "paid_on": "2027-08-19",
+          "amount_cents": 56600,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-vantage",
+          "invoice_id": "inv-202707-vantage",
+          "customer_id": "vantage",
+          "paid_on": "2027-08-18",
+          "amount_cents": 57700,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202707-willow",
+          "invoice_id": "inv-202707-willow",
+          "customer_id": "willow",
+          "paid_on": "2027-08-17",
+          "amount_cents": 42400,
+          "currency": "USD",
+          "status": "succeeded"
+        }
+      ]
+    },
+    "clock": {
+      "rebase": {
+        "relative_paths": [
+          "finance.payments"
+        ]
+      }
+    }
+  }
+}

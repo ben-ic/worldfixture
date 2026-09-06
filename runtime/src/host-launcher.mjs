@@ -10,6 +10,7 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
+import { readActiveGeneration, sessionPath } from './session-files.mjs';
 
 const run = promisify(execFile);
 
@@ -28,8 +29,8 @@ export const HOST_SURFACES = [
   ["stripe", 4701], ["vercel", 4702], ["slack", 4703],
   ["github", 4704], ["google", 4705], ["microsoft", 4706],
   ["mongoatlas", 4707], ["okta", 4708], ["resend", 4709],
-  ["apple", 4710], ["clerk", 4712], ["linear", 4713],
-  ["twilio", 4714], ["workbench", 4715], ["notion", 4716], ["site", 8080],
+  ["apple", 4710], ["aws", 4711], ["clerk", 4712], ["linear", 4713],
+  ["twilio", 4714], ["workbench", 4715], ["notion", 4716], ["domain", 4717], ["site", 8080],
   ["smtp", 2525], ["imap", 1143], ["s3", 61006],
   ["postgres", 5432], ["mysql", 3306],
 ].map(([name, containerPort]) => ({ name, containerPort, preferredPort: containerPort }));
@@ -87,11 +88,60 @@ export function hostInstance(stateDir) {
 }
 
 export function hostBindings(stateDir) {
+  const active = readActiveGeneration(stateDir, { allowTransition: true });
+  if (active) {
+    if (active.phase !== 'ready') return null;
+    const record = hostInstance(stateDir);
+    if (record) return translateBindings(readJson(sessionPath(stateDir, active.bindingsPath ?? join(active.stateDir, 'bindings.json'))) ?? {}, new Map(record.ports.map(entry => [entry.containerPort, entry])));
+  }
   return readJson(join(stateDir, FILES.bindings));
 }
 
 export function hostAddresses(stateDir) {
+  const active = readActiveGeneration(stateDir, { allowTransition: true });
+  if (active) {
+    if (active.phase !== 'ready') return null;
+    const record = hostInstance(stateDir);
+    if (record) return translateAddresses(readJson(sessionPath(stateDir, active.addressesPath ?? join(active.stateDir, 'addresses.json'))), record.ports);
+  }
   return readJson(join(stateDir, FILES.addresses));
+}
+
+export function refreshHostGeneration(stateDir, { generation, selection, bindings, addresses }) {
+  const record = hostInstance(stateDir);
+  if (!record) return;
+  const ports = record.ports ?? [];
+  const selected = selection && { id: selection.id, version: selection.version, digest: selection.digest };
+  const updated = { ...record, generation, ...(selected ? { requested_world: selected } : {}) };
+  writeFileSync(join(stateDir, FILES.bindings), `${JSON.stringify(translateBindings(bindings, new Map(ports.map(row => [row.containerPort, row]))), null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(join(stateDir, FILES.addresses), `${JSON.stringify(translateAddresses(addresses, ports), null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(join(stateDir, FILES.instance), `${JSON.stringify(updated, null, 2)}\n`, { mode: 0o600 });
+}
+
+function validRequestedWorld(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value) &&
+    typeof value.id === "string" && value.id.trim().length > 0 &&
+    typeof value.version === "string" && value.version.trim().length > 0 &&
+    typeof value.digest === "string" && /^[a-f0-9]{64}$/.test(value.digest);
+}
+
+export function verifyRequestedWorld(instance, requested) {
+  const original = instance.requested_world;
+  if (instance.api_version !== "worldfixture.host-instance/v1" || !validRequestedWorld(original)) {
+    throw new HostLauncherError(
+      "host_world_unverified",
+      "the running instance has no valid record of its original world selection; the requested world cannot be verified",
+      "Use another --state directory, or run `worldfixture down` for this state before you start the requested world.",
+    );
+  }
+  if (["id", "version", "digest"].some((key) => original[key] !== requested[key])) {
+    throw new HostLauncherError(
+      "host_world_mismatch",
+      `the running instance was started from ${original.id}@${original.version} (${original.digest}); ` +
+        `the requested world is ${requested.id}@${requested.version} (${requested.digest})`,
+      "Use another --state directory, or run `worldfixture down` for this state before you start the requested world.",
+    );
+  }
 }
 
 export function removeHostRecord(stateDir) {
@@ -344,6 +394,7 @@ export async function launchHostInstance({
   connectorToken,
   projectConfig,
   generatedSecretsPath,
+  requestedWorld,
   runner = run,
   selectPorts = selectHostPorts,
   onWorkbench,
@@ -357,9 +408,23 @@ export async function launchHostInstance({
   onPortRetry,
   onProgress,
   containerArgs = [],
+  prepareContainerArgs,
 }) {
+  if (requestedWorld !== undefined && !validRequestedWorld(requestedWorld)) {
+    throw new HostLauncherError(
+      "invalid_requested_world",
+      "requestedWorld must include a nonempty id and version and a lowercase SHA-256 digest",
+      "Pass the selected artifact's verified identity and digest to launchHostInstance.",
+    );
+  }
+  // Keep the original selection separate from the run lock. A rebase changes
+  // the run digest, and must not change which selection a later up can reuse.
+  const requested = requestedWorld === undefined ? undefined : {
+    id: requestedWorld.id, version: requestedWorld.version, digest: requestedWorld.digest,
+  };
   const running = await inspectHostInstance(stateDir, { runner });
   if (running) {
+    if (requested) verifyRequestedWorld(running, requested);
     const bindings = hostBindings(stateDir);
     if (bindings && !running.recovered) return { reused: true, instance: running, bindings };
     throw new HostLauncherError(
@@ -368,6 +433,9 @@ export async function launchHostInstance({
       "`worldfixture down`, then `worldfixture up`.",
     );
   }
+  // Staging belongs to the caller, but must follow the reuse checks. It runs
+  // once per new start, before state cleanup and outside Docker port retries.
+  const finalContainerArgs = prepareContainerArgs ? await prepareContainerArgs() : containerArgs;
   removeHostRecord(stateDir);
 
   // These files are live-instance pointers. The lock and SQLite state remain
@@ -438,7 +506,7 @@ export async function launchHostInstance({
     // reason this exists: without forwarding, the flag was accepted on the host
     // and silently dropped, and the container started every part of the world
     // while the caller believed it had asked for two.
-    args.push(...containerArgs);
+    args.push(...finalContainerArgs);
 
     // Docker cannot claim a host port while the reservation owns it. Release
     // all reservations immediately before one `docker run` call.
@@ -465,6 +533,7 @@ export async function launchHostInstance({
       image_id: imageId,
       state_dir: stateDir,
       ports: ports.map(({ release, ...entry }) => entry),
+      ...(requested ? { requested_world: requested } : {}),
     };
     writeFileSync(join(stateDir, FILES.bindings), `${JSON.stringify(bindings, null, 2)}\n`, { mode: 0o600 });
     writeFileSync(join(stateDir, FILES.addresses), `${JSON.stringify(addresses, null, 2)}\n`);

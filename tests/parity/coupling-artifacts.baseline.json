@@ -1,0 +1,460 @@
+{
+  "api_version": "worldfixture.coupling-parity-baseline/v1",
+  "migration_policy": {
+    "future_changes": "Add a separate migration record for each changed world identity. Name each changed source and artifact file, its original and new digest, and the finding and reason for the change. Add an explicit reversible or independently checked semantic migration test before accepting changed bytes. A reason string alone does not authorize a new digest.",
+    "new_worlds": "Add an original record for each newly shipped artifact; do not replace existing originals.",
+    "original_records": "Keep original source and artifact digests unchanged. Preserve business.saas-company.v2.baseline.json and its reference migration checks."
+  },
+  "purpose": "Immutable pre-fix P0 artifact and source evidence. This does not certify provider correctness.",
+  "recorded_on": "2026-09-05",
+  "worlds": [
+    {
+      "artifact": "dist/business.saas-company.v2",
+      "artifact_sha256": "a73b7d9e30fa154e34996654a2355a757e54e539542337cc9980d220d91e22ab",
+      "files": {
+        "manifest.json": {
+          "sha256": "40358b622d0d66c47462ab2de9d06ac78c066f952040c37dc446d2e053aad8d0",
+          "size": 4558
+        },
+        "packs/communication.json": {
+          "sha256": "1411a37bf8322f17e03f7e4b533adeb4542baa987dbc165eed18ebbfba1100ec",
+          "size": 77382
+        },
+        "packs/finance.json": {
+          "sha256": "5c57255e0259405805b12f003760e90230495dc77894843baf79c1c70fe886fa",
+          "size": 63103
+        },
+        "packs/identity.json": {
+          "sha256": "dfcf0d04cf64f80ead738b51782b033b0eda9d7b4fd4bb58eb5ae261ecffd958",
+          "size": 5890
+        },
+        "packs/software.json": {
+          "sha256": "cd35e6ff8958611b89bf28d5d36c606263c5458e3160df2a1ffacbd4c00520f6",
+          "size": 1848
+        },
+        "packs/support.json": {
+          "sha256": "664ce3a7acdf9f33c5580f5ab020ca2293d650ff7ac2e77368a454b425f02bc2",
+          "size": 619
+        },
+        "packs/work.json": {
+          "sha256": "a0a923f5cb32be3ac3d6d9fe95a051b175b24253e31144a4cc30fc8beeacfe3b",
+          "size": 7991
+        },
+        "projections/agent.json": {
+          "sha256": "b6e68812aa775af82ec47c1d09c29a30ed97c937eb4f943cb8c68e006bd7a885",
+          "size": 6775
+        },
+        "projections/apple.json": {
+          "sha256": "1627f21913def08f9bd9d8bf357e1eb5cd49b4548a770553ff4dee4e73ceed19",
+          "size": 1807
+        },
+        "projections/aws.json": {
+          "sha256": "c0e2854650866cb15a955044e604806bdfca421b90fc8575aabd3968c519d6c5",
+          "size": 1901
+        },
+        "projections/clerk.json": {
+          "sha256": "0b0221cf217941c0b6bf4c4e68d90f6123a5d41c7786acce534ffb32a6b20e9c",
+          "size": 3042
+        },
+        "projections/emulator-overlay.json": {
+          "sha256": "e74a525d21ff287b90525c829b12941f869da1c5e44fd1ae155e0c97b8cc225b",
+          "size": 69477
+        },
+        "projections/github.json": {
+          "sha256": "51be4c2c9157b79f5ecbc2b4ae81e8c3ca9e699bde5bb914b20027b21ada2c76",
+          "size": 3948
+        },
+        "projections/google.json": {
+          "sha256": "66a2b3ad29065c6363e4e5129bfe79e92d5619c438806d1162f32132e12a56ba",
+          "size": 17810
+        },
+        "projections/http-targets.json": {
+          "sha256": "0dc8e60caedbe5fcf5d79ca5341cbccfcba4a0b0bdc74dbdd9dea50c9fe9f43c",
+          "size": 8222
+        },
+        "projections/linear.json": {
+          "sha256": "787853aec3902b26d76b6f9780783dab598d0f5472a2451f7d28368030964c8e",
+          "size": 8359
+        },
+        "projections/mail.json": {
+          "sha256": "c6f2ca3233e33409c7b1a6036bf2aec8f687bdf34b1d2b6bdb72078c60647eb2",
+          "size": 46936
+        },
+        "projections/microsoft.json": {
+          "sha256": "031e588ca06411cc3f03cde4690b839deb0afe16dd6a4aeba33912e9ce6681ca",
+          "size": 1857
+        },
+        "projections/model.json": {
+          "sha256": "6a73193b0dfd6e35d8d6f910bdda3c297a2ad350852456a9c0db621735326740",
+          "size": 3914
+        },
+        "projections/mongoatlas.json": {
+          "sha256": "25ee47df44b030e48630f0e6e262fa840c13893cfeabb44ae23a33b64e0a4e22",
+          "size": 556
+        },
+        "projections/notion.json": {
+          "sha256": "62612d166595a8c2c4819b6605711d3d4e2403e60e58630435bcfdd8701a9d59",
+          "size": 20948
+        },
+        "projections/okta.json": {
+          "sha256": "7a1d0d4b04d8b01ecd1b0b275d6555f09c0445b201929c624e429b6c1add5c13",
+          "size": 2643
+        },
+        "projections/resend.json": {
+          "sha256": "7f32e1574359bedadc107852c5cbb6bfa3b3ed06c4381c01d1f8404c0c148a36",
+          "size": 851
+        },
+        "projections/slack.json": {
+          "sha256": "6690809f450317e3c245f7e7c405c05496477e3f56a6803a22171bc65c62739f",
+          "size": 6018
+        },
+        "projections/stripe.json": {
+          "sha256": "84d5efc230834d9d3a2e6ad73db65b6336b29bc48eef525cf5bdbdd5808e88ec",
+          "size": 2441
+        },
+        "projections/twilio.json": {
+          "sha256": "ba7fa72ee5adc03e74cfbdae8065ee95d67f393dbb9dec733fbdc71f1c1bd5df",
+          "size": 701
+        },
+        "projections/vercel.json": {
+          "sha256": "c2dc16d06a31dcca18a53af3eedd7a47e20b1ee0f696456a761b8a3c72420dcb",
+          "size": 375
+        },
+        "timeline.json": {
+          "sha256": "24fe7dc6e60cea1339b080a1a66bb692448550e236ca85bab720aee2a9e5520a",
+          "size": 2980
+        },
+        "world.json": {
+          "sha256": "b15142170b687f395ac736ad794518a43412faaaf788a1609feb3d2cc97fad44",
+          "size": 140971
+        }
+      },
+      "id": "business.saas-company",
+      "source": "worlds/business.saas-company.v2/world.json",
+      "source_files": {
+        "backbones/northstar-relay.json": {
+          "sha256": "5cb42703bbd6dbacf5d763e4f76414b0d01079b7c8acb3aeeb4bdf49233ee731",
+          "size": 8355
+        },
+        "packs/saas-operations.json": {
+          "sha256": "e04886062dc8bcb4363d4d8dccdf61e843452fe61c6f1cd3e663d15ce3c3d97a",
+          "size": 44808
+        },
+        "stories/lumen-renewal.json": {
+          "sha256": "508ad83d568c444fa269758057b803e646cba326bf057a9a4a2217b8b69ac786",
+          "size": 4935
+        },
+        "stories/release-28.json": {
+          "sha256": "69a58567425502290b4c5f5bdc6cdb769f1fc7edbff355c0004d38bff30e5ba9",
+          "size": 3773
+        },
+        "stories/theo-onboarding.json": {
+          "sha256": "c6c564fff1c2e9669ae179bd049b5d7462ad4e09fb245152ce1d0796b7e58f07",
+          "size": 514
+        },
+        "world.json": {
+          "sha256": "edc1349cf4335f2a122cba73fc6653e58e342ee2784bb50bd1bba8c3d4ae6597",
+          "size": 1121
+        }
+      },
+      "source_sha256": "f563ebef34f08d71586535005b42d520fa34005932742856b6d3479cacf34397",
+      "version": "v2"
+    },
+    {
+      "artifact": "dist/business.saas-company.v3",
+      "artifact_sha256": "5b24c396d60deee1d2a0742e3600b80211afc01a122fb12247271146fd8a3874",
+      "files": {
+        "manifest.json": {
+          "sha256": "30a60fbb7186cc7a2f20c9add787badeae66ef55bb25b72c35e393ec7577ee19",
+          "size": 4393
+        },
+        "packs/communication.json": {
+          "sha256": "d8fe9d6f615530efb013708e5323c9549752324ae9448c3669ae24d924832822",
+          "size": 2748268
+        },
+        "packs/finance.json": {
+          "sha256": "422a8f762fa81aaf3bb2f85c076a686b1025c3aebabacf57fa9b225181e917fa",
+          "size": 734676
+        },
+        "packs/identity.json": {
+          "sha256": "94834645d3eaa6654357d397f943dd605b5ddbac5f989bd3d7cc1b91cf683fc5",
+          "size": 47525
+        },
+        "packs/software.json": {
+          "sha256": "481126ea0eec32070512b92a7ce1fa0e5497ecc021c53985d9ca3db8f9b91e19",
+          "size": 48727
+        },
+        "packs/support.json": {
+          "sha256": "10138889ea6465893b387cc088e0cf70c8de22cca82550b92afce1264c61fe11",
+          "size": 4741
+        },
+        "packs/work.json": {
+          "sha256": "f2c57961f0515bb8b18489685740d3c90eefb26fcace0968cec32c7f0c10fcd4",
+          "size": 263464
+        },
+        "projections/agent.json": {
+          "sha256": "dc557a237879406ab9ef6cc3039b4693e56abb18080340a06f4c546bbd4c45be",
+          "size": 39824
+        },
+        "projections/apple.json": {
+          "sha256": "2caa09e5de99f4b7947f87c63499b443b5170cc7322a1b81ec3f26c79757056b",
+          "size": 18185
+        },
+        "projections/aws.json": {
+          "sha256": "bae67bdabc5d67efa95783da67b4e3f98b97ee83609bc55071709143697d2fcc",
+          "size": 5959
+        },
+        "projections/clerk.json": {
+          "sha256": "949cc14a5910f93c13859c975f31962dba435bd358e034659dbc9e4aa80f511a",
+          "size": 29300
+        },
+        "projections/emulator-overlay.json": {
+          "sha256": "4be4ce2a065513ce5316542b4ecb6fa61c691e4dfd007e4568cea3c0eb853dbf",
+          "size": 766976
+        },
+        "projections/github.json": {
+          "sha256": "8d713d51df132937d9a43536591d5268191e6fd309a4dcd229cd4c9730dace11",
+          "size": 68881
+        },
+        "projections/google.json": {
+          "sha256": "914357ba232bb9203733bc94cf61ae97b1968737441ca6016433dfaeb2b7390c",
+          "size": 24403
+        },
+        "projections/http-targets.json": {
+          "sha256": "51ae6c4f0bef35da9ad8961333a2790df8005d48de232a1b9049382b028e4110",
+          "size": 13788
+        },
+        "projections/linear.json": {
+          "sha256": "83e725957515c9899d1c9ee79234c5a6a2144d33fb807e5277003ff9783ebd32",
+          "size": 223697
+        },
+        "projections/mail.json": {
+          "sha256": "77ba7da051ff63585041264dfce5970faeca5c20fb7835178a4eb0796fdb6793",
+          "size": 1576476
+        },
+        "projections/microsoft.json": {
+          "sha256": "4834c61b6395bcb06c9737e1b0151bd7fad2a31783c7225e1987ee113c0d4c35",
+          "size": 18680
+        },
+        "projections/model.json": {
+          "sha256": "571dfc0b27af7cfcbb4be3f3e0787d4f75e38bf28cc142d946f7a6768bc0b516",
+          "size": 31077
+        },
+        "projections/mongoatlas.json": {
+          "sha256": "cfc96d17fc1e64aaca26419d75996f5013a653bc4ad0b153f83f54c6543545cf",
+          "size": 559
+        },
+        "projections/notion.json": {
+          "sha256": "6c8d33fe61148466783d4b46977f61d17ef1c5baf220234552ba9daf5645e461",
+          "size": 174518
+        },
+        "projections/okta.json": {
+          "sha256": "63ed74420964cc26965925f26b04cdcd30713c3f53fa0f3f35edad1a3815bcda",
+          "size": 20201
+        },
+        "projections/resend.json": {
+          "sha256": "01b5f687b36eb3fc35efd39c4cd63865cc155d8c9312ccf2c9ad7cb73f119c8f",
+          "size": 4748
+        },
+        "projections/slack.json": {
+          "sha256": "b695b0e59a79f931b962cbff1a2fedc48941994d11c871fc4eef89b4d2511518",
+          "size": 296623
+        },
+        "projections/stripe.json": {
+          "sha256": "5f90d4b5150ce77321097269d1d628815bb6c5f8a7f1c771aeb8a097ced00ba4",
+          "size": 31614
+        },
+        "projections/twilio.json": {
+          "sha256": "ba7fa72ee5adc03e74cfbdae8065ee95d67f393dbb9dec733fbdc71f1c1bd5df",
+          "size": 701
+        },
+        "projections/vercel.json": {
+          "sha256": "c76c43217448109e94a47b4645648db6a91d84b857c21fb4236984610d87a6fe",
+          "size": 380
+        },
+        "timeline.json": {
+          "sha256": "04d69a0ab2ebc81fa346c551f1190ca06dec4d0ecebd9dcd4f0754bba8cb2365",
+          "size": 33087
+        },
+        "world.json": {
+          "sha256": "68766f6c449daec36c6c5c6648df2be8af763017d0171d05dc207e3c1aa31e5e",
+          "size": 3596516
+        }
+      },
+      "id": "business.saas-company",
+      "source": "worlds/business.saas-company.v3/world.json",
+      "source_files": {
+        "backbones/northstar-relay.json": {
+          "sha256": "ea7bbd5c93c3135b10e0a60c29ed75c72b8855097bccc49bc11a5943f2248a63",
+          "size": 66662
+        },
+        "packs/saas-operations.json": {
+          "sha256": "76265dd566095c364c851edd2b9797b68bc8f2c60a2b280e8d2f02433e1a58dc",
+          "size": 2353421
+        },
+        "stories/live-timeline.json": {
+          "sha256": "2e5e7c6240431b52b4088d65a5cb3a45f094948e0307deff9b340160654d9e8f",
+          "size": 67358
+        },
+        "world.json": {
+          "sha256": "bbef2fc1b800c92f40eae214eac0f860120b04ca4f3adbf9cbbce1ed6caae54c",
+          "size": 1104
+        }
+      },
+      "source_sha256": "97d7f031302533d8f0ea92e3ab8e6764cf0f1741d6c2144b7a89b3cd662b79db",
+      "version": "v3"
+    },
+    {
+      "artifact": "dist/consumer.retail-brand.v1",
+      "artifact_sha256": "d1dea04cde1eed1046e45b38f5cc5500b427e8bf60078d932b1e14ddc161712e",
+      "files": {
+        "manifest.json": {
+          "sha256": "87c2c974f4b430cebd6a3a6fade66e4fcd23f101bb01350bcf70afcf8c954030",
+          "size": 4641
+        },
+        "packs/commerce.json": {
+          "sha256": "da1d1bb752df34c13d591e9538d7aa3149b7ee955f0215134bf03eaf8f9e21a2",
+          "size": 29310
+        },
+        "packs/communication.json": {
+          "sha256": "da1be6e8a8b5dc393ee2c7be7b11cd8d1730934fd87c3a4ea3b2a13ac67a8d10",
+          "size": 174302
+        },
+        "packs/finance.json": {
+          "sha256": "e3f03b2e4013eaa9dc9d309ade3662db42b70a262f48736f9667e22aea5fb264",
+          "size": 142158
+        },
+        "packs/identity.json": {
+          "sha256": "261c247790361738422acb021ffb59c23df8a202d452aec53534df1b3095e6fa",
+          "size": 12046
+        },
+        "packs/social.json": {
+          "sha256": "384f697ca0de88ea7930eadae28c10f32abc8150323902a98cc01e478c946906",
+          "size": 17114
+        },
+        "packs/software.json": {
+          "sha256": "914d80e6b7d950ba0c5a66ceed2106823179b52eeb3d3619171f614fb7eb16e9",
+          "size": 4311
+        },
+        "packs/support.json": {
+          "sha256": "6c783832e86b8f3fcf65f012340775d53c4a432ad7a51d3621fcf218a36ded23",
+          "size": 2094
+        },
+        "packs/work.json": {
+          "sha256": "b74e23cdbf153e6c3b835e558de699a722ce3f076fa5e196d137bda2fc036904",
+          "size": 8746
+        },
+        "projections/agent.json": {
+          "sha256": "79838e0991c347191ae6a3dfc09e12ad97a77cd0346352f4baffcc28d8b8eaf2",
+          "size": 11286
+        },
+        "projections/apple.json": {
+          "sha256": "8866a08fe451bd3c02b8d2d07a28e61df7b68339ff598a44a1b0bea3e1238377",
+          "size": 2512
+        },
+        "projections/aws.json": {
+          "sha256": "8071d027b221e03d2f6b7b9ec80d47f6e3c8a6ccdf4daa8e9c592698bf9b84c5",
+          "size": 4035
+        },
+        "projections/clerk.json": {
+          "sha256": "69f860076a626ee8fdc23f7b8a64fc58d07db23473967551b9acfab9f6fbb250",
+          "size": 4145
+        },
+        "projections/emulator-overlay.json": {
+          "sha256": "49eb61c86d9b4dddb74f2a60f56b42dda9319cfccb09ec4c0ba7a8ac2893d698",
+          "size": 103972
+        },
+        "projections/github.json": {
+          "sha256": "3f40e8a553cce45bc623470e0cf60a1f3f9a6be2303b74dfdd9a658c495222a6",
+          "size": 7166
+        },
+        "projections/google.json": {
+          "sha256": "980761dd3e7cc23b2528d04fea9ebb4bc30393daa3062cd4f07c9d8a74e2f857",
+          "size": 7667
+        },
+        "projections/http-targets.json": {
+          "sha256": "c8e0c3ece7f8b8713c33b55efa560187d6b11292d180813f1f9a03f6a6bbca66",
+          "size": 13382
+        },
+        "projections/linear.json": {
+          "sha256": "485fdbfabf51dcb7fec60ce826ea297f0854128f03e70623b72e7f165efb1483",
+          "size": 9235
+        },
+        "projections/mail.json": {
+          "sha256": "7c426c32712c3d65df0d7caaf36ca6e3f765fdfcba515b5c30bfe2bbaf40bd2b",
+          "size": 104783
+        },
+        "projections/microsoft.json": {
+          "sha256": "275f3512ea269548a76810a777e1a1dd8159eaf7aa744f3eb8f5b63c140f5dd6",
+          "size": 2526
+        },
+        "projections/model.json": {
+          "sha256": "d4d5cd853befcdbd5c2d8ce864eca88734f57a905dca6adfb5a894a2129e99f1",
+          "size": 8242
+        },
+        "projections/mongoatlas.json": {
+          "sha256": "cfbdb3f8ac63efe938a5a93b00518fa15eee6ed05e494f8280d05f14773b3080",
+          "size": 565
+        },
+        "projections/notion.json": {
+          "sha256": "cbbcb86468c1ca27d568a5946dd659bd9afb91719172d72e0fac085f39f82d0f",
+          "size": 38212
+        },
+        "projections/okta.json": {
+          "sha256": "4fb79d763177ea969b5343a32b9e0714818fd48e2b32ba1bbbf73db6502f9bb1",
+          "size": 3387
+        },
+        "projections/resend.json": {
+          "sha256": "9574a19155783f350db1212864523645b462ed0d0ab71b22cc022965d3849ea6",
+          "size": 3779
+        },
+        "projections/slack.json": {
+          "sha256": "09773be851e7dee42611b05379b182033dd060a62bfcb14efa89aba4009f1bc8",
+          "size": 12881
+        },
+        "projections/stripe.json": {
+          "sha256": "22a991adc0560ce38d0cb6d3df7a4877faf56147c5345219ee82d11dda352cd4",
+          "size": 15551
+        },
+        "projections/twilio.json": {
+          "sha256": "b70a809dc350b0a182b14b2e7690ab67cb918de4c8a073265d45ee767d245746",
+          "size": 685
+        },
+        "projections/vercel.json": {
+          "sha256": "487003ca2bce7544190338e7fa9ab9ecbdbb0d1b154d8fa357c9f7fbee4cd8b3",
+          "size": 371
+        },
+        "timeline.json": {
+          "sha256": "c8a33038ecd96f7d85dacfb82b9bf11e26afdc734855877ef887479c7f06623f",
+          "size": 5075
+        },
+        "world.json": {
+          "sha256": "a2ee64de4ecfd2d18ea45467512cc59a8e8fc1416c9269b2b749f6dc2b662f85",
+          "size": 352716
+        }
+      },
+      "id": "consumer.retail-brand",
+      "source": "worlds/consumer.retail-brand.v1/world.json",
+      "source_files": {
+        "backbones/marlow-pine.json": {
+          "sha256": "32a6efeb3eec35edf9623674faa1d90ffff343bda25a9315ddf9e2306994e32c",
+          "size": 17123
+        },
+        "packs/retail-operations.json": {
+          "sha256": "02578a0fe49157bc1aa494b1449dc549d8f977a9c03774f6276f421bdf6ee193",
+          "size": 154226
+        },
+        "stories/spring-drop.json": {
+          "sha256": "d2ce94866e2ad8e75f7a01cef332d63b5ddee72d64fd710943f0d21f0597fd94",
+          "size": 26008
+        },
+        "world.json": {
+          "sha256": "59e29b13be6ae47c20015683b498d5cb9d031ec6de9289075491e75a66b8dd6e",
+          "size": 1190
+        }
+      },
+      "source_sha256": "ecc575ed89af839a371ff2432e2b02b44d58581bcae7f9715f94b7ab56f7e9ad",
+      "version": "v1"
+    }
+  ]
+}

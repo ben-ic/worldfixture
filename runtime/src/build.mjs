@@ -18,7 +18,7 @@
 // is sent.
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 // What `load_world` in the compiler accepts as a source root: one self-contained
@@ -109,14 +109,10 @@ export function defaultOutput(source, directory = process.cwd()) {
   return resolve(directory, "dist", `${source.id}.${source.version}`);
 }
 
-// Make the output directory empty before the compiler writes into it.
-//
-// The compiler writes the files it produces and removes nothing, so a rebuild
-// after a world lost a pack would leave that pack's file behind and the artifact
-// would claim records the manifest no longer attests to. Replacing the directory
-// is only safe for something this command itself produced, so anything else with
-// files in it is refused rather than deleted.
-function prepareOutput(outputDir) {
+// Refuse unrelated output before starting Docker. The compiler checks the
+// copied artifact's entries before replacing it in a private staging directory.
+// The accepted output remains available until the build succeeds.
+function validateOutput(outputDir) {
   if (existsSync(outputDir)) {
     if (!statSync(outputDir).isDirectory()) {
       throw new BuildError(
@@ -137,10 +133,8 @@ function prepareOutput(outputDir) {
           "Choose an empty --output directory, so nothing of yours is replaced.",
         );
       }
-      rmSync(outputDir, { recursive: true, force: true });
     }
   }
-  mkdirSync(outputDir, { recursive: true });
 }
 
 // The `docker run` for one compile.
@@ -164,7 +158,9 @@ export function compilerArguments({ command, image, sourceDir, sourceFile, outpu
   args.push("--env", "PYTHONDONTWRITEBYTECODE=1");
   args.push("--entrypoint", "python3", image);
   args.push("-m", "worldfixture_compiler", command, `/world/${sourceFile}`);
-  if (outputDir) args.push("--output", "/output");
+  // Atomic compiler publication needs a writable parent. /output itself is a
+  // mount point, so the artifact must be a child of that private workspace.
+  if (outputDir) args.push("--output", "/output/artifact");
   return args;
 }
 
@@ -235,7 +231,26 @@ export async function buildWorldSource({
     );
   }
 
-  prepareOutput(outputDir);
-  await compile({ command: "build", source: inspected, image, outputDir, runner, user });
+  validateOutput(outputDir);
+  mkdirSync(dirname(outputDir), { recursive: true });
+  const workspace = mkdtempSync(join(dirname(outputDir), `.${basename(outputDir)}-build-`));
+  const artifact = join(workspace, 'artifact'), previous = join(workspace, 'previous');
+  try {
+    if (existsSync(outputDir)) cpSync(outputDir, artifact, { recursive: true, dereference: false });
+    await compile({ command: "build", source: inspected, image, outputDir: workspace, runner, user });
+    if (existsSync(outputDir)) renameSync(outputDir, previous);
+    try { renameSync(artifact, outputDir); }
+    catch (error) {
+      if (existsSync(previous)) {
+        try { renameSync(previous, outputDir); }
+        catch { throw new BuildError('output_recovery_required', `The build could not replace ${outputDir}; the previous artifact remains at ${previous}`, 'Restore that artifact before another build.'); }
+      }
+      throw error;
+    }
+    rmSync(previous, { recursive: true, force: true });
+  } finally {
+    // A failed rollback must retain the only copy of the previous artifact.
+    if (!existsSync(previous)) rmSync(workspace, { recursive: true, force: true });
+  }
   return { ...inspected, outputDir };
 }

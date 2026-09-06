@@ -106,6 +106,14 @@
         "path": "/.well-known/oauth-protected-resource",
         "expect": "authorization_servers",
         "kind": "protocol"
+      },
+      {
+        "port": "aws",
+        "protocol": "http",
+        "path": "/iam/?Action=ListUsers",
+        "expect": "InvalidClientTokenId",
+        "kind": "protocol",
+        "method": "POST"
       }
     ],
     "ports": [
@@ -274,7 +282,28 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "communication.channels"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/slack",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/slack/team",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "slack.oauth.v1",
@@ -289,8 +318,39 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/slack/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/slack/worldfixture_oauth_client/client_secret_ref"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/slack",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/slack/team",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.users.v1",
@@ -306,31 +366,118 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.oauth.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.webhooks.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.admin.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens" }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens"
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.pages-read.v1",
@@ -346,7 +493,23 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.blocks-read.v1",
@@ -362,118 +525,461 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.pages-write.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.blocks-write.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.meeting-notes.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.agents.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.sessions.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.databases.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.data-sources.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.views.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.custom-emojis.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.async-tasks.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.markdown.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.comments.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
-      ]
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "notion.file-uploads.v1",
       "port": "notion",
       "binds": [
-        { "name": "base_url", "from": "port.url" },
-        { "name": "token", "from": "projection", "pointer": "/tokens", "per_person": true }
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens",
+          "per_person": true
+        }
       ],
       "requires": [
         {
           "profile": "aws.s3.objects.v1",
           "bind": "base_url",
           "environment": "WORLDFIXTURE_NOTION_OBJECT_STORE_URL"
+        },
+        {
+          "profile": "aws.s3.objects.v1",
+          "bind": "access_key_id",
+          "environment": "WORLDFIXTURE_NOTION_OBJECT_STORE_ACCESS_KEY_ID"
+        },
+        {
+          "profile": "aws.s3.objects.v1",
+          "bind": "secret_access_key",
+          "environment": "WORLDFIXTURE_NOTION_OBJECT_STORE_SECRET_ACCESS_KEY"
+        },
+        {
+          "profile": "aws.s3.objects.v1",
+          "bind": "region",
+          "environment": "WORLDFIXTURE_NOTION_OBJECT_STORE_REGION"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/notion",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "github.repositories.v1",
@@ -489,7 +995,23 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "software.repositories"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/github",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "github.issues.v1",
@@ -505,7 +1027,23 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "software.repositories"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/github",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "github.apps.v1",
@@ -521,7 +1059,21 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/github",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "github.oauth.v1",
@@ -536,8 +1088,34 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/github/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/github/worldfixture_oauth_client/client_secret_ref"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/github",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "google.oauth.v1",
@@ -552,8 +1130,46 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/google/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/google/worldfixture_oauth_client/client_secret_ref"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/google",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "google.gmail.v1",
@@ -569,7 +1185,39 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/google",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "any_requires": [
+          [
+            "communication.mail",
+            "communication.mailboxes"
+          ]
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "google.calendar.v1",
@@ -585,7 +1233,39 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/google",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "any_requires": [
+          [
+            "communication.calendars",
+            "communication.calendar_events"
+          ]
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "google.drive.v1",
@@ -601,7 +1281,34 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people",
+          "communication.documents"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/google",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "microsoft.graph-users.v1",
@@ -617,7 +1324,33 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/microsoft",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "microsoft.oauth.v1",
@@ -632,8 +1365,46 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/microsoft/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/microsoft/worldfixture_oauth_client/client_secret_ref"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/microsoft",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "apple.oauth.v1",
@@ -648,8 +1419,46 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/apple/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/apple/worldfixture_oauth_client/client_secret_ref"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/apple",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "okta.users.v1",
@@ -665,7 +1474,33 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/okta",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "okta.groups.v1",
@@ -681,7 +1516,33 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/okta",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "okta.oauth.v1",
@@ -696,8 +1557,46 @@
           "from": "projection",
           "pointer": "/tokens",
           "per_person": true
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/okta/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/okta/worldfixture_oauth_client/client_secret_ref"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/okta",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "aws.iam.v1",
@@ -713,7 +1612,21 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/aws/iam",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "aws.sqs.v1",
@@ -729,7 +1642,21 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/aws/sqs",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "aws.sts.v1",
@@ -745,7 +1672,21 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/aws",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "resend.email.v1",
@@ -758,10 +1699,25 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/resend",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "resend.contacts.v1",
@@ -774,10 +1730,25 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/resend",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "resend.domains.v1",
@@ -790,10 +1761,25 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/resend",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "stripe.customers.v1",
@@ -806,10 +1792,28 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/stripe",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/tokens/stripe_token",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "stripe.catalog.v1",
@@ -822,10 +1826,28 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/stripe",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/tokens/stripe_token",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "mongoatlas.projects.v1",
@@ -841,7 +1863,26 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/mongoatlas",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/tokens/mongoatlas_token",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "mongoatlas.clusters.v1",
@@ -857,7 +1898,26 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/mongoatlas",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/tokens/mongoatlas_token",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "clerk.users.v1",
@@ -873,7 +1933,33 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/clerk",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "clerk.organizations.v1",
@@ -889,7 +1975,33 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/clerk",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
     },
     {
       "profile": "vercel.projects.v1",
@@ -905,7 +2017,21 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/vercel",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "vercel.teams.v1",
@@ -921,7 +2047,21 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/vercel",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "linear.issues.v1",
@@ -937,7 +2077,23 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "work"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/linear",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "linear.teams.v1",
@@ -953,7 +2109,23 @@
           "pointer": "/tokens",
           "per_person": true
         }
-      ]
+      ],
+      "world": {
+        "requires": [
+          "work"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/linear",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "twilio.messaging.v1",
@@ -966,8 +2138,7 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         },
         {
           "name": "account_sid",
@@ -981,7 +2152,21 @@
           "file": "projections/twilio.json",
           "pointer": "/account/auth_token"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/twilio",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     },
     {
       "profile": "twilio.verify.v1",
@@ -994,21 +2179,147 @@
         {
           "name": "token",
           "from": "projection",
-          "pointer": "/tokens",
-          "per_person": true
+          "pointer": "/tokens"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/twilio",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "clerk.oauth.v1",
+      "port": "clerk",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/clerk/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/clerk/worldfixture_oauth_client/client_secret_ref"
+        }
+      ],
+      "world": {
+        "requires": [
+          "people"
+        ],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/clerk",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ],
+        "identities": [
+          {
+            "collection": "people",
+            "scope": "all",
+            "fields": [
+              "id",
+              "email"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "profile": "linear.oauth.v1",
+      "port": "linear",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/linear/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/linear/worldfixture_oauth_client/client_secret_ref"
+        }
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/linear",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "vercel.oauth.v1",
+      "port": "vercel",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "client_id",
+          "from": "projection",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/vercel/worldfixture_oauth_client/client_id"
+        },
+        {
+          "name": "client_secret",
+          "from": "projection.credential",
+          "file": "projections/emulator-overlay.json",
+          "pointer": "/vercel/worldfixture_oauth_client/client_secret_ref"
+        }
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/vercel",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
     }
   ],
   "world": {
-    "requires": [
-      "identity.people.v1",
-      "identity.organizations.v1",
-      "communication.channels.v1",
-      "software.repositories.v1",
-      "work.projects.v1",
-      "finance.customers.v1"
-    ],
+    "requires": [],
     "projections": [
       {
         "file": "projections/emulator-overlay.json",
@@ -1037,16 +2348,5 @@
       "format": "worldfixture.emulate-snapshot/v1"
     }
   },
-  "disclaims": [
-    {
-      "profile": "aws.s3.buckets.v1",
-      "port": "aws",
-      "reason": "@emulators/aws serves a live, writable /s3/ and self-seeds three buckets the world never declares. SeaweedFS owns S3. Withholding the projection did not remove these routes, so the resolver must refuse this port whenever the s3 service is selected. This vendor is also the only one with no readiness check, deliberately: without one the resolver refuses it outright, so a run cannot raise a second S3 owner even by asking for aws.iam.v1. Give it a check only when these routes are gone."
-    },
-    {
-      "profile": "aws.s3.objects.v1",
-      "port": "aws",
-      "reason": "Same routes as aws.s3.buckets.v1: measured PUT bucket, PUT object and GET object all returning 200. This vendor is also the only one with no readiness check, deliberately: without one the resolver refuses it outright, so a run cannot raise a second S3 owner even by asking for aws.iam.v1. Give it a check only when these routes are gone."
-    }
-  ]
+  "disclaims": []
 }

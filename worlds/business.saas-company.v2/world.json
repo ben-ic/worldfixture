@@ -38,6 +38,8 @@
     "packs/saas-operations.json",
     "stories/lumen-renewal.json",
     "stories/release-28.json",
-    "stories/theo-onboarding.json"
+    "stories/theo-onboarding.json",
+    "packs/google-mailboxes.json",
+    "packs/finance-settlements.json"
   ]
 }

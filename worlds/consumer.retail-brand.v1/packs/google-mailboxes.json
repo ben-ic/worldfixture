@@ -1,0 +1,259 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "id": "pack.google-mailboxes",
+  "contributes": {
+    "communication": {
+      "mailboxes": [
+        {
+          "owner_id": "iris-mendel",
+          "labels": [
+            "Marketing",
+            "Product"
+          ]
+        },
+        {
+          "owner_id": "callum-reid",
+          "labels": [
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "sana-devi",
+          "labels": [
+            "Marketing",
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "otto-lindqvist",
+          "labels": [
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "bea-morrow",
+          "labels": [
+            "Marketing",
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "felix-arana",
+          "labels": [
+            "Customers",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "yuki-tanabe",
+          "labels": [
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "mira-halvorsen",
+          "labels": [
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "gus-ferreira",
+          "labels": []
+        },
+        {
+          "owner_id": "anya-kowalski",
+          "labels": []
+        },
+        {
+          "owner_id": "tomas-brekke",
+          "labels": []
+        },
+        {
+          "owner_id": "rosa-delgado",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "kit-nwosu",
+          "labels": [
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "lena-fischer",
+          "labels": [
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "harriet-vance",
+          "labels": [
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "desmond-oyelaran",
+          "labels": [
+            "Suppliers"
+          ]
+        },
+        {
+          "owner_id": "juno-park",
+          "labels": []
+        },
+        {
+          "owner_id": "alma-reyes",
+          "labels": [
+            "Finance",
+            "Marketing",
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "bennett-cho",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "clara-voight",
+          "labels": [
+            "Finance",
+            "Marketing",
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "dmitri-sokolov",
+          "labels": []
+        },
+        {
+          "owner_id": "esme-fontaine",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "franklin-obi",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "greta-lindholm",
+          "labels": [
+            "Finance",
+            "Marketing",
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "hugo-marchetti",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "imogen-bell",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "jonas-wirth",
+          "labels": [
+            "Finance",
+            "Marketing",
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "kaia-nakamura",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "leo-santoro",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "maren-oduya",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "nils-bergstrom",
+          "labels": []
+        },
+        {
+          "owner_id": "orla-brennan",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "paavo-virtanen",
+          "labels": []
+        },
+        {
+          "owner_id": "quinn-abara",
+          "labels": [
+            "Finance",
+            "Marketing",
+            "Support"
+          ]
+        },
+        {
+          "owner_id": "rania-haddad",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "soren-mikkelsen",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "tilda-nyberg",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "umberto-rossi",
+          "labels": []
+        },
+        {
+          "owner_id": "vera-pahlsson",
+          "labels": [
+            "Finance",
+            "Marketing"
+          ]
+        },
+        {
+          "owner_id": "wes-agyeman",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "zoya-petrosyan",
+          "labels": []
+        }
+      ]
+    }
+  }
+}

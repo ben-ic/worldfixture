@@ -1,0 +1,244 @@
+{
+  "api_version": "worldfixture.service/v1",
+  "name": "domain",
+  "version": "1.0.0",
+  "runtime": {
+    "command": [
+      "node",
+      "src/server.mjs"
+    ],
+    "ports": [
+      {
+        "name": "http",
+        "protocol": "http",
+        "container_port": 4717,
+        "env": "WORLDFIXTURE_DOMAIN_LISTEN",
+        "env_format": "host_port",
+        "published": true
+      }
+    ],
+    "environment": [
+      {
+        "name": "WORLDFIXTURE_WORLD_PATH",
+        "from": "world.path",
+        "required": true
+      },
+      {
+        "name": "WORLDFIXTURE_WORLD_SHA256",
+        "from": "world.sha256",
+        "required": true
+      },
+      {
+        "name": "WORLDFIXTURE_STATE_PATH",
+        "from": "runtime.state",
+        "required": true
+      },
+      {
+        "name": "DOMAIN_TOKEN",
+        "from": "generated",
+        "key": "domain.token",
+        "required": true
+      }
+    ],
+    "readiness": [
+      {
+        "port": "http",
+        "protocol": "http",
+        "path": "/readyz",
+        "expect": "\"ready\":true",
+        "kind": "protocol"
+      }
+    ]
+  },
+  "provides": [
+    {
+      "profile": "domain.collections.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "generated",
+          "key": "domain.token"
+        }
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/domain.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "domain.commerce.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "generated",
+          "key": "domain.token"
+        }
+      ],
+      "world": {
+        "requires": [
+          "commerce"
+        ],
+        "projections": [
+          {
+            "file": "projections/domain.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "domain.social.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "generated",
+          "key": "domain.token"
+        }
+      ],
+      "world": {
+        "requires": [
+          "social"
+        ],
+        "projections": [
+          {
+            "file": "projections/domain.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "domain.finance.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "generated",
+          "key": "domain.token"
+        }
+      ],
+      "world": {
+        "requires": [
+          "finance"
+        ],
+        "projections": [
+          {
+            "file": "projections/domain.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "domain.work.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "generated",
+          "key": "domain.token"
+        }
+      ],
+      "world": {
+        "requires": [
+          "work"
+        ],
+        "projections": [
+          {
+            "file": "projections/domain.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
+      "profile": "domain.support.v1",
+      "port": "http",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "generated",
+          "key": "domain.token"
+        }
+      ],
+      "world": {
+        "requires": [
+          "support"
+        ],
+        "projections": [
+          {
+            "file": "projections/domain.json",
+            "verified": true
+          }
+        ]
+      }
+    }
+  ],
+  "world": {
+    "requires": [],
+    "projections": [
+      {
+        "file": "projections/domain.json",
+        "verified": true
+      }
+    ]
+  },
+  "events": {
+    "consumes": [],
+    "produces": [
+      "domain.record.created.v1",
+      "domain.record.updated.v1",
+      "domain.record.deleted.v1",
+      "commerce.order.placed.v1"
+    ]
+  },
+  "lifecycle": {
+    "seed": true,
+    "reset": true,
+    "reset_mechanism": "restart",
+    "verify": true,
+    "recoverable_changes": true,
+    "state": {
+      "export": true,
+      "import": true,
+      "clear_paths": [
+        "domain"
+      ],
+      "snapshot_paths": [
+        "domain"
+      ]
+    }
+  }
+}

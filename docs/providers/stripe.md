@@ -13,7 +13,7 @@ Workbench uses. The tested API version is `2026-08-26.dahlia`.
 
 ## What does not work
 
-Taxes, discounts, refunds, disputes, credit notes, quotes, meters, usage
+Taxes, discounts, disputes, credit notes, quotes, meters, usage
 records, subscription schedules, revisions, Connect branches, broad payment
 failure states, hosted invoice pages, and invoice PDFs do not work. Complete
 production authorization, idempotency, paging, rate limits, and errors also do
@@ -26,11 +26,11 @@ Use `STRIPE_BASE_URL` and `STRIPE_TOKEN` from `worldfixture env`. Send the
 token as bearer authentication. Send normal Stripe form-encoded bodies. Set the
 Node SDK host to `STRIPE_BASE_URL`.
 
-The local routes also accept anonymous requests. Stripe does not. Do not depend
-on this local difference.
+The token is an account credential. The product rejects anonymous requests and
+unknown tokens.
 
 WorldFixture uses `@emulators/stripe` 0.10.0. Existing emulate.dev routes stay
-unchanged. WorldFixture adds the billing routes below. All routes use one store.
+unchanged. WorldFixture adds the billing and transaction routes below. All routes use one store.
 
 ## emulate.dev route reference
 
@@ -81,6 +81,38 @@ the official fields listed in
 | `DELETE /v1/subscriptions/:id` | Existing subscription ID | Canceled Subscription | SDK and webhook test |
 
 Do not assume that another Stripe parameter or state branch works.
+
+## Payments and refunds
+
+Prepared finance records include the complete invoice history. Each successful
+source payment has one PaymentIntent, one charge, and, when linked to an invoice,
+one invoice-payment record. Payment dates come from the source schedule. An
+invoice's due date and its payment date can differ. Invoice `amount_paid` remains
+the gross settlement amount; charge and refund records show returned funds.
+
+| Method and path | Local behavior |
+| --- | --- |
+| `GET /v1/invoice_payments` | Paginated links, with invoice, status, and payment filters |
+| `GET /v1/invoice_payments/:id` | Invoice, PaymentIntent, amount, currency, and payment date |
+| `GET /v1/refunds` | Paginated refunds, with charge or PaymentIntent filters |
+| `GET /v1/refunds/:id` | Refund amount, date, currency, status, charge, and PaymentIntent |
+| `POST /v1/refunds` | Successful partial or full refund of a successful charge; use `charge` or `payment_intent`, with optional `amount` |
+
+A refund cannot exceed the charge's remaining refundable amount. Seeded refunds
+preserve their authored date and source ID. Normal refund creation emits
+`refund.created`; loading the starting records emits no payment or refund events.
+Reset restores the starting payments and refunds and removes later API changes.
+
+One-time customers use `billing_mode: "one_time"` and a declared
+`revenue_account`. They do not create monthly subscriptions or recurring prices.
+A payment linked to an order and its invoice is counted once. Existing source
+order status alone does not create a payment or invent its date.
+
+The local transaction contract supports at most one invoice per payment.
+Invoice overpayment, cross-invoice allocations, failed refunds, asynchronous
+refund states, and disputes are **Not supported**. Tests are in
+`emulators/emulate/src/overrides/stripe-transactions.test.mjs` and
+`tests/image/coupling-finance-probes.test.mjs`.
 
 ## State, events, reset, Workbench, and proof
 

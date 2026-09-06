@@ -10,7 +10,6 @@
 // real bindings are supplied by `cli.mjs`.
 
 import { execFile } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +17,7 @@ import { promisify } from "node:util";
 
 import { hostAddresses, hostBindings, hostInstance } from "./host-launcher.mjs";
 import { probe } from "./readiness.mjs";
+import { inspectWorldArtifact } from "./world-catalogue.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -130,62 +130,34 @@ function checkArchitecture(arch, imageArchitecture) {
   return ok("Architecture", `${wanted} is supported`, imageArchitecture ? `the local image is ${imageArchitecture}` : undefined);
 }
 
-// The artifact is validated against its own manifest, byte for byte. `up`
-// refuses a mismatch at resolution time; doctor's job is to say so before the
-// user has spent five minutes watching a container start.
-export function validateArtifact(artifactPath) {
-  let manifest;
-  try {
-    manifest = JSON.parse(readFileSync(join(artifactPath, "manifest.json"), "utf8"));
-  } catch (error) {
+// Use the same integrity and source checks as world selection. A source name
+// alone is not proof that it can rebuild this artifact.
+function shellArgument(value) {
+  return "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
+}
+
+export function validateArtifact(artifactPath, { sourceRoots = [join(PACKAGE_ROOT, "worlds")] } = {}) {
+  const artifact = inspectWorldArtifact(artifactPath, { sourceRoots });
+  if (!artifact.valid) {
+    const repair = artifact.sourcePath
+      ? `Rebuild the artifact: worldfixture build ${shellArgument(artifact.sourcePath)} --output ${shellArgument(artifact.artifactPath)}`
+      : `Source path is unavailable for ${artifact.artifactPath}. Locate the original world source before you rebuild this artifact.`;
+    const errors = artifact.errors.map((error) => typeof error === "string" ? error : error.message);
     return failed(
       "World artifact",
-      `no world artifact at ${artifactPath}`,
-      firstLine(error.message),
-      "Build it: PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v3/world.json --output dist/business.saas-company.v3",
+      artifact.manifest
+        ? `${artifact.id}:${artifact.version} fails artifact validation`
+        : `no world artifact at ${artifact.artifactPath}`,
+      errors.join("; ") || "Artifact integrity checks failed.",
+      repair,
     );
   }
 
-  if (manifest.api_version !== "worldfixture.world-artifact/v1") {
-    return failed(
-      "World artifact",
-      `${artifactPath} is a ${manifest.api_version} artifact`,
-      "this runtime reads worldfixture.world-artifact/v1",
-      "Rebuild the artifact with the compiler in this checkout.",
-    );
-  }
-
-  const wrong = [];
-  for (const [file, expected] of Object.entries(manifest.files ?? {})) {
-    let bytes;
-    try {
-      bytes = readFileSync(join(artifactPath, file));
-    } catch {
-      wrong.push(`${file} is missing`);
-      continue;
-    }
-    if (bytes.length !== expected.size) {
-      wrong.push(`${file} is ${bytes.length} bytes, the manifest says ${expected.size}`);
-      continue;
-    }
-    const digest = createHash("sha256").update(bytes).digest("hex");
-    if (digest !== expected.sha256) wrong.push(`${file} hashes to ${digest.slice(0, 12)}…, the manifest says ${expected.sha256.slice(0, 12)}…`);
-  }
-
-  if (wrong.length > 0) {
-    return failed(
-      "World artifact",
-      `${wrong.length} of ${Object.keys(manifest.files).length} artifact files do not match the manifest`,
-      wrong.slice(0, 4).join("; "),
-      "Rebuild the artifact: PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v3/world.json --output dist/business.saas-company.v3",
-    );
-  }
-
-  const count = Object.keys(manifest.files ?? {}).length;
+  const count = Object.keys(artifact.manifest.files).length;
   return ok(
     "World artifact",
-    `${manifest.world_id}:${manifest.world_version} validates`,
-    `${count} files match the manifest, artifact ${manifest.artifact_sha256.slice(0, 12)}…`,
+    `${artifact.id}:${artifact.version} validates`,
+    `${count} files match the manifest, artifact ${artifact.digest.slice(0, 12)}…`,
   );
 }
 
@@ -429,6 +401,7 @@ function closedConflicts(stateDir) {
 
 export async function diagnose({
   artifactPath,
+  sourceRoots,
   stateDir,
   image = "worldfixture:local",
   arch = process.arch,
@@ -447,7 +420,7 @@ export async function diagnose({
   checks.push(imageCheck);
   checks.push(checkArchitecture(arch, imageCheck.imageArchitecture));
 
-  checks.push(validateArtifact(artifactPath));
+  checks.push(validateArtifact(artifactPath, { sourceRoots }));
   checks.push(checkStateDirectory(stateDir));
 
   const instanceCheck = dockerCheck.state === "ok"

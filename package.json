@@ -28,6 +28,9 @@
     "worldfixture": "runtime/bin/worldfixture.mjs"
   },
   "scripts": {
+    "test:coupling": "node tests/image/coupling-test.mjs",
+    "test:coupling:unit": "node --test tests/image/coupling-*.test.mjs",
+    "test:world-selection": "node tests/image/world-selection-test.mjs",
     "build:worlds": "PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v2/world.json --output dist/business.saas-company.v2 && PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/business.saas-company.v3/world.json --output dist/business.saas-company.v3 && PYTHONPATH=compiler python3 -m worldfixture_compiler build worlds/consumer.retail-brand.v1/world.json --output dist/consumer.retail-brand.v1",
     "build:workbench": "npm --prefix runtime/workbench-ui ci && npm --prefix runtime/workbench-ui run build",
     "docs:dev": "npm --prefix docs run dev",
@@ -49,6 +52,10 @@
     "!docs/package.json",
     "!docs/package-lock.json",
     "examples/minimal-world/",
+    "emulators/domain/src/validation.mjs",
+    "emulators/emulate/src/plugins/gmail-delivery.mjs",
+    "emulators/emulate/src/plugins/s3-signing.mjs",
+    "emulators/emulate/src/oauth-client-config.mjs",
     "runtime/bin/",
     "runtime/src/",
     "!runtime/src/*.test.mjs",

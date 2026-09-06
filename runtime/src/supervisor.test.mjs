@@ -9,7 +9,7 @@
 
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -19,18 +19,28 @@ import { promisify } from "node:util";
 import { loadManifests } from "./manifests.mjs";
 import { resolveEnvironment } from "./resolve.mjs";
 import { aggregate, probe } from "./readiness.mjs";
-import { allocate, environmentFor, SINGLE_CONTAINER_PORTS } from "./ports.mjs";
+import { allocate, environmentFor } from "./ports.mjs";
 import { appendEvent, openState } from "./state.mjs";
 import { history, send, tokenFor } from "./slack.mjs";
 import { StartupError, start, verifyArtifact, worldPathFor } from "./supervisor.mjs";
 import { credential, prepareCredentials } from "./credentials.mjs";
 import { inbox } from "./imap.mjs";
+import { s3Fetch } from "./s3-signing.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
+const ARTIFACT = process.env.WORLDFIXTURE_TEST_ARTIFACT || join(ROOT, "dist/business.saas-company.v2");
+// HTTP checks use a world that explicitly declares a site. v2 has no site.
+const HTTP_ARTIFACT = process.env.WORLDFIXTURE_TEST_HTTP_ARTIFACT || join(dirname(ARTIFACT), "business.saas-company.v3");
+const artifactFor = requires => requires.some(profile => profile.startsWith("http.")) ? HTTP_ARTIFACT : ARTIFACT;
 const SERVICES = join(ROOT, "emulators");
 const MANIFESTS = loadManifests(SERVICES);
 const run = promisify(execFile);
+
+function s3Bindings(instance) {
+  return { S3_ACCESS_KEY_ID: credential(instance.credentials, "s3.access_key_id"),
+    S3_SECRET_ACCESS_KEY: credential(instance.credentials, "s3.secret_access_key"),
+    S3_REGION: JSON.parse(readFileSync(join(ARTIFACT, "projections/aws.json"), "utf8")).region };
+}
 
 test("managed IMAP accepts the run password and rejects the old derived password", async () => {
   const instance = await start(lockFor(["mail.imap.v1"]), { artifactPath: ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES });
@@ -54,21 +64,24 @@ function stateDir() {
 
 // Both services here are pure Node, so this suite runs without Docker.
 function lockFor(requires, bindings = {}) {
+  const artifactPath = artifactFor(requires);
+  const world = JSON.parse(readFileSync(join(artifactPath, "world.json"), "utf8"));
   return resolveEnvironment(
     {
       api_version: "worldfixture.environment/v1",
-      world: { use: "business.saas-company:v2" },
+      world: { use: `${world.id}:${world.version}` },
       requires,
+      execution: { mode: "selected-capabilities" },
       bindings,
-      target: { kind: "none", identity: "person.maya-chen" },
+      target: { kind: "none", identity: "maya-chen" },
     },
-    { manifests: MANIFESTS, artifactPath: ARTIFACT },
+    { manifests: MANIFESTS, artifactPath },
   );
 }
 
 async function started(requires, bindings) {
   const instance = await start(lockFor(requires, bindings), {
-    artifactPath: ARTIFACT,
+    artifactPath: artifactFor(requires),
     stateDir: stateDir(),
     serviceRoot: SERVICES,
     readyTimeoutMs: 30_000,
@@ -88,7 +101,7 @@ test("a world whose bytes are not the ones the lock resolved is refused", () => 
   forged.world.projections[file] = { ...forged.world.projections[file], sha256: "0".repeat(64) };
 
   assert.throws(
-    () => verifyArtifact(forged, ARTIFACT),
+    () => verifyArtifact(forged, HTTP_ARTIFACT),
     (error) => error.code === "artifact_mismatch" && error.state_changed === false,
   );
 });
@@ -99,11 +112,11 @@ test("a missing projection is named rather than discovered at seed time", () => 
     ...lock,
     world: { ...lock.world, projections: { "projections/absent.json": { sha256: "0".repeat(64), size: 1 } } },
   };
-  assert.throws(() => verifyArtifact(forged, ARTIFACT), /absent\.json is missing/);
+  assert.throws(() => verifyArtifact(forged, HTTP_ARTIFACT), /absent\.json is missing/);
 });
 
 test("the real artifact satisfies the lock it resolved", () => {
-  assert.doesNotThrow(() => verifyArtifact(lockFor(["http.public-site.v1"]), ARTIFACT));
+  assert.doesNotThrow(() => verifyArtifact(lockFor(["http.public-site.v1"]), HTTP_ARTIFACT));
 });
 
 // ---- ports ---------------------------------------------------------------
@@ -149,36 +162,19 @@ test("a child process binds narrowly for a private port", async () => {
   assert.equal(slack.serverPort, slack.number, "a child process binds the port this machine dials");
 });
 
-// This case is about the FIXED ports, so it can only run when they are free.
-//
-// The README tells a new person to run `worldfixture up`, and CONTRIBUTING tells
-// them to run `npm test`. Doing both in that order used to fail here with
-// `EADDRINUSE 127.0.0.1:4703`, because the running instance is holding exactly
-// the port this test asserts. That is not a broken allocator, and a failure is
-// the wrong way to say so.
-async function fixedPortsAreFree() {
-  const { createServer } = await import("node:net");
-  return new Promise((resolve) => {
-    const probe = createServer();
-    probe.once("error", () => resolve(false));
-    probe.listen(4703, "127.0.0.1", () => probe.close(() => resolve(true)));
-  });
-}
-
-test("the single-container runner uses stable ports in one namespace", async (t) => {
-  if (!(await fixedPortsAreFree())) {
-    return t.skip("port 4703 is in use, most likely by a running instance; stop it with `worldfixture down`");
-  }
+// Use one free port map twice so a developer's running world cannot skip the
+// stable-port contract. The product image separately exercises its fixed map.
+test("the process runner reuses chosen stable ports in one namespace", async () => {
   const lock = lockFor(["slack.messaging.v1", "mail.imap.v1", "aws.s3.objects.v1"]);
-  const { allocation, release } = await allocate(lock, {
-    runner: "process",
-    fixedPorts: SINGLE_CONTAINER_PORTS,
-  });
+  const reserved = await allocate(lock, { runner: 'process' });
+  const fixedPorts = Object.fromEntries([...reserved.allocation].map(([key, port]) => [key, port.number]));
+  await reserved.release();
+  const { allocation, release } = await allocate(lock, { runner: 'process', fixedPorts });
 
   try {
-    assert.equal(allocation.get("emulate/slack").number, 4703);
-    assert.equal(allocation.get("mail/imap").number, 1143);
-    assert.equal(allocation.get("s3/s3").number, 61006);
+    assert.equal(allocation.get("emulate/slack").number, fixedPorts["emulate/slack"]);
+    assert.equal(allocation.get("mail/imap").number, fixedPorts["mail/imap"]);
+    assert.equal(allocation.get("s3/s3").number, fixedPorts["s3/s3"]);
     assert.equal(allocation.get("mail/health").bind, "127.0.0.1");
     assert.equal(allocation.get("mail/imap").bind, "0.0.0.0");
     assert.ok([...allocation.values()].every((entry) => entry.contained === false));
@@ -195,7 +191,7 @@ test("each service is handed its ports in the shape it asks for", async () => {
   const mail = lock.services.find((service) => service.name === "mail");
   const s3 = lock.services.find((service) => service.name === "s3");
   const mailEnv = environmentFor(mail, allocation, { worldPath: ARTIFACT });
-  const s3Env = environmentFor(s3, allocation, { worldPath: ARTIFACT });
+  const s3Env = environmentFor(s3, allocation, { worldPath: ARTIFACT, credentials: { values: { "s3.access_key_id": "test-access", "s3.secret_access_key": "test-secret" } } });
   await release();
 
   // mail wants `host:port` in one variable and declares no bind variable. The
@@ -209,6 +205,8 @@ test("each service is handed its ports in the shape it asks for", async () => {
   // the host path, which does not exist inside a container.
   assert.equal(mailEnv.WORLDFIXTURE_WORLD_PATH, ARTIFACT);
   assert.equal(s3Env.WORLDFIXTURE_WORLD_PATH, ARTIFACT);
+  assert.equal(s3Env.AWS_ACCESS_KEY_ID, "test-access");
+  assert.equal(s3Env.AWS_SECRET_ACCESS_KEY, "test-secret");
 });
 
 test("the composer gets a bind variable because it declares one", async () => {
@@ -379,13 +377,17 @@ test("reset restores provider, HTTP and runtime state to the accepted start", as
   const slack = instance.bindings().SLACK_BASE_URL;
   const site = instance.bindings().SITE_URL;
   const token = tokenFor({ id: "maya-chen" }, instance.credentials);
+  const selectedWorld = JSON.parse(readFileSync(join(HTTP_ARTIFACT, "world.json"), "utf8"));
+  const channelName = selectedWorld.communication.channels.find(row => row.member_ids.includes("maya-chen")).name;
+  const httpProjection = JSON.parse(readFileSync(join(HTTP_ARTIFACT, "projections/http-targets.json"), "utf8"));
+  const pagePath = httpProjection.pages.find(row => row.request_variants?.length > 1).path;
 
   try {
-    const initialHistory = await history(slack, token, "release-2-8");
-    const initialPage = await fetch(`${site}/notes/lumen-export`).then((response) => response.text());
+    const initialHistory = await history(slack, token, channelName);
+    const initialPage = await fetch(`${site}${pagePath}`).then((response) => response.text());
 
-    await send(slack, token, { channelName: "release-2-8", text: "reset removes this" });
-    const changedPage = await fetch(`${site}/notes/lumen-export`).then((response) => response.text());
+    await send(slack, token, { channelName: channelName, text: "reset removes this" });
+    const changedPage = await fetch(`${site}${pagePath}`).then((response) => response.text());
     appendEvent(instance.state, {
       id: "evt_reset_test",
       type: "communication.message.sent.v1",
@@ -394,15 +396,15 @@ test("reset restores provider, HTTP and runtime state to the accepted start", as
       occurred_at: "2026-09-02T12:00:00Z",
     });
 
-    assert.notDeepEqual(await history(slack, token, "release-2-8"), initialHistory);
+    assert.notDeepEqual(await history(slack, token, channelName), initialHistory);
     assert.notEqual(changedPage, initialPage);
     assert.equal(instance.state.prepare("SELECT COUNT(*) AS n FROM events").get().n, 1);
 
     await instance.reset();
 
-    assert.deepEqual(await history(slack, token, "release-2-8"), initialHistory);
+    assert.deepEqual(await history(slack, token, channelName), initialHistory);
     assert.equal(
-      await fetch(`${site}/notes/lumen-export`).then((response) => response.text()),
+      await fetch(`${site}${pagePath}`).then((response) => response.text()),
       initialPage,
     );
     assert.equal(instance.state.prepare("SELECT COUNT(*) AS n FROM events").get().n, 0);
@@ -433,7 +435,7 @@ test("a service that exits before readiness is reported with its own output", as
 test("starting an instance writes one instance row and the runtime tables", async () => {
   const directory = stateDir();
   const instance = await start(lockFor(["http.public-site.v1"]), {
-    artifactPath: ARTIFACT,
+    artifactPath: HTTP_ARTIFACT,
     stateDir: directory,
     serviceRoot: SERVICES,
     readyTimeoutMs: 30_000,
@@ -516,17 +518,17 @@ test("S3 starts as a container and answers its own protocol", async () => {
     assert.deepEqual(await seedGate.json(), {
       source: "worldfixture-s3",
       ready: true,
-      buckets: 2,
-      objects: 2,
+      buckets: JSON.parse(readFileSync(join(ARTIFACT, "projections/aws.json"), "utf8")).s3.buckets.length,
+      objects: JSON.parse(readFileSync(join(ARTIFACT, "projections/aws.json"), "utf8")).s3.objects.length,
     });
 
     const { host, port } = instance.addressOf("s3", "s3");
-    const listing = await fetch(`http://${host}:${port}/`);
+    const listing = await s3Fetch(`http://${host}:${port}/`, {}, s3Bindings(instance));
     assert.equal(listing.status, 200);
     assert.match(await listing.text(), /ListAllMyBucketsResult/);
 
     // The world's own document, read back over the S3 API.
-    const objects = await fetch(`http://${host}:${port}/northstar-relay-documents/?list-type=2`);
+    const objects = await s3Fetch(`http://${host}:${port}/northstar-relay-documents/?list-type=2`, {}, s3Bindings(instance));
     assert.equal(objects.status, 200);
     assert.match(await objects.text(), /<Key>/);
   } finally {
@@ -537,7 +539,7 @@ test("S3 starts as a container and answers its own protocol", async () => {
 test("world reset restarts resettable services and preserves MySQL data", async () => {
   const generatedSecretsPath = join(stateDir(), "generated-secrets.json");
   const instance = await start(lockFor(["mysql.wire.v1", "http.public-site.v1"]), {
-    artifactPath: ARTIFACT,
+    artifactPath: HTTP_ARTIFACT,
     stateDir: stateDir(),
     serviceRoot: SERVICES,
     readyTimeoutMs: 180_000,
@@ -607,7 +609,7 @@ test("Notion file uploads use the selected S3 service and reset with the world",
 
     const s3 = instance.addressOf("s3", "s3");
     const objectUrl = `http://${s3.host}:${s3.port}/northstar-relay-documents/notion/uploads/${upload.id}/agent.txt`;
-    const stored = await fetch(objectUrl);
+    const stored = await s3Fetch(objectUrl, {}, s3Bindings(instance));
     assert.equal(stored.status, 200);
     assert.equal(await stored.text(), "stored by SeaweedFS");
 
@@ -616,7 +618,7 @@ test("Notion file uploads use the selected S3 service and reset with the world",
     const missingMetadata = await fetch(`http://${restoredNotion.host}:${restoredNotion.port}/v1/file_uploads/${upload.id}`, { headers });
     assert.equal(missingMetadata.status, 404);
     const restoredS3 = instance.addressOf("s3", "s3");
-    assert.equal((await fetch(`http://${restoredS3.host}:${restoredS3.port}/northstar-relay-documents/notion/uploads/${upload.id}/agent.txt`)).status, 404);
+    assert.equal((await s3Fetch(`http://${restoredS3.host}:${restoredS3.port}/northstar-relay-documents/notion/uploads/${upload.id}/agent.txt`, {}, s3Bindings(instance))).status, 404);
   } finally {
     await instance.stop();
   }
@@ -633,7 +635,7 @@ test("selecting S3 leaves the composer's S3 port shut in a real run", async () =
   });
 
   try {
-    assert.deepEqual(instance.lock.closed_conflicts.map((entry) => entry.port), ["aws"]);
+    assert.deepEqual(instance.lock.closed_conflicts, []);
     assert.throws(() => instance.addressOf("emulate", "aws"), /no allocation/);
 
     const emulate = instance.lock.services.find((service) => service.name === "emulate");
@@ -710,7 +712,8 @@ test("a container that mounts no world is given no world path, not the host one"
 // Measured on CI: `emulate` started without its dependencies exits immediately
 // on `Cannot find package '@emulators/core'`, and 22 runtime tests reported
 // `fetch failed` instead. The cause took three CI runs to find.
-test("a service that dies during the wait is reported as exited, not as unready", async () => {
+test("a service that dies during the wait is reported promptly with its own error", async () => {
+  const began = Date.now();
   const lock = lockFor(["slack.messaging.v1"]);
   const emulate = lock.services.find((service) => service.name === "emulate");
 
@@ -719,8 +722,9 @@ test("a service that dies during the wait is reported as exited, not as unready"
   emulate.command = ["node", "-e", "process.stderr.write('cannot find package\\n'); process.exit(1)"];
 
   await assert.rejects(
-    () => start(lock, { artifactPath: ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES, readyTimeoutMs: 5_000 }),
+    () => start(lock, { artifactPath: ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES, readyTimeoutMs: 300_000 }),
     (error) => {
+      assert.ok(Date.now() - began < 3000, "child exit must not wait for the 300-second readiness budget");
       assert.equal(error.code, "service_exited", `reported as ${error.code}: ${error.message}`);
       assert.match(error.message, /emulate exited with code 1/);
       assert.ok(error.detail.log.some((entry) => /cannot find package/.test(entry.line)),
@@ -743,4 +747,75 @@ test("no shipped container service is left needing a world path it cannot reach"
     );
     assert.deepEqual(needs, [], `${manifest.name} requires the world path and mounts no world`);
   }
+});
+
+test("early domain actions use the paused authored clock before services are ready", async () => {
+  const { clockState } = await import('./clock.mjs');
+  const { executeDomainOperation } = await import('./domain-operations.mjs');
+  const world = JSON.parse(readFileSync(join(HTTP_ARTIFACT, 'world.json'), 'utf8'));
+  let observed;
+  const instance = await start(lockFor(['http.public-site.v1']), { artifactPath: HTTP_ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES,
+    readyTimeoutMs: 30000, onSpawned: async early => {
+      const clock = clockState(early.state); assert.equal(clock.running, false); assert.equal(clock.elapsed_ms, 0); assert.equal(clock.anchor, world.clock.anchor);
+      const actor = world.people.find(row => row.primary).id, record = { id: 'early-clock-check', author_id: actor, body: 'Authored time' };
+      const result = await executeDomainOperation(early.state, { api_version: 'worldfixture.runtime-operation/v1', type: 'social.post.publish.v1', actor_id: actor, record }, {
+        world, bindings: { DOMAIN_BASE_URL: 'http://test-domain.invalid', DOMAIN_TOKEN: 'test-clock-token' },
+        fetchImpl: async () => Response.json({ ok: true, record, event: { id: 'domain-event-clock', seq: 1, type: 'domain.record.created.v1', collection: 'social.posts', record_id: record.id, actor_id: actor, world, before: null, after: record } }),
+      });
+      observed = result.event.occurred_at;
+    } });
+  try { assert.equal(observed, new Date(world.clock.anchor).toISOString()); }
+  finally { await instance.stop(); }
+});
+
+test('a different required child exit interrupts the current service readiness wait', async () => {
+  const lock = lockFor(['slack.messaging.v1', 'http.public-site.v1']);
+  lock.services.find(row => row.name === 'emulate').command = ['node', '-e', 'setInterval(()=>{},1000)'];
+  lock.services.find(row => row.name === 'http-targets').command = ['node', '-e', "setTimeout(()=>{process.stderr.write('declared HTTP child failure\\n');process.exit(9)},100)"];
+  const began = Date.now();
+  await assert.rejects(start(lock, { artifactPath: HTTP_ARTIFACT, stateDir: stateDir(), serviceRoot: SERVICES, readyTimeoutMs: 300000 }), error => {
+    assert.equal(error.code, 'service_exited'); assert.equal(error.detail.service, 'http-targets');
+    assert.ok(Date.now() - began < 3000); assert.ok(error.detail.log.some(row => row.line.includes('declared HTTP child failure'))); return true;
+  });
+});
+
+test('timeline controller uses normal supervisor reset, stop, and a fresh schedule after down/up', async () => {
+  const { attachTimelineControl } = await import('./timeline-control.mjs');
+  const selectedWorld = JSON.parse(readFileSync(join(HTTP_ARTIFACT, 'world.json'), 'utf8'));
+  const projection = JSON.parse(readFileSync(join(HTTP_ARTIFACT, 'projections/http-targets.json'), 'utf8'));
+  const page = projection.pages.find(row => row.request_variants?.length > 1).path;
+  const dir = stateDir(), lock = lockFor(['http.public-site.v1'], { SITE_URL: 'http.public-site.v1/base_url' });
+  let instance = await start(lock, { artifactPath: HTTP_ARTIFACT, stateDir: dir, serviceRoot: SERVICES, readyTimeoutMs: 30000 });
+  try {
+    const controller = attachTimelineControl(instance, selectedWorld, { bindings: instance.bindings(), tickMs: 3600000 });
+    await controller.initialize({ setup: true });
+    const base = instance.bindings().SITE_URL;
+    const initial = await fetch(`${base}${page}`).then(response => response.text());
+    assert.notEqual(await fetch(`${base}${page}`).then(response => response.text()), initial);
+    instance.state.prepare("INSERT INTO connector_receipts(event_id,target,envelope,payload_fingerprint,status) VALUES('wf:test:v1:receipt','http://app.test','{}','test-fingerprint','accepted')").run();
+    const restored = await instance.reset(); assert.equal(restored.repeat.cycle, 2);
+    assert.equal(await fetch(`${base}${page}`).then(response => response.text()), initial);
+    assert.equal(instance.state.prepare('SELECT COUNT(*) AS n FROM connector_receipts').get().n, 1);
+    await instance.stop(); assert.equal(controller.status().mode, 'stopped');
+    instance = await start(lock, { artifactPath: HTTP_ARTIFACT, stateDir: dir, serviceRoot: SERVICES, readyTimeoutMs: 30000 });
+    const fresh = attachTimelineControl(instance, selectedWorld, { bindings: instance.bindings(), tickMs: 3600000 });
+    const result = await fresh.initialize({ setup: true });
+    assert.equal(result.repeat.cycle, 1); assert.equal(result.timeline.failed, 0); assert.equal(result.timeline.delivered, 0);
+    assert.equal(instance.state.prepare('SELECT COUNT(*) AS n FROM connector_receipts').get().n, 1);
+  } finally { await instance.stop(); }
+});
+
+test('fresh process startup removes absolute provider seed markers before seeding', async () => {
+  const directory = `/tmp/worldfixture-switch-clean-${process.pid}-${Date.now()}`; mkdirSync(directory); scratch.push(directory);
+  const marker = join(directory, 'seeded-old-generation'); writeFileSync(marker, 'old world');
+  const runtime = stateDir(), relativeMarker = join(runtime, 'provider-old'); writeFileSync(relativeMarker, 'old state');
+  const lock = lockFor(['http.public-site.v1']);
+  const service = lock.services.find(row => row.name === 'http-targets');
+  service.lifecycle.state.clear_paths = [...(service.lifecycle.state.clear_paths ?? []), directory, 'provider-old'];
+  const instance = await start(lock, { artifactPath: HTTP_ARTIFACT, stateDir: runtime, serviceRoot: SERVICES,
+    runner: 'process', readyTimeoutMs: 30000, onSpawned: () => {
+      assert.equal(existsSync(marker), false, 'an old seed marker must not suppress the new world seed');
+      assert.equal(existsSync(relativeMarker), false);
+    } });
+  try { assert.equal(instance.phase, 'ready'); } finally { await instance.stop(); }
 });

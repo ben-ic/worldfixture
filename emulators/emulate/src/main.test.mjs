@@ -11,11 +11,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -48,11 +49,11 @@ function freePort() {
   });
 }
 
-function writeWorld() {
+function writeWorld(overlay = OVERLAY) {
   const world = mkdtempSync(join(tmpdir(), "worldfixture-composer-"));
   mkdirSync(join(world, "projections"), { recursive: true });
 
-  const body = JSON.stringify(OVERLAY);
+  const body = JSON.stringify(overlay);
   writeFileSync(join(world, "projections", "emulator-overlay.json"), body);
   writeFileSync(
     join(world, "manifest.json"),
@@ -73,13 +74,13 @@ function writeWorld() {
 // Start the composer and wait for the line it prints once the listener is up. Rejects
 // on an early exit or on EADDRINUSE rather than letting the test probe a stale port
 // and believe whatever answers.
-async function startComposer(port, world) {
+async function startComposer(port, world, vendor = "slack") {
   const child = spawn(process.execPath, [MAIN], {
     cwd: CWD,
     env: {
       ...process.env,
       WORLDFIXTURE_WORLD_PATH: world,
-      WORLDFIXTURE_PORT_SLACK: String(port),
+      [`WORLDFIXTURE_PORT_${vendor.toUpperCase()}`]: String(port),
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -99,6 +100,22 @@ async function startComposer(port, world) {
   });
 
   await ready;
+  // The log follows serve(), but the socket can bind on a later event-loop
+  // turn. Confirm that this listener accepts requests before testing its API.
+  const deadline = Date.now() + 5_000;
+  for (;;) {
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/_worldfixture/ready`);
+      await response.arrayBuffer();
+      break;
+    } catch (error) {
+      if (child.exitCode !== null || Date.now() >= deadline) {
+        child.kill("SIGKILL");
+        throw new Error(`composer listener did not start:\n${output}`, { cause: error });
+      }
+      await delay(10);
+    }
+  }
 
   return {
     child,
@@ -163,7 +180,38 @@ test("the composer refuses a world whose overlay does not match its manifest", a
     (err) => err.message,
   );
 
-  assert.match(failure, /composer exited early \(1\)/);
+  assert.match(failure, /composer exited early \(64\)/);
   assert.match(failure, /does not match/);
   assert.match(failure, /manifest\.json/);
+});
+
+test("the composer preserves a declared Atlas Project0 and seeds no sample records", async (t) => {
+  const world = writeWorld({
+    mongoatlas: {
+      projects: [{ name: "Project0", org_id: "authored-org" }],
+      clusters: [{ name: "authored-cluster", project: "Project0" }],
+      database_users: [{ username: "authored-user", project: "Project0" }],
+    },
+    tokens: { atlas_token: { login: "authored-user", scopes: [] } },
+  });
+  t.after(() => rmSync(world, { recursive: true, force: true }));
+  const port = await freePort();
+  const composer = await startComposer(port, world, "mongoatlas");
+  t.after(() => composer.stop());
+  const read = async path => {
+    const response = await fetch(`http://127.0.0.1:${port}${path}`, {
+      headers: { authorization: "Bearer atlas_token" },
+    });
+    assert.equal(response.status, 200);
+    return response.json();
+  };
+  const projects = await read("/api/atlas/v2/groups");
+  assert.equal(projects.totalCount, 1);
+  assert.equal(projects.results[0].name, "Project0");
+  assert.equal(projects.results[0].orgId, "authored-org");
+  const path = `/api/atlas/v2/groups/${projects.results[0].id}`;
+  const clusters = await read(`${path}/clusters`);
+  assert.deepEqual(clusters.results.map(row => row.name), ["authored-cluster"]);
+  const users = await read(`${path}/databaseUsers`);
+  assert.deepEqual(users.results.map(row => row.username), ["authored-user"]);
 });

@@ -4,6 +4,12 @@ Every run selects free host ports and writes the actual connection values to
 its local state directory. Always read these values. Do not copy a port from a
 different run.
 
+A world switch creates new credentials. Read `worldfixture env` again and update
+or restart the application with the new values. If you use an application
+connector, confirm its URL with `worldfixture switch --connect <application-url>`.
+If the selected world needs no connector, use `worldfixture switch --without-application`.
+Then choose the initial position in **Timeline**, or run `worldfixture clock start 0s`.
+
 ## Use environment bindings
 
 Run an application with all active bindings:

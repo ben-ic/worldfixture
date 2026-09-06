@@ -1,0 +1,147 @@
+{
+  "api_version": "worldfixture.coupling-calendar-migration/v1",
+  "finding": 24,
+  "reason": "Normalize source calendar names, owner emails, start/end values and attendee emails for the Google seed API. Unnormalized calendars return HTTP 500 and event times and attendees are lost. Source data, other projection fields and all other files must remain identical to the original baseline.",
+  "recorded_on": "2026-09-05",
+  "semantic_check": "test_coupling_baseline.assert_calendar_semantics validates source-derived calendar fields; reverse_calendar_migration restores source arrays and derived manifest hashes and must reproduce every original file byte digest.",
+  "worlds": [
+    {
+      "artifact": "dist/business.saas-company.v2",
+      "bundle": {
+        "from": {
+          "bundle_sha256": "b48a0af3f6c5ff285af134d60a293a92a05a6a7811d2670704848837446f1e14",
+          "bundle_size": 542720,
+          "content_sha256": "a73b7d9e30fa154e34996654a2355a757e54e539542337cc9980d220d91e22ab"
+        },
+        "to": {
+          "bundle_sha256": "380c7506815680bdd6a8b39a5ecb014b520dff765fa17e9cc30af28f0e1eba4a",
+          "bundle_size": 542720,
+          "content_sha256": "a472947d1b81261bf01577fe3919b6a66f0f95225cf52a3eeb2520aaa606b988"
+        }
+      },
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "40358b622d0d66c47462ab2de9d06ac78c066f952040c37dc446d2e053aad8d0",
+            "size": 4558
+          },
+          "to": {
+            "sha256": "47df65a6a73df44f47dc7b003c143aa78edc66dc8b416ab6c80bfeccad5912a9",
+            "size": 4558
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "e74a525d21ff287b90525c829b12941f869da1c5e44fd1ae155e0c97b8cc225b",
+            "size": 69477
+          },
+          "to": {
+            "sha256": "cf9a04d74ad6719e5309c13ba204beff2dd8df8f76bfe94351b00a6cf983edfc",
+            "size": 69903
+          }
+        },
+        "projections/google.json": {
+          "from": {
+            "sha256": "66a2b3ad29065c6363e4e5129bfe79e92d5619c438806d1162f32132e12a56ba",
+            "size": 17810
+          },
+          "to": {
+            "sha256": "e6254898028be5965bc64fce92f13582dc5bd8363192d4ec589c5b42f927e656",
+            "size": 18236
+          }
+        }
+      },
+      "from_artifact_sha256": "a73b7d9e30fa154e34996654a2355a757e54e539542337cc9980d220d91e22ab",
+      "id": "business.saas-company",
+      "reason": "Normalize source calendar names, owner emails, start/end values and attendee emails for the Google seed API. Unnormalized calendars return HTTP 500 and event times and attendees are lost. Source data, other projection fields and all other files must remain identical to the original baseline.",
+      "source": "worlds/business.saas-company.v2/world.json",
+      "source_sha256": "f563ebef34f08d71586535005b42d520fa34005932742856b6d3479cacf34397",
+      "to_artifact_sha256": "a472947d1b81261bf01577fe3919b6a66f0f95225cf52a3eeb2520aaa606b988",
+      "version": "v2"
+    },
+    {
+      "artifact": "dist/business.saas-company.v3",
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "30a60fbb7186cc7a2f20c9add787badeae66ef55bb25b72c35e393ec7577ee19",
+            "size": 4393
+          },
+          "to": {
+            "sha256": "07f20f2cf916c8d179034471f49984505c87fb5c05070bf010547216511e5a54",
+            "size": 4393
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "4be4ce2a065513ce5316542b4ecb6fa61c691e4dfd007e4568cea3c0eb853dbf",
+            "size": 766976
+          },
+          "to": {
+            "sha256": "f7bb4718d652a13fdfef29bd3ef5ada81e6a815a3f1c77ba7271f0be266af153",
+            "size": 769303
+          }
+        },
+        "projections/google.json": {
+          "from": {
+            "sha256": "914357ba232bb9203733bc94cf61ae97b1968737441ca6016433dfaeb2b7390c",
+            "size": 24403
+          },
+          "to": {
+            "sha256": "1f24263472af33e7e8656ea166c092e6b4c379108ea3a2640961fa27abd21b84",
+            "size": 26730
+          }
+        }
+      },
+      "from_artifact_sha256": "5b24c396d60deee1d2a0742e3600b80211afc01a122fb12247271146fd8a3874",
+      "id": "business.saas-company",
+      "reason": "Normalize source calendar names, owner emails, start/end values and attendee emails for the Google seed API. Unnormalized calendars return HTTP 500 and event times and attendees are lost. Source data, other projection fields and all other files must remain identical to the original baseline.",
+      "source": "worlds/business.saas-company.v3/world.json",
+      "source_sha256": "97d7f031302533d8f0ea92e3ab8e6764cf0f1741d6c2144b7a89b3cd662b79db",
+      "to_artifact_sha256": "c3d54032e6950a44ea3094583a4f817b07eb49b0ff205221f7ed3961fc5b87b0",
+      "version": "v3"
+    },
+    {
+      "artifact": "dist/consumer.retail-brand.v1",
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "87c2c974f4b430cebd6a3a6fade66e4fcd23f101bb01350bcf70afcf8c954030",
+            "size": 4641
+          },
+          "to": {
+            "sha256": "143a9bda994bea21f0b9fa0eb1a847977deca2d4b2455648bda7752730440b55",
+            "size": 4641
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "49eb61c86d9b4dddb74f2a60f56b42dda9319cfccb09ec4c0ba7a8ac2893d698",
+            "size": 103972
+          },
+          "to": {
+            "sha256": "465e1e52387010508e0fd8651b6c4913e1dc7bf09c5068ab91f996b675d99176",
+            "size": 104555
+          }
+        },
+        "projections/google.json": {
+          "from": {
+            "sha256": "980761dd3e7cc23b2528d04fea9ebb4bc30393daa3062cd4f07c9d8a74e2f857",
+            "size": 7667
+          },
+          "to": {
+            "sha256": "bce35bbd0e4f992ded8598c0b430cc3dbd17583850f7ce842c53152ce070022e",
+            "size": 8250
+          }
+        }
+      },
+      "from_artifact_sha256": "d1dea04cde1eed1046e45b38f5cc5500b427e8bf60078d932b1e14ddc161712e",
+      "id": "consumer.retail-brand",
+      "reason": "Normalize source calendar names, owner emails, start/end values and attendee emails for the Google seed API. Unnormalized calendars return HTTP 500 and event times and attendees are lost. Source data, other projection fields and all other files must remain identical to the original baseline.",
+      "source": "worlds/consumer.retail-brand.v1/world.json",
+      "source_sha256": "ecc575ed89af839a371ff2432e2b02b44d58581bcae7f9715f94b7ab56f7e9ad",
+      "to_artifact_sha256": "9f9e2df83ec0d377d5a81a190c7e6caaf099c96c17049fd8556edcb442ea8bb9",
+      "version": "v1"
+    }
+  ]
+}

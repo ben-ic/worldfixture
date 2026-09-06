@@ -1,4 +1,5 @@
-# Seed for the WorldFixture API emulator — a demo Google Workspace.
+# Legacy YAML parser fixture for loadSeedConfig library callers and tests.
+# Service startup requires a verified world and never loads this file.
 #
 # VERIFIED by running emulate 0.8.0 against this file, not written from the docs.
 # Three things that only running it revealed:

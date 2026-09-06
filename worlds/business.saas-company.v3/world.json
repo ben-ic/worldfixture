@@ -36,6 +36,8 @@
   "fragments": [
     "backbones/northstar-relay.json",
     "packs/saas-operations.json",
-    "stories/live-timeline.json"
+    "stories/live-timeline.json",
+    "packs/google-mailboxes.json",
+    "packs/finance-settlements.json"
   ]
 }

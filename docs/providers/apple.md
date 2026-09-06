@@ -19,16 +19,17 @@ keys, and revoke a token.
 
 ## What does not work
 
-PKCE, Apple client-secret validation, server account-change events, user
-migration, user transfer, and email relay do not work. There is no Apple
+Server account-change events, user migration, user transfer, and email relay
+do not work. There is no Apple
 Workbench screen.
 
 ## Connection and authentication
 
 Use `APPLE_BASE_URL` and `APPLE_TOKEN`. The local browser flow selects a
-world user. The token route does not validate an Apple-signed client secret. It
-also does not enforce a registered client or verify `redirect_uri` during
-exchange.
+declared world user. [Declare the application in the world](../guides/worlds.md#declare-oauth-clients).
+The token route requires the declared client and exact callback URL. It accepts
+the generated shared secret or an ES256 assertion checked against the declared
+`public_key`, `team_id`, and `key_id`.
 
 ## Registered routes
 
@@ -46,8 +47,9 @@ and RS256 ID tokens.
 
 ## Detailed limits
 
-PKCE is **Not supported**. The executable route does not read or verify a PKCE
-challenge even though upstream package text says that it does.
+The local wrapper checks a supplied PKCE challenge during code exchange.
+Apple production consent and token behavior remain **Not verified against the
+production provider**.
 
 Server account-change events, user migration, user transfer, email relay, and
 other Apple APIs are **Not supported**. There is no Apple Workbench screen. No
@@ -55,7 +57,8 @@ official Apple SDK has a test.
 
 ## Evidence and authority
 
-Evidence: compiler projection tests under `tests/contracts/`, the registered
+Evidence: `emulators/emulate/src/overrides/declared-oauth.test.mjs`,
+compiler projection tests under `tests/contracts/`, the registered
 routes in `@emulators/apple` 0.10.0, and the `GET /auth/keys` readiness check
 in `emulators/emulate/service.json`.
 

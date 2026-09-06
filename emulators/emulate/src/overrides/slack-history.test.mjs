@@ -61,14 +61,10 @@ test("the world's topic replaces the one upstream self-seeded", () => {
   assert.equal(result.channels, 1);
 });
 
-test("a message from someone the workspace lacks is dropped, not misattributed", () => {
+test("a message from an unknown author fails instead of dropping source data", () => {
   const world = {
     users: WORLD.users,
     channels: [{ name: "release-2-8", topic: "t", messages: [{ user: "nobody", text: "x", ts: "1.000001" }] }],
   };
-  const { result, ss } = slackWith(world);
-  const channel = ss.channels.findOneBy("name", "release-2-8");
-
-  assert.equal(result.messages, 0);
-  assert.equal(ss.messages.findBy("channel_id", channel.channel_id).length, 0);
+  assert.throws(() => slackWith(world), /unknown declared author nobody/);
 });

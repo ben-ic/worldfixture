@@ -1,0 +1,98 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "id": "pack.google-mailboxes",
+  "contributes": {
+    "communication": {
+      "mailboxes": [
+        {
+          "owner_id": "maya-chen",
+          "labels": [
+            "Customers",
+            "Finance",
+            "Newsletters",
+            "Operations",
+            "Product",
+            "Receipts",
+            "Work"
+          ]
+        },
+        {
+          "owner_id": "jon-bell",
+          "labels": []
+        },
+        {
+          "owner_id": "noor-alvarez",
+          "labels": [
+            "Finance",
+            "Operations"
+          ]
+        },
+        {
+          "owner_id": "elena-petrov",
+          "labels": []
+        },
+        {
+          "owner_id": "samira-okafor",
+          "labels": []
+        },
+        {
+          "owner_id": "lucas-meyer",
+          "labels": []
+        },
+        {
+          "owner_id": "hana-ito",
+          "labels": [
+            "Work"
+          ]
+        },
+        {
+          "owner_id": "david-banerjee",
+          "labels": []
+        },
+        {
+          "owner_id": "imani-brooks",
+          "labels": []
+        },
+        {
+          "owner_id": "theo-martin",
+          "labels": []
+        },
+        {
+          "owner_id": "priya-raman",
+          "labels": [
+            "Customers",
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "ravi-okonkwo",
+          "labels": [
+            "Customers",
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "marta-silva",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "owen-price",
+          "labels": [
+            "Customers",
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "fern-ellery",
+          "labels": []
+        },
+        {
+          "owner_id": "adil-hassan",
+          "labels": []
+        }
+      ]
+    }
+  }
+}

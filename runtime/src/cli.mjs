@@ -9,54 +9,48 @@
 // changes runtime-owned state enters the recorded container rather than opening
 // its SQLite file across a bind mount.
 
-import { execFileSync, spawn } from "node:child_process";
-import { chmodSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { basename, dirname, join, relative, resolve, sep } from "node:path";
+import { spawn } from "node:child_process";
+import { randomUUID } from 'node:crypto';
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { defaultEnvironment } from "./environments.mjs";
-import { loadManifests } from "./manifests.mjs";
-import { ResolutionError, resolveEnvironment, serializeLock } from "./resolve.mjs";
-import { StartupError, start } from "./supervisor.mjs";
-import { contents, findChannel, findPeople, findPerson, insiders, personHandle, primaryOrganization, readWorld } from "./world.mjs";
-import { history, slackTokenHolders, tokenFor } from "./slack.mjs";
-import { submit } from "./commands.mjs";
-import { inbox } from "./imap.mjs";
-import { openState } from "./state.mjs";
+import { rebaseForSession } from "./session-world.mjs";
+import { attachManagedSession, configureApplicationBindings } from './session-runtime.mjs';
+import { assertSessionRecoverable, SessionError } from './session-manager.mjs';
+import { activeFile, activeStateDir, readActiveGeneration, sessionPath } from './session-files.mjs';
+import { importSwitchArtifact, listSwitchWorlds } from './switch-world.mjs';
+import { inspectWorldArtifact, resolveWorldSelection } from "./world-catalogue.mjs";
+export { rebaseForSession };
+
 import { resolveBindings, shellQuote } from "./bindings.mjs";
-import { credential, readRunCredentials } from "./credentials.mjs";
-import { aggregate, probe } from "./readiness.mjs";
-import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
-import { requestReset, serveControl } from "./control.mjs";
-import { startWorkbench } from "./workbench.mjs";
-import { diagnose, formatReport } from "./doctor.mjs";
-import { OpenError, TESTED_PLATFORMS, openWorkbench } from "./open.mjs";
-import { drain, follow, printExisting } from "./events.mjs";
-import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
-import { clockState, startClock } from "./clock.mjs";
-import { armTimeline, startScheduler, timelineState } from "./scheduler.mjs";
+import { BuildError, buildWorldSource, inspectSource, validateWorldSource } from "./build.mjs";
+import { ClockError, clockState, parseDuration } from "./clock.mjs";
+import { submit } from "./commands.mjs";
 import {
+  assertWorldMatchesInstance,
   ConnectorError,
   checkConnector,
   connectorDocumentation,
   connectorPrompt,
   connectorStatus,
+  connectorWorld,
   deliverConnectorEvent,
   discoverConnector,
   planConnector,
   resetConnector,
   seedConnector,
-  connectorWorld,
-  assertWorldMatchesInstance,
 } from "./connector.mjs";
-import { SCALE_PRESETS, ScaleError, describeScale, parseLimits, parseScale } from "./scale.mjs";
-import { BuildError, buildWorldSource, inspectSource, validateWorldSource } from "./build.mjs";
 import { writeConnectorEnvironment } from "./connector-env.mjs";
-import { connectorTarget, ensureProject, readProjectToken } from "./project.mjs";
+import { requestControl, requestReset, serveControl } from "./control.mjs";
+import { credential, readRunCredentials } from "./credentials.mjs";
+import { diagnose, formatReport } from "./doctor.mjs";
+import { drain, follow, printExisting } from "./events.mjs";
 import {
   ensureHostImage,
-  hostAddresses,
   HostLauncherError,
+  hostAddresses,
   hostBindings,
   hostInstance,
   inspectHostInstance,
@@ -66,7 +60,24 @@ import {
   runInHostInstance,
   stopHostInstance,
   streamInHostInstance,
+  verifyRequestedWorld,
 } from "./host-launcher.mjs";
+import { inbox } from "./imap.mjs";
+import { loadManifests } from "./manifests.mjs";
+import { OpenError, openWorkbench, TESTED_PLATFORMS } from "./open.mjs";
+import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
+import { connectorTarget, ensureProject, readProject, readProjectToken } from "./project.mjs";
+import { aggregate, probe } from "./readiness.mjs";
+import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
+import { ResolutionError, resolveEnvironment, serializeLock } from "./resolve.mjs";
+import { describeScale, parseLimits, parseScale, SCALE_PRESETS, ScaleError } from "./scale.mjs";
+import { timelineState } from "./scheduler.mjs";
+import { TimelineControlError, attachTimelineControl } from "./timeline-control.mjs";
+import { history, slackTokenHolders, tokenFor } from "./slack.mjs";
+import { openState } from "./state.mjs";
+import { StartupError, start } from "./supervisor.mjs";
+import { startWorkbench } from "./workbench.mjs";
+import { contents, findChannel, findPeople, findPerson, insiders, personHandle, primaryOrganization, readWorld } from "./world.mjs";
 
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -89,6 +100,10 @@ function defaultImage() {
 const USAGE = `worldfixture — a local world with real interfaces
 
   worldfixture up [world]        Start a world and print its bindings
+  worldfixture worlds [--json]   List artifact identities and validation results
+  worldfixture switch <world>    Replace provider state and select a new world
+  worldfixture switch --connect <url>  Confirm this generation's application connector
+  worldfixture switch --without-application  Confirm a run that needs no application
   worldfixture up --world-path <dir>   Start a world artifact you built yourself
   worldfixture new <dir>         Copy the starter world, ready to edit
   worldfixture build <source>    Prepare a versioned artifact from world JSON
@@ -98,13 +113,18 @@ const USAGE = `worldfixture — a local world with real interfaces
   worldfixture env               Print application bindings for a shell
   worldfixture doctor            Check Docker, the image, files, ports and readiness
   worldfixture reset             Restore the running world to its exact start
+  worldfixture clock [--json]    Read the running instance's world clock
+  worldfixture clock pause      Pause world time and scheduled delivery
+  worldfixture clock resume     Resume world time
+  worldfixture clock advance <duration>  Apply due arrivals without waiting
+  worldfixture clock start <duration>  Apply a setup position and start delivery
   worldfixture down              Stop and remove the local instance
   worldfixture people            List people and their provider identities
   worldfixture slack send --as <person> --channel <name> <text>
   worldfixture slack history --channel <name> [--as <person>]
   worldfixture mail inbox --as <person> [--folder INBOX]   Read Local Mail
   worldfixture events [--follow]   Show, or follow, the facts the runtime observed
-  worldfixture connector docs      Print the installed Connector v1 documentation
+  worldfixture connector docs      Print Connector v1 docs and the selected world payload
   worldfixture connector prompt <application-url>
   worldfixture connector check <application-url>
   worldfixture connector plan <application-url> [--scale <name>]
@@ -115,7 +135,9 @@ const USAGE = `worldfixture — a local world with real interfaces
   worldfixture run -- <command>   Start an application with this run's bindings
 
 Options
-  --world-path <dir>   A built world artifact (default dist/business.saas-company.v3)
+  --world <id:version> Select a world by verified manifest identity
+  --world-path <dir>   Select a built world artifact directory
+                       Default world: business.saas-company:v3
   --output <dir>       Where build writes the artifact (default dist/<id>.<version>)
   --state <dir>        Where instance state is written (default .worldfixture/runs/local)
   --verbose            Show ports, digests and every readiness check
@@ -123,13 +145,16 @@ Options
   --app-dir <dir>      Put the connector token in the app's ignored .env.local
   --app-env <name>     Local env file inside --app-dir (default .env.local)
   --project-dir <dir>  Project directory (default current directory)
-  --application-url <url>  Local application origin (default http://localhost:3000)
+  --application-url <url>  Explicit application connector origin for required app events
   --direct             Run checkout services in the foreground (development)
   --follow             Keep printing events as they are observed (events only)
   --only <parts>       Start only these parts of the world (slack, github, site
                        for HTTP targets, mail for Local Mail, s3, providers).
                        The default starts all of them.
   --no-rebase          Start the world at its authored anchor instead of today
+  --start-at <duration> Apply arrivals through this position before the run is ready
+  --setup              Wait for a starting position in the Workbench before delivery
+  --repeat             Restore provider state and replay after each completed arc
   --scale <name>       How much of the world to send to an application:
                        smoke (at most 25 of anything), sample (at most 250),
                        or full. The default is full.
@@ -142,7 +167,8 @@ Options
 
 const pad = (label, width = 12) => label.padEnd(width);
 
-// Nothing this command prints carries the local secret.
+// Status and diagnostic output must not carry the local secret. The explicit
+// `env` command exports usable credentials and writes those values directly.
 //
 // WHY A BACKSTOP AND NOT JUST A FIX. The token was reaching the terminal through
 // `execFile`, which copies the command line it ran into the Error it throws --
@@ -153,7 +179,7 @@ const pad = (label, width = 12) => label.padEnd(width);
 // This stays because the same shape of leak can be reintroduced by any future
 // call that interpolates a binding into a command, a URL or an error, and the
 // cost of being wrong is a secret in somebody's scrollback and CI log. One
-// chokepoint that every line passes through is cheaper than remembering.
+// shared path for status and diagnostic lines is cheaper than remembering.
 const TOKEN_PATTERN = /\bwf_local_[0-9a-f]{8,}/g;
 const ASSIGNED_TOKEN_PATTERN = /\b(WORLDFIXTURE_TOKEN|authorization|Bearer)([=:]\s*|\s+)(\S+)/gi;
 
@@ -204,7 +230,7 @@ function fail(error) {
 
 // ---- arguments -----------------------------------------------------------
 
-function parse(argv) {
+export function parse(argv) {
   const flags = {};
   const positional = [];
 
@@ -215,40 +241,85 @@ function parse(argv) {
       continue;
     }
     const name = argument.slice(2);
-    if (["verbose", "choose", "direct", "json", "follow", "no-rebase", "list", "print", "help"].includes(name)) flags[name] = true;
-    else flags[name] = argv[++index];
+    if (["world", "world-path"].includes(name) && Object.hasOwn(flags, name)) {
+      throw new BuildError("invalid_world_selection", `--${name} was supplied more than once`);
+    }
+    if (["verbose", "choose", "direct", "json", "follow", "no-rebase", "setup", "repeat", "list", "print", "help", "without-application", "status"].includes(name)) flags[name] = true;
+    else {
+      if (index + 1 >= argv.length || argv[index + 1].startsWith("--")) {
+        throw new BuildError("invalid_arguments", `--${name} needs a value`);
+      }
+      flags[name] = argv[++index];
+    }
   }
 
   return { flags, positional };
 }
 
-function paths(flags) {
-  const projectDir = resolve(flags["project-dir"] ?? flags["app-dir"] ?? process.cwd());
-  const stateDir = flags.state ? resolve(flags.state) : resolve(projectDir, ".worldfixture/runs/local");
-  const builtPath = flags["world-path"]
-    ? resolve(flags["world-path"])
-    : resolve(PACKAGE_ROOT, "dist/business.saas-company.v3");
-  // `up` rebases the world onto today and writes the result into the run's own
-  // state directory. Every other command has to read that same world, or it
-  // reports dates the running instance does not have.
-  //
-  // AN EXPLICIT `--world-path` WINS. It used to lose: the session world was
-  // preferred unconditionally, so a command that named a world read a different
-  // one whenever an instance happened to be running in that directory, and said
-  // nothing about it. `worldfixture people --world-path <v2>` printed the 99
-  // people of the running v3 world, and the CLI could report one artifact while
-  // operating on another. Naming a world has to mean it.
-  const sessionPath = join(stateDir, "world");
-  const useSession = !flags["world-path"] && existsSync(join(sessionPath, "world.json"));
+// Paths for state-only commands do not inspect or validate an artifact. World
+// lookup is lazy, and read commands use the recorded session before defaults.
+export function paths(flags, { packageRoot = PACKAGE_ROOT, cwd = process.cwd() } = {}) {
+  const projectDir = resolve(cwd, flags["project-dir"] ?? flags["app-dir"] ?? cwd);
+  const stateDir = flags.state ? resolve(cwd, flags.state) : resolve(projectDir, ".worldfixture/runs/local");
   return {
-    artifactPath: useSession ? sessionPath : builtPath,
-    builtPath,
+    get builtPath() {
+      if (flags["world-path"]) return resolve(cwd, flags["world-path"]);
+      const projectWorld = readProject(projectDir)?.config.world;
+      try {
+        return resolveWorldSelection({ selector: flags.world, projectWorld, cwd: flags.world ? cwd : projectDir,
+          distRoot: join(packageRoot, "dist"), sourceRoots: [join(packageRoot, "worlds")] }).artifactPath;
+      } catch (error) {
+        // doctor must inspect the selected damaged build and name its repair.
+        if (error.artifact?.artifactPath) return error.artifact.artifactPath;
+        throw error;
+      }
+    },
+    get artifactPath() {
+      if (!flags["world-path"] && !flags.world) {
+        const active = readActiveGeneration(stateDir);
+        if (active) return sessionPath(stateDir, active.artifactPath);
+        for (const name of ["world", "input-world"]) {
+          const sessionPath = join(stateDir, name);
+          if (existsSync(join(sessionPath, "world.json"))) return sessionPath;
+        }
+      }
+      return this.builtPath;
+    },
     projectDir,
     generatedSecretsPath: process.env.WORLDFIXTURE_GENERATED_SECRETS_PATH
       ?? join(projectDir, ".worldfixture/generated-secrets.json"),
     stateDir,
-    serviceRoot: flags["service-root"] ? resolve(flags["service-root"]) : resolve(PACKAGE_ROOT, "emulators"),
+    serviceRoot: flags["service-root"] ? resolve(cwd, flags["service-root"]) : resolve(packageRoot, "emulators"),
   };
+}
+
+// Validate all selectors before ensureProject or startup can write anything.
+export function resolveUpSelection({ flags, positional }, { projectWorld,
+  distRoot = join(PACKAGE_ROOT, "dist"), sourceRoots = [join(PACKAGE_ROOT, "worlds")], cwd = process.cwd(), projectDir = cwd } = {}) {
+  if (positional.length > 1 || (positional.length && flags.world !== undefined)) {
+    throw new BuildError("invalid_world_selection", "Supply one world selector: a name or an artifact directory path");
+  }
+  try {
+    return resolveWorldSelection({ selector: positional[0] ?? flags.world, worldPath: flags["world-path"],
+      projectWorld, distRoot, sourceRoots,
+      cwd: positional.length || flags.world !== undefined || flags["world-path"] !== undefined ? cwd : projectDir });
+  } catch (error) {
+    throw new BuildError("invalid_world_selection", error.message, "Run `worldfixture worlds` to list available worlds.");
+  }
+}
+
+function worlds({ flags, positional }) {
+  if (positional.length) throw new BuildError("invalid_world_selection", "worlds does not accept positional selectors");
+  const entries = listSwitchWorlds({ distRoot: join(PACKAGE_ROOT, "dist"), sourceRoots: [join(PACKAGE_ROOT, "worlds")], stateDir: paths(flags).stateDir });
+  if (flags.json) return say(JSON.stringify(entries, null, 2));
+  if (!entries.length) return say("No world artifacts were found. Build a world source first.");
+  for (const entry of entries) {
+    say(`${entry.id ?? "unknown"}:${entry.version ?? "unknown"}  ${entry.valid ? "valid" : "INVALID"}`);
+    say(`  Artifact: ${entry.artifactPath}`);
+    if (entry.digest) say(`  SHA-256: ${entry.digest}`);
+    say(`  Source: ${entry.sourcePath ?? "no verified source is available"}`);
+    for (const error of entry.errors) say(`  Error: ${error}`);
+  }
 }
 
 // ---- application connector ----------------------------------------------
@@ -258,7 +329,7 @@ function paths(flags) {
 // check instead of blocking a command that would have worked.
 function runningLock(stateDir) {
   try {
-    return JSON.parse(readFileSync(join(stateDir, "environment.lock.json"), "utf8"));
+    return JSON.parse(readFileSync(activeFile(stateDir, 'lockPath', 'environment.lock.json'), "utf8"));
   } catch {
     return null;
   }
@@ -266,7 +337,7 @@ function runningLock(stateDir) {
 
 const CONNECTOR_USAGE = `An application connector fills your own application with this world.
 
-  worldfixture connector docs                    The installed Connector v1 documentation
+  worldfixture connector docs                    Connector v1 docs and the selected world payload
   worldfixture connector prompt <url>            A prompt for a coding agent to implement one
   worldfixture connector discover <url>          What the application says it supports
   worldfixture connector check <url>             Conformance: discovery, auth, plan, status
@@ -392,7 +463,9 @@ function printSlice(world, flags) {
 
 async function connectorCommand({ flags, positional }) {
   const [action, baseUrl] = positional;
-  if (action === "docs") return say(connectorDocumentation().trimEnd());
+  if (action === "docs") return say(connectorDocumentation({
+    artifactPath: paths(flags).artifactPath, scale: parseScale(flags.scale), limits: parseLimits(flags.limit),
+  }).trimEnd());
 
   // `worldfixture connector` and `connector --help` used to answer "an
   // application URL is required", which is true of the action they did not name
@@ -406,7 +479,21 @@ async function connectorCommand({ flags, positional }) {
     process.exitCode = 1;
     return;
   }
-  if (action === "prompt") return say(connectorPrompt(baseUrl));
+  if (action === "prompt") return say(connectorPrompt(baseUrl, {
+    artifactPath: paths(flags).artifactPath, scale: parseScale(flags.scale), limits: parseLimits(flags.limit),
+  }));
+
+  const active = readActiveGeneration(paths(flags).stateDir);
+  if (active && ['check', 'plan', 'seed', 'status', 'reset', 'event', 'replay'].includes(action)) {
+    const input = { kind: 'connector', action, baseUrl, scale: parseScale(flags.scale), limits: parseLimits(flags.limit),
+      eventKind: flags.event, list: flags.list === true, print: flags.print === true };
+    if (action === 'event') {
+      if (!flags.file) throw new ConnectorError('event_required', 'connector event requires --file <event.json>');
+      input.event = JSON.parse(readFileSync(resolve(flags.file), 'utf8'));
+    }
+    const result = await requestManagedControl(paths(flags).stateDir, { action: 'operation', generation: active.generation, input }, { timeoutMs: 900_000 });
+    return printConnectorValue(result.result, { ...flags, json: true });
+  }
 
   const { artifactPath } = paths(flags);
   const token = connectorToken(flags);
@@ -473,7 +560,7 @@ async function connectorCommand({ flags, positional }) {
     if (!readBindings(stateDir) && !hostBindings(stateDir)) {
       throw new ConnectorError("no_instance", "no instance is running, so there is no event to replay");
     }
-    const db = openState(`${stateDir}/state.sqlite`);
+    const db = openState(activeFile(stateDir, 'statePath', 'state.sqlite'));
     let observed;
     try {
       observed = drain(db, 0).rows;
@@ -521,29 +608,17 @@ async function runApplication(argv) {
   }
 
   const parsed = parse(optionArgs);
-  const { artifactPath, stateDir } = paths(parsed.flags);
-  await ensureRecordedInstance(stateDir);
-  const found = instanceAt(stateDir);
-  if (!found) {
-    say(`No instance is running. Run \`${invocation()} up\` first.`);
-    process.exitCode = 1;
-    return;
-  }
-
-  const { resolved } = resolveBindings(found.lock, {
-    addressOf: addressReader(found.lock, found.bindings, stateDir),
-    artifactPath,
-    credentials: readRunCredentials(stateDir, found.lock.world),
-  });
-  const environment = Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]));
-  if (!found.bindings.WORLDFIXTURE_TOKEN) {
+  const current = await applicationEnvironment(parsed.flags);
+  if (!current) return;
+  const { values: environment, lock, unresolved } = current;
+  if (unresolved.length) throw new SessionError('unresolved_bindings', unresolved.map(entry => `${entry.name}: ${entry.reason}`).join('; '));
+  if (!environment.WORLDFIXTURE_TOKEN) {
     say("This instance has no application connector token. Restart it with the current WorldFixture build.");
     process.exitCode = 1;
     return;
   }
-  environment.WORLDFIXTURE_TOKEN = found.bindings.WORLDFIXTURE_TOKEN;
-  environment.WORLDFIXTURE_WORLD_ID = found.lock.world.id;
-  environment.WORLDFIXTURE_WORLD_VERSION = found.lock.world.version;
+  environment.WORLDFIXTURE_WORLD_ID = lock.world.id;
+  environment.WORLDFIXTURE_WORLD_VERSION = lock.world.version;
 
   const child = spawn(command[0], command.slice(1), { stdio: "inherit", env: { ...process.env, ...environment } });
   const result = await new Promise((resolve, reject) => {
@@ -556,72 +631,39 @@ async function runApplication(argv) {
 
 // ---- up ------------------------------------------------------------------
 
-// Rebase the world onto this session's own time.
-//
-// A world is authored at a fixed anchor -- the current default world was written
-// at 2026-08-28 -- and every date in it is relative to that. Started as built, it
-// is frozen there and drifts further from the person looking at it every day.
-// `clock.rebase.relative_paths` and `build_rebased_world` exist precisely so the
-// anchor can follow the session, and until now nothing on the running path
-// called them.
-//
-// It matters for more than tidiness. A message somebody sends is stamped by the
-// provider with the real clock, so in a world frozen a year away it sorts below
-// every seeded message and disappears from the view. That reads as "the UI does
-// not refresh" when the refresh is working perfectly.
-//
-// Rebasing needs the world SOURCE and the compiler, which the image has and an
-// npm install does not. When they are absent this returns the artifact it was
-// given and says so, rather than failing to start.
-export function rebaseForSession(artifactPath, stateDir, { quiet = false } = {}) {
-  const name = basename(artifactPath);
-  const source = resolve(PACKAGE_ROOT, "worlds", name, "world.json");
-  if (!existsSync(source)) return { artifactPath, rebased: false, reason: "this install ships no world source" };
-
-  const output = join(stateDir, "world");
-  const script =
-    "from datetime import datetime, timezone; from pathlib import Path; " +
-    "from worldfixture_compiler.compiler import build_rebased_world; " +
-    `build_rebased_world(Path(${JSON.stringify(source)}), datetime.now(timezone.utc), Path(${JSON.stringify(output)}))`;
-
-  try {
-    rmSync(output, { recursive: true, force: true });
-    execFileSync("python3", ["-c", script], {
-      cwd: PACKAGE_ROOT,
-      env: { ...process.env, PYTHONPATH: resolve(PACKAGE_ROOT, "compiler") },
-      stdio: "pipe",
-      timeout: 120_000,
-    });
-  } catch (error) {
-    // A world that cannot be rebased still starts, at its authored anchor. It is
-    // a worse experience, not a broken one, and refusing to start over it would
-    // be the wrong trade.
-    const detail = String(error.stderr ?? error.message).trim().split("\n").pop();
-    if (!quiet) say(`  the world could not be rebased onto today, so it starts at its authored anchor: ${detail}`);
-    return { artifactPath, rebased: false, reason: detail };
+export function validateTimelineStart(flags) {
+  if (flags["start-at"] !== undefined) parseDuration(flags["start-at"]);
+  if (flags.setup && flags["start-at"] !== undefined) {
+    throw new BuildError("invalid_arguments", "Use --setup to choose a position in the Workbench, or --start-at to apply one at launch.");
   }
-  return { artifactPath: output, rebased: true };
 }
 
-async function directUp({ flags, positional }, { applicationEnvironment, project } = {}) {
+async function directUp({ flags }, { applicationEnvironment, project, selection } = {}) {
   const { builtPath, stateDir, serviceRoot, generatedSecretsPath: defaultGeneratedSecretsPath } = paths(flags);
+  assertSessionRecoverable(stateDir);
   const generatedSecretsPath = project?.generatedSecretsPath ?? defaultGeneratedSecretsPath;
   mkdirSync(stateDir, { recursive: true });
+  // Both launch modes retain the exact input, even when no source can rebase it.
+  const inputPath = prepareSessionInput(builtPath, stateDir, selection);
   const session = flags["no-rebase"]
-    ? { artifactPath: builtPath, rebased: false }
-    : rebaseForSession(builtPath, stateDir);
+    ? { artifactPath: inputPath, rebased: false }
+    : rebaseForSession(inputPath, stateDir, { quiet: true });
+  if (!flags["no-rebase"] && !session.rebased) say(`World dates use the authored anchor: ${session.reason}`);
   const artifactPath = session.artifactPath;
   const world = readWorld(artifactPath);
   const inOneContainer = process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1";
   // `--only slack,github` starts the parts of the world a run actually needs.
   // The default is every part, which is the zero-configuration first run.
   const only = flags.only ? String(flags.only).split(",").map((name) => name.trim()).filter(Boolean) : undefined;
-  const spec = defaultEnvironment(positional[0] ?? `${world.id}:${world.version}`, {
+  const manifests = loadManifests(serviceRoot);
+  const spec = defaultEnvironment(`${world.id}:${world.version}`, {
+    artifactPath, manifests,
     includeS3: inOneContainer || project?.config.services.includes("s3"),
     includeProviders: inOneContainer,
     includePostgres: project?.config.services.includes("postgres"),
     includeMySQL: project?.config.services.includes("mysql"),
     only,
+    oauthClients: world.software?.oauth_clients,
     // Whose mail and Slack credentials this run binds. Read from the world that
     // is about to start, so a world other than the default one -- a shipped one
     // or one somebody compiled with `worldfixture build` -- binds its own
@@ -629,7 +671,8 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
     identity: world.people?.find((person) => person.primary)?.id,
   });
 
-  const lock = resolveEnvironment(spec, { manifests: loadManifests(serviceRoot), artifactPath });
+  if (flags["application-url"]) spec.target.application_url = connectorTarget({ application_url: flags["application-url"] }, { inContainer: inOneContainer }).transport_url;
+  const lock = resolveEnvironment(spec, { manifests, artifactPath });
 
   // The lock and the environment are written before anything starts, so a run
   // that fails still leaves the thing that explains what it tried to do.
@@ -697,26 +740,13 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
     `${stateDir}/workbench.json`,
     `${JSON.stringify({ url: workbench.url, state: "ready" }, null, 2)}\n`,
   );
-  const application = resolveBindings(lock, {
-    addressOf: (service, port) => instance.addressOf(service, port),
-    artifactPath,
-    credentials: instance.credentials,
-  });
-  if (application.unresolved.length > 0) {
+  try {
+    configureApplicationBindings(instance, workbench.url);
+  } catch (error) {
     await workbench.close();
     await instance.stop();
-    throw new StartupError(
-      "binding_unresolved",
-      application.unresolved.map((entry) => `${entry.name}: ${entry.reason}`).join("; "),
-    );
+    throw new StartupError("binding_unresolved", error.message);
   }
-  instance.applicationBindings = Object.fromEntries(
-    Object.entries(application.resolved).map(([name, entry]) => [name, entry.value]),
-  );
-  instance.applicationBindings.WORKBENCH_URL = workbench.url;
-  // The target application uses the same local secret for its connector. `up`
-  // can create it or reuse the value in the application's ignored env file.
-  instance.applicationBindings.WORLDFIXTURE_TOKEN = instance.runtimeToken;
 
   // The concrete addresses this run allocated, so `worldfixture slack send` in
   // another terminal reaches this instance rather than asking the user to copy a
@@ -729,9 +759,6 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
   // machine, and reached by anything as ordinary as `cat .worldfixture/runs/
   // local/*.json` to find the Workbench port. Its sibling `host-bindings.json`
   // was already written 0600; this one was missed.
-  writeFileSync(bindingsPath, `${JSON.stringify(instance.applicationBindings, null, 2)}\n`, { mode: 0o600 });
-  chmodSync(bindingsPath, 0o600);
-  writeFileSync(`${stateDir}/addresses.json`, `${JSON.stringify(instance.addresses(), null, 2)}\n`);
 
   // Armed BEFORE the screen invites the user to press Ctrl-C. Registering it
   // afterwards leaves a window in which SIGINT takes Node's default path and
@@ -741,26 +768,69 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
   // The clock starts HERE, after readiness, and not when the process began.
   // Startup takes tens of seconds on a cold machine, and a timeline counted from
   // process start would spend its opening minute before anything was listening.
-  const scheduler = armInstanceTimeline(instance, world, {
-    bindings: instance.applicationBindings,
-    stateDir,
-    verbose: flags.verbose,
-  });
-
-  let control;
+  let scheduler, control, sessionManager, positioningShutdown;
+  const interruptPositioning = () => {
+    if (positioningShutdown) return;
+    process.exitCode = 130;
+    positioningShutdown = (async () => {
+      say("Stopping initial timeline delivery…");
+      await instance.timelineControl?.stop();
+      await workbench.close();
+      await instance.stop();
+      for (const file of [bindingsPath, `${stateDir}/addresses.json`, `${stateDir}/workbench.json`]) rmSync(file, { force: true });
+    })();
+  };
+  process.on("SIGINT", interruptPositioning);
+  process.on("SIGTERM", interruptPositioning);
   try {
+    scheduler = await armInstanceTimeline(instance, world, {
+      bindings: instance.applicationBindings, stateDir, verbose: flags.verbose,
+      startAtMs: flags["start-at"] === undefined ? 0 : parseDuration(flags["start-at"]),
+      repeat: flags.repeat === true, setup: flags.setup === true,
+    });
+    if (positioningShutdown) { await positioningShutdown; return; }
+    sessionManager = attachManagedSession(instance, {
+      sessionRoot: stateDir, packageRoot: PACKAGE_ROOT, serviceRoot, workbench,
+      initialSpec: spec, initialSelection: selection ?? inspectWorldArtifact(builtPath),
+      noRebase: flags['no-rebase'] === true,
+      environmentOptions: {
+        includeS3: inOneContainer || project?.config.services.includes('s3'), includeProviders: inOneContainer,
+        includePostgres: project?.config.services.includes('postgres'), includeMySQL: project?.config.services.includes('mysql'), only,
+      },
+      startOptions: { serviceRoot, runner: inOneContainer ? 'process' : 'container',
+        fixedPorts: inOneContainer ? SINGLE_CONTAINER_PORTS : undefined, runtimeToken: instance.runtimeToken },
+      activateTimeline: (current, options) => armInstanceTimeline(current, readWorld(current.artifactPath), {
+        bindings: current.applicationBindings, stateDir: current.stateDir, verbose: flags.verbose, ...options,
+      }),
+    });
+    sessionManager.operation = (input, generation) => sessionManager.withGeneration(generation,
+      current => executeSessionOperation(current, input), { mutation: true });
+    await sessionManager.publishInitial();
     control = await serveControl(instance, stateDir);
+    if (positioningShutdown) { await positioningShutdown; await control.close(); return; }
   } catch (error) {
-    await scheduler.stop();
+    if (positioningShutdown) { await positioningShutdown; return; }
+    await scheduler?.stop();
     await workbench.close();
     await instance.stop();
     rmSync(bindingsPath, { force: true });
     rmSync(`${stateDir}/addresses.json`, { force: true });
+    rmSync(`${stateDir}/workbench.json`, { force: true });
+    error.state_changed = true;
     throw error;
+  } finally {
+    process.off("SIGINT", interruptPositioning);
+    process.off("SIGTERM", interruptPositioning);
   }
+  // The host treats these bindings as the accepted-ready marker. Initial
+  // positioning must finish through provider APIs before that marker is visible.
+  writeFileSync(bindingsPath, `${JSON.stringify(instance.applicationBindings, null, 2)}\n`, { mode: 0o600 });
+  chmodSync(bindingsPath, 0o600);
+  writeFileSync(`${stateDir}/addresses.json`, `${JSON.stringify(instance.addresses(), null, 2)}\n`);
   const finished = runUntilInterrupted(instance, bindingsPath, control, workbench, scheduler);
 
   printReady(instance, world, { verbose: flags.verbose, stateDir });
+  printClock(scheduler.status());
   if (applicationEnvironment) say(`Application environment: ${applicationEnvironment.envPath}`);
   if (project && !inOneContainer) {
     say(`Project: ${project.projectDir}`);
@@ -772,27 +842,42 @@ async function directUp({ flags, positional }, { applicationEnvironment, project
 }
 
 async function up(parsed) {
-  // `worldfixture up ./dist/demo.my-world.v1` is what somebody types straight
-  // after `worldfixture build`, and the positional argument otherwise names an
-  // environment rather than a path. A directory holding a world.json is not
-  // ambiguous, so it is read as `--world-path` and dropped from the positional
-  // list, where `directUp` would have passed it on as an environment name.
-  const positionalWorld = parsed.positional[0]
-    && existsSync(join(resolve(parsed.positional[0]), "world.json"))
-    ? parsed.positional[0]
-    : null;
-  if (positionalWorld) {
-    parsed = {
-      flags: { ...parsed.flags, "world-path": positionalWorld },
-      positional: parsed.positional.slice(1),
-    };
-  }
-
+  validateTimelineStart(parsed.flags);
   const inOneContainer = process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1";
-  const projectDir = parsed.flags["project-dir"] ?? parsed.flags["app-dir"] ?? process.cwd();
+  const projectDir = resolve(parsed.flags["project-dir"] ?? parsed.flags["app-dir"] ?? process.cwd());
+  const containerProject = inOneContainer
+    ? JSON.parse(process.env.WORLDFIXTURE_PROJECT_CONFIG ?? '{"api_version":"worldfixture.project/v1","application_url":"http://localhost:3000","services":[]}')
+    : null;
+  const existingProject = inOneContainer ? null : readProject(projectDir);
+  let configuredApplication = parsed.flags["application-url"] ?? existingProject?.config.application_url;
+  if (!configuredApplication) {
+    try { configuredApplication = JSON.parse(readFileSync(join(paths(parsed.flags).stateDir, "application-connector.json"), "utf8")).url; } catch {}
+  }
+  const projectWorld = containerProject?.world ?? existingProject?.config.world;
+  const selected = resolveUpSelection(parsed, { projectWorld, projectDir });
+  const direct = parsed.flags.direct || inOneContainer;
+  const requestedWorld = { id: selected.id, version: selected.version, digest: selected.digest };
+  if (!direct) {
+    // Refuse a different running world before project or application files can
+    // change. The launcher repeats this check in case the instance changes.
+    const running = await inspectHostInstance(paths(parsed.flags).stateDir);
+    if (running) {
+      verifyRequestedWorld(running, requestedWorld);
+      if (parsed.flags["start-at"] !== undefined || parsed.flags.setup || parsed.flags.repeat) {
+        throw new BuildError("instance_already_running", "The instance is already running. Launch options cannot change its clock. Use clock commands or stop it before a new launch.");
+      }
+    }
+  }
+  say(`Selected world: ${selected.id}:${selected.version} (${selected.selectionSource})`);
+  say(`Artifact: ${selected.artifactPath}`);
+  // Both launch modes receive the same exact selection. The positional value
+  // is now resolved; the environment must use that artifact's actual identity.
+  parsed = { flags: { ...parsed.flags, "world-path": selected.artifactPath }, positional: [] };
+  delete parsed.flags.world;
+  if (configuredApplication) parsed.flags["application-url"] = configuredApplication;
   const project = inOneContainer
     ? {
-      config: JSON.parse(process.env.WORLDFIXTURE_PROJECT_CONFIG ?? '{"api_version":"worldfixture.project/v1","application_url":"http://localhost:3000","services":[]}'),
+      config: containerProject,
       token: process.env.WORLDFIXTURE_TOKEN,
       generatedSecretsPath: process.env.WORLDFIXTURE_GENERATED_SECRETS_PATH,
     }
@@ -806,18 +891,9 @@ async function up(parsed) {
       token: project.token,
     })
     : null;
-  const direct = parsed.flags.direct || inOneContainer;
-  if (direct) return await directUp(parsed, { applicationEnvironment, project });
+  if (direct) return await directUp(parsed, { applicationEnvironment, project, selection: selected });
 
   const { builtPath, stateDir } = paths(parsed.flags);
-  mkdirSync(stateDir, { recursive: true });
-
-  // The world inside the container has to be told which parts to start, and
-  // where its world is. `--world-path` names a directory on the host, which the
-  // container cannot see, so the artifact is staged into the one directory it
-  // can and the container is pointed at that copy.
-  const containerArgs = parsed.flags.only ? ["--only", String(parsed.flags.only)] : [];
-  if (parsed.flags["world-path"]) containerArgs.push("--world-path", stageWorldArtifact(builtPath, stateDir));
 
   const started = Date.now();
   const progress = startupProgress({ stateDir, startedAt: started });
@@ -827,7 +903,9 @@ async function up(parsed) {
     connectorToken: project.token,
     projectConfig: project.config,
     generatedSecretsPath: project.generatedSecretsPath,
-    containerArgs,
+    requestedWorld,
+    // The launcher checks reuse before this callback changes the input snapshot.
+    prepareContainerArgs: () => prepareContainerArgs(builtPath, stateDir, parsed.flags, selected),
     // A first run on a new machine has no image. Say what is happening: this is
     // a few hundred megabytes and a silent minute reads as a hang.
     onPull: (name) => {
@@ -871,8 +949,14 @@ async function up(parsed) {
   // screen describes only exists once the instance is up. Reading the path taken
   // before the launch would print the anchor the image was built at, and the
   // screen would be describing a world the instance is not serving.
-  const world = readWorld(paths(parsed.flags).artifactPath);
+  const world = readWorld(paths({ ...parsed.flags, "world-path": undefined }).artifactPath);
   printReadyBindings(world, result.bindings, stateDir);
+  const currentClock = await runInHostInstance(stateDir, ["clock", "--json"]);
+  if (currentClock.code === 0) printClock(JSON.parse(currentClock.stdout));
+  else {
+    say("The instance started, but its clock state could not be read.");
+    process.exitCode = currentClock.code || 1;
+  }
   say();
   say(result.reused ? "Reused the running instance." : "The instance is running in the background.");
   say(`Project: ${project.projectDir}`);
@@ -889,43 +973,28 @@ async function up(parsed) {
 // re-arm callback: after a restore the world plays its timeline again from zero,
 // which is what "restored to the accepted start" has to mean for a world whose
 // start includes things that have not happened yet.
-function armInstanceTimeline(instance, world, { bindings, stateDir, verbose }) {
-  const arm = () => {
-    // The world's own time origin, which the compiler rebases every relative
-    // date against. It is what "now" means inside this world.
-    startClock(instance.state, { anchor: world.clock?.anchor ?? "" });
-    return armTimeline(instance.state, world);
-  };
-
-  const armed = arm();
-  instance.rearmTimeline = arm;
-
-  const scheduler = startScheduler(instance.state, {
-    world,
-    bindings,
-    credentials: instance.credentials,
-    rules: instance.lock.rules ?? [],
-    now: () => Date.now(),
+async function armInstanceTimeline(instance, world, { bindings, stateDir, verbose, startAtMs, repeat, setup }) {
+  for (const entry of instance.lock.execution?.timeline?.excluded ?? []) say(`Timeline ${entry.id}: not selected (${entry.reason})`);
+  for (const entry of instance.lock.execution?.binding_diagnostics ?? []) say(`Binding ${entry.binding}: ${entry.status} (${entry.reason})`);
+  for (const entry of instance.lock.execution?.rule_diagnostics ?? []) say(`Rule ${entry.id}: ${entry.status} (${entry.reason})`);
+  const controller = attachTimelineControl(instance, world, {
+    bindings, credentials: instance.credentials, rules: instance.lock.rules ?? [],
     applicationConnector: () => {
+      if (Object.hasOwn(instance, 'applicationConnector')) return instance.applicationConnector;
+      if (instance.lock.target?.application_url) return { baseUrl: instance.lock.target.application_url, token: instance.runtimeToken };
       try {
         const target = JSON.parse(readFileSync(join(stateDir, "application-connector.json"), "utf8"));
         return { baseUrl: target.transport_url, token: instance.runtimeToken };
-      } catch {
-        return null;
-      }
+      } catch { return null; }
     },
-  }, {
     onPlayed: (played) => {
       if (!verbose) return;
-      for (const entry of played) {
-        say(`  timeline ${entry.arrival} (${entry.kind}) ${entry.status}${entry.reason ? `: ${entry.reason}` : ""}`);
-      }
+      for (const entry of played) say(`  timeline ${entry.id ?? entry.arrival} (${entry.kind}) ${entry.status}${entry.reason ? `: ${entry.reason}` : ""}`);
     },
     onError: (error) => say(`  timeline tick failed: ${error.message}`),
   });
-
-  instance.scheduler = scheduler;
-  return { ...scheduler, armed };
+  await controller.initialize({ startAtMs, repeat, setup });
+  return controller;
 }
 
 // The ready screen, without the line that ends it.
@@ -949,7 +1018,7 @@ function printReadyBindings(world, bindings, stateDir) {
   say("WorldFixture is ready");
   say();
   say(`${pad("World")}${world.id}:${world.version}`);
-  say(`${pad("People")}${held.people} at ${organization.name}`);
+  say(`${pad("People")}${organization ? `${held.people} at ${organization.name ?? organization.id}` : `${held.all_people} in this world`}`);
   say(
     `${pad("Content")}${held.channels} channels, ${held.slack_messages} Slack messages, ` +
       `${held.mail_messages} emails, ${held.repositories} repositories`,
@@ -984,8 +1053,8 @@ function printReadyBindings(world, bindings, stateDir) {
   if (person) {
     say();
     say(person.name);
-    say(`  ${pad("Slack", 10)}${person.slack_id}`);
-    say(`  ${pad("Email", 10)}${person.email}`);
+    if (person.slack_id) say(`  ${pad("Slack", 10)}${person.slack_id}`);
+    if (person.email) say(`  ${pad("Email", 10)}${person.email}`);
   }
 
   const channel = world.communication?.channels?.at(-1);
@@ -1215,14 +1284,14 @@ function runUntilInterrupted(instance, bindingsPath, control, workbench, schedul
       say("Stopping…");
       // Before the services, so no arrival is halfway through a provider write
       // when the provider goes away.
-      await scheduler?.stop();
+      await (instance.sessionManager?.instance.timelineControl ?? scheduler)?.stop();
       await workbench.close();
       await control.close();
-      const stopped = await instance.stop();
+      const stopped = instance.sessionManager ? await instance.sessionManager.stop() : await instance.stop();
       rmSync(bindingsPath, { force: true });
       rmSync(bindingsPath.replace("bindings.json", "addresses.json"), { force: true });
       rmSync(bindingsPath.replace("bindings.json", "workbench.json"), { force: true });
-      for (const record of stopped) {
+      for (const record of stopped ?? []) {
         if (record.exited === null) say(`  ${record.service} did not exit`);
       }
       say("Stopped. No process is left holding a port.");
@@ -1259,9 +1328,41 @@ async function reset({ flags }) {
     }
   } catch (error) {
     say(`Reset failed: ${error.message}`);
-    say("No partly reset world is running; all application services were stopped.");
+    say("Inspect `worldfixture switch --status` and the service logs before retrying.");
     process.exitCode = 1;
   }
+}
+
+export function clockCommandInput(positional) {
+  const [action = "status", duration, ...extra] = positional;
+  if (!["status", "pause", "resume", "advance", "start"].includes(action) || extra.length
+      || (!["advance", "start"].includes(action) && duration !== undefined)) {
+    throw new BuildError("invalid_arguments", "Use clock, clock pause, clock resume, clock advance <duration>, or clock start <duration>.");
+  }
+  if (["advance", "start"].includes(action)) parseDuration(duration);
+  return { action, ...(["advance", "start"].includes(action) ? { duration } : {}) };
+}
+
+function printClock(result) {
+  const { clock, timeline, repeat } = result;
+  say(`Clock: ${result.mode === "setup" ? "setup" : clock.running ? "running" : "paused"} · t+${clock.elapsed_ms / 1000}s${clock.world_now ? ` · ${clock.world_now}` : ""}`);
+  say(`Timeline: ${timeline.pending} pending · ${timeline.in_flight} in flight · ${timeline.delivered} delivered · ${timeline.failed} failed · ${timeline.skipped} skipped${timeline.uncertain ? ` · ${timeline.uncertain} uncertain` : ""}`);
+  if (timeline.next_due_ms === null) say("No scheduled arrivals remain.");
+  else say(`Next arrival: t+${timeline.next_due_ms / 1000}s`);
+  if (result.mode === "setup") say("Choose a starting position in the Workbench. No arrivals have been applied.");
+  if (repeat?.enabled) say(`Repeat: cycle ${repeat.cycle} · ${repeat.status}. Each cycle restores WorldFixture provider state; application data stays intact.`);
+  if (repeat?.error) say(`Repeat stopped: ${repeat.error}`);
+}
+
+async function clockCommand({ flags, positional }) {
+  if (flags.help) {
+    say("worldfixture clock [--json]\nworldfixture clock pause\nworldfixture clock resume\nworldfixture clock advance <duration>\nworldfixture clock start <duration>\n\nDurations: 90s, 5m, 1w. Advance keeps a paused clock paused. Start applies a setup position once.");
+    return;
+  }
+  const input = clockCommandInput(positional);
+  const result = await requestControl(paths(flags).stateDir, input);
+  if (flags.json) say(JSON.stringify(result));
+  else printClock(result);
 }
 
 async function down({ flags }) {
@@ -1274,6 +1375,85 @@ async function down({ flags }) {
 }
 
 // ---- the read-only commands ----------------------------------------------
+
+async function executeSessionOperation(instance, input) {
+  const world = readWorld(instance.artifactPath), bindings = instance.applicationBindings ?? instance.bindings();
+  if (input.kind === 'slack-send') {
+    const person = world.people?.find(row => row.id === input.personId);
+    const channel = world.communication?.channels?.find(row => row.id === input.channelId);
+    if (!person || !channel || typeof input.text !== 'string') throw new Error('The selected person or channel does not belong to this world.');
+    const result = await submit(instance.state, { baseUrl: bindings.SLACK_BASE_URL,
+      token: tokenFor(person, instance.credentials), person, channel, text: input.text },
+    { world, rules: instance.lock.rules ?? [], bindings, credentials: instance.credentials, generation: instance.generation });
+    return { result };
+  }
+  if (input.kind !== 'connector') throw new Error('Unknown session operation');
+  const baseUrl = input.baseUrl, token = instance.runtimeToken;
+  const selected = connectorWorld(instance.artifactPath, { scale: input.scale, limits: input.limits });
+  assertWorldMatchesInstance(selected, instance.lock, { generation: instance.generation, expectedGeneration: instance.generation });
+  let result;
+  if (input.action === 'check') result = await checkConnector(baseUrl, { world: selected, token });
+  else if (input.action === 'plan') result = await planConnector(baseUrl, { world: selected, token });
+  else if (input.action === 'seed') result = await seedConnector(baseUrl, { world: selected, token });
+  else if (input.action === 'status') result = await connectorStatus(baseUrl, { token });
+  else if (input.action === 'reset') result = await resetConnector(baseUrl, { token });
+  else if (input.action === 'event') result = await deliverConnectorEvent(baseUrl, input.event, { token });
+  else if (input.action === 'replay') {
+    const observed = drain(instance.state, 0).rows;
+    if (input.list) result = observedKinds(observed);
+    else {
+      const event = connectorEventFromWorldEvent(selectWorldEvent(observed, input.eventKind), world);
+      result = input.print ? event : await deliverConnectorEvent(baseUrl, event, { token });
+    }
+  } else throw new Error('Unknown connector operation');
+  return { result };
+}
+
+async function switchCommand({ flags, positional }) {
+  const { stateDir } = paths(flags);
+  if (flags.help) return say('worldfixture switch <world> [--no-rebase]\nworldfixture switch --status\nworldfixture switch --connect <application-url>\nworldfixture switch --without-application\n\nSwitch restores provider state and keeps application databases. Confirm the new connection before starting its timeline.');
+  if (flags.status) {
+    if (positional.length || flags.connect || flags['without-application']) throw new Error('Use switch --status on its own.');
+    return printConnectorValue(await requestManagedControl(stateDir, { action: 'session-status' }), { json: true });
+  }
+  if (flags.connect || flags['without-application']) {
+    if (positional.length || flags['world-path'] || flags.world || (flags.connect && flags['without-application'])) throw new Error('Choose one connection operation.');
+    return printConnectorValue(await requestManagedControl(stateDir, { action: 'confirm-connection', input: flags.connect
+      ? { applicationUrl: flags.connect } : { withoutApplication: true } }, { timeoutMs: 900_000 }), { json: true });
+  }
+  if (positional.length > 1 || (positional.length && (flags.world || flags['world-path'])) || (flags.world && flags['world-path'])) throw new Error('Supply one world selector.');
+  let selector = positional[0] ?? flags.world;
+  let worldPath = flags['world-path'];
+  if (!selector && !worldPath) throw new Error('Supply a world name or artifact path for the switch.');
+  if (selector && (selector.includes('/') || selector.startsWith('.') || existsSync(resolve(selector)))) {
+    worldPath = resolve(selector); selector = undefined;
+  }
+  const input = { ...(selector ? { selector } : { worldPath: resolve(worldPath) }), ...(flags['no-rebase'] ? { noRebase: true } : {}) };
+  if (input.worldPath && process.env.WORLDFIXTURE_SINGLE_CONTAINER !== '1' && hostInstance(stateDir)) {
+    const imported = await importSwitchArtifact(input.worldPath, { stateDir });
+    input.worldPath = `/state/catalogue/${imported.digest}`;
+  }
+  const result = await requestManagedControl(stateDir, { action: 'switch', input }, { timeoutMs: 900_000 });
+  if (flags.json) return say(JSON.stringify(result));
+  say(`World switch complete. Generation ${result.generation}.`);
+  say('Provider state was restored. Application databases were preserved.');
+  say('Confirm the connection with `worldfixture switch --connect <url>` or `worldfixture switch --without-application`, then choose a starting position in Timeline.');
+}
+
+async function requestManagedControl(stateDir, command, options = {}) {
+  if (process.env.WORLDFIXTURE_SINGLE_CONTAINER === '1' || !hostInstance(stateDir)) return requestControl(stateDir, command, options);
+  const active = readActiveGeneration(stateDir, { allowTransition: true });
+  const directory = join(stateDir, 'control-requests');
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const name = `${randomUUID()}.json`, file = join(directory, name);
+  writeFileSync(file, JSON.stringify({ ...command, generation: command.generation ?? active?.generation }), { mode: 0o600, flag: 'wx' });
+  try {
+    const result = await runInHostInstance(stateDir, ['control', '--file', `/state/control-requests/${name}`], { timeoutMs: options.timeoutMs ?? 120_000 });
+    const value = JSON.parse(result.stdout.trim());
+    if (!value.ok) throw Object.assign(new Error(value.error), value);
+    return value;
+  } finally { rmSync(file, { force: true }); }
+}
 
 function people({ flags }) {
   const { artifactPath } = paths(flags);
@@ -1298,7 +1478,7 @@ function readBindings(stateDir) {
     if (bindings) return bindings;
   }
   try {
-    return JSON.parse(readFileSync(`${stateDir}/bindings.json`, "utf8"));
+    return JSON.parse(readFileSync(activeFile(stateDir, 'bindingsPath', 'bindings.json'), "utf8"));
   } catch {
     return null;
   }
@@ -1332,7 +1512,14 @@ function sayAmbiguous(reference, matches) {
 }
 
 async function slack({ flags, positional }) {
-  const { artifactPath, stateDir } = paths(flags);
+  const { stateDir } = paths(flags);
+  const active = readActiveGeneration(stateDir);
+  const artifactPath = active && !flags.world && !flags['world-path']
+    ? sessionPath(stateDir, active.artifactPath) : paths(flags).artifactPath;
+  if (active && (flags.world || flags['world-path'])) {
+    const selected = inspectWorldArtifact(artifactPath);
+    if (!selected.valid || selected.digest !== active.world.artifact_sha256) throw new SessionError('artifact_mismatch', 'The selected artifact is not the active world generation. Omit the world selector to use the running session.');
+  }
   const world = readWorld(artifactPath);
   const [subcommand, ...rest] = positional;
 
@@ -1382,7 +1569,7 @@ async function slack({ flags, positional }) {
     return;
   }
 
-  const token = tokenFor(person, readRunCredentials(stateDir, world));
+  const token = tokenFor(person, readRunCredentials(active ? sessionPath(stateDir, active.stateDir) : stateDir, world));
 
   if (subcommand === "send") {
     const channel = findChannel(world, flags.channel ?? "");
@@ -1395,11 +1582,12 @@ async function slack({ flags, positional }) {
 
     // Through the runtime rather than straight at the API, so the command, the
     // fact it produced and everything that fact caused are all recorded.
-    const lock = JSON.parse(readFileSync(`${stateDir}/environment.lock.json`, "utf8"));
-    const db = openState(`${stateDir}/state.sqlite`);
+    const lock = runningLock(stateDir);
+    const db = active ? null : openState(activeFile(stateDir, 'statePath', 'state.sqlite'));
 
     try {
-      const result = await submit(
+      const result = active ? (await requestControl(stateDir, { action: 'operation', generation: active.generation,
+        input: { kind: 'slack-send', personId: person.id, channelId: channel.id, text: rest.join(' ') } })).result : await submit(
         db,
         { baseUrl: base, token, person, channel, text: rest.join(" ") },
         { world, rules: lock.rules ?? [], bindings },
@@ -1408,16 +1596,10 @@ async function slack({ flags, positional }) {
       say(`Sent as ${result.identity.user} to #${channel.name} at ${result.event.provider_evidence.message_ts}`);
 
       for (const effect of result.effects) {
-        if (effect.skipped) {
-          say(`  ${effect.emission.rule}: ${effect.skipped}`);
-          continue;
-        }
-        for (const person of effect.delivered) {
-          say(`  ${effect.emission.rule} → Local Mail to ${person.email}`);
-        }
+        say(`  Queued ${effect.type} at t+${effect.due_at / 1000}s (${effect.id}).`);
       }
     } finally {
-      db.close();
+      db?.close();
     }
     return;
   }
@@ -1425,6 +1607,7 @@ async function slack({ flags, positional }) {
   if (subcommand === "history") {
     const channel = findChannel(world, flags.channel ?? "");
     const messages = await history(base, token, channel?.name ?? flags.channel);
+    if (active && readActiveGeneration(stateDir).generation !== active.generation) throw new Error('The world changed during this read. Read the current generation again.');
     for (const message of messages) say(`  ${message.user ?? message.username ?? "?"}: ${message.text}`);
     return;
   }
@@ -1440,7 +1623,7 @@ function instanceAt(stateDir) {
   const bindings = readBindings(stateDir);
   if (!bindings) return null;
   try {
-    return { bindings, lock: JSON.parse(readFileSync(`${stateDir}/environment.lock.json`, "utf8")) };
+    return { bindings, lock: JSON.parse(readFileSync(activeFile(stateDir, 'lockPath', 'environment.lock.json'), "utf8")) };
   } catch {
     return null;
   }
@@ -1462,8 +1645,8 @@ function addressReader(lock, bindings, stateDir) {
   // be probed too.
   try {
     const recorded = process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1"
-      ? JSON.parse(readFileSync(`${stateDir}/addresses.json`, "utf8"))
-      : hostAddresses(stateDir) ?? JSON.parse(readFileSync(`${stateDir}/addresses.json`, "utf8"));
+      ? JSON.parse(readFileSync(activeFile(stateDir, 'addressesPath', 'addresses.json'), "utf8"))
+      : hostAddresses(stateDir) ?? JSON.parse(readFileSync(activeFile(stateDir, 'addressesPath', 'addresses.json'), "utf8"));
     for (const [key, address] of Object.entries(recorded)) {
       byPort.set(key, { host: address.host, port: address.port });
     }
@@ -1487,7 +1670,8 @@ function addressReader(lock, bindings, stateDir) {
 }
 
 async function status({ flags }) {
-  const { artifactPath, stateDir } = paths(flags);
+  const located = paths(flags);
+  const { stateDir } = located;
   await ensureRecordedInstance(stateDir);
   const found = instanceAt(stateDir);
 
@@ -1502,7 +1686,7 @@ async function status({ flags }) {
 
   const { bindings, lock } = found;
   const addressOf = addressReader(lock, bindings, stateDir);
-  const world = readWorld(artifactPath);
+  const world = readWorld(located.artifactPath);
 
   say(`${pad("World", 14)}${lock.world.id}:${lock.world.version}`);
   say(`${pad("Artifact", 14)}${lock.world.artifact_sha256.slice(0, 12)}…`);
@@ -1553,9 +1737,11 @@ async function status({ flags }) {
   say(`${pad("People", 14)}${held.people}, ${held.slack_messages} Slack messages, ${held.mail_messages} emails`);
 }
 
-async function env({ flags }) {
-  const { artifactPath, stateDir } = paths(flags);
+async function applicationEnvironment(flags) {
+  const located = paths(flags);
+  const { stateDir } = located;
   await ensureRecordedInstance(stateDir);
+  const active = readActiveGeneration(stateDir);
   const found = instanceAt(stateDir);
 
   if (!found) {
@@ -1565,22 +1751,38 @@ async function env({ flags }) {
   }
 
   const { bindings, lock } = found;
+  const artifactPath = located.artifactPath;
+  if (active && (flags.world || flags['world-path'])) {
+    const selected = inspectWorldArtifact(artifactPath);
+    if (!selected.valid || selected.digest !== active.world.artifact_sha256) throw new SessionError('artifact_mismatch', 'The selected artifact is not the active world generation. Omit the world selector to use the running session.');
+  }
   const { resolved, unresolved } = resolveBindings(lock, {
     addressOf: addressReader(lock, bindings, stateDir),
     artifactPath,
-    credentials: readRunCredentials(stateDir, lock.world),
+    credentials: readRunCredentials(activeStateDir(stateDir), lock.world),
   });
+  const values = Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]));
+  for (const name of ['WORKBENCH_URL', 'WORLDFIXTURE_TOKEN']) {
+    if (bindings[name] !== undefined) values[name] = bindings[name];
+  }
+  if (readActiveGeneration(stateDir)?.generation !== active?.generation) throw new SessionError('stale_generation', 'The active world changed while reading bindings. Read the connection settings again.');
+  return { values, resolved, unresolved, lock };
+}
+
+async function env({ flags }) {
+  const current = await applicationEnvironment(flags);
+  if (!current) return;
+  const { values, resolved, unresolved, lock } = current;
   if (flags.json) {
-    say(JSON.stringify(Object.fromEntries(Object.entries(resolved).map(([name, entry]) => [name, entry.value]))));
+    process.stdout.write(`${JSON.stringify(values)}\n`);
     return;
   }
 
-  for (const name of Object.keys(resolved).sort()) {
-    say(`export ${name}=${shellQuote(resolved[name].value)}`);
+  for (const name of Object.keys(values).sort()) {
+    process.stdout.write(`export ${name}=${shellQuote(values[name])}\n`);
   }
 
-  // A credential that fell back to a workspace-wide token no longer says who is
-  // acting, so the fallback is announced rather than passed off as the person's.
+  // Bindings without a person can explicitly request a shared service token.
   for (const [name, entry] of Object.entries(resolved)) {
     if (entry.scope === "shared") say(`# ${name} is a shared token, not ${lock.target?.identity ?? "one person"}'s`);
   }
@@ -1588,7 +1790,14 @@ async function env({ flags }) {
 }
 
 async function mail({ flags, positional }) {
-  const { artifactPath, stateDir } = paths(flags);
+  const { stateDir } = paths(flags);
+  const active = readActiveGeneration(stateDir);
+  const artifactPath = active && !flags.world && !flags['world-path']
+    ? sessionPath(stateDir, active.artifactPath) : paths(flags).artifactPath;
+  if (active && (flags.world || flags['world-path'])) {
+    const selected = inspectWorldArtifact(artifactPath);
+    if (!selected.valid || selected.digest !== active.world.artifact_sha256) throw new SessionError('artifact_mismatch', 'The selected artifact is not the active world generation. Omit the world selector to use the running session.');
+  }
   const world = readWorld(artifactPath);
   const bindings = readBindings(stateDir);
 
@@ -1627,11 +1836,12 @@ async function mail({ flags, positional }) {
   // here reads Cyrus's files.
   const result = await inbox(bindings.IMAP_HOST_PORT, {
     login: account.login,
-    password: credential(readRunCredentials(stateDir, world), account.password_ref),
+    password: credential(readRunCredentials(active ? sessionPath(stateDir, active.stateDir) : stateDir, world), account.password_ref),
     mailbox: flags.folder ?? "INBOX",
     limit: Number(flags.limit ?? 10),
   });
 
+  if (active && readActiveGeneration(stateDir).generation !== active.generation) throw new Error('The world changed during this read. Read the current generation again.');
   say(`${person.name} — ${result.mailbox}, ${result.exists} messages`);
   say();
   for (const message of result.messages) {
@@ -1669,7 +1879,7 @@ async function events({ flags }) {
     return;
   }
 
-  const db = openState(`${stateDir}/state.sqlite`);
+  const db = openState(activeFile(stateDir, 'statePath', 'state.sqlite'));
   const write = (text) => process.stdout.write(text);
 
   try {
@@ -1913,33 +2123,59 @@ async function validateCommand({ flags, positional }) {
   say(`${checked.id}@${checked.version} is a valid world. Build it with \`${invocation()} build ${source}\`.`);
 }
 
-// A world artifact on the host is not visible to the container.
-//
-// The container sees exactly one host directory: the state directory, bound at
-// /state. So an artifact named by `--world-path` is copied there and the
-// container is told to start `/state/world`, which is also where the recorded
-// world for this run belongs -- `paths()` already reads that location, so
-// `status`, `people` and `slack` on the host describe the world the instance is
-// actually serving rather than the default one.
-//
-// The world starts at its authored anchor rather than today. Rebasing needs the
-// world SOURCE and this stages an artifact, so there is nothing to rebase from;
-// `rebaseForSession` sees no matching source in the image and returns the
-// artifact unchanged.
-function stageWorldArtifact(builtPath, stateDir) {
-  if (!existsSync(join(builtPath, "world.json")) || !existsSync(join(builtPath, "manifest.json"))) {
-    throw new BuildError(
-      "not_a_world_artifact",
-      `${builtPath} is not a built world artifact: it has no world.json and manifest.json`,
-      `Prepare the artifact first: \`worldfixture build <source> --output ${builtPath}\`.`,
-    );
-  }
+// Called only for a new launch, after the host launcher's reuse/refusal check.
+function prepareSessionInput(builtPath, stateDir, expectedWorld) {
+  const staged = stageWorldArtifact(builtPath, stateDir, expectedWorld);
+  // A previous rebased world must not mask this run's authored input snapshot.
+  rmSync(join(stateDir, "world"), { recursive: true, force: true });
+  return staged;
+}
 
-  const staged = join(stateDir, "world");
-  if (resolve(builtPath) === staged) return "/state/world";
-  rmSync(staged, { recursive: true, force: true });
-  cpSync(builtPath, staged, { recursive: true });
-  return "/state/world";
+export function prepareContainerArgs(builtPath, stateDir, flags = {}, expectedWorld) {
+  validateTimelineStart(flags);
+  prepareSessionInput(builtPath, stateDir, expectedWorld);
+  const args = ["--world-path", "/state/input-world"];
+  if (flags.only) args.push("--only", String(flags.only));
+  if (flags["application-url"]) args.push("--application-url", String(flags["application-url"]));
+  if (flags["no-rebase"]) args.push("--no-rebase");
+  if (flags["start-at"] !== undefined) args.push("--start-at", String(flags["start-at"]));
+  if (flags.repeat) args.push("--repeat");
+  if (flags.setup) args.push("--setup");
+  return args;
+}
+
+function stageWorldArtifact(builtPath, stateDir, expectedWorld = inspectWorldArtifact(builtPath)) {
+  const verify = path => {
+    const checked = inspectWorldArtifact(path);
+    if (!checked.valid || checked.id !== expectedWorld.id || checked.version !== expectedWorld.version || checked.digest !== expectedWorld.digest) {
+      throw new BuildError("artifact_changed", `World artifact changed before startup: ${checked.errors.join("; ") || "the copied identity or digest differs from the selected artifact"}`,
+        "Select the world again after its build completes.");
+    }
+    return checked;
+  };
+  const source = verify(builtPath);
+  const staged = join(stateDir, "input-world");
+  if (existsSync(staged) && realpathSync(builtPath) === realpathSync(staged)) {
+    return staged;
+  }
+  mkdirSync(stateDir, { recursive: true });
+  const pending = mkdtempSync(join(stateDir, ".input-world-"));
+  try {
+    // Copy the artifact's declared files only. The current project and its
+    // state can be inside the artifact directory when someone runs `up .`.
+    for (const name of ["manifest.json", ...Object.keys(source.manifest.files)]) {
+      const target = join(pending, name);
+      mkdirSync(dirname(target), { recursive: true });
+      copyFileSync(join(builtPath, name), target);
+    }
+    verify(pending);
+    rmSync(staged, { recursive: true, force: true });
+    renameSync(pending, staged);
+  } catch (error) {
+    rmSync(pending, { recursive: true, force: true });
+    throw error;
+  }
+  return staged;
 }
 
 // ---- dispatch ------------------------------------------------------------
@@ -1947,16 +2183,16 @@ function stageWorldArtifact(builtPath, stateDir) {
 export async function main(argv) {
   const [command, ...rest] = argv;
   if (command === "run") return runApplication(rest);
-  const parsed = parse(rest);
-
   try {
+    const parsed = parse(rest);
+    if (command === "clock" && !parsed.flags.help) clockCommandInput(parsed.positional);
     // Commands that read or change runtime-owned state execute in the recorded
     // container. SQLite locking across a Docker Desktop bind mount is not a
     // safe control contract, and reset must clear the same runtime state
     // connection that recorded the action.
     if (
       process.env.WORLDFIXTURE_SINGLE_CONTAINER !== "1" &&
-      ["slack", "mail", "events"].includes(command)
+      ["slack", "mail", "events", "clock"].includes(command)
     ) {
       const { stateDir } = paths(parsed.flags);
       if (hostInstance(stateDir)) {
@@ -1995,6 +2231,8 @@ export async function main(argv) {
       }
     }
     switch (command) {
+      case "worlds":
+        return worlds(parsed);
       case "up":
         return await up(parsed);
       case "people":
@@ -2011,6 +2249,16 @@ export async function main(argv) {
         return await env(parsed);
       case "reset":
         return await reset(parsed);
+      case "clock":
+        return await clockCommand(parsed);
+      case 'switch':
+        return await switchCommand(parsed);
+      case 'control': {
+        if (!parsed.flags.file) throw new Error('Control requires a request file.');
+        const command = JSON.parse(readFileSync(resolve(parsed.flags.file), 'utf8'));
+        try { return say(JSON.stringify(await requestControl(paths(parsed.flags).stateDir, command, { timeoutMs: 900_000 }))); }
+        catch (error) { process.exitCode = 1; return say(JSON.stringify({ ok: false, error: error.message, code: error.code, state_changed: error.state_changed, detail: error.detail })); }
+      }
       case "down":
         return await down(parsed);
       case "doctor":
@@ -2037,6 +2285,14 @@ export async function main(argv) {
         return undefined;
     }
   } catch (error) {
+    if (["clock", "switch", "control"].includes(command) || error instanceof ClockError || error instanceof TimelineControlError || error instanceof SessionError) {
+      say(`${command ?? "worldfixture"} failed: ${error.message}`);
+      if (error.result?.clock) printClock(error.result);
+      if (error.detail?.repair) say(error.detail.repair);
+      if (error.state_changed && command === "up") say("Initial positioning failed. The instance was stopped; its result remains in the run state directory.");
+      process.exitCode = 1;
+      return undefined;
+    }
     // DOCKER IS NOT INSTALLED.
     //
     // Every command here reaches Docker eventually, and without it Node throws

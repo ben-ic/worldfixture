@@ -1,9 +1,9 @@
 // The resolver's contract, and the two capability-ownership rules it exists to
 // enforce.
 //
-// These run against the real service manifests and the real built artifact, not
-// fixtures, because the rules being tested are about how four particular
-// services actually overlap. A fixture would pass whatever the services did.
+// Success cases use the real service manifests and built artifact. Failure
+// cases make specific manifest defects to keep the generic ownership and
+// readiness guards covered after the production defects are removed.
 
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync } from "node:fs";
@@ -16,15 +16,16 @@ import { loadManifests } from "./manifests.mjs";
 import { defaultEnvironment } from "./environments.mjs";
 import { resolveBindings } from "./bindings.mjs";
 import { prepareCredentials } from "./credentials.mjs";
+import { environmentFor } from "./ports.mjs";
 import { canonical, resolveEnvironment, serializeLock } from "./resolve.mjs";
 import { validate } from "./schema.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const ARTIFACT = join(ROOT, "dist/business.saas-company.v2");
+const ARTIFACT = process.env.WORLDFIXTURE_TEST_ARTIFACT || join(ROOT, "dist/business.saas-company.v2");
 const MANIFESTS = loadManifests(join(ROOT, "emulators"));
 const GENERATED_SECRETS = join(mkdtempSync(join(tmpdir(), "worldfixture-secrets-")), "generated-secrets.json");
 const CREDENTIALS = await prepareCredentials({
-  lock: resolveEnvironment(defaultEnvironment("business.saas-company:v2", { includeS3: true, includeProviders: true, includePostgres: true, includeMySQL: true }), { manifests: MANIFESTS, artifactPath: ARTIFACT }),
+  lock: resolveEnvironment(defaultEnvironment("business.saas-company:v2", { artifactPath: ARTIFACT, manifests: MANIFESTS, includeS3: true, includeProviders: true, includePostgres: true, includeMySQL: true }), { manifests: MANIFESTS, artifactPath: ARTIFACT }),
   artifactPath: ARTIFACT, stateDir: dirname(GENERATED_SECRETS), generatedSecretsPath: GENERATED_SECRETS,
 });
 
@@ -35,17 +36,18 @@ function environment(requires, extra = {}) {
     api_version: "worldfixture.environment/v1",
     world: { use: "business.saas-company:v2" },
     requires,
+    execution: { mode: "selected-capabilities" },
     ...extra,
   };
 }
 
-function resolve(spec) {
-  return resolveEnvironment(spec, { manifests: MANIFESTS, artifactPath: ARTIFACT });
+function resolve(spec, manifests = MANIFESTS) {
+  return resolveEnvironment(spec, { manifests, artifactPath: ARTIFACT });
 }
 
-function refuses(spec) {
+function refuses(spec, manifests = MANIFESTS) {
   try {
-    resolve(spec);
+    resolve(spec, manifests);
   } catch (error) {
     if (error.name !== "ResolutionError") throw error;
     return error;
@@ -63,7 +65,7 @@ const FIRST_SLICE = environment(
       SLACK_TOKEN: "slack.messaging.v1/token",
       IMAP_HOST_PORT: "mail.imap.v1/host_port",
     },
-    target: { kind: "none", identity: "person.maya-chen" },
+    target: { kind: "none", identity: "maya-chen" },
   },
 );
 
@@ -192,14 +194,13 @@ test("the world the artifact holds must be the world the environment asked for",
   assert.equal(error.code, "world_mismatch");
 });
 
-test("the product image default includes providers and SeaweedFS but closes composer AWS", () => {
+test("the product image default includes AWS control-plane providers beside SeaweedFS", () => {
   const lock = resolve(
-    defaultEnvironment("business.saas-company:v2", { includeS3: true, includeProviders: true }),
+    defaultEnvironment("business.saas-company:v2", { artifactPath: ARTIFACT, manifests: MANIFESTS, includeS3: true, includeProviders: true }),
   );
 
   assert.deepEqual(lock.capabilities["aws.s3.objects.v1"], { service: "s3", port: "s3" });
   for (const profile of [
-    "apple.oauth.v1",
     "clerk.organizations.v1",
     "github.apps.v1",
     "google.gmail.v1",
@@ -207,7 +208,6 @@ test("the product image default includes providers and SeaweedFS but closes comp
     "google.drive.v1",
     "linear.teams.v1",
     "microsoft.graph-users.v1",
-    "mongoatlas.clusters.v1",
     "notion.users.v1",
     "notion.oauth.v1",
     "notion.webhooks.v1",
@@ -230,7 +230,6 @@ test("the product image default includes providers and SeaweedFS but closes comp
     "resend.domains.v1",
     "slack.oauth.v1",
     "stripe.catalog.v1",
-    "twilio.verify.v1",
     "vercel.teams.v1",
   ]) {
     assert.equal(lock.capabilities[profile].service, "emulate", profile);
@@ -238,8 +237,8 @@ test("the product image default includes providers and SeaweedFS but closes comp
   assert.deepEqual(
     lock.services.find((service) => service.name === "emulate").ports.map((port) => port.name).sort(),
     [
-      "apple", "clerk", "github", "google", "linear", "microsoft", "mongoatlas",
-      "notion", "okta", "resend", "slack", "stripe", "twilio", "vercel",
+      "aws", "clerk", "github", "google", "linear", "microsoft",
+      "notion", "okta", "resend", "slack", "stripe", "vercel",
     ],
   );
   assert.equal(lock.bindings.S3_BASE_URL.service, "s3");
@@ -254,13 +253,21 @@ test("the product image default includes providers and SeaweedFS but closes comp
   assert.equal(s3.S3_REGION.value, "eu-west-2");
   assert.equal(s3.S3_BUCKET.value, "northstar-relay-documents");
   assert.equal(s3.S3_PATH_STYLE.value, "true");
-  assert.ok(lock.closed_conflicts.some((entry) => entry.disclaimed_by === "emulate" && entry.port === "aws"));
+  assert.deepEqual(lock.closed_conflicts, []);
+  for (const absent of ['http.public-site.v1', 'aws.sqs.v1', 'mongoatlas.clusters.v1', 'twilio.verify.v1', 'apple.oauth.v1']) assert.equal(lock.capabilities[absent], undefined, `${absent} has no declared source/projection`);
+  assert.equal(refuses(environment(['aws.sqs.v1'])).code, 'capability_world_requirement');
+  assert.equal(lock.bindings.AWS_BASE_URL.service, "emulate");
+  assert.equal(lock.bindings.AWS_BASE_URL.port, "aws");
+  assert.ok(s3.AWS_TOKEN.value);
+  for (const profile of ["aws.iam.v1", "aws.sts.v1"]) {
+    assert.deepEqual(lock.capabilities[profile], { service: "emulate", port: "aws" });
+  }
 });
 
 // ---- ports ---------------------------------------------------------------
 
 test("the composer starts only the vendors a run selected", () => {
-  // A vendor is enabled by being given a port. Fourteen are declared; a run that
+  // A vendor is enabled by being given a port. A run that
   // needs Slack pays for Slack.
   const lock = resolve(environment(["slack.messaging.v1"]));
   const emulate = lock.services.find((service) => service.name === "emulate");
@@ -302,6 +309,46 @@ test("a profile dependency selects its provider and pins its internal binding", 
   });
 });
 
+test("OAuth defaults require a selected provider and an unambiguous declared client", () => {
+  const google = [
+    { client_id: "first", redirect_uris: ["http://localhost:3100/a"] },
+    { client_id: "second", redirect_uris: ["http://localhost:3100/b"] },
+  ];
+  const options = { artifactPath: ARTIFACT, manifests: MANIFESTS, includeProviders: true, oauthClients: { google } };
+  assert.equal(defaultEnvironment("business.saas-company:v2", options).bindings.GOOGLE_CLIENT_ID, undefined);
+  google[1].primary = true;
+  const selected = defaultEnvironment("business.saas-company:v2", options);
+  assert.equal(selected.bindings.GOOGLE_CLIENT_ID, "google.oauth.v1/client_id");
+  assert.equal(selected.bindings.GOOGLE_CLIENT_SECRET, "google.oauth.v1/client_secret");
+  assert.equal(defaultEnvironment("business.saas-company:v2", { ...options, only: ["slack"] }).bindings.GOOGLE_CLIENT_ID, undefined);
+  const publicSpec = defaultEnvironment("business.saas-company:v2", {
+    artifactPath: ARTIFACT, manifests: MANIFESTS, includeProviders: true, oauthClients: { clerk: [{ client_id: "public", is_public: true }] },
+  });
+  assert.equal(publicSpec.bindings.CLERK_CLIENT_ID, "clerk.oauth.v1/client_id");
+  assert.equal(publicSpec.bindings.CLERK_CLIENT_SECRET, undefined);
+  assert.ok(resolve(publicSpec).capabilities["clerk.oauth.v1"]);
+});
+
+test("Notion upload dependencies resolve the S3 identity without putting secrets in the lock", () => {
+  const lock = resolve(environment(["notion.file-uploads.v1"]));
+  const service = lock.services.find(row => row.name === "emulate");
+  const allocation = new Map(service.ports.map(port => [`emulate/${port.name}`, {
+    bind: "127.0.0.1", serverPort: 4000,
+  }]));
+  allocation.set("s3/s3", { host: "127.0.0.1", number: 9000 });
+  const env = environmentFor(service, allocation, {
+    worldPath: ARTIFACT, worldSha256: lock.world.artifact_sha256, statePath: "/tmp/run", runtimeToken: "runtime-test", credentials: CREDENTIALS,
+  });
+  const s3 = resolveBindings(resolve(environment(["aws.s3.objects.v1"], { bindings: {
+    KEY: "aws.s3.objects.v1/access_key_id", SECRET: "aws.s3.objects.v1/secret_access_key", REGION: "aws.s3.objects.v1/region",
+  } })), { artifactPath: ARTIFACT, credentials: CREDENTIALS, addressOf: () => ({ host: "127.0.0.1", port: 9000 }) }).resolved;
+  assert.equal(env.WORLDFIXTURE_NOTION_OBJECT_STORE_ACCESS_KEY_ID, s3.KEY.value);
+  assert.equal(env.WORLDFIXTURE_NOTION_OBJECT_STORE_SECRET_ACCESS_KEY, s3.SECRET.value);
+  assert.equal(env.WORLDFIXTURE_NOTION_OBJECT_STORE_REGION, s3.REGION.value);
+  assert.ok(!serializeLock(lock).includes(s3.SECRET.value));
+  assert.ok(!resolve(environment(["notion.users.v1"])).services[0].environment.some(row => row.attribute === "secret_access_key"));
+});
+
 test("a service that cannot start without a port always gets it", () => {
   // SeaweedFS needs its master, volume and filer ports whether or not an
   // application calls them, and its readiness seed gate is on the filer.
@@ -328,11 +375,18 @@ test("readiness is carried only for ports the run opens", () => {
   assert.equal(emulate.readiness[0].kind, "protocol");
 });
 
+function defectiveAwsManifests({ conflict = false, noReadiness = false } = {}) {
+  const manifests = structuredClone(MANIFESTS);
+  const composer = manifests.find(manifest => manifest.name === "emulate");
+  if (conflict) composer.disclaims.push({
+    profile: "aws.s3.objects.v1", port: "aws", reason: "Test fixture with an extra S3 route",
+  });
+  if (noReadiness) composer.runtime.readiness = composer.runtime.readiness.filter(check => check.port !== "aws");
+  return manifests;
+}
+
 test("a published port with no protocol check is refused, not started blind", () => {
-  // AWS is deliberately the only composer vendor with no readiness check. Its
-  // listener also owns live S3 routes, so selecting even IAM must fail before a
-  // run can raise that second S3 owner beside SeaweedFS.
-  const error = refuses(environment(["aws.iam.v1"]));
+  const error = refuses(environment(["aws.iam.v1"]), defectiveAwsManifests({ noReadiness: true }));
   assert.equal(error.code, "capability_not_provable");
   assert.equal(error.detail.port, "aws");
 });
@@ -346,45 +400,46 @@ test("no manifest but the S3 service claims an S3 capability", () => {
   assert.deepEqual(claimants.map((manifest) => manifest.name), ["s3"]);
 });
 
-test("selecting SeaweedFS closes the composer's S3 port and records why", () => {
-  // Measured live: @emulators/aws answers PUT bucket, PUT object and GET object
-  // with 200, and self-seeds three buckets the world never declares. Withholding
-  // its projection changed what those routes serve, not whether they exist.
-  const lock = resolve(environment(["aws.s3.objects.v1", "slack.messaging.v1"]));
-  const emulate = lock.services.find((service) => service.name === "emulate");
+test("SeaweedFS and AWS control-plane capabilities use separate listeners", () => {
+  const lock = resolve(environment(["aws.s3.objects.v1", "aws.iam.v1", "aws.sts.v1"]));
+  assert.deepEqual(lock.capabilities["aws.s3.objects.v1"], { service: "s3", port: "s3" });
+  for (const profile of ["aws.iam.v1", "aws.sts.v1"]) {
+    assert.deepEqual(lock.capabilities[profile], { service: "emulate", port: "aws" });
+  }
+  assert.deepEqual(lock.services.find(service => service.name === "emulate").readiness.map(check => check.port), ["aws"]);
+  assert.deepEqual(lock.closed_conflicts, []);
+});
 
-  assert.ok(!emulate.ports.some((port) => port.name === "aws"), "the aws port must not be open");
-  assert.deepEqual(lock.closed_conflicts.map((entry) => [entry.profile, entry.owner, entry.disclaimed_by]), [
+test("Slack and SeaweedFS do not select the AWS control-plane listener", () => {
+  const lock = resolve(environment(["aws.s3.objects.v1", "slack.messaging.v1"]));
+  assert.deepEqual(lock.services.find(service => service.name === "emulate").ports.map(port => port.name), ["slack"]);
+  assert.deepEqual(lock.closed_conflicts, []);
+});
+
+test("a disclaimed S3 route is closed when its port is not needed", () => {
+  const lock = resolve(environment(["aws.s3.objects.v1", "slack.messaging.v1"]), defectiveAwsManifests({ conflict: true }));
+  assert.ok(!lock.services.find(service => service.name === "emulate").ports.some(port => port.name === "aws"));
+  assert.deepEqual(lock.closed_conflicts.map(entry => [entry.profile, entry.owner, entry.disclaimed_by]), [
     ["aws.s3.objects.v1", "s3", "emulate"],
   ]);
   assert.equal(lock.closed_conflicts[0].action, "port_closed");
 });
 
 test("a second S3 owner that cannot be closed is refused", () => {
-  // `aws.iam.v1` lives on the same listener as the S3 routes, so the port cannot
-  // be shut without taking IAM with it. Two owners of one provider's mutable
-  // state is what the design forbids, so this fails rather than picking one.
-  const error = refuses(environment(["aws.s3.objects.v1", "aws.iam.v1"]));
+  const error = refuses(environment(["aws.s3.objects.v1", "aws.iam.v1"]), defectiveAwsManifests({ conflict: true }));
   assert.equal(error.code, "capability_conflict");
   assert.equal(error.detail.owner, "s3");
   assert.deepEqual(error.detail.blocked_by, ["aws.iam.v1"]);
 });
 
-test("the rule is about ownership, not about the aws port being unwelcome", () => {
-  // With no S3 owner selected there is no second owner and nothing to close, so
-  // the refusal changes shape: `aws.iam.v1` alone fails because no measured
-  // readiness check exists for that vendor, not because anything conflicts.
-  // Eleven of the composer's fourteen vendors are unselectable for that reason
-  // today, and that is the honest state rather than a conflict.
-  const error = refuses(environment(["aws.iam.v1", "slack.messaging.v1"]));
-  assert.equal(error.code, "capability_not_provable");
-  assert.equal(error.detail.port, "aws");
+test("a disclaimed route does not conflict when no owner is selected", () => {
+  const lock = resolve(environment(["aws.iam.v1", "slack.messaging.v1"]), defectiveAwsManifests({ conflict: true }));
+  assert.deepEqual(lock.capabilities["aws.iam.v1"], { service: "emulate", port: "aws" });
+  assert.deepEqual(lock.closed_conflicts, []);
 });
 
 test("an ownership conflict is decided before a provability refusal", () => {
-  // Both apply to the aws port. The conflict is the more specific answer and
-  // the one a user can act on, so it must win.
-  const error = refuses(environment(["aws.s3.objects.v1", "aws.iam.v1"]));
+  const error = refuses(environment(["aws.s3.objects.v1", "aws.iam.v1"]), defectiveAwsManifests({ conflict: true, noReadiness: true }));
   assert.equal(error.code, "capability_conflict");
 });
 
@@ -427,7 +482,7 @@ test("a binding resolves to a service, a port and how to compute it", () => {
     from: "projection",
     port: "slack",
     pointer: "/tokens",
-    person: "person.maya-chen",
+    person: "maya-chen",
   });
 });
 
@@ -446,10 +501,11 @@ test("the lock pins where a binding comes from and never a port number", () => {
   }
 });
 
-test("a per-person credential needs a person", () => {
-  // Every Slack token in this world once resolved to the default admin. There is
-  // no anonymous default, so a token binding without an identity is refused.
+test("a per-person credential uses the authored primary and rejects an unknown explicit person", () => {
+  const defaulted = resolve(environment(["slack.messaging.v1"], { bindings: { SLACK_TOKEN: "slack.messaging.v1/token" } }));
+  assert.equal(defaulted.bindings.SLACK_TOKEN.person, "maya-chen");
   const error = refuses(environment(["slack.messaging.v1"], {
+    target: { kind: "none", identity: "unknown-person" },
     bindings: { SLACK_TOKEN: "slack.messaging.v1/token" },
   }));
   assert.equal(error.code, "identity_required");
@@ -458,7 +514,7 @@ test("a per-person credential needs a person", () => {
 test("a binding on a capability the environment does not require is refused", () => {
   const error = refuses(environment(["slack.messaging.v1"], {
     bindings: { GITHUB_HOST: "github.repositories.v1/base_url" },
-    target: { kind: "none", identity: "person.maya-chen" },
+    target: { kind: "none", identity: "maya-chen" },
   }));
   assert.equal(error.code, "binding_not_required");
 });
@@ -466,7 +522,7 @@ test("a binding on a capability the environment does not require is refused", ()
 test("a binding on an attribute the service does not declare is refused", () => {
   const error = refuses(environment(["slack.messaging.v1"], {
     bindings: { SLACK_WEBHOOK: "slack.messaging.v1/webhook_url" },
-    target: { kind: "none", identity: "person.maya-chen" },
+    target: { kind: "none", identity: "maya-chen" },
   }));
   assert.equal(error.code, "binding_not_declared");
   assert.equal(error.detail.attribute, "webhook_url");

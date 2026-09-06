@@ -1,3 +1,5 @@
+import { s3Fetch } from "../../runtime/src/s3-signing.mjs";
+
 const auth = (token, extra = {}) => ({ authorization: `Bearer ${token}`, ...extra });
 
 export async function providerJson(url, options = {}) {
@@ -105,7 +107,7 @@ export async function sendGmail(bindings, { to, subject, text }) {
 
 export async function s3Buckets(bindings) {
   return await Promise.all(["northstar-relay-documents", "northstar-relay-exports"].map(async (name) => {
-    const response = await fetch(`${bindings.S3_BASE_URL}/${name}/?list-type=2`);
+    const response = await s3Fetch(`${bindings.S3_BASE_URL}/${name}/?list-type=2`, {}, bindings);
     const xml = await response.text();
     if (!response.ok) throw new Error(`S3 ListObjectsV2 returned ${response.status}`);
     return `${name} · ${[...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].length} objects`;
@@ -114,7 +116,7 @@ export async function s3Buckets(bindings) {
 
 export async function s3BucketDetails(bindings) {
   return await Promise.all(["northstar-relay-documents", "northstar-relay-exports"].map(async (name) => {
-    const response = await fetch(`${bindings.S3_BASE_URL}/${name}/?list-type=2`);
+    const response = await s3Fetch(`${bindings.S3_BASE_URL}/${name}/?list-type=2`, {}, bindings);
     const xml = await response.text();
     if (!response.ok) throw new Error(`S3 ListObjectsV2 returned ${response.status}`);
     return { name, keys: [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map((match) => match[1]) };
@@ -152,9 +154,9 @@ export async function allSlackMessages(bindings) {
 }
 
 export async function putS3Object(bindings, bucket, key, value) {
-  const response = await fetch(`${bindings.S3_BASE_URL}/${bucket}/${key}`, {
+  const response = await s3Fetch(`${bindings.S3_BASE_URL}/${bucket}/${key}`, {
     method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(value, null, 2),
-  });
+  }, bindings);
   if (!response.ok) throw new Error(`S3 PutObject returned ${response.status}: ${(await response.text()).slice(0, 180)}`);
   return { bucket, key, etag: response.headers.get("etag") };
 }

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/runtime-operation.v1.schema.json",
+  "title": "Versioned WorldFixture domain operation",
+  "description": "An operation names its meaning. The selected capability resolves its public delivery adapter. Creating an order never implies a payment.",
+  "type": "object",
+  "required": ["api_version", "type", "actor_id", "record"],
+  "additionalProperties": false,
+  "properties": {
+    "api_version": {"const": "worldfixture.runtime-operation/v1"},
+    "type": {"enum": ["commerce.order.place.v1", "social.post.publish.v1", "social.review.publish.v1", "social.comment.publish.v1"]},
+    "actor_id": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
+    "record": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"}}}
+  }
+}

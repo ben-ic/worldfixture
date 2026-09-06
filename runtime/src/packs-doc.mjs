@@ -1,20 +1,11 @@
 // A reference for the payload a connector actually receives.
 //
-// WHY THIS IS GENERATED. `connector-request.v1.schema.json` specifies the seed
-// payload as `"packs": {"type": "object"}`, and that is the whole of it. Five
-// people implemented a connector against this contract and every one of them
-// named the same largest cost: to learn what a pack contains they stood up a
-// throwaway HTTP server, pointed `connector seed` at it, and read the 3.8 MB
-// body off disk. Three wrote the same server. One measured it at eight of their
-// forty-five minutes -- more than writing the mapping.
-//
-// WHY IT IS NOT PROSE. A hand-written field list is wrong the first time a world
-// changes, and wrong quietly. This reads the built artifact, so the document is
-// a function of the thing it documents, and a test regenerates it and fails when
-// the two disagree.
+// Read the same world and scale slice as connector plan/seed. No catalogue
+// entry or example payload is a substitute for the selected artifact.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { canonical } from "./resolve.mjs";
 
 const EXAMPLE_LIMIT = 240;
 const MAX_ITEMS = 3;
@@ -23,7 +14,7 @@ function describeValue(value) {
   if (value === null) return "null";
   if (Array.isArray(value)) {
     if (value.length === 0) return "array";
-    return `array of ${describeValue(value[0])}`;
+    return `array of ${[...new Set(value.map(describeValue))].sort().join(" or ")}`;
   }
   if (typeof value === "object") return "object";
   return typeof value;
@@ -49,13 +40,13 @@ function collectionsOf(packs) {
   const found = [];
   for (const [packName, pack] of Object.entries(packs)) {
     for (const [name, value] of Object.entries(pack)) {
-      if (!Array.isArray(value) || value.length === 0) continue;
-      if (!value.every((entry) => entry && typeof entry === "object")) continue;
+      if (!Array.isArray(value)) continue;
+      if (!value.every((entry) => entry && typeof entry === "object" && !Array.isArray(entry))) continue;
       found.push({ pack: packName, name, records: value, nested: false });
       const nested = new Map();
       for (const record of value) {
         for (const [field, inner] of Object.entries(record)) {
-          if (!Array.isArray(inner) || inner.length === 0) continue;
+          if (!Array.isArray(inner)) continue;
           if (!inner.every((entry) => entry && typeof entry === "object" && !Array.isArray(entry))) continue;
           if (!nested.has(field)) nested.set(field, []);
           nested.get(field).push(...inner);
@@ -91,16 +82,12 @@ function fieldsOf(records) {
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-// Two collections holding the same records under different names.
-//
-// The default world carries `mail` and `resolved_mail`, byte for byte the same
-// 3,069 records, and together they are most of a 3.8 MB request. Two connector
-// authors found that out by measuring their own traffic.
+// Claim duplicate content only when every field matches, not just the IDs.
 function duplicateNote(collections) {
   const byContent = new Map();
   for (const entry of collections) {
-    if (entry.nested) continue;
-    const key = JSON.stringify(entry.records.map((record) => record.id ?? null));
+    if (entry.nested || entry.records.length === 0) continue;
+    const key = canonical(entry.records);
     if (!byContent.has(key)) byContent.set(key, []);
     byContent.get(key).push(`${entry.pack}.${entry.name}`);
   }
@@ -113,12 +100,16 @@ function duplicateNote(collections) {
   );
 }
 
-export function packsReference(artifactPath) {
-  const manifest = JSON.parse(readFileSync(join(artifactPath, "manifest.json"), "utf8"));
-  const packs = {};
-  for (const name of manifest.packs ?? []) {
-    packs[name] = JSON.parse(readFileSync(join(artifactPath, "packs", `${name}.json`), "utf8"));
+export function packsReference(source) {
+  // Keep the artifact-path form for callers that need a full reference.
+  if (typeof source === "string") {
+    const manifest = JSON.parse(readFileSync(join(source, "manifest.json"), "utf8"));
+    const packs = Object.fromEntries((manifest.packs ?? []).map(name =>
+      [name, JSON.parse(readFileSync(join(source, "packs", `${name}.json`), "utf8"))]));
+    source = { world: { id: manifest.world_id, version: manifest.world_version,
+      artifact_sha256: manifest.artifact_sha256 }, packs };
   }
+  const { world, packs, scale } = source;
   const collections = collectionsOf(packs);
   const total = collections.filter((entry) => !entry.nested).reduce((sum, entry) => sum + entry.records.length, 0);
 
@@ -126,12 +117,12 @@ export function packsReference(artifactPath) {
     "# What a connector receives",
     "",
     "This is the `packs` object in a seed or plan request, described from the world",
-    `it documents: \`${manifest.world_id}:${manifest.world_version}\`, artifact`,
-    `\`${manifest.artifact_sha256.slice(0, 12)}…\`.`,
+    `it documents: \`${world.id}:${world.version}\`, artifact`,
+    `\`${world.artifact_sha256}\`.`,
     "",
-    "It is generated from the prepared artifact and checked by a test, so it cannot",
-    "drift from what is actually sent. Run `npx worldfixture connector docs` to read the",
-    "version installed alongside your build.",
+    "This reference uses the selected artifact and the same scale rules as connector plan and seed.",
+    `Scale: \`${scale?.preset ?? "full"}\`; limits: \`${JSON.stringify(scale?.limits ?? {})}\`.`,
+    "Empty arrays are shown. Their element fields cannot be inferred from this payload.",
     "",
     "## The shape",
     "",
@@ -146,26 +137,19 @@ export function packsReference(artifactPath) {
     "}",
     "```",
     "",
-    "## Rules that hold across every pack",
+    "## Reading this payload",
     "",
-    "- A record's `id` is a stable slug, not a number, and it is the identifier a",
-    "  `worldfixture_ref` addresses: `person/maya-chen`, `channel/channel-soc2`.",
-    "- A field ending `_id` names one record. A field ending `_ids` names several.",
-    "  A list of ids is a membership list and may be trimmed by a scale slice; a",
-    "  single id is a dependency and never dangles.",
-    "- People are also addressable by `email`, `github_login` and `slack_id`, and",
-    "  some collections use those rather than the person's `id`.",
-    "- Collections arrive in a deterministic order, and messages within a channel",
-    "  are ordered by `timestamp`.",
-    "- A slice is referentially whole. It never contains a record that refers to a",
-    "  record it does not contain, so a connector needs no special handling for one.",
+    "- Use each record's complete `id` when mapping it to an application record.",
+    "- Fields ending `_id` or `_ids` describe record references or membership.",
+    "- Provider identities and optional fields exist only where this payload includes them.",
+    "- The field tables show observed types and whether each field is present on every record.",
     ...duplicateNote(collections),
     "",
     "## Collections",
     "",
     `${collections.filter((entry) => !entry.nested).length} top-level collections and ` +
       `${collections.filter((entry) => entry.nested).length} nested ones, ` +
-      `${total.toLocaleString("en-US")} top-level records in the full world.`,
+      `${total.toLocaleString("en-US")} top-level records in this payload.`,
     "",
     "| Pack | Collection | Records |",
     "| --- | --- | --- |",
@@ -178,6 +162,10 @@ export function packsReference(artifactPath) {
     if (entry.nested) {
       lines.push(`Nested inside each \`${entry.parent}\` record, not a collection of its own.`, "");
     }
+    if (entry.records.length === 0) {
+      lines.push("Declared empty array. No record fields are available.", "", "```json", "[]", "```", "");
+      continue;
+    }
     lines.push("| Field | Type | On every record |", "| --- | --- | --- |");
     for (const field of fieldsOf(entry.records)) {
       lines.push(`| \`${field.name}\` | ${field.types} | ${field.always ? "yes" : "no"} |`);
@@ -185,5 +173,15 @@ export function packsReference(artifactPath) {
     lines.push("", "```json", JSON.stringify(trimValue(entry.records[0]), null, 2), "```", "");
   }
 
+  const values = Object.entries(packs).flatMap(([pack, fields]) => Object.entries(fields)
+    .filter(([name]) => !collections.some(entry => entry.pack === pack && entry.name === name))
+    .map(([name, value]) => ({ name: `${pack}.${name}`, value })));
+  if (values.length) {
+    lines.push("## Other pack values", "");
+    for (const { name, value } of values) {
+      lines.push(`### \`${name}\``, "", `Type: ${describeValue(value)}.`, "", "```json",
+        JSON.stringify(trimValue(value), null, 2), "```", "");
+    }
+  }
   return `${lines.join("\n").trimEnd()}\n`;
 }

@@ -190,17 +190,22 @@ export async function probe(check, address, { timeoutMs = DEFAULT_TIMEOUT_MS } =
 }
 
 // Poll one check until it answers or the deadline passes.
-export async function waitFor(check, address, { timeoutMs = 60_000, intervalMs = 250, probeTimeoutMs } = {}) {
+export async function waitFor(check, address, { timeoutMs = 60_000, intervalMs = 250, probeTimeoutMs, signal } = {}) {
   const deadline = Date.now() + timeoutMs;
-  let last = { ok: false, detail: "never probed" };
-
-  while (Date.now() < deadline) {
-    last = await probe(check, address, { timeoutMs: probeTimeoutMs });
-    if (last.ok) return last;
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-
-  return { ...last, detail: `${last.detail} (still failing after ${timeoutMs}ms)` };
+  let last = { ok: false, detail: "never probed" }, cancel;
+  const cancelled = new Promise(resolve => { cancel = () => resolve(null); });
+  signal?.addEventListener('abort', cancel, { once: true });
+  try {
+    while (Date.now() < deadline && !signal?.aborted) {
+      const result = await Promise.race([probe(check, address, { timeoutMs: probeTimeoutMs }), cancelled]);
+      if (signal?.aborted || result === null) return { ok: false, detail: 'Readiness wait cancelled by service lifecycle' };
+      last = result;
+      if (last.ok) return last;
+      await Promise.race([new Promise(resolve => setTimeout(resolve, intervalMs)), cancelled]);
+    }
+    return signal?.aborted ? { ok: false, detail: 'Readiness wait cancelled by service lifecycle' }
+      : { ...last, detail: `${last.detail} (still failing after ${timeoutMs}ms)` };
+  } finally { signal?.removeEventListener('abort', cancel); }
 }
 
 // One service's readiness, from its own checks.

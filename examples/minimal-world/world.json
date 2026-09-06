@@ -11,7 +11,8 @@
     ],
     "clock": {
       "anchor": "2027-03-01T09:00:00Z",
-      "timezone": "UTC"
+      "timezone": "UTC",
+      "locale": "en-GB"
     },
     "scenario": {
       "id": "quiet-week",

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { bindingGroupsFor } from "../runtime-data.mjs";
 
 import { Button, CopyButton, Panel } from "./Primitives.jsx";
 
@@ -25,11 +26,14 @@ const MASK = "••••••••••••";
 
 const isSecret = (name, value) => CREDENTIAL.test(name) || EMBEDDED_CREDENTIAL.test(value);
 
-export function Bindings({ data, complete = false }) {
+export function Bindings({ data, complete = false, surfaceId, onAction }) {
   const [revealed, setRevealed] = useState(() => new Set());
-  const entries = Object.entries(data.bindings).filter(([name]) => name !== "WORKBENCH_URL");
-  const visible = complete ? entries : entries.filter(([name]) => /SLACK|GITHUB|GOOGLE|S3|SMTP|IMAP|SITE/.test(name)).slice(0, 8);
+  const [query, setQuery] = useState("");
+  const allGroups = bindingGroupsFor(data, { surfaceId });
+  const groups = bindingGroupsFor(data, { surfaceId, query });
+  const entries = [...new Map(allGroups.flatMap((group) => group.entries))];
   const environment = entries.map(([name, value]) => `${name}=${JSON.stringify(value)}`).join("\n");
+  const copied = () => onAction?.({ type: "copy", target: "bindings", ...(surfaceId === undefined ? {} : { surface: surfaceId }), success: true });
 
   function toggle(name) {
     setRevealed((current) => {
@@ -39,8 +43,12 @@ export function Bindings({ data, complete = false }) {
     });
   }
 
-  return <Panel title="Bindings for this instance" tools={<CopyButton value={environment}>Copy .env</CopyButton>}>
-    {visible.map(([name, value]) => {
+  return <Panel title={surfaceId === undefined ? "Bindings for this instance" : "Bindings for this service"} tools={entries.length > 0 && <CopyButton value={environment} onCopy={copied}>Copy .env</CopyButton>}>
+    {entries.length > 0 && <div className="action-form"><label>FIND A BINDING OR CAPABILITY<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Binding name or service"/></label><span className="muted">{entries.length} bindings available. Open a group to view and copy its values.</span></div>}
+    {groups.map((group) => <details className="technical-details" key={group.id} open={complete || Boolean(query) || groups.length === 1}>
+      <summary>{group.name ?? group.id} · {group.entries.length} bindings</summary>
+      {group.capabilities?.length > 0 && <div className="panel-pad muted">{group.capabilities.join(" · ")}</div>}
+      {group.entries.map(([name, value]) => {
       const secret = isSecret(name, value);
       const shown = !secret || revealed.has(name);
       return <div className="data-row binding-row" key={name}>
@@ -49,10 +57,12 @@ export function Bindings({ data, complete = false }) {
         <span className="inline-actions">
           {secret && <Button kind="small" onClick={() => toggle(name)}
             aria-label={`${shown ? "Hide" : "Show"} ${name}`}>{shown ? "Hide" : "Show"}</Button>}
-          <CopyButton value={value}/>
+          <CopyButton value={value} onCopy={copied}/>
         </span>
       </div>;
-    })}
+      })}
+    </details>)}
+    {groups.length === 0 && <div className="empty">{entries.length ? "No bindings match this search." : "No connection bindings are declared for this selection."}</div>}
   </Panel>;
 }
 
@@ -66,14 +76,18 @@ function eventTitle(value = "activity") {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export function ActivityTable({ data, limit, onRefresh }) {
-  const events = data.activity.slice(0, limit ?? data.activity.length);
-  const people = new Map(data.people.map((person) => [person.id, person.name]));
-  return <Panel title="Recent activity" tools={<button className="button small" onClick={onRefresh}>Refresh</button>}>
+export function ActivityTable({ data, limit, onRefresh, onAction }) {
+  const events = (data.activity ?? []).slice(0, limit ?? data.activity?.length);
+  const people = new Map((data.people ?? []).map((person) => [person.id, person.name]));
+  async function refresh() {
+    const result = await onRefresh?.();
+    if (result) onAction?.({ type: "read", target: "activity", eventIds: (result.activity ?? []).map((event) => event.id).filter(Boolean), success: true });
+  }
+  return <Panel title="Recent activity" tools={<button className="button small" onClick={refresh}>Refresh</button>}>
     <div className="data-row activity-columns table-head"><span>TIME</span><span>ACTOR</span><span>ACTION</span><span>ACCEPTED BY</span><span>OBSERVED</span></div>
     {events.length ? events.map((event) => <div className="data-row activity-columns" key={event.id ?? event.seq}>
       <code className="dim">{time(event.occurred_at)}</code><span className="truncate">{people.get(event.actor_id) ?? event.actor_id ?? event.source}</span>
       <span className="truncate"><strong>{eventTitle(event.type)}</strong><small>{event.type}</small></span><code className="muted">{event.source}</code><code className="blue">{event.id ?? `event ${event.seq}`}</code>
-    </div>) : <div className="empty">No observed changes yet. The accepted seeded state is ready.</div>}
+    </div>) : <div className="empty">No observed activity is available.</div>}
   </Panel>;
 }

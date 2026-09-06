@@ -13,6 +13,23 @@ For example, DropLive uses WorldFixture for product demos.
 npx worldfixture up
 ```
 
+List the available world artifacts and select one by its manifest identity:
+
+```sh
+npx worldfixture worlds
+npx worldfixture up consumer.retail-brand:v1
+```
+
+An explicit world takes precedence over the project's `world` setting. Without
+either, `up` selects `business.saas-company:v3`. See [How worlds work](docs/guides/worlds.md)
+for artifact paths, project settings, and date handling.
+
+Use **Choose world** in the Workbench or `npx worldfixture switch <world>` to
+change a running world. A switch restores provider state and changes credentials.
+Application database data remains. Confirm the new application connection before
+you start its timeline. See [Switch a running world](docs/guides/worlds.md#switch-a-running-world)
+and [Timeline controls](docs/guides/timeline.md).
+
 All people, organizations, domains, messages, and financial records are
 synthetic. WorldFixture is pre-release software. It implements selected
 provider operations and does not claim full provider parity.
@@ -143,6 +160,20 @@ node emulators/http-targets/test/protocol-test.mjs
 
 The Python command tests the compiler, schemas, and world parity. `build` is the
 CLI command that runs the compiler.
+
+Run the supplemental Gmail arrival and Linear identity check against a built
+product image. Use a new report directory for each run:
+
+```sh
+node tests/image/coupling-arrival-test.mjs --image worldfixture:local --report .worldfixture/coupling/arrival-check
+```
+
+This test copies the v2 source and adds two Gmail arrivals for nonprimary
+recipients, custom labels, and two Linear tasks with the same title and distinct
+IDs. It checks normal scheduled delivery and reset through public APIs, reads
+every declared mailbox with that person's credentials, and verifies that shipped
+source bytes remain unchanged. The report includes the copied source and its
+artifact digest. Shipped SMTP arrivals keep their original transport.
 
 The next two are prerequisites of the **runtime** suite, not only the emulator
 one, and both are no-ops once they have run. `emulate` starts as a child process

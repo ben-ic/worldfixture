@@ -1,0 +1,609 @@
+{
+  "schema": "worldfixture.coupling-mail-migration/v1",
+  "allowed_artifact_files": [
+    "manifest.json",
+    "packs/communication.json",
+    "projections/emulator-overlay.json",
+    "projections/google.json",
+    "world.json"
+  ],
+  "worlds": [
+    {
+      "id": "business.saas-company",
+      "version": "v2",
+      "source": "worlds/business.saas-company.v2/world.json",
+      "artifact": "dist/business.saas-company.v2",
+      "reason": "Declare Google mailbox owners and custom labels; project every selected source message per owner, preserve Drive content and owner, carry Linear task/project IDs, and seed Gmail arrivals only through Gmail.",
+      "from_source_sha256": "db6fb91c7f6fd1760e1bce7281564566c587eef9bba7874824d4d1759000aa0f",
+      "to_source_sha256": "c837057865dfc029fa52dfa298cd6f2e3896926112b1328b7a5f0d66aeeb27de",
+      "from_artifact_sha256": "fae5a9a2a324cfccfa05f5f75f43ab41de159b6c392d33d100e84f145c608559",
+      "to_artifact_sha256": "4400c2b9700fde68c5abd03869a097489d3dbf36616fb26b012fab7356b653b1",
+      "source_files": {
+        "from": {
+          "backbones/northstar-relay.json": {
+            "sha256": "5cb42703bbd6dbacf5d763e4f76414b0d01079b7c8acb3aeeb4bdf49233ee731",
+            "size": 8355
+          },
+          "packs/saas-operations.json": {
+            "sha256": "e90927b414488b00625b8bee1a24f31e9adbc8e8d4b31353f3ce03098a273f46",
+            "size": 44916
+          },
+          "stories/lumen-renewal.json": {
+            "sha256": "508ad83d568c444fa269758057b803e646cba326bf057a9a4a2217b8b69ac786",
+            "size": 4935
+          },
+          "stories/release-28.json": {
+            "sha256": "69a58567425502290b4c5f5bdc6cdb769f1fc7edbff355c0004d38bff30e5ba9",
+            "size": 3773
+          },
+          "stories/theo-onboarding.json": {
+            "sha256": "c6c564fff1c2e9669ae179bd049b5d7462ad4e09fb245152ce1d0796b7e58f07",
+            "size": 514
+          },
+          "world.json": {
+            "sha256": "edc1349cf4335f2a122cba73fc6653e58e342ee2784bb50bd1bba8c3d4ae6597",
+            "size": 1121
+          }
+        },
+        "to": {
+          "backbones/northstar-relay.json": {
+            "sha256": "5cb42703bbd6dbacf5d763e4f76414b0d01079b7c8acb3aeeb4bdf49233ee731",
+            "size": 8355
+          },
+          "packs/google-mailboxes.json": {
+            "sha256": "45679381a7859632fbae8d9bff61b18e39614ce076f2e53bc91548b9d17a7715",
+            "size": 1938
+          },
+          "packs/saas-operations.json": {
+            "sha256": "e90927b414488b00625b8bee1a24f31e9adbc8e8d4b31353f3ce03098a273f46",
+            "size": 44916
+          },
+          "stories/lumen-renewal.json": {
+            "sha256": "508ad83d568c444fa269758057b803e646cba326bf057a9a4a2217b8b69ac786",
+            "size": 4935
+          },
+          "stories/release-28.json": {
+            "sha256": "69a58567425502290b4c5f5bdc6cdb769f1fc7edbff355c0004d38bff30e5ba9",
+            "size": 3773
+          },
+          "stories/theo-onboarding.json": {
+            "sha256": "c6c564fff1c2e9669ae179bd049b5d7462ad4e09fb245152ce1d0796b7e58f07",
+            "size": 514
+          },
+          "world.json": {
+            "sha256": "afa9135075e789d67814df744ffa23ca5ad9004476f11980e1c1706846284ef0",
+            "size": 1156
+          }
+        }
+      },
+      "source_manifest_insertion": ",\n    \"packs/google-mailboxes.json\"",
+      "added_source_file": "packs/google-mailboxes.json",
+      "mailbox_owner_ids": [
+        "maya-chen",
+        "jon-bell",
+        "noor-alvarez",
+        "elena-petrov",
+        "samira-okafor",
+        "lucas-meyer",
+        "hana-ito",
+        "david-banerjee",
+        "imani-brooks",
+        "theo-martin",
+        "priya-raman",
+        "ravi-okonkwo",
+        "marta-silva",
+        "owen-price",
+        "fern-ellery",
+        "adil-hassan"
+      ],
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "170eee26f40ec21eca8474f99d1fcf3f3f0f9c53deeca329bf4d52f914123e7d",
+            "size": 4558
+          },
+          "to": {
+            "sha256": "26ce610497560ef7c8cb5f6c1485182bd290ab199a306a3b876e821bb1a251d1",
+            "size": 4680
+          }
+        },
+        "packs/communication.json": {
+          "from": {
+            "sha256": "1411a37bf8322f17e03f7e4b533adeb4542baa987dbc165eed18ebbfba1100ec",
+            "size": 77382
+          },
+          "to": {
+            "sha256": "b4b3a3d57a48bb48d1a99f4f210c44c3ab556ed5c9453dda609c88784bfaa39b",
+            "size": 78196
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "2898cbcc424438e56bd910c394d515778f90edbef60fef2b16c96e0f877f59d9",
+            "size": 69974
+          },
+          "to": {
+            "sha256": "d6f72ac6a5f7b43d4a4511b93d7158204b846f1db9ced225f4cde61275fbaf6f",
+            "size": 148991
+          }
+        },
+        "projections/google.json": {
+          "from": {
+            "sha256": "e6254898028be5965bc64fce92f13582dc5bd8363192d4ec589c5b42f927e656",
+            "size": 18236
+          },
+          "to": {
+            "sha256": "fb0ca9a206f3954ed9eff2338edff790a2e17a2212852db2eb0fb82dd22becb2",
+            "size": 102554
+          }
+        },
+        "world.json": {
+          "from": {
+            "sha256": "2a96256628341c68f2127ba54ff22d8ff1eea10037a43c3c6770afe1d563bbb3",
+            "size": 141055
+          },
+          "to": {
+            "sha256": "5ce738eecee56eceed53572da687dba9cc201183979d2c1597c6ad40930f923c",
+            "size": 141869
+          }
+        }
+      },
+      "bundle": {
+        "from": {
+          "bundle_sha256": "20fc750c8593184f789ea5a8681d36d5c9b0d87daf8e20bde000a1f02e1d6af1",
+          "bundle_size": 542720,
+          "content_sha256": "fae5a9a2a324cfccfa05f5f75f43ab41de159b6c392d33d100e84f145c608559"
+        },
+        "to": {
+          "bundle_sha256": "f94b2a4bb066c43ddddd90a83fc85de8029585cc002a31a8811af0e6634cb31e",
+          "bundle_size": 706560,
+          "content_sha256": "4400c2b9700fde68c5abd03869a097489d3dbf36616fb26b012fab7356b653b1"
+        }
+      }
+    },
+    {
+      "id": "business.saas-company",
+      "version": "v3",
+      "source": "worlds/business.saas-company.v3/world.json",
+      "artifact": "dist/business.saas-company.v3",
+      "reason": "Declare Google mailbox owners and custom labels; project every selected source message per owner, preserve Drive content and owner, carry Linear task/project IDs, and seed Gmail arrivals only through Gmail.",
+      "from_source_sha256": "6f4fe5f367d7c7dc1745a9e4ba498ab9769908a47ba7dd9fec9aac06e6046832",
+      "to_source_sha256": "ead917d37ede78bbcd2accd6e8e2be12615b9c3d9779014287906cc27a304c72",
+      "from_artifact_sha256": "fbbc4f22b6806197e7ebfaa4189c8114ef205137f1cc5da120be41207eae8847",
+      "to_artifact_sha256": "15e89fd2b33b7f4a786d0b062a6bc101a673c41384c5f74ec57c025f3f8b358c",
+      "source_files": {
+        "from": {
+          "backbones/northstar-relay.json": {
+            "sha256": "ea7bbd5c93c3135b10e0a60c29ed75c72b8855097bccc49bc11a5943f2248a63",
+            "size": 66662
+          },
+          "packs/saas-operations.json": {
+            "sha256": "e7fdd0a7f73dd6e060ce039dc0ee1edbd0b90316f7ba0cf2904a4f87f9d17d36",
+            "size": 2353611
+          },
+          "stories/live-timeline.json": {
+            "sha256": "2e5e7c6240431b52b4088d65a5cb3a45f094948e0307deff9b340160654d9e8f",
+            "size": 67358
+          },
+          "world.json": {
+            "sha256": "bbef2fc1b800c92f40eae214eac0f860120b04ca4f3adbf9cbbce1ed6caae54c",
+            "size": 1104
+          }
+        },
+        "to": {
+          "backbones/northstar-relay.json": {
+            "sha256": "ea7bbd5c93c3135b10e0a60c29ed75c72b8855097bccc49bc11a5943f2248a63",
+            "size": 66662
+          },
+          "packs/google-mailboxes.json": {
+            "sha256": "17c09cd715447c2297eaf67be42a2d5a94a80881ed44a626be8a608ae350f730",
+            "size": 14205
+          },
+          "packs/saas-operations.json": {
+            "sha256": "e7fdd0a7f73dd6e060ce039dc0ee1edbd0b90316f7ba0cf2904a4f87f9d17d36",
+            "size": 2353611
+          },
+          "stories/live-timeline.json": {
+            "sha256": "2e5e7c6240431b52b4088d65a5cb3a45f094948e0307deff9b340160654d9e8f",
+            "size": 67358
+          },
+          "world.json": {
+            "sha256": "ae02bcef326990f8de5a57752d1d9ce0fa3e4e94d5d3407d1004d44c8c70256e",
+            "size": 1139
+          }
+        }
+      },
+      "source_manifest_insertion": ",\n    \"packs/google-mailboxes.json\"",
+      "added_source_file": "packs/google-mailboxes.json",
+      "mailbox_owner_ids": [
+        "maya-chen",
+        "jon-bell",
+        "noor-alvarez",
+        "david-banerjee",
+        "elena-petrov",
+        "amara-diallo",
+        "rowan-whitfield",
+        "sofia-marchetti",
+        "lucas-meyer",
+        "hana-ito",
+        "samira-okafor",
+        "imani-brooks",
+        "theo-martin",
+        "priyanka-nair",
+        "tomas-novak",
+        "ada-lindqvist",
+        "kwame-mensah",
+        "fatima-haddad",
+        "oscar-ruiz",
+        "mei-zhang",
+        "daniel-osei",
+        "ingrid-solberg",
+        "rafael-costa",
+        "yuki-tanaka",
+        "zara-ahmed",
+        "nikolai-petrov",
+        "clara-dubois",
+        "marcus-webb",
+        "aiko-yamamoto",
+        "ben-hartley",
+        "leila-farouk",
+        "simon-novotny",
+        "grace-okonkwo",
+        "henrik-larsen",
+        "isabel-moreno",
+        "jamal-rashid",
+        "keiko-sato",
+        "liam-doherty",
+        "mira-kovac",
+        "nathan-ford",
+        "olivia-barnes",
+        "pedro-silva",
+        "qing-liu",
+        "ravi-kapoor",
+        "sara-lindgren",
+        "tobias-krause",
+        "ulla-virtanen",
+        "victor-almeida",
+        "wren-callahan",
+        "xiomara-reyes",
+        "yusuf-demir",
+        "zoe-patterson",
+        "arjun-mehta",
+        "bianca-rossi",
+        "callum-fraser",
+        "dalia-mansour",
+        "erik-johansson",
+        "farida-bello",
+        "gustavo-herrera",
+        "helena-novak",
+        "idris-coulibaly",
+        "jenna-whitlock",
+        "kasper-nielsen",
+        "lena-fischer",
+        "mateo-vargas",
+        "nour-khalil",
+        "omar-bakri",
+        "paloma-ortiz",
+        "quentin-leroy",
+        "rina-chowdhury",
+        "sean-murphy",
+        "tara-bergstrom",
+        "ugo-bianchi",
+        "vera-ilyina",
+        "wesley-chan",
+        "xander-rooij",
+        "yara-nasser",
+        "zeno-papadakis",
+        "alina-popescu",
+        "bruno-cardoso",
+        "celine-aubert",
+        "dev-sharma",
+        "eero-makinen",
+        "freya-nilsen",
+        "gabriel-sousa",
+        "hiro-nakamura",
+        "iris-vandenberg",
+        "jakub-wisniewski",
+        "karin-holmberg",
+        "luca-ferrari",
+        "maya-osei",
+        "nils-andersson",
+        "ophelia-hart",
+        "pavel-dvorak",
+        "rosa-delgado",
+        "stefan-weber",
+        "tessa-lindholm",
+        "uma-krishnan",
+        "viktor-horvath",
+        "priya-raman",
+        "callan-reed",
+        "alys-brenner",
+        "anders-holm",
+        "bea-nowak",
+        "boris-katz",
+        "ravi-sundaram",
+        "carla-nunes",
+        "nadia-farouk",
+        "owen-pritchard",
+        "dmitri-volkov",
+        "marta-sokolova",
+        "esme-lefevre",
+        "duncan-reid",
+        "felix-braun",
+        "ines-carvalho",
+        "gita-rao",
+        "gareth-powell",
+        "hugo-meier",
+        "tanya-oyelaran",
+        "ilse-de-vries",
+        "alan-whitmore",
+        "jonas-ekstrom",
+        "bridget-kelly",
+        "kara-boyle",
+        "cormac-byrne",
+        "dina-vasquez",
+        "lars-pedersen",
+        "emil-berg",
+        "maud-thibault",
+        "fiona-grant",
+        "nikhil-verma",
+        "gideon-marks",
+        "olga-ivanova",
+        "hollie-prentice",
+        "piotr-zielinski",
+        "idris-salim",
+        "rania-aziz",
+        "jana-kral",
+        "sven-larsson",
+        "kieran-walsh",
+        "tomasz-kowalski",
+        "lorna-mackay",
+        "ursula-mayer",
+        "miles-okafor",
+        "vikram-chandra",
+        "nina-petrova",
+        "wanda-nowicka",
+        "oskar-lind",
+        "yannis-petrou",
+        "paula-mendes",
+        "zofia-kaminska",
+        "fern-ellery",
+        "gus-nakamura",
+        "harriet-vaughn",
+        "ivo-marek",
+        "joan-ferris",
+        "kofi-adjei",
+        "lena-brandt",
+        "mo-chowdhury",
+        "niamh-doyle",
+        "otto-frey"
+      ],
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "40fa00fb8ce8427ddee107f2bf5d5ce878720e71d5a419d8c9ccceb53eceabc0",
+            "size": 4393
+          },
+          "to": {
+            "sha256": "83badc69b38ce1e1a6322d696721eee8b76752717ef362ab24cc05e713571c9f",
+            "size": 4517
+          }
+        },
+        "packs/communication.json": {
+          "from": {
+            "sha256": "d8fe9d6f615530efb013708e5323c9549752324ae9448c3669ae24d924832822",
+            "size": 2748268
+          },
+          "to": {
+            "sha256": "75ec32f3577df44a8d202bee61265cb7859257cce2a9e6959f74ce7cc8cf1ba5",
+            "size": 2754957
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "51d01d11431ab2f2da1e98329dc7bdfe2a35cd285d0d4daabfcbc96735ac491b",
+            "size": 772252
+          },
+          "to": {
+            "sha256": "bd64f9e1f603c4890828d028e2b6d23f433d3c00f6f17399223e55d9a1b3a7ae",
+            "size": 3638954
+          }
+        },
+        "projections/google.json": {
+          "from": {
+            "sha256": "1f24263472af33e7e8656ea166c092e6b4c379108ea3a2640961fa27abd21b84",
+            "size": 26730
+          },
+          "to": {
+            "sha256": "7d5bb60e75fdad221131a0bcb05f8131a8815a1746fc63aabba8e30b3fa7657e",
+            "size": 3095084
+          }
+        },
+        "world.json": {
+          "from": {
+            "sha256": "ed3d681f57d7cfdb08851223da7a11575de16ada79ec52b6483946d8d0c41387",
+            "size": 3596675
+          },
+          "to": {
+            "sha256": "f0aa58f8d0834e5cb7b82605c09d5ba99b862693a7436af1c07dd5d56fd7680b",
+            "size": 3603364
+          }
+        }
+      },
+      "bundle": {
+        "from": {
+          "bundle_sha256": "6aa5ef357779380051739c060a321c4d4ee3ef55eca397fda3f3d2904b5ee669",
+          "bundle_size": 10864640,
+          "content_sha256": "fbbc4f22b6806197e7ebfaa4189c8114ef205137f1cc5da120be41207eae8847"
+        },
+        "to": {
+          "bundle_sha256": "97458bea8335ad4593ae775590d0c25d90cbe79333e0b8eb495ecc4089abaaaa",
+          "bundle_size": 16814080,
+          "content_sha256": "15e89fd2b33b7f4a786d0b062a6bc101a673c41384c5f74ec57c025f3f8b358c"
+        }
+      }
+    },
+    {
+      "id": "consumer.retail-brand",
+      "version": "v1",
+      "source": "worlds/consumer.retail-brand.v1/world.json",
+      "artifact": "dist/consumer.retail-brand.v1",
+      "reason": "Declare Google mailbox owners and custom labels; project every selected source message per owner, preserve Drive content and owner, carry Linear task/project IDs, and seed Gmail arrivals only through Gmail.",
+      "from_source_sha256": "f0400213c9eb990a4f927d6a2d367eed91c38747dbef27959017397e51d73973",
+      "to_source_sha256": "a6d22101acc9a61d0a9f0f9826b4e0b01536f8b825ddac9503996e78db671108",
+      "from_artifact_sha256": "276536644a0d766ddb0d8c2dd5467fb4c38b69f23f04247698e96f6d19b81f8a",
+      "to_artifact_sha256": "9a02f78fe0a2cf9c717f736f699df551f80d838c675d8f773af50d97e8ba2858",
+      "source_files": {
+        "from": {
+          "backbones/marlow-pine.json": {
+            "sha256": "32a6efeb3eec35edf9623674faa1d90ffff343bda25a9315ddf9e2306994e32c",
+            "size": 17123
+          },
+          "packs/retail-operations.json": {
+            "sha256": "1bee5dde1fbdaffa6b53595bd1d4031bbb805b6bbd6dc3e56f33663086ecc967",
+            "size": 154336
+          },
+          "stories/spring-drop.json": {
+            "sha256": "d2ce94866e2ad8e75f7a01cef332d63b5ddee72d64fd710943f0d21f0597fd94",
+            "size": 26008
+          },
+          "world.json": {
+            "sha256": "59e29b13be6ae47c20015683b498d5cb9d031ec6de9289075491e75a66b8dd6e",
+            "size": 1190
+          }
+        },
+        "to": {
+          "backbones/marlow-pine.json": {
+            "sha256": "32a6efeb3eec35edf9623674faa1d90ffff343bda25a9315ddf9e2306994e32c",
+            "size": 17123
+          },
+          "packs/google-mailboxes.json": {
+            "sha256": "e891f8798253d69f36fc825491229f088ed68336d41ad2b6c6a6a3b054b5142b",
+            "size": 5089
+          },
+          "packs/retail-operations.json": {
+            "sha256": "1bee5dde1fbdaffa6b53595bd1d4031bbb805b6bbd6dc3e56f33663086ecc967",
+            "size": 154336
+          },
+          "stories/spring-drop.json": {
+            "sha256": "d2ce94866e2ad8e75f7a01cef332d63b5ddee72d64fd710943f0d21f0597fd94",
+            "size": 26008
+          },
+          "world.json": {
+            "sha256": "7ad19974d141f8b52107d97d5f52d8b770e424d24adf35fb9c2e8e8e3d7b8624",
+            "size": 1225
+          }
+        }
+      },
+      "source_manifest_insertion": ",\n    \"packs/google-mailboxes.json\"",
+      "added_source_file": "packs/google-mailboxes.json",
+      "mailbox_owner_ids": [
+        "iris-mendel",
+        "callum-reid",
+        "sana-devi",
+        "otto-lindqvist",
+        "bea-morrow",
+        "felix-arana",
+        "yuki-tanabe",
+        "mira-halvorsen",
+        "gus-ferreira",
+        "anya-kowalski",
+        "tomas-brekke",
+        "rosa-delgado",
+        "kit-nwosu",
+        "lena-fischer",
+        "harriet-vance",
+        "desmond-oyelaran",
+        "juno-park",
+        "alma-reyes",
+        "bennett-cho",
+        "clara-voight",
+        "dmitri-sokolov",
+        "esme-fontaine",
+        "franklin-obi",
+        "greta-lindholm",
+        "hugo-marchetti",
+        "imogen-bell",
+        "jonas-wirth",
+        "kaia-nakamura",
+        "leo-santoro",
+        "maren-oduya",
+        "nils-bergstrom",
+        "orla-brennan",
+        "paavo-virtanen",
+        "quinn-abara",
+        "rania-haddad",
+        "soren-mikkelsen",
+        "tilda-nyberg",
+        "umberto-rossi",
+        "vera-pahlsson",
+        "wes-agyeman",
+        "zoya-petrosyan"
+      ],
+      "files": {
+        "manifest.json": {
+          "from": {
+            "sha256": "59963c61f34e7df8cf02b8c1e5e9c2d4d708a157996c89520ddc4933006c7dfe",
+            "size": 4641
+          },
+          "to": {
+            "sha256": "be34a7d157fe0dd5ae080f84e8b810dbc4918e5624bcf1f9c31761bfa8e9eac6",
+            "size": 4763
+          }
+        },
+        "packs/communication.json": {
+          "from": {
+            "sha256": "da1be6e8a8b5dc393ee2c7be7b11cd8d1730934fd87c3a4ea3b2a13ac67a8d10",
+            "size": 174302
+          },
+          "to": {
+            "sha256": "0868c8bc6f3693ad7a9691d0a879548f15c6686d302161a873b16b819f3d32c1",
+            "size": 176498
+          }
+        },
+        "projections/emulator-overlay.json": {
+          "from": {
+            "sha256": "fab571d9b963421e5de60f87bdde2d51b4339b9ac4ee9359cbfe59ded1cd55c3",
+            "size": 104555
+          },
+          "to": {
+            "sha256": "aceba2e92ab178208a5815d8fc3316f9ae9ae219eeda125dd5c56ddca001077a",
+            "size": 326495
+          }
+        },
+        "projections/google.json": {
+          "from": {
+            "sha256": "bce35bbd0e4f992ded8598c0b430cc3dbd17583850f7ce842c53152ce070022e",
+            "size": 8250
+          },
+          "to": {
+            "sha256": "b52ccfe06f9da96297572fb82ab3c0925b19c25486fb07ef778d731826dafeb0",
+            "size": 250574
+          }
+        },
+        "world.json": {
+          "from": {
+            "sha256": "beac9c8e64d5e5b443494fd5bf1d0c50e20319d109c3e1c6e6c21e3c24f776bc",
+            "size": 352802
+          },
+          "to": {
+            "sha256": "bf13bbc8cd4a0ef119154c87a66c8719b60b902fc59918b93a141339c1effed0",
+            "size": 354998
+          }
+        }
+      },
+      "bundle": {
+        "from": {
+          "bundle_sha256": "1cc72ca463f6dfe0d9aa0f838d19add550769567600636829c01fd03cc6ff905",
+          "bundle_size": 1136640,
+          "content_sha256": "276536644a0d766ddb0d8c2dd5467fb4c38b69f23f04247698e96f6d19b81f8a"
+        },
+        "to": {
+          "bundle_sha256": "5a4c0a990d0999ba982b2a02d95f739053c3c0e44da13df7d70fe3bd079d598f",
+          "bundle_size": 1607680,
+          "content_sha256": "9a02f78fe0a2cf9c717f736f699df551f80d838c675d8f773af50d97e8ba2858"
+        }
+      }
+    }
+  ]
+}

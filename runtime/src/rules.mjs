@@ -5,15 +5,13 @@
 // run arbitrary scripts. Behaviour that needs code belongs in a service or a
 // target adapter.
 //
-// WHAT IS DELIBERATELY MISSING, because the extraction measured why. A rule that
-// reacts to a change a service made on its own needs a durable change journal to
-// read it out of, and `GET /_worldfixture/changes` exists in no service. So this
-// engine only fires on events the RUNTIME ITSELF ORIGINATED -- a command the CLI
-// or the API submitted, whose provider evidence came back from the provider
-// call. For those there is nothing to catch up on after a restart: the runtime
-// was the writer. Rules over service-originated changes wait for the cursor
-// contract, and `originated` below is where that limit is enforced rather than
-// assumed.
+// queueEffects checks the persisted causal chain before it calls this rule
+// interpreter. The chain must reach a runtime command. A service change without
+// that chain cannot start a rule through the runtime queue.
+
+import { readFileSync } from 'node:fs';
+import { validate } from './schema.mjs';
+const RULE_SCHEMA = JSON.parse(readFileSync(new URL('../../schemas/causal-rule.v1.schema.json', import.meta.url), 'utf8'));
 
 export class RuleError extends Error {
   constructor(code, message, detail = {}) {
@@ -29,7 +27,9 @@ export function parseDelay(value) {
   if (value === undefined) return 0;
   const match = String(value).match(/^(\d+)(ms|s|m)$/);
   if (!match) throw new RuleError("bad_delay", `"${value}" is not a delay; use 500ms, 5s or 2m`, { value });
-  return Number(match[1]) * { ms: 1, s: 1_000, m: 60_000 }[match[2]];
+  const delay = Number(match[1]) * { ms: 1, s: 1_000, m: 60_000 }[match[2]];
+  if (!Number.isSafeInteger(delay) || delay > 7 * 24 * 60 * 60 * 1000) throw new RuleError("bad_delay", "Rule delay must be at most seven days");
+  return delay;
 }
 
 // Resolve one `copy` or `lookup` term against the event and the world.
@@ -83,6 +83,7 @@ export function applyRules(rules, event, { world }) {
   const emissions = [];
 
   for (const rule of rules) {
+    if (rule.execution === "descriptive") continue;
     if (rule.when !== event.type) continue;
 
     const missing = (rule.requires ?? []).filter(
@@ -104,17 +105,20 @@ export function applyRules(rules, event, { world }) {
   return emissions;
 }
 
-// Only a fact the runtime itself produced may drive a rule.
-//
-// A service-originated change would need the change journal no service offers,
-// and a rule that fired on one would silently miss everything that happened
-// while the runtime was not watching. Refusing is the honest behaviour; a rule
-// that "mostly" fires is worse than one that does not exist.
-export function originated(event) {
-  return Boolean(event.caused_by?.startsWith("cmd_"));
-}
-
-export function eligible(rules, event, { world }) {
-  if (!originated(event)) return [];
-  return applyRules(rules, event, { world });
+export function validateExecutableRules(rules) {
+  const errors = [], ids = new Set();
+  for (const rule of rules ?? []) {
+    if (!rule || typeof rule !== 'object') { errors.push('Rule must be an object'); continue; }
+    if (ids.has(rule.id)) errors.push(`Repeated rule ID ${rule.id}`);
+    ids.add(rule.id);
+    if (rule.execution === 'descriptive') {
+      if (typeof rule.reason !== 'string' || !rule.reason.trim()) errors.push(`Descriptive rule ${rule.id} needs a reason`);
+      continue;
+    }
+    errors.push(...validate(rule, RULE_SCHEMA).map(error => `Rule ${rule.id}: ${error}`));
+    for (const emission of rule.emit ?? []) {
+      try { parseDelay(emission.after); } catch (error) { errors.push(`Rule ${rule.id}: ${error.message}`); }
+    }
+  }
+  return errors;
 }

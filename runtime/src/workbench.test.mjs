@@ -1,27 +1,79 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { createServer } from "node:http";
 import test from "node:test";
 import { join } from "node:path";
+import { openState } from "./state.mjs";
 
 import {
-  atlasDatabaseView,
   sanitizeNotionInspection,
   sanitizePublicBindings,
   providerBrowserUrl,
   providerOverview,
-  publicTwilioProjection,
   linearOverview,
   twilioOverview,
   selectNotionWebhookReveal,
   slackChannelTopic,
   startWorkbench,
-  stripePricesWithInterval,
   workbenchWebhookSecretRevealEnabled,
 } from "./workbench.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 const CREDENTIALS = { values: { "token:slack_token": randomBytes(24).toString("hex") } };
+
+test("Gmail reads use the selected declared mailbox credential", async () => {
+  const tokens = [];
+  const provider = createServer((request, response) => {
+    tokens.push(request.headers.authorization);
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ messages: [], resultSizeEstimate: 0 }));
+  });
+  await new Promise(resolve => provider.listen(0, "127.0.0.1", resolve));
+  const instance = { state: { prepare: () => ({ get: () => ({ seq: 0 }) }) },
+    credentials: { values: { ...CREDENTIALS.values, "token:google_token_noor-alvarez": "noor-only" } },
+    applicationBindings: { GOOGLE_BASE_URL: `http://127.0.0.1:${provider.address().port}`, GOOGLE_TOKEN: "primary-only" } };
+  const workbench = await startWorkbench(instance, { artifactPath: join(ROOT, "dist/business.saas-company.v2"), stateDir: ROOT });
+  try {
+    const result = await fetch(`${workbench.url}/api/provider/gmail?person_id=noor-alvarez`);
+    assert.equal(result.status, 200);
+    assert.match((await result.json()).email, /^noor/);
+    assert.deepEqual(tokens, ["Bearer noor-only", "Bearer noor-only"]);
+    const invalid = await fetch(`${workbench.url}/api/provider/gmail?person_id=not-a-world-person`);
+    assert.equal(invalid.status, 500);
+    assert.equal(tokens.length, 2);
+  } finally { await workbench.close(); await new Promise(resolve => provider.close(resolve)); }
+});
+
+test("Workbench payment amounts use explicit currency minor units without a USD minimum", async () => {
+  const forms = [];
+  const provider = createServer(async (request, response) => {
+    let raw = ""; for await (const chunk of request) raw += chunk;
+    forms.push(Object.fromEntries(new URLSearchParams(raw)));
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ id: "pi_one_yen", amount: 1, currency: "jpy", status: "succeeded" }));
+  });
+  await new Promise(resolve => provider.listen(0, "127.0.0.1", resolve));
+  const directory = mkdtempSync(join(tmpdir(), "wf-workbench-payment-"));
+  const state = openState(join(directory, "state.sqlite"));
+  const workbench = await startWorkbench({ state, credentials: CREDENTIALS,
+    applicationBindings: { STRIPE_BASE_URL: `http://127.0.0.1:${provider.address().port}`, STRIPE_TOKEN: "local-stripe" } },
+  { artifactPath: join(ROOT, "dist/business.saas-company.v2"), stateDir: directory });
+  const send = value => fetch(`${workbench.url}/api/actions/stripe-payment`, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ person_id: "maya-chen", ...value }) });
+  try {
+    for (const value of [{ amount_cents: 1 }, { amount_cents: 0, currency: "jpy" }, { amount_cents: 1.5, currency: "usd" }, { amount_cents: Number.MAX_SAFE_INTEGER + 1, currency: "usd" }]) {
+      assert.equal((await send(value)).status, 400);
+    }
+    assert.equal(forms.length, 0);
+    const accepted = await send({ amount_cents: 1, currency: "JPY" });
+    assert.equal(accepted.status, 200);
+    const result = await accepted.json();
+    assert.equal(result.event.provider_evidence.currency, "jpy");
+    assert.equal(forms[0].amount, "1"); assert.equal(forms[0].currency, "jpy");
+  } finally { await workbench.close(); state.close(); rmSync(directory, { recursive: true, force: true }); await new Promise(resolve => provider.close(resolve)); }
+});
 
 test("a reduced world does not report omitted services or projection-only Microsoft data", async () => {
   const result = await providerOverview({ MICROSOFT_BASE_URL: "http://127.0.0.1:1" }, join(ROOT, "dist/business.saas-company.v3"), {
@@ -76,18 +128,6 @@ test("provider links use the active browser binding and keep their resource path
   );
 });
 
-test("Twilio browser data does not contain account, API key, or verification secrets", () => {
-  const result = publicTwilioProjection({
-    account: { sid: "AC123", friendly_name: "Test", auth_token: "account-secret" },
-    api_keys: [{ sid: "SK123", secret: "api-key-secret" }],
-    verify_services: [{ sid: "VA123", friendly_name: "Sign-in", code: "123456" }],
-  });
-  assert.deepEqual(result.account, { sid: "AC123", friendly_name: "Test" });
-  assert.equal(result.api_keys, undefined);
-  assert.equal(result.verify_services[0].code, undefined);
-  assert.doesNotMatch(JSON.stringify(result), /secret|123456/);
-});
-
 test("Linear Workbench data comes from the live GraphQL API", async () => {
   const provider = createServer(async (request, response) => {
     let requestBody = "";
@@ -95,14 +135,15 @@ test("Linear Workbench data comes from the live GraphQL API", async () => {
     assert.equal(request.url, "/graphql");
     assert.equal(request.method, "POST");
     assert.equal(request.headers.authorization, "Bearer linear-token");
-    assert.match(JSON.parse(requestBody).query, /issues\(first: 100\)/);
+    assert.match(JSON.parse(requestBody).query, /WorldFixtureWorkbench/);
     response.writeHead(200, { "content-type": "application/json" });
     response.end(JSON.stringify({ data: {
       organization: { id: "org-1", name: "Example" },
-      teams: { nodes: [{ id: "team-1", name: "Engineering", key: "ENG" }] },
+      teams: { nodes: [{ id: "team-1", name: "Engineering", key: "ENG" }], pageInfo: { hasNextPage: false } },
+      workflowStates: { nodes: [{ id: "state-1", name: "Under review", type: "started" }], pageInfo: { hasNextPage: false } },
       issues: { nodes: [{ id: "issue-1", identifier: "ENG-1", title: "Live issue",
-        state: { name: "In Progress" }, assignee: { name: "Maya", email: "maya@example.test" },
-        labels: { nodes: [{ name: "release" }] } }] },
+        state: { id: "state-1", name: "Under review", type: "started" }, assignee: { name: "Maya", email: "maya@example.test" },
+        labels: { nodes: [{ name: "release" }] } }], pageInfo: { hasNextPage: false } },
     } }));
   });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
@@ -112,7 +153,7 @@ test("Linear Workbench data comes from the live GraphQL API", async () => {
     });
     assert.equal(result.teams[0].key, "ENG");
     assert.deepEqual(result.issues[0], {
-      id: "issue-1", identifier: "ENG-1", title: "Live issue", state: "In Progress",
+      id: "issue-1", identifier: "ENG-1", title: "Live issue", state: { id: "state-1", name: "Under review", type: "started" },
       assignee: "maya@example.test", labels: ["release"],
     });
   } finally {
@@ -125,12 +166,12 @@ test("Twilio Workbench data uses Basic auth and live REST lists", async () => {
     assert.equal(request.headers.authorization, `Basic ${Buffer.from("AC123:auth-secret").toString("base64")}`);
     const bodies = {
       "/2010-04-01/Accounts/AC123.json": { sid: "AC123", friendly_name: "Example" },
-      "/2010-04-01/Accounts/AC123/IncomingPhoneNumbers.json": { incoming_phone_numbers: [{ sid: "PN1" }] },
-      "/messaging/v1/Services": { services: [{ sid: "MG1" }] },
-      "/verify/v2/Services": { services: [{ sid: "VA1" }] },
+      "/2010-04-01/Accounts/AC123/IncomingPhoneNumbers.json": { incoming_phone_numbers: [{ sid: "PN1" }], page: 0, next_page_uri: null },
+      "/messaging/v1/Services": { services: [{ sid: "MG1" }], page: 0, next_page_uri: null },
+      "/verify/v2/Services": { services: [{ sid: "VA1" }], page: 0, next_page_uri: null },
     };
-    response.writeHead(bodies[request.url] ? 200 : 404, { "content-type": "application/json" });
-    response.end(JSON.stringify(bodies[request.url] ?? { message: "missing" }));
+    response.writeHead(bodies[new URL(request.url, "http://local.test").pathname] ? 200 : 404, { "content-type": "application/json" });
+    response.end(JSON.stringify(bodies[new URL(request.url, "http://local.test").pathname] ?? { message: "missing" }));
   });
   await new Promise((resolve) => provider.listen(0, "127.0.0.1", resolve));
   try {
@@ -229,66 +270,54 @@ test("Workbench enforces the reveal switch and sends no-store reveal responses",
   }
 });
 
-// Closes: a channel whose topic the emulator reports as an empty string kept
-// the empty string instead of falling through to the world's declared topic.
-// The read was `channel.topic?.value ?? channel.topic ?? declared.topic`, and
-// `??` does not fall back over "". The middle branch was unreachable as well:
-// the emulator always emits `topic` as an object, so it could only ever have
-// rendered the object itself.
-test("a blank provider channel topic falls through to the topic the world declares", () => {
+test("a cleared provider topic stays empty instead of restoring the authored topic", () => {
   const declared = { name: "general", topic: "Company updates and questions for everyone" };
-  assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, declared), declared.topic);
+  assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, declared), "");
   assert.equal(slackChannelTopic({ name: "general", topic: { value: "Release 3.2" } }, declared), "Release 3.2");
   assert.equal(slackChannelTopic({ name: "general" }, declared), declared.topic);
-  assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, undefined), undefined);
+  assert.equal(slackChannelTopic({ name: "general", topic: { value: "" } }, undefined), "");
 });
 
-// Closes: the product catalogue printed the literal word "recurring" in its
-// INTERVAL column. `GET /v1/prices` answers `type: "recurring"` and carries no
-// `recurring` object, while the same provider returns the complete price --
-// `recurring: {interval: "month"}` -- inside a subscription item.
-test("a listed Stripe price takes its billing interval from the provider's expanded copy", () => {
-  const listed = [
-    { id: "price_elmgrove", product: "prod_team", currency: "usd", unit_amount: 45700, type: "recurring" },
-    { id: "price_unsubscribed", product: "prod_team", currency: "usd", unit_amount: 1000, type: "recurring" },
-    { id: "price_setup", product: "prod_setup", currency: "usd", unit_amount: 500, type: "one_time" },
-  ];
-  const subscriptions = [
-    { id: "sub_elmgrove", items: { data: [{ price: { id: "price_elmgrove", recurring: { interval: "month", interval_count: 1 } } }] } },
-  ];
-  const [team, unsubscribed, setup] = stripePricesWithInterval(listed, subscriptions);
-  assert.equal(team.recurring.interval, "month");
-  assert.equal(team.unit_amount, 45700);
-  // A price the provider never expands stays blank rather than borrowing an
-  // interval the API would not confirm.
-  assert.equal(unsubscribed.recurring, undefined);
-  assert.equal(setup.recurring, undefined);
-  assert.equal(stripePricesWithInterval(undefined, undefined).length, 0);
+test("the Workbench overview preserves a live topic clear on its next provider read", async t => {
+  let topic = "Authored topic";
+  const provider = createServer((request, response) => {
+    const body = request.url === "/api/conversations.list"
+      ? { channels: [{ id: "C_TOPIC", name: "general", topic: { value: topic } }] }
+      : request.url === "/api/conversations.history" ? { messages: [] } : { members: [] };
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ ok: true, response_metadata: { next_cursor: "" }, ...body }));
+  });
+  await new Promise(resolve => provider.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => provider.close(resolve)));
+  const bindings = { SLACK_BASE_URL: `http://127.0.0.1:${provider.address().port}`, SLACK_TOKEN: "topic-test-token" };
+  const world = { communication: { channels: [{ id: "source-channel", name: "general", topic }] } };
+  assert.equal((await providerOverview(bindings, ROOT, world)).slack.channels[0].topic, topic);
+  topic = "";
+  assert.equal((await providerOverview(bindings, ROOT, world)).slack.channels[0].topic, "");
 });
 
-// Closes: the Atlas data explorer rendered blank card titles and "No
-// collections" for a database that really holds four. The databases route
-// answers `{databaseName}` with no `name` and no `collections`; the collections
-// live on their own route and arrive as `{collectionName, databaseName}`.
-test("an Atlas database carries the name and collections the data explorer reads", () => {
-  const view = atlasDatabaseView({ databaseName: "northstar" }, { name: "northstar-production" }, [
-    { collectionName: "customers", databaseName: "northstar" },
-    { collectionName: "invoices", databaseName: "northstar" },
-  ]);
-  assert.equal(view.name, "northstar");
-  assert.equal(view.cluster, "northstar-production");
-  assert.deepEqual(view.collections, ["customers", "invoices"]);
-  // What Atlas really sent stays on the record so the drawer does not lie.
-  assert.equal(view.databaseName, "northstar");
-  // The React key used to degrade to "northstar-production-undefined".
-  assert.equal(`${view.cluster}-${view.name}`, "northstar-production-northstar");
-  assert.deepEqual(atlasDatabaseView({ databaseName: "northstar" }, { name: "c" }).collections, []);
+
+test("the Workbench overview keeps the Slack count unknown when a live history read fails", async t => {
+  const provider = createServer((request, response) => {
+    if (request.url === "/api/conversations.history") {
+      response.writeHead(503, { "content-type": "application/json" });
+      return response.end(JSON.stringify({ error: "history unavailable" }));
+    }
+    const value = request.url === "/api/conversations.list"
+      ? { channels: [{ id: "C_FAILED_HISTORY", name: "general" }] } : { members: [] };
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ ok: true, response_metadata: { next_cursor: "" }, ...value }));
+  });
+  await new Promise(resolve => provider.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => provider.close(resolve)));
+  const result = await providerOverview({ SLACK_BASE_URL: `http://127.0.0.1:${provider.address().port}`, SLACK_TOKEN: "history-test-token" }, ROOT, {});
+  assert.equal(result.slack.status, "partial");
+  assert.equal(result.slack.messageCount, null);
+  assert.equal(result.slack.channels[0].messageCount, null);
+  assert.equal(result.slack.collectionStatus.messageCount.status, "failed");
+  assert.match(result.slack.error, /503/);
 });
 
-// Closes: every Slack message was attributed to a raw member id. History
-// carries `user` and no `user_name`, and the world's own `slack_id` values are
-// in an id space the emulator never issues, so the name has to come from the
-// provider's `users.list`.
 test("Slack history names its authors from the provider's own member list", async () => {
   let userListReads = 0;
   const provider = createServer(async (request, response) => {

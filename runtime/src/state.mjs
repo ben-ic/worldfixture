@@ -14,7 +14,7 @@ import { DatabaseSync } from "node:sqlite";
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 // `strict` catches a column written with the wrong type at insert time rather
 // than at read time, which for an append-only log is the difference between a
@@ -64,12 +64,36 @@ CREATE TABLE IF NOT EXISTS commands (
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS scheduled_events (
-  id TEXT PRIMARY KEY,
+  seq INTEGER PRIMARY KEY AUTOINCREMENT,
+  id TEXT NOT NULL UNIQUE,
   due_at INTEGER NOT NULL,
   type TEXT NOT NULL,
   payload TEXT NOT NULL,
   caused_by TEXT,
-  delivered_at INTEGER
+  delivered_at INTEGER,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','in_flight','delivered','failed','skipped','uncertain')),
+  attempted_at INTEGER,
+  completed_at INTEGER,
+  command_id TEXT,
+  event_id TEXT,
+  error TEXT
+) STRICT;
+
+-- Preserved across provider reset: the application owns its data and receipts.
+CREATE TABLE IF NOT EXISTS connector_receipts (
+  event_id TEXT PRIMARY KEY,
+  target TEXT NOT NULL,
+  envelope TEXT NOT NULL,
+  payload_fingerprint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  receipt TEXT
+) STRICT;
+CREATE TABLE IF NOT EXISTS timeline_cycle (
+  id INTEGER PRIMARY KEY CHECK(id = 1),
+  enabled INTEGER NOT NULL DEFAULT 0,
+  cycle INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'idle',
+  error TEXT
 ) STRICT;
 CREATE INDEX IF NOT EXISTS scheduled_events_due ON scheduled_events(due_at) WHERE delivered_at IS NULL;
 

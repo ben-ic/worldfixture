@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/domain-event.v1.schema.json",
+  "title": "Accepted domain mutation event",
+  "type": "object",
+  "required": [
+    "api_version",
+    "id",
+    "seq",
+    "type",
+    "collection",
+    "record_id",
+    "actor_id",
+    "occurred_at",
+    "world",
+    "provenance",
+    "before",
+    "after"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "api_version": {
+      "const": "worldfixture.domain-event/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^domain-event-[1-9][0-9]*$"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "type": {
+      "enum": [
+        "domain.record.created.v1",
+        "domain.record.updated.v1",
+        "domain.record.deleted.v1",
+        "commerce.order.placed.v1"
+      ]
+    },
+    "collection": {
+      "type": "string"
+    },
+    "record_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actor_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "world": {
+      "type": "object",
+      "required": [
+        "id",
+        "version"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "service",
+        "artifact_sha256",
+        "record_version",
+        "write_scope",
+        "provider_sync"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "service": {
+          "const": "domain"
+        },
+        "artifact_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "record_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "write_scope": {
+          "const": "domain-only"
+        },
+        "provider_sync": {
+          "const": false
+        }
+      }
+    },
+    "before": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "after": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}

@@ -31,18 +31,42 @@ summary. It does not replace these two columns.
 | [Notion](./notion.md#what-works) | Pinned 61-operation REST, 39-operation Admin, 13-method Agent, 31-event webhook, Workers, and 41-tool MCP inventories. Workbench uses shared state. | Other API versions, hosted Workers behavior, external webhook delivery, and hosted MCP result parity. | Named inventories are **Supported and contract-tested**; `@notionhq/client` 5.26.0 and `@notionhq/workers` 0.9.0 are tested |
 | [Linear](./linear.md) | Selected GraphQL reads and mutations for issues, comments, labels, webhooks, and agents. Workbench reads live GraphQL state. | Complete GraphQL schema, strict authorization, production webhook delivery, and official SDK proof. | Route source and Workbench tests; no route-contract or official SDK test |
 | [Microsoft](./microsoft.md) | OAuth, `/me`, and one-user Graph reads. | Graph list and write APIs. The Workbench provider view is **Not supported**. | Focused local tests; no official SDK test |
-| [Apple](./apple.md) | OAuth discovery, authorization, grant, refresh, and revoke. | PKCE, client-secret validation, account events, and official SDK proof. | Focused local tests; no official SDK test |
+| [Apple](./apple.md) | OAuth discovery, authorization, grant, refresh, and revoke. | Account events, complete production consent behavior, and official SDK proof. | Focused local tests; no official SDK test |
 | [Okta](./okta.md) | Named user, group, app, authorization-server, and OAuth operations. Workbench reads live state. | `SSWS`, complete scope enforcement, hooks, and broad management API. | Focused local tests; no official SDK test |
 | [Clerk](./clerk.md) | Named user, email, organization, membership, invitation, and session operations. Workbench reads live state. | Webhooks and broad Backend API. | Focused local tests; no official SDK test |
 | [Vercel](./vercel.md) | Named team, project, deployment, domain, environment, Blob, and OAuth operations. Workbench reads live state. | Webhook API and official SDK proof. | Focused local tests; no official SDK contract test |
 | [MongoDB Atlas](./mongodb-atlas.md) | Named project, cluster, database-user, and retired Data API operations. Workbench reads Admin state. | Production auth and versioned `Accept` rules. The implemented Data API is retired. | Focused local tests; no official SDK test |
-| [AWS IAM, SQS, and STS](./aws.md) | None in a resolved run. | The resolver rejects the conflicting AWS listener. | **Not supported** |
+| [AWS IAM, SQS, and STS](./aws.md) | Named local Query API actions with run bearer credentials. | No AWS SDK/SigV4 authentication or production IAM policy evaluation. | Operator, route, authentication, and reset tests; **Supported but partial** |
 | [Stripe](./stripe.md#worldfixture-billing-route-reference) | Named customer, catalog, checkout, invoice, subscription, and payment operations. Workbench has selected writes. | Broad Stripe API and authentication enforcement. | Named branches are **Supported and contract-tested** with `stripe` 22.6.1 |
 | [Twilio](./twilio.md#core-route-reference) | Named message, call, phone-number, Verify, and Conversations operations. Workbench reads live REST state. | Complete Twilio API and official SDK proof. | Route tests; no official SDK or production recording test |
 | [Resend](./resend.md) | Named email, domain, API-key, audience, and old audience-contact operations. Workbench reads live state. | Current global Contact API and authentication enforcement. | Focused local tests; no official SDK test |
-| [S3](./s3.md) | Core bucket and object reads, put, and delete. Workbench lists and puts objects. | Authentication enforcement; multipart has no contract test. | Core object operations are **Supported and contract-tested** |
+| [S3](./s3.md) | Exact bucket listing, object reads, put, and delete with run SigV4 credentials. Workbench lists and puts objects. | Native multipart has no contract test. | Core object operations and signature enforcement are **Supported and contract-tested** |
 | [Local Mail](./local-mail.md) | Named SMTP delivery and IMAP mailbox operations. Workbench reads and sends mail. | TLS, `STARTTLS`, SMTP `AUTH`, network relay, and complete IMAP proof. | Named IMAP subset is **Supported and contract-tested** |
 | [PostgreSQL and MariaDB](./databases.md) | Real wire services. Named MariaDB CRUD and reset persistence. PostgreSQL connection and authentication. | PostgreSQL CRUD proof, complete SQL semantics, events, and Workbench database browser. | Named protocol operations are **Supported and contract-tested** |
+
+## Local request limits
+
+WorldFixture sets the emulate.dev core request budget to **100,000 per token
+per provider server per hour**. Gmail, Calendar, and Drive share the Google
+server and its budget. Anonymous requests share a separate anonymous budget.
+The Notion API also uses this core budget. Its separate MCP and search limits
+are unchanged. S3, Local Mail, HTTP targets, and databases do not use this
+core limiter. Responses served before core middleware are outside this budget.
+
+This is a local demo limit, not a reproduction of production-provider quotas.
+The response headers report `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and
+`X-RateLimit-Reset` (Unix seconds). The pinned upstream limiter returns HTTP
+`403` when the remaining count reaches zero, including the request that uses
+the last count. Its existing cutoff behavior is unchanged.
+
+The higher budget requires an image built from this source. An existing
+container or older image keeps its previous limit. Restarting an application
+alone does not change the provider limit.
+
+The version-checked patch is in
+[`patch-core-rate-limit.mjs`](../../emulators/emulate/scripts/patch-core-rate-limit.mjs).
+[`core-rate-limit.test.mjs`](../../emulators/emulate/src/core-rate-limit.test.mjs)
+tests the cutoff, separate tokens, hourly recovery, and unchanged authentication.
 
 ## Official SDK proof
 

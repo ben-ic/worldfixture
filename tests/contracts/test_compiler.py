@@ -32,6 +32,8 @@ class WorldCompilerTest(unittest.TestCase):
                 "world.json",
                 "backbones/northstar-relay.json",
                 "packs/saas-operations.json",
+                "packs/google-mailboxes.json",
+                "packs/finance-settlements.json",
                 "stories/lumen-renewal.json",
                 "stories/release-28.json",
                 "stories/theo-onboarding.json",
@@ -147,6 +149,52 @@ class WorldCompilerTest(unittest.TestCase):
         self.assertEqual(google_user["email"], github_user["email"])
         self.assertEqual(google_user["email"], mail_user["email"])
 
+    def test_google_calendar_projection_uses_upstream_seed_fields(self) -> None:
+        for source in (SOURCE, ROOT / "worlds/business.saas-company.v3/world.json",
+                       ROOT / "worlds/consumer.retail-brand.v1/world.json"):
+            with self.subTest(source=source):
+                world = load_world(source)[0]
+                original = copy.deepcopy(world["communication"])
+                projected = compile_world(world)["projections"]["google"]
+                primary_email = next(person["email"] for person in world["people"] if person.get("primary"))
+                for calendar in projected["calendars"]:
+                    authored = next(item for item in original["calendars"] if item["id"] == calendar["id"])
+                    self.assertEqual(authored["name"], calendar["summary"])
+                    self.assertEqual(primary_email, calendar["user_email"])
+                    self.assertNotIn("name", calendar)
+                for event in projected["calendar_events"]:
+                    authored = next(item for item in original["calendar_events"] if item["id"] == event["id"])
+                    self.assertEqual(authored["start"], event["start_date_time"])
+                    self.assertEqual(authored["end"], event["end_date_time"])
+                    self.assertEqual(authored["calendar_id"], event["calendar_id"])
+                    self.assertEqual(authored["attendees"], [item["email"] for item in event["attendees"]])
+                    self.assertNotIn("start", event)
+                    self.assertNotIn("end", event)
+                self.assertEqual(original, world["communication"])
+
+    def test_google_calendar_projection_keeps_dynamic_names_and_all_day_dates(self) -> None:
+        from worldfixture_compiler.compiler import _google_projection
+
+        world = source_world()
+        next(person for person in world["people"] if person.get("primary"))["email"] = "owner@custom.test"
+        world["communication"]["calendars"] = [
+            {"id": "custom-calendar", "title": "A different team", "user_email": "owner@custom.test"},
+            {"id": "native-calendar", "summary": "Provider-native summary", "primary": True},
+        ]
+        world["communication"]["calendar_events"] = [{
+            "id": "custom-day", "calendar_id": "custom-calendar", "summary": "A different event",
+            "start": "2026-09-08", "end": {"date": "2026-09-09"},
+            "attendees": [{"email": "guest@custom.test", "display_name": "Guest"}],
+        }]
+        projected = _google_projection(world, [])
+        self.assertEqual("A different team", projected["calendars"][0]["summary"])
+        self.assertEqual("Provider-native summary", projected["calendars"][1]["summary"])
+        event = projected["calendar_events"][0]
+        self.assertEqual("owner@custom.test", event["user_email"])
+        self.assertEqual("2026-09-08", event["start_date"])
+        self.assertEqual("2026-09-09", event["end_date"])
+        self.assertEqual("Guest", event["attendees"][0]["display_name"])
+
     def test_lumen_story_crosses_mail_chat_finance_model_and_agent(self) -> None:
         compiled = compile_world(source_world())
         world = compiled["world"]
@@ -212,52 +260,26 @@ class WorldCompilerTest(unittest.TestCase):
         self.assertIn("finance.bank-transaction.created", rule["emits"])
         self.assertNotIn("fraud", json.dumps(compiled["projections"]))
 
-    def test_http_targets_tell_the_same_company_story(self) -> None:
-        targets = compile_world(source_world())["projections"]["http-targets"]
-
+    def test_http_targets_preserve_the_authored_site(self) -> None:
+        source, _ = load_world(ROOT / "worlds/business.saas-company.v3/world.json")
+        targets = compile_world(source)["projections"]["http-targets"]
         self.assertEqual("worldfixture.http-targets/v1", targets["api_version"])
-        self.assertEqual("Northstar Relay", targets["organization"]["name"])
-        feed_items = targets["feeds"][0]["items"]
-        self.assertEqual(6, len(feed_items))
-        self.assertEqual(
-            [90, 20, 540],
-            [item["available_after_seconds"] for item in feed_items[3:]],
-        )
-        self.assertEqual(
-            "The 48k sample completed; the scheduled 52k run failed again.",
-            feed_items[3]["summary"],
-        )
-        self.assertEqual(
-            [200, 200, 503, 200],
-            next(item for item in targets["probes"] if item["mode"] == "flapping")["statuses"],
-        )
-        self.assertEqual(
-            41200,
-            next(
-                item
-                for item in targets["metrics"]
-                if item["name"] == "northstar_lumen_invoice_cents"
-            )["value"],
-        )
+        self.assertEqual(source["site"]["pages"], targets["pages"])
+        self.assertEqual(source["site"]["probes"], targets["probes"])
+        self.assertEqual([row["id"] for row in source["site"]["feed"]["items"]], [row["id"] for row in targets["feeds"][0]["items"]])
         self.assertIn("/api/v1/status", targets["api"]["document"]["paths"])
-        lumen = next(page for page in targets["pages"] if page["path"] == "/notes/lumen-export")
-        self.assertIn("Invoice 4471 is open", lumen["sections"][0]["body"])
-        self.assertNotIn("fix is merged", json.dumps(targets).lower())
 
     def test_http_target_arrivals_use_the_timeline_schedule(self) -> None:
-        source = source_world()
-        expected = {
-            "arrival-priya-sample-result": 91,
-            "arrival-lucas-load-test": 242,
-            "arrival-lumen-payment": 543,
-        }
-
+        source, _ = load_world(ROOT / "worlds/business.saas-company.v3/world.json")
         for event in source["timeline"]:
-            if event["id"] in expected:
-                event["after_seconds"] = expected[event["id"]]
-
+            event["after_seconds"] += 37
+        arrivals = {row["id"]: row["after_seconds"] for row in source["timeline"]}
         feed_items = compile_world(source)["projections"]["http-targets"]["feeds"][0]["items"]
-        self.assertEqual(list(expected.values()), [item["available_after_seconds"] for item in feed_items[3:]])
+        for authored, actual in zip(source["site"]["feed"]["items"], feed_items, strict=True):
+            if "arrival_id" in authored:
+                self.assertEqual(arrivals[authored["arrival_id"]], actual["available_after_seconds"])
+            else:
+                self.assertNotIn("available_after_seconds", actual)
 
     def test_rebase_moves_history_that_sits_far_from_the_anchor(self) -> None:
         """A world's whole history moves, not just the part near the anchor.
@@ -276,8 +298,7 @@ class WorldCompilerTest(unittest.TestCase):
         wherever it sits. Prose keeps the window.
         """
         source = ROOT / "worlds/business.saas-company.v3/world.json"
-        if not source.is_file():
-            self.skipTest("no v3 world source")
+        self.assertTrue(source.is_file(), "required v3 world source is missing")
 
         world, _provenance = load_world(source)
         original_anchor = datetime.fromisoformat(world["clock"]["anchor"].replace("Z", "+00:00"))
@@ -340,27 +361,27 @@ class WorldCompilerTest(unittest.TestCase):
             overlay["tokens"]["notion_token_jon-bell"]["login"],
         )
         self.assertIn("interact:agents", overlay["tokens"]["notion_token_jon-bell"]["scopes"])
-        self.assertEqual("maya@northstar-relay.worldfixture.test", overlay["tokens"]["apple_token"]["login"])
-        self.assertEqual("mayac", overlay["tokens"]["mongoatlas_token"]["login"])
+        self.assertNotIn("apple_token", overlay["tokens"])
+        self.assertNotIn("mongoatlas", overlay)
         self.assertNotIn("worldfixture_entity_refs", overlay["google"]["messages"][0])
         self.assertEqual(
             {"name", "real_name", "email", "profile", "presence"},
             set(overlay["slack"]["users"][0]),
         )
         self.assertEqual(
-            {"owner", "name", "description", "language", "topics", "auto_init", "issues"},
+            {"owner", "name", "description", "language", "topics", "auto_init", "issues", "collaborators"},
             set(overlay["github"]["repos"][0]),
         )
         self.assertEqual(14, len(overlay["linear"]["issues"]))
         self.assertEqual("Northstar Relay", overlay["clerk"]["organizations"][0]["name"])
         self.assertEqual("Northstar Relay", overlay["vercel"]["teams"][0]["name"])
         self.assertEqual(4, len(overlay["stripe"]["customers"]))
-        self.assertEqual("Northstar Relay", overlay["twilio"]["account"]["friendly_name"])
+        self.assertNotIn("twilio", overlay)
         # Buckets belong to the S3 service, not the AWS vendor. See
         # `test_the_aws_overlay_yields_s3_to_the_service_that_owns_it`.
         self.assertNotIn("s3", overlay["aws"])
         self.assertEqual(4, len(overlay["resend"]["contacts"]))
-        self.assertEqual("Northstar Relay", overlay["mongoatlas"]["projects"][0]["name"])
+        self.assertNotIn("mongoatlas", overlay)
         self.assertEqual("Northstar Relay", overlay["notion"]["workspace"]["name"])
         self.assertEqual(
             {"bucket": "northstar-relay-documents", "prefix": "notion/uploads"},
@@ -376,7 +397,12 @@ class WorldCompilerTest(unittest.TestCase):
         self.assertEqual("status", project_page["properties"]["Status"]["type"])
         self.assertEqual("people", project_page["properties"]["Owner"]["type"])
         self.assertEqual("date", project_page["properties"]["Target"]["type"])
-        self.assertNotIn("worldfixture_task_id", overlay["linear"]["issues"][0])
+        self.assertEqual(1, overlay["google"]["worldfixture_seed_version"])
+        self.assertEqual(1, overlay["linear"]["worldfixture_seed_version"])
+        self.assertEqual(
+            {task["id"] for task in source_world()["work"]["tasks"]},
+            {issue["worldfixture_task_id"] for issue in overlay["linear"]["issues"]},
+        )
 
     def test_notion_identifiers_are_stable_inside_a_world_and_distinct_between_worlds(self) -> None:
         first_world = source_world()
@@ -428,14 +454,13 @@ class WorldCompilerTest(unittest.TestCase):
         linear_maya = next(user for user in projections["linear"]["users"] if user["worldfixture_person_id"] == "maya-chen")
         vercel_maya = projections["vercel"]["users"][0]
         microsoft_maya = next(user for user in projections["microsoft"]["users"] if user["worldfixture_person_id"] == "maya-chen")
-        apple_maya = projections["apple"]["users"][0]
 
         self.assertEqual(["maya@northstar-relay.worldfixture.test"], clerk_maya["email_addresses"])
         self.assertEqual("maya@northstar-relay.worldfixture.test", okta_maya["email"])
         self.assertEqual("maya@northstar-relay.worldfixture.test", linear_maya["email"])
         self.assertEqual("maya@northstar-relay.worldfixture.test", vercel_maya["email"])
         self.assertEqual("maya@northstar-relay.worldfixture.test", microsoft_maya["email"])
-        self.assertEqual("maya@northstar-relay.worldfixture.test", apple_maya["email"])
+        self.assertNotIn("apple", projections)
 
         blocked = next(issue for issue in projections["linear"]["issues"] if issue["worldfixture_task_id"] == "task-cancel-cleanup")
         self.assertEqual("In Progress", blocked["state"])
@@ -450,47 +475,41 @@ class WorldCompilerTest(unittest.TestCase):
         overlay = projections["emulator-overlay"]
 
         self.assertEqual("maya@northstar-relay.worldfixture.test", projections["microsoft"]["users"][0]["email"])
-        self.assertEqual("maya@northstar-relay.worldfixture.test", projections["apple"]["users"][0]["email"])
+        self.assertNotIn("apple", projections)
         self.assertEqual("northstar-relay.worldfixture.test", projections["resend"]["domains"][0]["name"])
-        self.assertEqual("Northstar Relay", projections["mongoatlas"]["projects"][0]["name"])
-        self.assertEqual("Northstar Relay Support", projections["twilio"]["phone_numbers"][0]["friendly_name"])
-        self.assertEqual("worldfixture_twilio_test_token", projections["twilio"]["account"]["auth_token"])
+        self.assertNotIn("mongoatlas", projections)
+        self.assertNotIn("twilio", projections)
         self.assertEqual(
             {"northstar-relay-documents", "northstar-relay-exports"},
             {bucket["name"] for bucket in projections["aws"]["s3"]["buckets"]},
         )
         self.assertIn("priya@lumen-labs.worldfixture.test", {contact["email"] for contact in projections["resend"]["contacts"]})
-        self.assertEqual(
-            {"customers", "invoices", "support_cases", "tasks"},
-            set(projections["mongoatlas"]["databases"][0]["collections"]),
-        )
+        self.assertNotIn("mongoatlas_token", overlay["tokens"])
+        self.assertNotIn("twilio_token", overlay["tokens"])
 
         vendor_names = {
-            "apple",
             "aws",
             "clerk",
             "github",
             "google",
             "linear",
             "microsoft",
-            "mongoatlas",
             "notion",
             "okta",
             "resend",
             "slack",
             "stripe",
-            "twilio",
             "vercel",
         }
         self.assertTrue(vendor_names.issubset(overlay))
         self.assertEqual("maya@northstar-relay.worldfixture.test", overlay["tokens"]["microsoft_token"]["login"])
-        self.assertEqual("maya@northstar-relay.worldfixture.test", overlay["tokens"]["apple_token"]["login"])
+        self.assertNotIn("apple_token", overlay["tokens"])
         self.assertNotIn("worldfixture_person_id", overlay["microsoft"]["users"][0])
         self.assertNotIn("worldfixture_organization_id", overlay["aws"])
 
         resend_priya = next(contact for contact in projections["resend"]["contacts"] if contact["worldfixture_person_id"] == "priya-raman")
         self.assertEqual("lumen", resend_priya["worldfixture_customer_id"])
-        self.assertEqual("Northstar Relay", projections["twilio"]["account"]["friendly_name"])
+        self.assertNotIn("twilio", projections)
         self.assertIn(
             "northstar-relay-exports",
             {bucket["name"] for bucket in projections["aws"]["s3"]["buckets"]},
@@ -606,8 +625,8 @@ class WorldCompilerTest(unittest.TestCase):
         # IAM and SQS, which nothing else implements. The canonical projection
         # stays rich and the S3 service reads it directly.
         self.assertNotIn("s3", projections["emulator-overlay"]["aws"])
-        for kept in ("iam", "sqs"):
-            self.assertIn(kept, projections["emulator-overlay"]["aws"])
+        self.assertIn("iam", projections["emulator-overlay"]["aws"])
+        self.assertNotIn("sqs", projections["emulator-overlay"]["aws"])
         self.assertIn("objects", projections["aws"]["s3"])
         self.assertTrue(projections["aws"]["s3"]["buckets"])
 
@@ -627,10 +646,8 @@ class WorldCompilerTest(unittest.TestCase):
 class CloudVocabularyTest(unittest.TestCase):
     """A projection may not select on one world's team, queue and role names.
 
-    `_aws_projection` was written against `business.saas-company`, the only world
-    at the time, and kept its vocabulary as bare literals. Each is now a declared
-    value with the reviewed literal as its default, the same way
-    `LEGACY_SLACK_BOTS` and `LEGACY_TRACKER_TEAM` are.
+    The normal compiler uses declared AWS values and omits absent collections.
+    The exported legacy profile callback retains its reviewed defaults.
     """
 
     def test_operators_come_from_the_teams_a_world_declares(self) -> None:
@@ -640,12 +657,13 @@ class CloudVocabularyTest(unittest.TestCase):
         # single primary person out of 99 organization members -- the `[:4]` cap
         # never engaged at all, because the filter collapsed first.
         source = ROOT / "worlds/business.saas-company.v3/world.json"
-        if not source.is_file():
-            self.skipTest("no v3 world source")
+        self.assertTrue(source.is_file(), "required v3 world source is missing")
 
         world, _provenance = load_world(source)
+        for field in ("operator_teams", "operator_ids", "operator_limit"):
+            world["software"].pop(field, None)
         self.assertNotIn("engineering", {person.get("team") for person in world["people"]})
-        self.assertEqual(1, len(compile_world(world)["projections"]["aws"]["iam"]["users"]))
+        self.assertNotIn("iam", compile_world(world)["projections"]["aws"])
 
         world["software"]["operator_teams"] = ["platform", "reliability"]
         users = compile_world(world)["projections"]["aws"]["iam"]["users"]
@@ -655,9 +673,8 @@ class CloudVocabularyTest(unittest.TestCase):
     def test_a_person_without_a_team_is_not_an_operator(self) -> None:
         # `person["team"]` was a bare subscript, so a person carrying no team
         # raised a KeyError out of the AWS projection rather than simply not
-        # being selected. This calls the projection rather than compiling the
-        # world because `_notion_projection` still indexes `person["team"]` the
-        # same way at four sites, which is a separate, unfixed report.
+        # being selected. Call the legacy projection directly to check its
+        # primary-person default when no person has a team.
         from worldfixture_compiler.compiler import _aws_projection
 
         world = copy.deepcopy(source_world())
@@ -667,23 +684,15 @@ class CloudVocabularyTest(unittest.TestCase):
 
         self.assertEqual(1, len(users), "only the primary person is left to select")
 
-    def test_the_reviewed_literals_are_still_the_default(self) -> None:
-        # v2 declares none of these and its bytes are the parity evidence, so
-        # the defaults have to reproduce exactly what the literals produced.
-        aws = compile_world(source_world())["projections"]["aws"]
-
-        self.assertEqual(
-            ["mayac", "jonbell", "lucasmeyer", "hanaito"],
-            [user["user_name"] for user in aws["iam"]["users"]],
-        )
-        self.assertEqual(
-            ["billing-events", "export-jobs", "export-jobs-dlq"],
-            [queue["name"] for queue in aws["sqs"]["queues"]],
-        )
-        self.assertEqual(
-            ["billing-webhook", "export-worker"],
-            [role["role_name"] for role in aws["iam"]["roles"]],
-        )
+    def test_absent_operator_queue_role_config_does_not_create_records(self) -> None:
+        world = copy.deepcopy(source_world())
+        for field in ("operator_teams", "operator_ids", "operator_limit", "queues", "service_roles"):
+            world["software"].pop(field, None)
+        projections = compile_world(world)["projections"]
+        self.assertNotIn("iam", projections["aws"])
+        self.assertNotIn("sqs", projections["aws"])
+        self.assertNotIn("iam", projections["emulator-overlay"]["aws"])
+        self.assertNotIn("sqs", projections["emulator-overlay"]["aws"])
 
     def test_a_world_owns_its_queues_and_service_roles(self) -> None:
         # A world that sells goods to people has no export pipeline and no
@@ -698,16 +707,10 @@ class CloudVocabularyTest(unittest.TestCase):
         self.assertEqual(["order-events"], [queue["name"] for queue in aws["sqs"]["queues"]])
         self.assertEqual(["fulfilment"], [role["role_name"] for role in aws["iam"]["roles"]])
 
-    def test_a_world_without_a_site_is_told_to_declare_one(self) -> None:
-        # The fallback HTTP targets are built from record ids only v2 has. Any
-        # other world that declared no `site` died on a bare `KeyError:
-        # 'story-lumen-renewal'` raised out of a projection, which the command
-        # line does not catch, so the author got a traceback naming no remedy.
+    def test_a_world_without_a_site_has_no_invented_http_targets(self) -> None:
         world = copy.deepcopy(source_world())
-        world["stories"] = []
-
-        with self.assertRaisesRegex(WorldError, "declares no `site`"):
-            compile_world(world)
+        world.pop("site", None)
+        self.assertIsNone(compile_world(world)["projections"].get("http-targets"))
 
 
 class CompilerSourceTest(unittest.TestCase):

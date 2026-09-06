@@ -306,17 +306,23 @@ class ServiceManifestTest(unittest.TestCase):
         make the endpoint answer "not ready" for a listener that is working, and
         a check for a vendor with no port would probe nothing.
 
-        AWS is the deliberate exception in both directions: it keeps a port
-        entry so the resolver can see and close it, and it must never gain a
-        readiness check -- `emulators/emulate/src/ready.mjs` refuses to probe it
-        and SeaweedFS stays the only S3 owner.
+        AWS registers only IAM, SQS and STS Query routes. Its unauthenticated
+        IAM check must reach the token boundary; it is a protocol check, not
+        proof that a particular world's users were seeded. SeaweedFS remains
+        the only S3 owner.
         """
         manifest = load_manifest("emulate")
         ports = {port["name"] for port in manifest["runtime"]["ports"]}
         checked = {check["port"] for check in manifest["runtime"]["readiness"] if check["kind"] == "protocol"}
         self.assertIn("aws", ports)
-        self.assertNotIn("aws", checked)
-        self.assertEqual(ports - {"aws"}, checked)
+        self.assertIn("aws", checked)
+        self.assertEqual(ports, checked)
+        aws_checks = [check for check in manifest["runtime"]["readiness"] if check["port"] == "aws" and check["kind"] == "protocol"]
+        self.assertEqual(1, len(aws_checks))
+        self.assertEqual("http", aws_checks[0]["protocol"])
+        self.assertEqual("POST", aws_checks[0]["method"])
+        self.assertEqual("/iam/?Action=ListUsers", aws_checks[0]["path"])
+        self.assertEqual("InvalidClientTokenId", aws_checks[0]["expect"])
 
     def test_every_service_is_proven_by_at_least_one_live_protocol_check(self) -> None:
         """A service with only a seed gate cannot be aggregated on. This is the
@@ -350,82 +356,33 @@ class ServiceManifestTest(unittest.TestCase):
             with self.subTest(service=service):
                 self.assertEqual(set(), disclaimed & profiles(manifest))
 
-    def test_the_composer_disclaims_the_s3_surface_it_actually_serves(self) -> None:
-        """Measured live: `@emulators/aws` answers PUT bucket, PUT object and
-        GET object with 200, and self-seeds three buckets the world never
-        declares. `provides` omitting it is not enough -- the resolver cannot
-        see a route no manifest mentions, so the composer has to name it."""
-        disclaimed = {d["profile"] for d in load_manifest("emulate")["disclaims"]}
-        owned = profiles(load_manifest("s3"))
-        self.assertTrue(disclaimed, "the composer disclaims nothing")
-        self.assertTrue(disclaimed <= owned, f"{disclaimed - owned} is disclaimed but nothing owns it")
-        for entry in load_manifest("emulate")["disclaims"]:
+    def test_the_composer_declares_only_its_restricted_aws_routes(self) -> None:
+        """The registration wrapper excludes upstream S3 routes and sample
+        seeds. The manifest declares IAM/SQS/STS; it must neither offer S3 nor
+        claim that an S3 route still exists as a disclaimed surface. Live route
+        exclusion is checked separately by the AWS adapter and image tests."""
+        manifest = load_manifest("emulate")
+        aws = [entry for entry in manifest["provides"] if entry["profile"].startswith("aws.")]
+        self.assertEqual({"aws.iam.v1", "aws.sqs.v1", "aws.sts.v1"}, {entry["profile"] for entry in aws})
+        self.assertEqual({"aws"}, {entry["port"] for entry in aws})
+        s3_disclaims = {entry["profile"] for entry in manifest.get("disclaims", []) if entry["profile"].startswith("aws.s3.")}
+        self.assertEqual(set(), s3_disclaims)
+
+    def test_composer_capabilities_declare_their_own_source_and_seed_scope(self) -> None:
+        # One missing vendor must not make every other composer capability
+        # unavailable. Runtime preflight tests exercise these declarations.
+        manifest = load_manifest("emulate")
+        self.assertEqual([], manifest["world"].get("requires", []))
+        profiles = {entry["profile"]: entry for entry in manifest["provides"]}
+        self.assertIn("communication.channels", profiles["slack.messaging.v1"]["world"]["requires"])
+        for entry in manifest["provides"]:
             with self.subTest(profile=entry["profile"]):
-                self.assertEqual("aws", entry["port"])
-
-    def test_declared_world_requirements_match_what_the_projections_use(self) -> None:
-        """`world.requires` is each service saying which part of the world it needs.
-
-        It was declared from the beginning and nothing ever checked it, so it
-        drifted: `mail` did not name finance although invoice mail is added to
-        the mailbox it seeds, and `http-targets` named neither the communication
-        nor the finance nor the support records its own pages are built from.
-
-        This derives the truth instead of trusting the file. It builds the world
-        once with every domain, then once per domain with that domain removed,
-        and compares the bytes of each projection. A projection whose bytes
-        change without a domain draws content from it, and the service that
-        reads that projection has to say so.
-
-        The check is what makes `build --for` trustworthy: the pack set is
-        computed from these declarations, so an under-declared service would
-        quietly receive a world with its records missing.
-        """
-        import hashlib
-        import sys
-
-        sys.path.insert(0, str(ROOT / "compiler"))
-        from worldfixture_compiler.compiler import PACK_SOURCES, compile_world, load_world, prune_world
-
-        source_path = ROOT / "worlds/business.saas-company.v3/world.json"
-        if not source_path.is_file():
-            self.skipTest("no v3 world source")
-        source, _provenance = load_world(source_path)
-        every = set(PACK_SOURCES)
-
-        def projections(keep):
-            compiled = compile_world(prune_world(source, set(keep)))
-            return {
-                name: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
-                for name, value in compiled["projections"].items()
-                if value is not None
-            }
-
-        full = projections(every)
-        used: dict[str, set[str]] = {name: {"identity"} for name in full}
-        for pack in sorted(every - {"identity"}):
-            without = projections(every - {pack})
-            for name in full:
-                if without.get(name) != full[name]:
-                    used[name].add(pack)
-
-        for service in SERVICES:
-            manifest = load_manifest(service)
-            declared = {name.split(".")[0] for name in manifest["world"].get("requires", [])}
-            files = [entry["file"] for entry in manifest["world"].get("projections", [])]
-            needed: set[str] = set()
-            for file in files:
-                stem = file.removeprefix("projections/").removesuffix(".json")
-                needed |= used.get(stem, set())
-            if not needed:
-                continue
-            with self.subTest(service=service):
-                self.assertEqual(
-                    needed,
-                    declared,
-                    f"{service} reads {files} which draws from {sorted(needed)}, "
-                    f"but its world.requires names {sorted(declared)}",
-                )
+                declaration = entry["world"]
+                self.assertIsInstance(declaration["requires"], list)
+                seeds = [row for row in declaration["projections"] if row["file"] == "projections/emulator-overlay.json"]
+                self.assertTrue(seeds, "A composer capability must check its own provider seed")
+                self.assertTrue(any(row.get("subtree", "").startswith("/" + entry["port"]) for row in seeds))
+                self.assertTrue(all(row.get("verified") is True and (row.get("subtree", "").startswith("/" + entry["port"]) or row.get("subtree") == "/tokens/" + entry["port"] + "_token") for row in seeds))
 
     def test_every_profile_offers_at_least_one_binding_attribute(self) -> None:
         """An environment binds `<profile>/<attribute>`. A profile exposing no
@@ -438,7 +395,9 @@ class ServiceManifestTest(unittest.TestCase):
     # -- helpers ---------------------------------------------------------
 
     def artifact(self) -> Path:
-        return ROOT / "dist/business.saas-company.v2"
+        # The positive service contract fixture authors an HTTP site. P4 v2
+        # correctly has no HTTP projection because it declares no site.
+        return ROOT / "dist/business.saas-company.v3"
 
     def artifact_projections(self):
         if not self.artifact().is_dir():
@@ -446,10 +405,10 @@ class ServiceManifestTest(unittest.TestCase):
             # and the README's documented build command compiles v3, so somebody
             # following the documentation built a world, ran the tests, and these
             # two skipped anyway with a message implying they had not.
-            self.skipTest(
+            self.fail(
                 f"no built artifact at {self.artifact().relative_to(ROOT)}; build it with "
                 "`PYTHONPATH=compiler python3 -m worldfixture_compiler build "
-                "worlds/business.saas-company.v2/world.json --output dist/business.saas-company.v2`"
+                "worlds/business.saas-company.v3/world.json --output dist/business.saas-company.v3`"
             )
         for service in SERVICES:
             for entry in load_manifest(service)["world"].get("projections", []):
@@ -458,11 +417,9 @@ class ServiceManifestTest(unittest.TestCase):
     def test_only_one_service_claims_the_s3_object_capability(self) -> None:
         """One provider's mutable state must not sit behind two route owners.
 
-        The lock can only refuse a second owner if the manifests disagree about
-        who owns S3. `@emulators/aws` serves a live, writable `/s3/` regardless
-        -- measured against a running composer, not assumed -- so this
-        declaration is the whole of the guarantee and must not be widened
-        without closing that route.
+        The manifest ownership check complements the AWS registration wrapper,
+        which excludes upstream S3 routes. The resolver must still see exactly
+        one owner for S3 when it selects services.
         """
         owners = [s for s in SERVICES if any(p.startswith("aws.s3.") for p in profiles(load_manifest(s)))]
         self.assertEqual(["s3"], owners)

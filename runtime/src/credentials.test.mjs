@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
 import { credential, prepareCredentials, readRunCredentials } from "./credentials.mjs";
 import { ensureGeneratedSecrets } from "./generated-secrets.mjs";
-import { resolveBindings } from "./bindings.mjs";
+import { resolveBindings, resolveToken, resolveTokenReference } from "./bindings.mjs";
 import { defaultEnvironment } from "./environments.mjs";
 import { loadManifests } from "./manifests.mjs";
 import { resolveEnvironment, serializeLock } from "./resolve.mjs";
@@ -15,10 +15,35 @@ import { bindingCanBePrinted } from "./cli.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 const artifactPath = join(ROOT, "dist/business.saas-company.v2");
-const lock = resolveEnvironment(defaultEnvironment("business.saas-company:v2", { includeS3: true, includePostgres: true, includeMySQL: true, includeProviders: true }), {
-  artifactPath, manifests: loadManifests(join(ROOT, "emulators")),
+const manifests = loadManifests(join(ROOT, "emulators"));
+const lock = resolveEnvironment(defaultEnvironment("business.saas-company:v2", { artifactPath, manifests, includeS3: true, includePostgres: true, includeMySQL: true, includeProviders: true }), {
+  artifactPath, manifests,
 });
 const run = promisify(execFile);
+
+test('personal credentials cannot substitute a shared grant belonging to another person', t => {
+  const root = mkdtempSync(join(tmpdir(), 'worldfixture-person-grants-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  cpSync(artifactPath, root, { recursive: true });
+  const path = join(root, 'projections/emulator-overlay.json'), overlay = JSON.parse(readFileSync(path));
+  const github = { profile: 'github.repositories.v1', person: 'jon-bell' };
+  assert.equal(resolveTokenReference(root, github).reference, undefined);
+  assert.deepEqual(resolveTokenReference(root, { ...github, person: 'maya-chen' }), { reference: 'token:github_token', scope: 'person' });
+  assert.equal(resolveTokenReference(root, { ...github, person: 'unknown-person' }).reference, undefined);
+  assert.equal(resolveTokenReference(root, { profile: github.profile }).scope, 'shared');
+  for (const provider of ['slack', 'google', 'notion']) {
+    const request = { profile: `${provider}.identity.v1`, person: 'jon-bell' };
+    const key = `${provider}_token_jon-bell`;
+    assert.equal(resolveTokenReference(root, request).scope, 'person');
+    assert.throws(() => resolveToken(root, { ...request, credentials: { values: { [`token:${provider}_token`]: 'other-person-secret', 'token:demo_token': 'other-person-secret' } } }), /no credential/);
+    const granted = overlay.tokens[key]; delete overlay.tokens[key];
+    writeFileSync(path, JSON.stringify(overlay));
+    assert.equal(resolveTokenReference(root, request).reference, undefined);
+    overlay.tokens[key] = { ...granted, login: 'another-person' };
+    writeFileSync(path, JSON.stringify(overlay));
+    assert.equal(resolveTokenReference(root, request).reference, undefined);
+  }
+});
 
 test("startup output excludes credentials, including secrets inside connection URLs", () => {
   for (const name of ["SLACK_TOKEN", "TWILIO_AUTH_TOKEN", "IMAP_PASSWORD", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]) {
@@ -70,6 +95,22 @@ test("lost stores cannot make a later command mint a token the running service d
   writeFileSync(generatedSecretsPath, "{broken");
   await assert.rejects(() => prepareCredentials({ lock, artifactPath, stateDir, generatedSecretsPath }), /restore the file/);
   assert.equal(readFileSync(generatedSecretsPath, "utf8"), "{broken");
+});
+
+test("session generations rotate provider credentials while declared application credentials stay valid", async t => {
+  const project = mkdtempSync(join(tmpdir(), "worldfixture-generation-credentials-"));
+  t.after(() => rmSync(project, { recursive: true, force: true }));
+  const generatedSecretsPath = join(project, "secrets.json");
+  const first = await prepareCredentials({ lock, artifactPath, stateDir: join(project, "a"), generatedSecretsPath, generation: "generation-a" });
+  const preservedCredentials = Object.fromEntries(Object.entries(first.values).filter(([key]) => key.startsWith("postgres.") || key.startsWith("mysql.")));
+  assert.ok(Object.keys(preservedCredentials).length > 0);
+  const second = await prepareCredentials({ lock, artifactPath, stateDir: join(project, "b"), generatedSecretsPath, generation: "generation-b", preservedCredentials });
+  for (const [key, value] of Object.entries(first.values)) {
+    if (Object.hasOwn(preservedCredentials, key)) assert.equal(second.values[key], value, key);
+    else assert.notEqual(second.values[key], value, key);
+  }
+  const restart = await prepareCredentials({ lock, artifactPath, stateDir: join(project, "b-again"), generatedSecretsPath, generation: "generation-b", preservedCredentials });
+  assert.deepEqual(restart, second);
 });
 
 test("concurrent startup processes retain every generated key and agree on shared keys", async t => {

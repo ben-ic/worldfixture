@@ -40,37 +40,26 @@ This is a gap in the world data, for the world's author to close: if the story
 needs a partial export object, a world record has to declare it. Until then the
 story and the artifact disagree, and the artifact is the honest one.
 
-## What this SeaweedFS build does about signatures
+## Request signatures
 
-Measured against this exact image, not assumed:
+The service uses the run's `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` to
+create a private SeaweedFS identity configuration. Seed requests use that same
+identity. `ListBuckets` therefore returns the complete source bucket list.
+The embedded IAM API remains disabled.
+
+The standalone protocol test verifies these results:
 
 | Request | Result |
 | --- | --- |
 | Correct AWS SigV4 header | 200 |
-| No `Authorization` header at all | 200 |
-| SigV4 header with the signature replaced by `fff…` | 200 |
-| Presigned URL query with a forged signature and an expiry in 2020 | 200 |
+| No `Authorization` header | 403 |
+| Forged SigV4 signature | 403 |
+| Expired, forged presigned URL | 403 |
 
-**There is no authentication on this endpoint.** The service runs
-`-iam=false -s3.iam=false` with no `-s3.config` identity file, which leaves the S3
-API with no identity at all. A signature is neither required nor verified, and a
-presigned URL's expiry is not honoured either.
-
-The protocol test asserts the four rows above. A presigned URL proves only that
-the application created one; it does not protect data in this configuration. A
-build that starts to enforce signatures will fail the test instead of silently
-changing the contract.
-
-`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are still generated for the
-session and handed to the application, because an S3 client cannot be constructed
-without them. The server ignores them. They are not a security boundary and
-nothing here should be pointed at real data.
-
-One more identity-shaped limitation: `ListBuckets` (`GET /`) answers `200` with an
-**empty** bucket list, because the listing is scoped to the caller's identity and
-there is none. Every declared bucket is there — `HEAD /<bucket>` and
-`ListObjectsV2` both work — but a client that enumerates buckets sees nothing. The
-protocol test asserts this too, so it becomes visible if it ever changes.
+WorldFixture generates the credentials and passes them to the service and its
+clients. A standalone launch must supply both environment variables. Identity
+and curl configuration files have private file permissions and stay in the
+service's temporary state. Reset retains the same run credentials.
 
 ## Ports
 
@@ -102,6 +91,9 @@ missed the only failure this fixture has actually had.
 
 ## Run it
 
+Set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` for the standalone run first.
+The managed WorldFixture launch supplies these values automatically.
+
 ```text
 PYTHONPATH=compiler python3 -m worldfixture_compiler build \
   worlds/business.saas-company.v2/world.json --output /tmp/wf-s3
@@ -110,6 +102,7 @@ cd emulators/s3
 docker build --platform=linux/amd64 -t worldfixture-s3:test .
 docker run -d --name worldfixture-s3-test \
   -v /tmp/wf-s3:/world:ro -e WORLDFIXTURE_WORLD_PATH=/world \
+  -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
   -p 127.0.0.1:4990:61006 -p 127.0.0.1:4991:61004 \
   worldfixture-s3:test
 ```
@@ -155,11 +148,8 @@ Seeding reads no clock. The bucket set, the object set, every key, every byte,
 every content type and the world timestamp each object carries are functions of
 the projection alone.
 
-Verified: two fresh containers were started from one artifact and each was dumped
-over the S3 API — every bucket listing, and for every object its
-`Content-Type`, `Content-Length`, `ETag`, `x-amz-meta-*` and its bytes. The two
-dumps are byte-identical (1851 bytes, sha256
-`f000376965df0458acd13c348028b843ac02c249d0d4873936d44bd446d216b8` in both).
+The protocol tests compare every source bucket name, object byte, content type,
+ETag, and authored metadata value.
 
 What is *not* identical between runs is SeaweedFS's own `Last-Modified`, on both
 the object and its listing. The filer stamps `Mtime` from `time.Now()` on every
@@ -213,7 +203,7 @@ file, so there is none to preserve inside the image.
 
 ## Security boundary
 
-- There is no authentication. See the signature table above.
+- S3 requests require a valid signature from the run identity.
 - The mounted world is read-only to this fixture and is read once, at startup.
 - Telemetry, Iceberg, WebDAV, SFTP and the IAM management API are disabled.
 - All state is in `/tmp` and ends with the session. No volume is attached.

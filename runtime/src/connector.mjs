@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { loadSchema, validate } from "./schema.mjs";
 import { DEFAULT_SCALE, scaleWorld } from "./scale.mjs";
+import { packsReference } from "./packs-doc.mjs";
 
 export const CONNECTOR_VERSION = "worldfixture.connector/v1";
 export const REQUEST_VERSION = "worldfixture.connector-request/v1";
@@ -205,7 +206,11 @@ export function connectorWorld(artifactPath, { scale = DEFAULT_SCALE, limits = {
 //
 // None of that announced itself. It has to, because every symptom of it looks
 // like a bug in the connector.
-export function assertWorldMatchesInstance(world, lock) {
+export function assertWorldMatchesInstance(world, lock, { generation, expectedGeneration } = {}) {
+  if (generation !== undefined || expectedGeneration !== undefined) {
+    if (!generation || generation !== expectedGeneration) throw new ConnectorError('generation_mismatch', 'The selected world generation changed. Read the active world and try again.');
+    if (!lock?.world?.artifact_sha256 || !world?.world?.artifact_sha256) throw new ConnectorError('artifact_identity_required', 'The active and selected artifacts must both have a verified identity.');
+  }
   const running = lock?.world?.artifact_sha256;
   const sending = world?.world?.artifact_sha256;
   if (!running || !sending || running === sending) return;
@@ -405,7 +410,8 @@ export async function checkConnector(baseUrl, { world, artifactPath, token, scal
   return { ready: checks.every((check) => check.ok), discovery, checks };
 }
 
-export function connectorPrompt(baseUrl) {
+export function connectorPrompt(baseUrl, options = {}) {
+  const reference = options.world || options.artifactPath ? packsReference(sourceFor(options)) : null;
   const url = applicationUrl(baseUrl).origin;
   return `Add a development-only WorldFixture connector to the application in the current directory at ${url}.
 
@@ -413,7 +419,7 @@ Read the connector documentation that matches the installed WorldFixture version
 
   worldfixture connector docs
 
-Read the "What a connector receives" section of those docs before you design the mapping. It lists every pack, every collection, every field and a real record of each. You do not need to discover the payload by capturing a request, and you should not have to guess a field name.
+${reference ? 'Use the selected-world "What a connector receives" reference included below for this mapping. It describes the same payload as connector plan and seed with the selected scale.' : 'Run connector docs with the same --world or --world-path, --state, --scale and --limit options as connector plan and seed. Read its generated "What a connector receives" section before you design the mapping.'}
 
 Implement the documented Connector v1 HTTP contract inside this application. Inspect the application's domain models, migrations, ORM, authentication, service layer, existing seed tools, tests, build commands, and all local service dependencies. Map WorldFixture records to the existing domain model. Do not create a parallel domain model.
 
@@ -427,9 +433,11 @@ Run this conformance check and fix all failures:
 
   worldfixture connector check ${url}
 
-Add tests for the mapping, a repeated seed request, repeated event delivery, authentication, and the normal application page after seed. When finished, report service bindings, the start command, application URL, entity mapping, event mapping, unmapped records, reset support, verification results, and changed files.`;
+Add tests for the mapping, a repeated seed request, repeated event delivery, authentication, and the normal application page after seed. When finished, report service bindings, the start command, application URL, entity mapping, event mapping, unmapped records, reset support, verification results, and changed files.${reference ? `\n\n${reference}` : ""}`;
 }
 
-export function connectorDocumentation() {
-  return CONNECTOR_DOCS.map((path) => readFileSync(path, "utf8").trim()).join("\n\n---\n\n") + "\n";
+export function connectorDocumentation(options = {}) {
+  const reference = options.world || options.artifactPath ? packsReference(sourceFor(options)) : null;
+  return CONNECTOR_DOCS.map(path => path.endsWith("/packs.md") && reference
+    ? reference.trim() : readFileSync(path, "utf8").trim()).join("\n\n---\n\n") + "\n";
 }

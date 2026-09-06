@@ -12,10 +12,14 @@ WorldFixture uses `@emulators/microsoft` 0.10.0.
 
 “Partial” means that only the routes in the next table are registered.
 
+OAuth applications must be [declared in world source](../guides/worlds.md#declare-oauth-clients).
+The local flow checks the declared client, exact callback URL, and selected
+world user. Undeclared sample clients are rejected.
+
 ## What works
 
 You can use local OAuth and OpenID Connect flows. You can also read the current
-user or one user by ID from Microsoft Graph.
+user, one user by ID, or a paginated user list from Microsoft Graph.
 
 ## What does not work
 
@@ -30,6 +34,9 @@ Use `MICROSOFT_BASE_URL` and `MICROSOFT_TOKEN`. Send
 `Authorization: Bearer <token>` for Graph reads. `GET /v1.0/users/:id` does
 not check authentication. This differs from Microsoft Graph.
 
+`GET /v1.0/users` requires a known token with `User.ReadBasic.All` or a higher
+directory read scope. The generated directory token includes this scope.
+
 ## Registered routes
 
 | HTTP method and path | Required input | Important response fields |
@@ -43,6 +50,7 @@ not check authentication. This differs from Microsoft Graph.
 | `POST /:tenant/oauth2/token` | Legacy tenant token form body | Local token response |
 | `GET /oidc/userinfo` | Bearer token | Local OIDC user claims |
 | `GET /v1.0/me` | Known bearer token | User `id`, `displayName`, `mail`, and `userPrincipalName` |
+| `GET /v1.0/users` | Directory read token; optional `$top`, `$select`, and returned `$skiptoken` | `value` user array and `@odata.nextLink` when another page exists |
 | `GET /v1.0/users/:id` | User ID; authentication is not enforced | User `id`, `displayName`, `mail`, and `userPrincipalName` |
 | `GET /oauth2/v2.0/logout` | Optional post-logout redirect values | Local redirect |
 | `POST /oauth2/v2.0/revoke` | Token form body | Local revocation result |
@@ -53,7 +61,8 @@ full production contract comparison.
 
 ## Detailed limits
 
-All Graph writes are **Not supported**. Graph list-users, OData query behavior,
+All Graph writes are **Not supported**. OData query options other than the user
+list's `$top`, `$select`, and `$skiptoken`,
 mail, calendar, Teams, OneDrive, SharePoint, groups, subscriptions, and webhooks
 are **Not supported**.
 
@@ -61,9 +70,10 @@ No official Microsoft SDK version is tested.
 
 ## Evidence and authority
 
-Tests: `emulators/emulate/src/overrides/microsoft-users.test.mjs`, compiler
+Tests: `emulators/emulate/src/overrides/identity-lists.test.mjs`,
+`emulators/emulate/src/overrides/declared-oauth-extra.test.mjs`, compiler
 contract tests under `tests/contracts/`, and the readiness check in
 `emulators/emulate/service.json`.
 
 Authority: [Microsoft identity platform](https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc)
-and [Get user](https://learn.microsoft.com/en-us/graph/api/user-get?view=graph-rest-1.0).
+and [List users](https://learn.microsoft.com/en-us/graph/api/user-list?view=graph-rest-1.0).

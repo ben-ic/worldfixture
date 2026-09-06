@@ -9,7 +9,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { forgetSlackCaches, send } from "./slack.mjs";
+import { forgetSlackCaches, identity, send } from "./slack.mjs";
 
 const RATE_LIMITED = () =>
   new Response(JSON.stringify({ message: "API rate limit exceeded", documentation_url: "https://emulate.dev/slack" }), {
@@ -54,5 +54,22 @@ test("an unlabelled HTTP failure names the status rather than saying unknown", a
 
   assert.match(error.message, /http_502|HTTP 502/);
   assert.equal(/unknown error/.test(error.message), false);
+  forgetSlackCaches();
+});
+
+test("reused names, URLs, and tokens cannot reuse another generation's Slack identities", async () => {
+  forgetSlackCaches();
+  const sent = [];
+  for (const generation of ["world-a", "world-b", "world-a-restored"]) {
+    const fetchImpl = async (url, request) => {
+      if (url.endsWith("conversations.list")) return Response.json({ ok: true, channels: [{ id: `channel-${generation}`, name: "shared" }] });
+      if (url.endsWith("auth.test")) return Response.json({ ok: true, user_id: `person-${generation}` });
+      const body = JSON.parse(request.body); sent.push(body.channel);
+      return Response.json({ ok: true, ts: "1.0", channel: body.channel });
+    };
+    await send("http://same.test", "same-token", { channelName: "shared", text: generation }, { generation, fetchImpl });
+    assert.equal((await identity("http://same.test", "same-token", { generation, fetchImpl })).user_id, `person-${generation}`);
+  }
+  assert.deepEqual(sent, ["channel-world-a", "channel-world-b", "channel-world-a-restored"]);
   forgetSlackCaches();
 });

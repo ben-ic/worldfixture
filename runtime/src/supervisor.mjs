@@ -1,3 +1,4 @@
+import { forgetSlackCaches } from "./slack.mjs";
 // The supervisor: one lock in, a running world out.
 //
 // It does the eight things `extraction-plan.md` asks of it, in order: read a
@@ -22,6 +23,9 @@ import { createHash, randomUUID } from "node:crypto";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { startClock, pauseClock } from "./clock.mjs";
+import { executionPreflight } from "./execution-preflight.mjs";
+import { lifecyclePath } from "./lifecycle-paths.mjs";
 import { aggregate, waitFor } from "./readiness.mjs";
 import { allocate, environmentFor } from "./ports.mjs";
 import { openState, recordInstance, resetState } from "./state.mjs";
@@ -146,12 +150,17 @@ function startChild(service, environment, { cwd, allocation, worldPath, runner, 
     log,
     exited: null,
     container: useContainer ? service.container.name : undefined,
-    launch: { service, environment, cwd, allocation, worldPath, runner, credentialsPath },
+    launch: { service, environment, cwd, allocation, worldPath, runner, credentialsPath, onExit },
   };
 
+  child.on("error", (error) => {
+    log.append("stderr", `Cannot start ${service.name}: ${error.message}`);
+    record.exited = { code: null, signal: null, error: error.message };
+    record.launch.onExit?.(record);
+  });
   child.on("exit", (code, signal) => {
     record.exited = { code, signal };
-    onExit?.(record);
+    record.launch.onExit?.(record);
   });
 
   return record;
@@ -205,6 +214,15 @@ export class Instance {
     this.serviceStates = new Map(lock.services.map((service) => [service.name, "starting"]));
   }
 
+  childExited(record) {
+    if (record.expectedStop) return;
+    this.readinessAbort?.abort(record);
+    this.serviceStates.set(record.service, "failed");
+    this.readiness.set(record.service, { ready: false, seeded: false, proven: 0, checks: [], reason: `Service process exited (${record.exited?.code ?? record.exited?.signal ?? "unknown"})` });
+    if (this.phase !== "stopped") this.phase = "failed";
+    publishProgress(this);
+  }
+
   addressOf(service, port) {
     const assigned = this.allocation.get(`${service}/${port}`);
     if (!assigned) throw new Error(`no allocation for ${service}/${port}`);
@@ -246,6 +264,7 @@ export class Instance {
       ? this.children.filter((record) => selected.has(record.service))
       : this.children;
     const running = records.filter((record) => record.exited === null);
+    for (const record of records) record.expectedStop = true;
 
     // A container outlives the `docker run` client that started it, so killing
     // the client alone leaves the container up and its ports held. `docker stop`
@@ -292,13 +311,22 @@ export class Instance {
     return records.map((record) => ({ service: record.service, exited: record.exited }));
   }
 
-  async stop(options = {}) {
+  async stop({ preserveServices = [], ...options } = {}) {
+    await this.timelineControl?.stop();
+    if (preserveServices.length) options.services = this.children.filter(record => !preserveServices.includes(record.service)).map(record => record.service);
     const stopped = await this.stopChildren(options);
     this.state?.close();
     return stopped;
   }
 
   async reset() {
+    if (this.timelineControl) return this.timelineControl.command({ action: 'reset' });
+    return this.restoreBaseline();
+  }
+
+  // Called only inside the controller queue, or by the legacy reset path.
+  async restoreBaseline() {
+    forgetSlackCaches();
     const resetNames = this.lock.services
       .filter((service) => service.lifecycle?.reset)
       .map((service) => service.name);
@@ -325,15 +353,13 @@ export class Instance {
       for (const launch of launches) {
         const contained = Boolean(launch.service.container) && launch.runner !== "process";
         if (contained) continue;
-        for (const path of launch.service.lifecycle?.state?.clear_paths ?? []) {
-          if (!(path === "/tmp/seaweedfs" || path.startsWith("/tmp/worldfixture-"))) {
-            throw new Error(`${launch.service.name} reset path is outside its allowed temporary state: ${path}`);
-          }
-          rmSync(path, { recursive: true, force: true });
+        for (const declared of launch.service.lifecycle?.state?.clear_paths ?? []) {
+          rmSync(lifecyclePath(declared, this.stateDir), { recursive: true, force: true });
         }
-        for (const [index, path] of (launch.service.lifecycle?.state?.snapshot_paths ?? []).entries()) {
+        for (const [index, declared] of (launch.service.lifecycle?.state?.snapshot_paths ?? []).entries()) {
+          const path = lifecyclePath(declared, this.stateDir);
           const baseline = join(this.stateDir, "baselines", launch.service.name, String(index));
-          if (!existsSync(baseline)) throw new Error(`${launch.service.name} has no accepted baseline for ${path}`);
+          if (!existsSync(baseline)) throw new Error(`${launch.service.name} has no accepted baseline for ${declared}`);
           mkdirSync(dirnameOf(path), { recursive: true });
           cpSync(baseline, path, { recursive: true, preserveTimestamps: true });
         }
@@ -357,13 +383,13 @@ export class Instance {
       this.rearmTimeline?.();
       this.scheduler?.resume();
     } catch (error) {
-      await this.stopChildren();
+      await this.stopChildren({ services: resetNames });
       if (error.detail?.service) this.serviceStates.set(error.detail.service, "failed");
       rmSync(join(this.stateDir, "bindings.json"), { force: true });
       rmSync(join(this.stateDir, "addresses.json"), { force: true });
-      // Left suspended on purpose: every service is stopped, so an arrival now
+      // Left suspended on purpose: provider services are stopped, so an arrival now
       // would be recorded as failed against a world that is not running.
-      throw new StartupError("reset_failed", `reset failed and every service was stopped: ${error.message}`, {
+      throw new StartupError("reset_failed", `reset failed and provider services were stopped: ${error.message}`, {
         service: error.detail?.service,
         state_changed: true,
       });
@@ -420,6 +446,11 @@ export async function start(lock, {
   runtimeToken = process.env.WORLDFIXTURE_TOKEN || randomUUID(),
   generatedSecretsPath = join(stateDir, "generated-secrets.json"),
   onSpawned,
+  generation,
+  preservedChildren = [],
+  preservedAllocation = new Map(),
+  preservedCredentials = {},
+  manageSignals = true,
   // Where a startup step that takes minutes says so. `ensureImage` has written
   // its "this happens once" line since it was added, and nothing ever carried
   // it: the only call site passed two arguments, so the default no-op `log`
@@ -428,7 +459,21 @@ export async function start(lock, {
   onNotice,
 }) {
   verifyArtifact(lock, artifactPath);
-  const credentials = await prepareCredentials({ lock, artifactPath, stateDir, generatedSecretsPath });
+  const selectedWorld = JSON.parse(readFileSync(join(artifactPath, "world.json"), "utf8"));
+  const execution = executionPreflight(selectedWorld, { artifactPath, capabilities: lock.capabilities,
+    rules: lock.rules ?? [], applicationTarget: lock.target?.application_url, allowUnselected: Boolean(lock.execution?.timeline),
+    deferApplicationConnection: lock.execution?.application_connection?.status === 'pending' });
+  if (execution.errors.length) throw new StartupError("invalid_execution_contract", execution.errors.join("; "));
+  // New process-run providers must discard the previous generation's seed
+  // markers and storage, including approved absolute mail and S3 paths. A new
+  // service container owns fresh storage; never remove its paths on the host.
+  for (const service of lock.services) {
+    if (!service.lifecycle?.reset || (service.container && runner !== 'process')) continue;
+    for (const path of service.lifecycle?.state?.clear_paths ?? []) {
+      rmSync(lifecyclePath(path, stateDir), { recursive: true, force: true });
+    }
+  }
+  const credentials = await prepareCredentials({ lock, artifactPath, stateDir, generatedSecretsPath, generation, preservedCredentials });
   const credentialsPath = join(stateDir, CREDENTIALS_FILE);
 
   // This is a new instance even when it reuses a state directory. A baseline
@@ -439,14 +484,24 @@ export async function start(lock, {
   const id = randomUUID();
   const lockSha256 = createHash("sha256").update(serializeLock(lock)).digest("hex");
   const worldSha256 = lock.world.artifact_sha256;
-  const { allocation, release } = await allocate(lock, { runner, fixedPorts });
+  const { allocation, release } = await allocate(lock, { runner, fixedPorts, preservedAllocation });
   const state = openState(join(stateDir, "state.sqlite"));
-  recordInstance(state, { id, lock, lockSha256, startedAt: now() });
+  // A fresh provider seed starts a fresh schedule. Connector receipts survive:
+  // the application is preserved and event IDs include the world identity.
+  resetState(state);
+  state.exec('DELETE FROM timeline_cycle');
+  const startupTime = now();
+  recordInstance(state, { id, lock, lockSha256, startedAt: startupTime });
+  startClock(state, { anchor: selectedWorld.clock?.anchor ?? "", now: startupTime });
+  pauseClock(state, { now: startupTime });
 
-  const children = [];
+  const children = [...preservedChildren];
   const instance = new Instance({ lock, allocation, children, state, id, stateDir, readyTimeoutMs, runtimeToken });
   instance.credentials = credentials;
+  instance.generation = generation;
   instance.artifactPath = artifactPath;
+  const preservedNames = new Set(preservedChildren.map(record => record.service));
+  for (const record of preservedChildren) record.launch.onExit = exited => instance.childExited(exited);
 
   // Every reservation is released together, immediately before the first spawn,
   // so no child inherits a socket the supervisor is still holding.
@@ -472,8 +527,7 @@ export async function start(lock, {
       () => process.exit(130),
     );
   };
-  process.on("SIGINT", onInterrupt);
-  process.on("SIGTERM", onInterrupt);
+  if (manageSignals) { process.on("SIGINT", onInterrupt); process.on("SIGTERM", onInterrupt); }
   const disarm = () => {
     process.off("SIGINT", onInterrupt);
     process.off("SIGTERM", onInterrupt);
@@ -481,6 +535,7 @@ export async function start(lock, {
 
   try {
     for (const service of lock.services) {
+      if (preservedNames.has(service.name)) continue;
       const useContainer = Boolean(service.container) && runner !== "process";
       if (useContainer) {
         // One container per service per run, named after the instance so a
@@ -507,6 +562,7 @@ export async function start(lock, {
           worldPath: artifactPath,
           runner,
           credentialsPath: usesCredentials ? credentialsPath : undefined,
+          onExit: record => instance.childExited(record),
         }),
       );
     }
@@ -530,7 +586,7 @@ export async function start(lock, {
     await captureBaselines(instance, runner);
   } catch (error) {
     disarm();
-    await instance.stop();
+    await instance.stop({ preserveServices: [...preservedNames] });
     throw error;
   }
 
@@ -576,7 +632,7 @@ export function publishProgress(instance) {
 async function captureBaselines(instance, runner) {
   const services = instance.lock.services.filter(
     (service) =>
-      !(Boolean(service.container) && runner !== "process") &&
+      service.lifecycle?.reset && !(Boolean(service.container) && runner !== "process") &&
       (service.lifecycle?.state?.snapshot_paths?.length ?? 0) > 0,
   );
   if (services.length === 0) {
@@ -589,15 +645,19 @@ async function captureBaselines(instance, runner) {
   publishProgress(instance);
 
   // Mail and SeaweedFS keep state in files that can change while they run.
-  // Copying those files live can make a baseline that never existed. Stop the
-  // whole application surface after accepted readiness, copy the quiet state,
-  // then start and prove the exact accepted world once more.
-  const launches = instance.children.map((record) => record.launch);
-  await instance.stopChildren();
+  // Copying those files live can make a baseline that never existed. Stop only
+  // resettable providers, copy the quiet state, then prove their baseline again.
+  // Application database processes continue to own their data and credentials.
+  const resettable = new Set(instance.lock.services.filter(service => service.lifecycle?.reset).map(service => service.name));
+  const launches = instance.children.filter(record => resettable.has(record.service)).map(record => record.launch);
+  const preserved = instance.children.filter(record => !resettable.has(record.service));
+  await instance.stopChildren({ services: [...resettable] });
   instance.children.length = 0;
+  instance.children.push(...preserved);
 
   for (const service of services) {
-    for (const [index, path] of service.lifecycle.state.snapshot_paths.entries()) {
+    for (const [index, declared] of service.lifecycle.state.snapshot_paths.entries()) {
+      const path = lifecyclePath(declared, instance.stateDir);
       if (!existsSync(path)) throw new Error(`${service.name} accepted readiness without reset state ${path}`);
       const baseline = join(instance.stateDir, "baselines", service.name, String(index));
       mkdirSync(dirnameOf(baseline), { recursive: true });
@@ -670,6 +730,16 @@ function imageExists(tag) {
 // Seed gates are awaited before protocol checks, because a service still loading
 // its world will refuse a protocol call for a reason that is not a fault.
 async function proveReady(instance, { readyTimeoutMs }) {
+  const controller = new AbortController();
+  instance.readinessAbort = controller;
+  const failedChild = () => instance.children.find(child => child.exited !== null && !child.expectedStop);
+  const failIfExited = () => {
+    const child = failedChild();
+    if (child) throw new StartupError('service_exited', `${child.service} exited with code ${child.exited.code} before it became ready`,
+      { service: child.service, exited: child.exited, log: child.log.tail(), state_changed: true });
+  };
+  try {
+  failIfExited();
   for (const service of instance.lock.services) {
     const record = instance.children.find((entry) => entry.service === service.name);
     const results = [];
@@ -685,7 +755,8 @@ async function proveReady(instance, { readyTimeoutMs }) {
         }
 
         const address = instance.addressOf(service.name, check.port);
-        const result = await waitFor(check, address, { timeoutMs: readyTimeoutMs });
+        const result = await waitFor(check, address, { timeoutMs: readyTimeoutMs, signal: controller.signal });
+        failIfExited();
         results.push({ ...check, ...result, service: service.name });
 
         if (!result.ok) {
@@ -717,10 +788,13 @@ async function proveReady(instance, { readyTimeoutMs }) {
       }
     }
 
+    if (record.exited !== null) throw new StartupError("service_exited", `${service.name} exited before readiness was accepted`,
+      { service: service.name, exited: record.exited, log: record.log.tail(), state_changed: true });
     instance.readiness.set(service.name, aggregate(results));
     instance.serviceStates.set(service.name, "running");
     publishProgress(instance);
   }
 
   return instance.readiness;
+  } finally { if (instance.readinessAbort === controller) instance.readinessAbort = null; }
 }

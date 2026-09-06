@@ -43,7 +43,7 @@ starts a listener.
 ## Configuration
 
 - `WORLDFIXTURE_WORLD_PATH` selects a prepared world artifact.
-- `WORLDFIXTURE_SEED` selects the base YAML seed. The default is `seed.yaml`.
+- The service requires a verified world artifact. It does not read a base YAML seed.
 - `WORLDFIXTURE_SEED_OVERLAY` adds one JSON object after the world projection.
 - `WORLDFIXTURE_PORT_<VENDOR>` enables a vendor on that port.
 - `WORLDFIXTURE_BIND_<VENDOR>` sets its bind address.

@@ -1,7 +1,8 @@
 # The smallest world that runs
 
-Two people, one channel, two messages, one project and one task. Copy this
-directory, edit it, and you have your own world.
+Two people, one channel, two messages, one project, one task and one scheduled
+arrival. After thirty seconds of world time, Tomas posts in `#general` about
+checking the export retry. Copy this directory and edit it to make your own world.
 
 `worldfixture new` makes the copy, from anywhere, whether WorldFixture came from
 npm or from a checkout:
@@ -29,32 +30,33 @@ relative to that anchor.
 domains, and several fragments can contribute to the same domain, which is how
 the larger worlds in `worlds/` are split into a backbone and a story.
 
-## The empty domains, and why they are there
+## Optional sections
 
-The `business.operations/v1` profile projects `communication`, `finance`,
-`software`, `support`, `work`, `agentic` and `stories`, and it indexes them
-rather than defaulting them. A world that leaves one out is refused by
-`validate`, by name, so declare the ones you have no records for as empty. That
-is what most of `core.json` is.
+The starter includes empty collections to show where more records can go. You
+can omit sections that your world does not use. The `business.operations/v1`
+profile does not require unrelated sections or provider identities.
 
-`site` is genuinely optional; this world has one anyway, because a public site is
-one of the surfaces an instance serves.
+Keep references valid when you remove a section. For example, the scheduled
+chat arrival needs both its author and its channel. Replace that arrival with
+another real action if you remove the channel.
 
 ## Rules the build enforces
 
-- Every person needs a unique `id`, `email`, `github_login` and `slack_id`, and a
-  `slack_id` starts with `U`.
-- Exactly one person is `primary`. The CLI acts as that person by default and
-  their credentials are the ones `worldfixture env` prints.
+- Every world needs a nonempty authored `timeline`. Give each arrival a unique
+  `id`, a nonnegative integer `after_seconds`, a supported `kind`, and its
+  required `payload`. An empty timeline is not an open-ended event model.
+- Each person needs a unique canonical `id` and a name. Provider adapters derive
+  native IDs when you do not declare them. Mail and some identity APIs need email.
+- A `primary` person is optional. When one is declared, personal default bindings
+  use that person. An operation that needs an actor must name an existing person.
 - Every email and organization domain ends in `.test`. The build refuses
   anything else, so a world can never address a real inbox.
 - `agentic.actor_id` names a person in this world.
 - Nothing in a world may depend on the clock, the filesystem, or randomness. The
   same source always produces the same artifact bytes.
 
-## What it does not do
+## Session dates
 
-A world you build yourself starts at its authored anchor rather than being
-rebased onto today, because rebasing needs the world source and the source lives
-on your machine rather than in the image. Its history will read as dated. The
-worlds shipped in the image are rebased on every `up`.
+A normal start can prepare a session copy at the current date when it can verify
+this source. `--no-rebase` keeps the authored anchor. Keep the source with your
+artifact so the runtime can verify and rebuild it.

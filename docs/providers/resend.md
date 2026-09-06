@@ -18,9 +18,9 @@ behavior and the official Resend SDK are
 ## Connect
 
 Use `RESEND_BASE_URL` and `RESEND_TOKEN`. Send
-`Authorization: Bearer TOKEN_VALUE` and JSON bodies. The local routes also
-accept anonymous requests. They do not apply Resend's production `User-Agent`
-rule. Do not depend on these differences.
+`Authorization: Bearer TOKEN_VALUE` and JSON bodies. The token is an account
+credential. The product rejects anonymous requests and unknown tokens. The
+local routes do not apply Resend's production `User-Agent` rule.
 
 WorldFixture uses `@emulators/resend` 0.10.0.
 

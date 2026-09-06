@@ -4,12 +4,20 @@
   "title": "WorldFixture environment v1",
   "description": "What a user, an example or an integration asks for. It names capabilities and never selects ports, mutable image tags, or internal topology. The resolver turns it into an environment lock, which is the immutable thing a run actually uses.",
   "type": "object",
-  "required": ["api_version", "world", "requires"],
+  "required": [
+    "api_version",
+    "world",
+    "requires"
+  ],
   "properties": {
-    "api_version": {"const": "worldfixture.environment/v1"},
+    "api_version": {
+      "const": "worldfixture.environment/v1"
+    },
     "world": {
       "type": "object",
-      "required": ["use"],
+      "required": [
+        "use"
+      ],
       "properties": {
         "use": {
           "description": "A world id and version, as `<id>:v<n>`. The resolver pins its digests into the lock; an existing lock never follows a newer release.",
@@ -20,46 +28,85 @@
     },
     "experience": {
       "type": "object",
-      "required": ["use"],
-      "properties": {"use": {"type": "string"}}
+      "required": [
+        "use"
+      ],
+      "properties": {
+        "use": {
+          "type": "string"
+        }
+      }
     },
     "requires": {
       "description": "The capability profiles this environment needs. Each must be provided by exactly one available service, or resolution fails by name rather than by starting something that half works.",
       "type": "array",
       "minItems": 1,
-      "items": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"}
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"
+      }
     },
     "prefer": {
       "description": "Which service implements a capability, when more than one can. Absent means the resolver refuses an ambiguous capability rather than choosing for the user.",
       "type": "object",
-      "additionalProperties": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      }
     },
     "bindings": {
       "description": "Environment variables for the target application, each naming `<profile>/<attribute>`. The attribute must be one the profile declares under `provides[].binds`.",
       "type": "object",
-      "additionalProperties": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+/[a-z][a-z0-9_]*$"},
-      "propertyNames": {"pattern": "^[A-Z][A-Z0-9_]*$"}
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+/[a-z][a-z0-9_]*$"
+      },
+      "propertyNames": {
+        "pattern": "^[A-Z][A-Z0-9_]*$"
+      }
     },
     "rules": {
       "description": "Causal rules this run applies, in addition to any the world declares. A rule belongs here when it describes a PROVIDER's behaviour -- Slack emailing the members of a channel someone posted in -- which is true of every workspace and is not a fact about any one world; a rule that belongs to a world's story, such as an invoice being paid producing a receipt, belongs in world data instead. The engine only fires either kind on a fact the runtime originated.",
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "when", "emit"],
+        "required": [
+          "id",
+          "when",
+          "emit"
+        ],
         "properties": {
-          "id": {"type": "string"},
-          "when": {"type": "string"},
-          "requires": {"type": "array", "items": {"type": "string"}},
+          "id": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          },
+          "requires": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "emit": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
-              "required": ["type"],
+              "required": [
+                "type"
+              ],
               "properties": {
-                "type": {"type": "string"},
-                "after": {"type": "string", "pattern": "^[0-9]+(ms|s|m)$"},
-                "with": {"type": "object"}
+                "type": {
+                  "type": "string"
+                },
+                "after": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(ms|s|m)$"
+                },
+                "with": {
+                  "type": "object"
+                }
               }
             }
           }
@@ -69,13 +116,68 @@
     "target": {
       "description": "The application under test. `kind: none` is a complete environment -- a world with no target is how the CLI and the workbench use one.",
       "type": "object",
-      "required": ["kind"],
+      "required": [
+        "kind"
+      ],
       "properties": {
-        "kind": {"enum": ["none", "http", "mcp"]},
-        "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "kind": {
+          "enum": [
+            "none",
+            "http",
+            "mcp"
+          ]
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
         "identity": {
           "description": "The world person the target acts as. Any binding whose attribute is declared `per_person` resolves for this person, so a run cannot hand out a credential belonging to nobody.",
           "type": "string"
+        },
+        "application_url": {
+          "type": "string",
+          "pattern": "^https?://",
+          "description": "Explicit connector transport target required by application-event arrivals."
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "enum": [
+            "all",
+            "selected-capabilities"
+          ]
+        },
+        "binding_diagnostics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "binding",
+              "status",
+              "reason"
+            ],
+            "properties": {
+              "binding": {
+                "type": "string"
+              },
+              "status": {
+                "const": "not-selected"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     }

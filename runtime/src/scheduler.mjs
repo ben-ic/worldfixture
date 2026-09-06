@@ -1,55 +1,13 @@
-// The deterministic timeline scheduler.
-//
-// WHAT THIS FIXES. A world artifact carries a `timeline`: a list of facts that
-// are meant to arrive after the world starts running, each with an
-// `after_seconds`. `business.saas-company.v2` declares eight of them. Before
-// this file, ONE of the eight was ever delivered -- the compiler's
-// `_arrival_projection` kept `kind == "incoming-email"` and dropped the rest,
-// and the survivor was played by a `setTimeout` inside the composer. The other
-// seven were compiled, digested and verified into the artifact, and then nothing
-// played them. A world that says a message arrives at t+20s and never delivers
-// it is lying about its own contents.
-//
-// The scheduler is specified to support two kinds of arrival: deterministic
-// scheduled events, and stochastic actor activation. This file is the
-// deterministic half. There is no sampling here and no randomness: the same
-// world plays the same events at the same world-relative times, every run.
-//
-// FOUR RULES IT KEEPS, each of which the shortcut version would break:
-//
-//   * EVERY ARRIVAL IS A REAL PROVIDER WRITE. A chat message goes through the
-//     Slack Web API as its author. Mail goes over SMTP. A comment goes through
-//     the GitHub API. Nothing reaches into an emulator's store, so an arrival is
-//     indistinguishable from a person doing the same thing by hand -- which is
-//     the point of the world being made of real interfaces.
-//
-//   * EVERY ARRIVAL IS AN EVENT, AND CAUSES WHAT IT SHOULD. Delivery goes
-//     through `commands.mjs`, so an arrival records a command, records the fact
-//     with the provider's own evidence, and fires the causal rules. A scheduled
-//     Slack message therefore produces the same mail notifications a manual one
-//     does. The composer's `setTimeout` could do none of this: it wrote to
-//     Gmail from outside the runtime, with no ledger row and no rules.
-//
-//   * TIME IS WORLD TIME, NOT PROCESS TIME. Due times are compared against the
-//     environment clock in `clock.mjs`, which starts after readiness. On a cold
-//     machine, startup takes tens of seconds; a timeline counted from process
-//     start would spend its opening minute before anything was listening.
-//
-//   * RESET RE-ARMS IT. `resetState` clears `scheduled_events` and `clock`, so
-//     after a reset the world plays its timeline again from zero. An arrival
-//     that had already been delivered before the reset is delivered again,
-//     because the world was restored to the state in which it had not yet
-//     happened.
-//
-// WHAT IT DOES NOT DO. It does not invent a destination. A `webhook` arrival
-// needs a subscriber, and this instance may have none; that arrival is recorded
-// as skipped WITH THE REASON rather than dropped silently or delivered somewhere
-// it was not addressed.
+// The persisted schedule is the source for delivery and timeline inspection.
+// One runtime controller serializes ticks, advance and reset. Each due arrival
+// uses a public provider API; failed, skipped and interrupted attempts remain
+// distinct from accepted writes. Delayed effects drain in due-time order.
 
 import { randomUUID } from "node:crypto";
 
 import { appendEvent } from "./state.mjs";
-import { elapsedMs } from "./clock.mjs";
+import { elapsedMs, withClockElapsed } from "./clock.mjs";
+import { deliverEffect, worldNow } from "./causal-queue.mjs";
 import { deliverArrival } from "./arrivals.mjs";
 
 const id = (prefix) => `${prefix}_${randomUUID().replaceAll("-", "").slice(0, 24)}`;
@@ -62,7 +20,7 @@ export const DEFAULT_TICK_MS = 250;
 //
 // The table is the schedule, not the world file. That matters for two reasons:
 // a run can be inspected to see what is still pending, and `delivered_at` is the
-// idempotency record that stops a restarted tick from replaying an arrival.
+// persisted outcome prevents another normal tick from replaying an arrival.
 export function armTimeline(db, world) {
   const timeline = [...(world.timeline ?? [])].sort(
     (left, right) => (left.after_seconds ?? 0) - (right.after_seconds ?? 0) || String(left.id).localeCompare(String(right.id)),
@@ -93,42 +51,58 @@ export function armTimeline(db, world) {
 }
 
 export function pending(db) {
-  return db.prepare("SELECT * FROM scheduled_events WHERE delivered_at IS NULL ORDER BY due_at, id").all();
+  return db.prepare("SELECT * FROM scheduled_events WHERE status = 'pending' ORDER BY due_at, id").all();
 }
 
 export function due(db, elapsed) {
   return db
-    .prepare("SELECT * FROM scheduled_events WHERE delivered_at IS NULL AND due_at <= ? ORDER BY due_at, id")
+    .prepare("SELECT * FROM scheduled_events WHERE status = 'pending' AND due_at <= ? ORDER BY due_at, id")
     .all(elapsed);
 }
 
 export function timelineState(db) {
-  const rows = db.prepare("SELECT delivered_at, due_at, type FROM scheduled_events ORDER BY due_at, id").all();
-  const waiting = rows.filter((row) => row.delivered_at === null);
-  return {
-    total: rows.length,
-    delivered: rows.length - waiting.length,
-    pending: waiting.length,
-    next_due_ms: waiting[0]?.due_at ?? null,
-  };
+  const summary = { total: 0, pending: 0, in_flight: 0, delivered: 0, failed: 0, skipped: 0, uncertain: 0, next_due_ms: null };
+  for (const row of db.prepare('SELECT status, COUNT(*) AS count FROM scheduled_events GROUP BY status').all()) {
+    summary[row.status] = row.count; summary.total += row.count;
+  }
+  summary.next_due_ms = db.prepare("SELECT MIN(due_at) AS due FROM scheduled_events WHERE status='pending'").get().due;
+  return summary;
+}
+
+export function timelineRecords(db, query = {}) {
+  const input = query instanceof URLSearchParams ? [...query.entries()] : Object.entries(query);
+  const valuesByName = {}, allowed = new Set(['after', 'limit', 'fromMs', 'toMs']);
+  function badQuery(message) { const error = new Error(message); error.code = 'bad_timeline_query'; error.status = 400; throw error; }
+  for (const [key, value] of input) {
+    if (!allowed.has(key) || Object.hasOwn(valuesByName, key)) badQuery('Unknown or duplicate timeline query field');
+    if (value === undefined) continue;
+    if (typeof value === 'string' && !/^\d+$/.test(value)) badQuery('Timeline query values must be whole nonnegative numbers');
+    valuesByName[key] = typeof value === 'string' ? Number(value) : value;
+  }
+  const { after = 0, limit = 100, fromMs, toMs } = valuesByName;
+  if (!Number.isSafeInteger(after) || after < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 1000) badQuery('Timeline cursor and limit must be valid nonnegative integers; limit is 1..1000');
+  for (const value of [fromMs, toMs]) if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) badQuery('Timeline time bounds must be nonnegative safe integers');
+  if (fromMs !== undefined && toMs !== undefined && fromMs > toMs) badQuery('Timeline start must not exceed its end');
+  const where = ['seq > ?'], values = [after];
+  if (fromMs !== undefined) { where.push('due_at >= ?'); values.push(fromMs); }
+  if (toMs !== undefined) { where.push('due_at <= ?'); values.push(toMs); }
+  const rows = db.prepare(`SELECT * FROM scheduled_events WHERE ${where.join(' AND ')} ORDER BY seq LIMIT ?`).all(...values, limit + 1);
+  const data = rows.slice(0, limit).map(row => ({ ...row, payload: JSON.parse(row.payload) }));
+  return { data, next_cursor: data.at(-1)?.seq ?? after, has_more: rows.length > limit,
+    total_count: db.prepare(`SELECT COUNT(*) AS count FROM scheduled_events${where.length > 1 ? ` WHERE ${where.slice(1).join(' AND ')}` : ''}`).get(...values.slice(1)).count };
 }
 
 // ---- one arrival ---------------------------------------------------------
 
-// Deliver one row and record what happened to it.
-//
-// A failed delivery is marked delivered anyway, with a `scheduler.arrival.failed`
-// event carrying the reason. Leaving it pending would make the tick retry it
-// every 250ms for the rest of the run, and a world that floods its own ledger
-// with one broken arrival is worse than one that reports the arrival as broken
-// once. The distinction between "worked", "skipped" and "failed" is in the
-// ledger, where a reader can see it.
+// Record a claim before the provider call; interrupted claims require inspection.
 export async function playOne(db, row, context) {
+  const current = db.prepare('SELECT * FROM scheduled_events WHERE id=?').get(row.id);
+  if (current && current.status !== 'pending') return { arrival: row.id, id: row.id, kind: row.type, status: current.status, reason: current.error };
   const payload = JSON.parse(row.payload);
   const command = {
     id: id("cmd"),
     type: "world.timeline.arrival.v1",
-    actor_id: payload.author_id ?? payload.from_id ?? null,
+    actor_id: payload.actor_id ?? payload.author_id ?? payload.from_id ?? (row.type === "world.causal.effect.v1" ? payload.payload?.actor_id : null) ?? null,
     target: { service: "scheduler", arrival: row.id },
     input: { kind: row.type, due_at: row.due_at },
   };
@@ -139,9 +113,12 @@ export async function playOne(db, row, context) {
   ).run(command.id, command.type, command.actor_id, JSON.stringify(command.target), JSON.stringify(command.input),
     `timeline:${row.id}`, Date.now());
 
+  db.prepare("UPDATE scheduled_events SET status='in_flight',attempted_at=?,command_id=? WHERE id=? AND status='pending'").run(Date.now(), command.id, row.id);
   let outcome;
   try {
-    outcome = await deliverArrival(db, { id: row.id, kind: row.type, payload }, { ...context, commandId: command.id });
+    outcome = row.type === "world.causal.effect.v1"
+      ? await deliverEffect(db, payload, { ...context, commandId: command.id })
+      : await deliverArrival(db, { id: row.id, kind: row.type, payload }, { ...context, commandId: command.id });
   } catch (error) {
     outcome = { status: "failed", reason: error.message };
   }
@@ -152,7 +129,7 @@ export async function playOne(db, row, context) {
       type: `world.timeline.arrival.${outcome.status}.v1`,
       actor_id: command.actor_id,
       source: "scheduler",
-      occurred_at: new Date(context.now?.() ?? Date.now()).toISOString(),
+      occurred_at: new Date(worldNow(db, context.now?.() ?? Date.now())).toISOString(),
       provider_evidence: { arrival: row.id, kind: row.type, reason: outcome.reason },
       caused_by: command.id,
     });
@@ -163,10 +140,13 @@ export async function playOne(db, row, context) {
     outcome.reason ?? null,
     command.id,
   );
-  db.prepare("UPDATE scheduled_events SET delivered_at = ?, caused_by = ? WHERE id = ?")
-    .run(Date.now(), command.id, row.id);
+  const eventId = outcome.event_id ?? outcome.event?.id ?? db.prepare('SELECT event_id FROM commands WHERE id=?').get(command.id)?.event_id
+    ?? db.prepare('SELECT id FROM events WHERE caused_by=? ORDER BY seq LIMIT 1').get(command.id)?.id ?? null;
+  db.prepare('UPDATE commands SET event_id=COALESCE(event_id,?) WHERE id=?').run(eventId, command.id);
+  db.prepare('UPDATE scheduled_events SET status=?,delivered_at=?,completed_at=?,event_id=?,error=? WHERE id=?')
+    .run(outcome.status, outcome.status === 'delivered' ? Date.now() : null, Date.now(), eventId, outcome.reason ?? null, row.id);
 
-  return { arrival: row.id, kind: row.type, ...outcome };
+  return { arrival: row.id, id: row.id, kind: row.type, due_at: row.due_at, event_id: eventId, ...outcome };
 }
 
 // Every arrival now due, in world order, one at a time.
@@ -176,67 +156,13 @@ export async function playOne(db, row, context) {
 export async function playDue(db, context, { now = Date.now() } = {}) {
   const elapsed = elapsedMs(db, now);
   const played = [];
-  for (const row of due(db, elapsed)) played.push(await playOne(db, row, context));
+  for (;;) {
+    if (context.shouldStop?.()) break;
+    const row = db.prepare("SELECT * FROM scheduled_events WHERE status='pending' AND due_at<=? ORDER BY due_at,id LIMIT 1").get(elapsed);
+    if (!row) break;
+    const result = await withClockElapsed(db, row.due_at, () => playOne(db, row, context));
+    played.push(result);
+    if (result.status === 'failed' && context.stopOnFailure) break;
+  }
   return played;
-}
-
-// ---- the loop ------------------------------------------------------------
-
-// Start ticking. Returns a handle with `stop()`, so the caller owns its
-// lifetime: the supervisor stops it before it stops the services an arrival
-// would otherwise try to write to.
-export function startScheduler(db, context, { tickMs = DEFAULT_TICK_MS, now = () => Date.now(), onPlayed, onError } = {}) {
-  let running = false;
-  let stopped = false;
-  let suspended = false;
-
-  const tick = async () => {
-    // One tick at a time. An arrival that takes longer than the interval --
-    // a Slack message whose causal rule sends seven emails over SMTP -- must not
-    // have the next tick start on top of it.
-    if (running || stopped || suspended) return;
-    running = true;
-    try {
-      const played = await playDue(db, context, { now: now() });
-      if (played.length > 0) onPlayed?.(played);
-    } catch (error) {
-      onError?.(error);
-    } finally {
-      running = false;
-    }
-  };
-
-  const timer = setInterval(tick, tickMs);
-  timer.unref?.();
-
-  // Wait for an arrival in flight rather than cutting a provider write in half;
-  // it holds a database row it is about to mark delivered.
-  const settle = async () => {
-    while (running) await new Promise((resolve) => setTimeout(resolve, 10));
-  };
-
-  return {
-    tick,
-    // SUSPEND IS NOT STOP, and reset is why. Reset stops every application
-    // surface, restores them, and starts them again; the scheduler has to be
-    // quiet across that window and alive afterwards. An early version called
-    // `stop()` there, which left the restored world with a timeline that could
-    // never play -- a reset that silently disabled the thing it had just
-    // re-armed.
-    async suspend() {
-      suspended = true;
-      await settle();
-    },
-    resume() {
-      suspended = false;
-    },
-    get suspended() {
-      return suspended;
-    },
-    async stop() {
-      stopped = true;
-      clearInterval(timer);
-      await settle();
-    },
-  };
 }

@@ -21,7 +21,9 @@
             "finance.bank-transaction.created",
             "mail.payment-receipt.available"
           ],
+          "execution": "descriptive",
           "id": "rule-invoice-payment",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "invoice_id",
             "payment_id",
@@ -34,12 +36,52 @@
             "support.case.updated",
             "slack.customer-channel.notified"
           ],
+          "execution": "descriptive",
           "id": "rule-support-reply",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "customer_id",
             "thread_id"
           ],
           "when": "mail.customer-reply.received"
+        },
+        {
+          "api_version": "worldfixture.causal-rule/v1",
+          "emit": [
+            {
+              "after": "1s",
+              "type": "mail.notification.requested.v1",
+              "with": {
+                "author": {
+                  "copy": "actor_id"
+                },
+                "channel": {
+                  "copy": "provider_evidence.channel_name"
+                },
+                "recipients": {
+                  "lookup": {
+                    "collection": "communication.channels",
+                    "match": {
+                      "field": "name",
+                      "value": {
+                        "copy": "provider_evidence.channel_name"
+                      }
+                    },
+                    "select": "member_ids"
+                  }
+                },
+                "text": {
+                  "copy": "provider_evidence.text"
+                }
+              }
+            }
+          ],
+          "id": "rule-slack-channel-notification",
+          "requires": [
+            "provider_evidence.channel_name",
+            "actor_id"
+          ],
+          "when": "communication.message.sent.v1"
         }
       ],
       "constraints": [

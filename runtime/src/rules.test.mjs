@@ -6,8 +6,37 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-import { CHANNEL_NOTIFICATION } from "./environments.mjs";
-import { RuleError, applyRules, eligible, originated, parseDelay } from "./rules.mjs";
+import { defaultEnvironment } from "./environments.mjs";
+import { RuleError, applyRules, parseDelay } from "./rules.mjs";
+
+// Explicit test fixture; notifications are authored world policy.
+const CHANNEL_NOTIFICATION = {
+  api_version: "worldfixture.causal-rule/v1",
+  id: "rule-slack-channel-notification",
+  when: "communication.message.sent.v1",
+  requires: ["provider_evidence.channel_name", "actor_id"],
+  emit: [
+    {
+      type: "mail.notification.requested.v1",
+      // Real notification mail is not instant, and a bounded delay is part of
+      // the rule language rather than decoration.
+      after: "1s",
+      with: {
+        recipients: {
+          lookup: {
+            collection: "communication.channels",
+            match: { field: "name", value: { copy: "provider_evidence.channel_name" } },
+            select: "member_ids",
+          },
+        },
+        author: { copy: "actor_id" },
+        channel: { copy: "provider_evidence.channel_name" },
+        text: { copy: "provider_evidence.text" },
+      },
+    },
+  ],
+};
+
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const WORLD = JSON.parse(readFileSync(join(ROOT, "dist/business.saas-company.v2/world.json"), "utf8"));
@@ -33,14 +62,6 @@ test("a delay is bounded and named, or it is not a delay", () => {
   for (const bad of ["soon", "5", "-1s", "1h", "1e3s"]) {
     assert.throws(() => parseDelay(bad), RuleError, bad);
   }
-});
-
-test("only a fact the runtime originated can drive a rule", () => {
-  // A rule over a change a service made on its own needs the durable change
-  // journal no service offers. One that "mostly" fires is worse than none.
-  assert.equal(originated(messageSent()), true);
-  assert.equal(originated(messageSent({ caused: null })), false);
-  assert.deepEqual(eligible([CHANNEL_NOTIFICATION], messageSent({ caused: null }), { world: WORLD }), []);
 });
 
 test("a rule copies from the event and looks up in the world", () => {
@@ -102,9 +123,6 @@ test("the world's own rules parse under the same engine", () => {
   }
 });
 
-test("the channel notification is a run rule, not world data", () => {
-  // It describes how Slack behaves, which is true of every workspace. Writing it
-  // into this world would state it as something this company does.
-  const ids = WORLD.agentic.causal_rules.map((rule) => rule.id);
-  assert.ok(!ids.includes(CHANNEL_NOTIFICATION.id));
+test("channel notifications are not injected into generated environments", () => {
+  assert.deepEqual(defaultEnvironment('test.sparse:v1').rules, []);
 });

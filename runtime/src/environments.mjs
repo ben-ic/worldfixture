@@ -1,3 +1,5 @@
+import { selectCompatibleCapabilities } from './capability-world.mjs';
+
 // The environment `worldfixture up` starts when nobody asked for anything.
 //
 // The first run takes no configuration: no selector, no account, no key, no
@@ -11,6 +13,11 @@
 // list can claim a surface it did not start.
 
 const PROVIDER_CAPABILITIES = [
+  "slack.messaging.v1",
+  "github.repositories.v1",
+  "aws.iam.v1",
+  "aws.sqs.v1",
+  "aws.sts.v1",
   "apple.oauth.v1",
   "clerk.users.v1",
   "clerk.organizations.v1",
@@ -59,9 +66,16 @@ const PROVIDER_CAPABILITIES = [
   "twilio.verify.v1",
   "vercel.projects.v1",
   "vercel.teams.v1",
+  "domain.collections.v1",
 ];
 
 const PROVIDER_BINDINGS = {
+  SLACK_BASE_URL: "slack.messaging.v1/base_url", SLACK_TOKEN: "slack.messaging.v1/token",
+  GITHUB_BASE_URL: "github.repositories.v1/base_url", GITHUB_TOKEN: "github.repositories.v1/token",
+  DOMAIN_BASE_URL: "domain.collections.v1/base_url",
+  DOMAIN_TOKEN: "domain.collections.v1/token",
+  AWS_BASE_URL: "aws.iam.v1/base_url",
+  AWS_TOKEN: "aws.iam.v1/token",
   APPLE_BASE_URL: "apple.oauth.v1/base_url",
   APPLE_TOKEN: "apple.oauth.v1/token",
   CLERK_BASE_URL: "clerk.users.v1/base_url",
@@ -108,6 +122,7 @@ const PROVIDER_BINDINGS = {
 // publishes; `resolve.mjs` maps those to services, and each service manifest
 // already declares which world projection it reads.
 export const WORLD_PARTS = {
+  domain: ["domain.collections.v1"],
   slack: ["slack.messaging.v1"],
   github: ["github.repositories.v1"],
   site: ["http.public-site.v1"],
@@ -134,6 +149,9 @@ export function defaultEnvironment(
     includePostgres = false,
     includeMySQL = false,
     only,
+    oauthClients = {},
+    artifactPath,
+    manifests,
     // Whose credentials the bindings carry. Named by the caller, which has read
     // the world, because it is a fact about the world and not about this file.
     //
@@ -142,8 +160,8 @@ export function defaultEnvironment(
     // account for that id and refused to start with four unresolved bindings --
     // measured on `consumer.retail-brand:v1`, whose primary person is
     // `iris-mendel`, and on any world somebody compiles themselves. The default
-    // stays for a caller that has no world to read.
-    identity = "maya-chen",
+    // is absent when the world does not declare a primary person.
+    identity,
   } = {},
 ) {
   // `only` names the parts of the world this run wants. Absent, it wants all of
@@ -181,19 +199,38 @@ export function defaultEnvironment(
         SMTP_PASSWORD: "mail.smtp-submission.v1/password",
       } : {}),
     },
-    rules: wants("slack") && wants("mail") ? [CHANNEL_NOTIFICATION] : [],
+    rules: [],
+    execution: { mode: only ? "selected-capabilities" : "all" },
     // The world's own primary person. A per-person credential belonging to
     // nobody is refused, and there is no anonymous default.
-    target: { kind: "none", identity },
+    target: { kind: "none", ...(identity ? { identity } : {}) },
   };
 
   // The product image is the complete zero-configuration world. Start every
-  // provider listener whose live unauthenticated protocol check is declared.
+  // provider listener that has compatible source and projection requirements.
   // A source checkout keeps the smaller development default so its ordinary
   // CLI tests do not start thirteen listeners for each case.
   if (includeProviders && wants("providers")) {
     spec.requires.push(...PROVIDER_CAPABILITIES);
     Object.assign(spec.bindings, PROVIDER_BINDINGS);
+  }
+
+  for (const [provider, clients] of Object.entries(oauthClients)) {
+    if (!spec.requires.some(profile => profile.startsWith(`${provider}.`))) continue;
+    const profile = `${provider}.oauth.v1`;
+    if (!spec.requires.includes(profile)) spec.requires.push(profile);
+    // OAuth can be selected without the provider's content capability. Its
+    // connection URL and user token must still reach the selected listener.
+    spec.bindings[`${provider.toUpperCase()}_BASE_URL`] = `${profile}/base_url`;
+    if (manifests?.some(manifest => manifest.provides.some(capability => capability.profile === profile && capability.binds?.some(binding => binding.name === 'token')))) {
+      spec.bindings[`${provider.toUpperCase()}_TOKEN`] = `${profile}/token`;
+    }
+    const selected = clients.find(client => client.primary) ?? (clients.length === 1 ? clients[0] : undefined);
+    if (!selected) continue;
+    spec.bindings[`${provider.toUpperCase()}_CLIENT_ID`] = `${profile}/client_id`;
+    const publicClient = (provider === "clerk" && selected.is_public === true)
+      || (provider === "okta" && selected.token_endpoint_auth_method === "none");
+    if (!publicClient && !selected.public_key) spec.bindings[`${provider.toUpperCase()}_CLIENT_SECRET`] = `${profile}/client_secret`;
   }
 
   // SeaweedFS is part of the product image. A source checkout still uses its
@@ -229,44 +266,13 @@ export function defaultEnvironment(
     spec.bindings.MYSQL_URL = "mysql.wire.v1/url";
   }
 
+  if (wanted?.has("domain")) {
+    spec.requires.push("domain.collections.v1");
+    spec.bindings.DOMAIN_BASE_URL = "domain.collections.v1/base_url";
+    spec.bindings.DOMAIN_TOKEN = "domain.collections.v1/token";
+  }
+  spec.requires = [...new Set(spec.requires)];
+  if (artifactPath && manifests) return selectCompatibleCapabilities(spec, { artifactPath, manifests,
+    explicitProfiles: only?.flatMap(part => WORLD_PARTS[part] ?? []) ?? [] });
   return spec;
 }
-
-// Slack emails the other members of a channel somebody posted in.
-//
-// WHY THIS IS A RUN RULE AND NOT WORLD DATA. Cross-service behaviour normally
-// lives in world data, and that is right for behaviour that belongs to a
-// world's story -- an invoice being paid produces a receipt. This
-// is not that. It is a fact about how Slack behaves, true of every Slack
-// workspace, and writing it into `business.saas-company` would state it as
-// something this particular company does. The world already carries the only
-// part that IS about this world: who is in each channel.
-//
-// WHAT IT DOES NOT DO. It notifies the channel's own members, taken from the
-// world's `member_ids`, and nobody else. A rule that mailed somebody outside the
-// workspace would be inventing a relationship the world does not declare.
-export const CHANNEL_NOTIFICATION = {
-  id: "rule-slack-channel-notification",
-  when: "communication.message.sent.v1",
-  requires: ["provider_evidence.channel_name", "actor_id"],
-  emit: [
-    {
-      type: "mail.notification.requested.v1",
-      // Real notification mail is not instant, and a bounded delay is part of
-      // the rule language rather than decoration.
-      after: "1s",
-      with: {
-        recipients: {
-          lookup: {
-            collection: "communication.channels",
-            match: { field: "name", value: { copy: "provider_evidence.channel_name" } },
-            select: "member_ids",
-          },
-        },
-        author: { copy: "actor_id" },
-        channel: { copy: "provider_evidence.channel_name" },
-        text: { copy: "provider_evidence.text" },
-      },
-    },
-  ],
-};

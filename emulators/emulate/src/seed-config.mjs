@@ -2,23 +2,13 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
+import { oauthClientEntries } from "./oauth-client-config.mjs";
 
 // The only world-artifact shape this composer knows how to read, and the one file it
 // reads out of an artifact. Both are stated here rather than assembled at the call
 // site so the manifest lookup key and the path on disk cannot drift apart.
 const WORLD_API_VERSION = "worldfixture.world-artifact/v1";
 const OVERLAY_FILE = "projections/emulator-overlay.json";
-
-// What a sample seed carries that a world has to declare for itself. Anything
-// here is a credential or an application registration, not world content.
-const CREDENTIAL_KEYS = [
-  "oauth_apps",
-  "oauth_clients",
-  "oauth_applications",
-  "integrations",
-  "tokens",
-  "api_keys",
-];
 
 export function loadSeedConfig({
   seedPath = "seed.yaml",
@@ -27,46 +17,16 @@ export function loadSeedConfig({
   credentialsPath,
   log = () => {},
 } = {}) {
-  let seed = readObject(seedPath, "YAML", (body) => parseYaml(body) ?? {});
+  let seed = worldPath ? {} : readObject(seedPath, "YAML", (body) => parseYaml(body) ?? {});
 
+  let worldIdentity;
+  let declaredProviders = [];
   if (worldPath) {
-    const { overlay, projection } = readVerifiedWorldOverlay(worldPath);
-    seed = deepMerge(seed, overlay);
-    // A selected world owns the complete local Notion fixture. Do not merge a
-    // sample workspace into it or retain the sample when the projection is
-    // absent. This keeps separate worlds from sharing identities or content.
-    seed.notion = structuredClone(overlay.notion ?? {});
-    seed.tokens = structuredClone(overlay.tokens ?? {});
-    // A compiled world owns provider identities and resources. Do not retain
-    // the sample OAuth applications from seed.yaml when the world did not
-    // declare them. Their fixed localhost callback URLs make a target app with
-    // a fallback port fail before consent. With no declared application, the
-    // local provider accepts the client configuration supplied by the target
-    // app while it still validates state, code, redirect URI and token use.
-    // EVERY vendor, and every credential the sample seed carries.
-    //
-    // This named slack, github and google, and the reason it gives applies to
-    // all of them. What the other five kept was not cosmetic: `seed.yaml` ships
-    // `lin_test_admin`, a Linear token with read, write, issues:create,
-    // comments:create and admin scope belonging to
-    // `admin@sample.worldfixture.test` -- a person no world declares -- and it
-    // authenticated in every compiled world. Okta, Clerk, Vercel, Apple and
-    // Twilio each carried a sample client secret or API key the same way.
-    //
-    // `main.mjs` spends thirty lines on why an unknown bearer token must not
-    // become somebody. These arrived through the vendor's own store instead of
-    // the composer's token map and skipped that argument entirely.
-    // Over what the SEED carries, not what the overlay declares. Iterating the
-    // overlay meant a vendor the world says nothing about -- which is every
-    // vendor whose credentials leaked -- was never visited at all, so the sample
-    // stayed exactly where it did the most harm.
-    for (const [provider, sampled] of Object.entries(seed)) {
-      if (provider === "tokens" || !sampled || typeof sampled !== "object") continue;
-      const declared = overlay[provider];
-      for (const key of CREDENTIAL_KEYS) {
-        if (!declared || !(key in declared)) delete sampled[key];
-      }
-    }
+    const { overlay, projection, manifest } = readVerifiedWorldOverlay(worldPath);
+    worldIdentity = { id: manifest.world_id, version: manifest.world_version, digest: manifest.artifact_sha256 };
+    seed = structuredClone(overlay);
+    declaredProviders = Object.entries(overlay).filter(([, value]) => value && typeof value === "object" && !Array.isArray(value)).map(([key]) => key);
+    // The verified overlay is complete; sample files never supply absent providers or credentials.
     log(`world projection applied from ${projection}`);
   }
 
@@ -75,6 +35,7 @@ export function loadSeedConfig({
     log("session seed overlay applied");
   }
 
+  const tokenReferences = Object.fromEntries(Object.keys(seed.tokens ?? {}).map(reference => [reference, reference]));
   if (credentialsPath) {
     let credentials;
     try { credentials = JSON.parse(readFileSync(credentialsPath, "utf8")); }
@@ -87,7 +48,14 @@ export function loadSeedConfig({
     };
     // The verified artifact contains identity references and permissions. Only
     // this in-memory seed uses the secrets prepared by the runtime at startup.
-    seed.tokens = Object.fromEntries(Object.entries(seed.tokens ?? {}).map(([reference, subject]) => [value(`token:${reference}`), subject]));
+    seed.tokens = Object.fromEntries(Object.entries(seed.tokens ?? {}).map(([reference, subject]) => {
+      const secret = value(`token:${reference}`);
+      tokenReferences[reference] = secret;
+      return [secret, subject];
+    }));
+    for (const client of oauthClientEntries(seed)) {
+      if (client.client_secret_ref) client.client_secret = value(client.client_secret_ref);
+    }
     if (seed.twilio?.account) seed.twilio.account.auth_token = value("twilio:account:auth_token");
     for (const key of seed.twilio?.api_keys ?? []) key.secret = value(`twilio:api_key:${key.sid}`);
     for (const user of seed.clerk?.users ?? []) {
@@ -96,6 +64,13 @@ export function loadSeedConfig({
     if (credentials.values?.["token:demo_token"]) seed.worldfixture_google_token = value("token:demo_token");
   }
 
+  // Runtime metadata comes from verified files, never from an overlay. Keep
+  // credential references out of serialized seed reports.
+  Object.defineProperties(seed, {
+    worldfixture_world: { value: worldIdentity },
+    worldfixture_providers: { value: declaredProviders },
+    worldfixture_token_references: { value: tokenReferences },
+  });
   return seed;
 }
 
@@ -160,7 +135,7 @@ function readVerifiedWorldOverlay(worldPath) {
     throw new Error(`JSON seed ${projection} must contain an object`);
   }
 
-  return { overlay, projection };
+  return { overlay, projection, manifest };
 }
 
 function readObject(path, format, decode) {

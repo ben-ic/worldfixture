@@ -23,7 +23,9 @@
             "finance.ledger.updated",
             "mail.order-confirmation.available"
           ],
+          "execution": "descriptive",
           "id": "rule-order-paid",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "order_id",
             "amount_cents"
@@ -35,7 +37,9 @@
             "social.product-rating.updated",
             "support.case.considered"
           ],
+          "execution": "descriptive",
           "id": "rule-review-published",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "review_id",
             "product_id"
@@ -47,13 +51,53 @@
             "finance.ledger.updated",
             "mail.payment-receipt.available"
           ],
+          "execution": "descriptive",
           "id": "rule-invoice-payment",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "invoice_id",
             "payment_id",
             "amount_cents"
           ],
           "when": "finance.invoice.paid"
+        },
+        {
+          "api_version": "worldfixture.causal-rule/v1",
+          "emit": [
+            {
+              "after": "1s",
+              "type": "mail.notification.requested.v1",
+              "with": {
+                "author": {
+                  "copy": "actor_id"
+                },
+                "channel": {
+                  "copy": "provider_evidence.channel_name"
+                },
+                "recipients": {
+                  "lookup": {
+                    "collection": "communication.channels",
+                    "match": {
+                      "field": "name",
+                      "value": {
+                        "copy": "provider_evidence.channel_name"
+                      }
+                    },
+                    "select": "member_ids"
+                  }
+                },
+                "text": {
+                  "copy": "provider_evidence.text"
+                }
+              }
+            }
+          ],
+          "id": "rule-slack-channel-notification",
+          "requires": [
+            "provider_evidence.channel_name",
+            "actor_id"
+          ],
+          "when": "communication.message.sent.v1"
         }
       ],
       "constraints": [
@@ -432,8 +476,6 @@
       {
         "entity_refs": [
           "prod-fieldstone-bowl",
-          "issue-210",
-          "issue-218",
           "project-fieldstone-drop",
           "doc-fieldstone-launch"
         ],
@@ -457,8 +499,6 @@
       },
       {
         "entity_refs": [
-          "issue-215",
-          "issue-216",
           "case-double-charge",
           "inv-2033",
           "inv-2034",
@@ -471,7 +511,6 @@
       },
       {
         "entity_refs": [
-          "issue-213",
           "case-missing-tracking",
           "project-fulfilment-recovery",
           "post-shipping-honestly"
@@ -483,8 +522,6 @@
       },
       {
         "entity_refs": [
-          "issue-211",
-          "issue-212",
           "post-verified-reviews",
           "doc-review-badges"
         ],
@@ -559,36 +596,6 @@
           "author_id": "kit-nwosu",
           "channel_id": "channel-fieldstone",
           "text": "197 sellable bowls after the third run. Every preorder is covered and there are about fifty left for the drop."
-        }
-      },
-      {
-        "after_seconds": 260,
-        "id": "arrival-issue-210-fixed",
-        "kind": "github-comment",
-        "payload": {
-          "author_id": "gus-ferreira",
-          "body": "Fixed. The collection grid now reads the same availability source as the product page, and the cache is invalidated on any status change. Added a test that flips a product to preorder and asserts the grid within one request.",
-          "issue_id": "issue-210"
-        }
-      },
-      {
-        "after_seconds": 300,
-        "id": "arrival-issue-215-fixed",
-        "kind": "github-comment",
-        "payload": {
-          "author_id": "tomas-brekke",
-          "body": "Idempotency key is now set from the renewal id, so a retry after a timeout returns the original charge instead of creating a second one. Test kills the connection mid-charge and asserts one charge at the provider.",
-          "issue_id": "issue-215"
-        }
-      },
-      {
-        "after_seconds": 340,
-        "id": "arrival-issue-213-comment",
-        "kind": "github-comment",
-        "payload": {
-          "author_id": "callum-reid",
-          "body": "Swiftline has agreed not to send a scan without a tracking number, but the guard still belongs here. A partner's promise is not a validation rule.",
-          "issue_id": "issue-213"
         }
       },
       {

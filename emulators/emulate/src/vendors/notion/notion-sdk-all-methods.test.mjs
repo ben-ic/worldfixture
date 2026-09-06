@@ -57,6 +57,9 @@ function fixture() {
   const baseUrl = "http://notion.worldfixture.test";
   const objects = new Map();
   process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_URL = "http://object-store.test";
+  process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_ACCESS_KEY_ID = "test-access";
+  process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_SECRET_ACCESS_KEY = "test-secret";
+  process.env.WORLDFIXTURE_NOTION_OBJECT_STORE_REGION = "us-east-1";
   globalThis.fetch = async (url, init = {}) => {
     const key = String(url);
     if (init.method === "PUT") {

@@ -12,17 +12,32 @@ enough to prove two things without shipping the reference bytes:
 from __future__ import annotations
 
 import hashlib
+import io
 import json
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
 
-from worldfixture_compiler import build_world, bundle_world
 from worldfixture_compiler.compiler import canonical_json, sha256
+
+from tests.parity.finance_migration import assert_finance_semantics, finance_record, reverse_finance_migration
+from tests.parity.mail_migration import assert_mail_semantics, mail_record, reverse_mail_migration
+from tests.parity.operator_migration import assert_operator_semantics, operator_record, reverse_operator_migration
+from tests.parity.p4_migration import build_historical_finance_stage, bundle_historical_finance_stage
+from tests.parity.test_coupling_baseline import (
+    CALENDAR_MIGRATION,
+    assert_calendar_semantics,
+    reverse_calendar_migration,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "worlds/business.saas-company.v2/world.json"
 BASELINE = json.loads((Path(__file__).parent / "business.saas-company.v2.baseline.json").read_text())
+CALENDAR = next(row for row in CALENDAR_MIGRATION["worlds"] if row["id"] == "business.saas-company" and row["version"] == "v2")
+OPERATORS = operator_record("business.saas-company", "v2")
+MAIL = mail_record("business.saas-company", "v2")
+FINANCE = finance_record("business.saas-company", "v2")
 
 
 def revert_namespace(node):
@@ -74,13 +89,23 @@ def reference_bytes(data: bytes) -> bytes:
 def build() -> dict[str, bytes]:
     with tempfile.TemporaryDirectory() as directory:
         output = Path(directory)
-        build_world(SOURCE, output)
+        build_historical_finance_stage(SOURCE, output)
         return {path.relative_to(output).as_posix(): path.read_bytes() for path in output.rglob("*") if path.is_file()}
 
 
 class ReferenceParityTest(unittest.TestCase):
     def setUp(self) -> None:
-        self.files = build()
+        self.finance_files = build()
+        assert_finance_semantics(self, self.finance_files)
+        self.current_files = reverse_finance_migration(self.finance_files)
+        assert_mail_semantics(self, self.current_files)
+        self.operator_files = reverse_mail_migration(self.current_files)
+        assert_operator_semantics(self, self.operator_files)
+        assert_calendar_semantics(self, self.current_files)
+        # Reverse mail first, then explicit operators, calendars, and the original
+        # namespace and provider migrations. Each generation retains its hashes.
+        self.calendar_files = reverse_operator_migration(self.operator_files)
+        self.files = reverse_calendar_migration(self.calendar_files)
 
     def test_the_build_matches_the_recorded_worldfixture_baseline(self) -> None:
         expected = BASELINE["worldfixture"]["files"]
@@ -89,16 +114,82 @@ class ReferenceParityTest(unittest.TestCase):
         for name, data in sorted(self.files.items()):
             self.assertEqual(expected[name]["size"], len(data), name)
             self.assertEqual(expected[name]["sha256"], hashlib.sha256(data).hexdigest(), name)
+            current = CALENDAR["files"][name]["to"] if name in CALENDAR["files"] else expected[name]
+            self.assertEqual(current["size"], len(self.calendar_files[name]), name)
+            self.assertEqual(current["sha256"], sha256(self.calendar_files[name]), name)
+            if name in OPERATORS["files"]:
+                self.assertEqual(current, OPERATORS["files"][name]["from"])
+                current = OPERATORS["files"][name]["to"]
+            self.assertEqual(current["size"], len(self.operator_files[name]), name)
+            self.assertEqual(current["sha256"], sha256(self.operator_files[name]), name)
+            if name in MAIL["files"]:
+                self.assertEqual(current, MAIL["files"][name]["from"])
+                current = MAIL["files"][name]["to"]
+            self.assertEqual(current["size"], len(self.current_files[name]), name)
+            self.assertEqual(current["sha256"], sha256(self.current_files[name]), name)
+            if name in FINANCE['files']:
+                self.assertEqual(current, FINANCE['files'][name]['from'])
+                current = FINANCE['files'][name]['to']
+            self.assertEqual(current['size'], len(self.finance_files[name]), name)
+            self.assertEqual(current['sha256'], sha256(self.finance_files[name]), name)
 
     def test_the_transport_bundle_matches_the_recorded_worldfixture_baseline(self) -> None:
         expected = BASELINE["worldfixture"]
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / "world.tar"
-            result = bundle_world(SOURCE, archive)
+            result = bundle_historical_finance_stage(SOURCE, archive)
+            bundle = archive.read_bytes()
 
-        self.assertEqual(expected["bundle_sha256"], result["artifact_sha256"])
-        self.assertEqual(expected["bundle_size"], result["artifact_size"])
-        self.assertEqual(expected["content_sha256"], result["content_sha256"])
+        migrated = CALENDAR["bundle"]
+        self.assertEqual(migrated["from"], {key: expected[key] for key in ("bundle_sha256", "bundle_size", "content_sha256")})
+        self.assertEqual(migrated["to"], OPERATORS["bundle"]["from"])
+        self.assertEqual(OPERATORS["bundle"]["to"], MAIL["bundle"]["from"])
+        self.assertEqual(MAIL['bundle']['to'], FINANCE['bundle']['from'])
+        current = FINANCE['bundle']['to']
+        self.assertEqual(current["bundle_sha256"], sha256(bundle))
+        self.assertEqual(current["bundle_size"], len(bundle))
+        self.assertEqual(current["bundle_sha256"], result["artifact_sha256"])
+        self.assertEqual(current["bundle_size"], result["artifact_size"])
+        self.assertEqual(current["content_sha256"], result["content_sha256"])
+        self.assertEqual(FINANCE["to_artifact_sha256"], result["content_sha256"])
+
+        # Reverse content only. Retain archive member order and metadata, so
+        # unrelated transport changes cannot disappear behind this migration.
+        with tarfile.open(fileobj=io.BytesIO(bundle), mode="r:") as archive:
+            members = archive.getmembers()
+            self.assertTrue(all(member.isfile() for member in members))
+            files = {member.name: archive.extractfile(member).read() for member in members}
+        self.assertEqual(len(members), len(files), "Duplicate bundle members")
+        self.assertEqual(self.finance_files, files)
+        mail_files = reverse_finance_migration(files)
+        self.assertEqual(self.current_files, mail_files)
+        operator_files = reverse_mail_migration(mail_files)
+        calendar_files = reverse_operator_migration(operator_files)
+        original_files = reverse_calendar_migration(calendar_files)
+
+        def archive_bytes(contents):
+            restored = io.BytesIO()
+            with tarfile.open(fileobj=restored, mode="w", format=tarfile.USTAR_FORMAT) as archive:
+                for member in members:
+                    data = contents[member.name]
+                    member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+            return restored.getvalue()
+
+        mail_bundle = archive_bytes(mail_files)
+        self.assertEqual(MAIL['bundle']['to']['bundle_sha256'], sha256(mail_bundle))
+        self.assertEqual(MAIL['bundle']['to']['bundle_size'], len(mail_bundle))
+        operator_bundle = archive_bytes(operator_files)
+        self.assertEqual(OPERATORS["bundle"]["to"]["bundle_sha256"], sha256(operator_bundle))
+        self.assertEqual(OPERATORS["bundle"]["to"]["bundle_size"], len(operator_bundle))
+        calendar_bundle = archive_bytes(calendar_files)
+        self.assertEqual(migrated["to"]["bundle_sha256"], sha256(calendar_bundle))
+        self.assertEqual(migrated["to"]["bundle_size"], len(calendar_bundle))
+        restored = archive_bytes(original_files)
+
+        self.assertEqual(expected["bundle_sha256"], sha256(restored))
+        self.assertEqual(expected["bundle_size"], len(restored))
+        self.assertEqual(expected["content_sha256"], json.loads(original_files["manifest.json"])["artifact_sha256"])
 
     def test_unmigrated_files_differ_only_by_the_namespace_rename(self) -> None:
         """These files carry no migration of their own.
@@ -278,6 +369,11 @@ class ReferenceParityTest(unittest.TestCase):
     def test_the_manifest_only_migrates_its_contract_and_derived_provenance(self) -> None:
         migration = BASELINE["migration"]["manifest.json"]
         manifest = json.loads(self.files["manifest.json"])
+        current_manifest = json.loads(self.current_files["manifest.json"])
+        for name, expected in current_manifest["files"].items():
+            self.assertEqual(expected["size"], len(self.current_files[name]), name)
+            self.assertEqual(expected["sha256"], sha256(self.current_files[name]), name)
+        self.assertEqual(current_manifest["artifact_sha256"], sha256(canonical_json(current_manifest["files"])))
 
         self.assertEqual(migration["api_version"]["to"], manifest["api_version"])
         self.assertEqual("business.operations/v1", manifest["profile"])

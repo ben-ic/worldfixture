@@ -22,7 +22,9 @@
             "finance.bank-transaction.created",
             "mail.payment-receipt.available"
           ],
+          "execution": "descriptive",
           "id": "rule-invoice-payment",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "invoice_id",
             "payment_id",
@@ -35,7 +37,9 @@
             "support.case.updated",
             "slack.customer-channel.notified"
           ],
+          "execution": "descriptive",
           "id": "rule-support-reply",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "customer_id",
             "thread_id"
@@ -47,11 +51,51 @@
             "software.issue.updated",
             "slack.release-channel.notified"
           ],
+          "execution": "descriptive",
           "id": "rule-issue-comment",
+          "reason": "Describes a story consequence. No executable provider operation is declared for this rule.",
           "requires": [
             "issue_id"
           ],
           "when": "software.issue.commented"
+        },
+        {
+          "api_version": "worldfixture.causal-rule/v1",
+          "emit": [
+            {
+              "after": "1s",
+              "type": "mail.notification.requested.v1",
+              "with": {
+                "author": {
+                  "copy": "actor_id"
+                },
+                "channel": {
+                  "copy": "provider_evidence.channel_name"
+                },
+                "recipients": {
+                  "lookup": {
+                    "collection": "communication.channels",
+                    "match": {
+                      "field": "name",
+                      "value": {
+                        "copy": "provider_evidence.channel_name"
+                      }
+                    },
+                    "select": "member_ids"
+                  }
+                },
+                "text": {
+                  "copy": "provider_evidence.text"
+                }
+              }
+            }
+          ],
+          "id": "rule-slack-channel-notification",
+          "requires": [
+            "provider_evidence.channel_name",
+            "actor_id"
+          ],
+          "when": "communication.message.sent.v1"
         }
       ],
       "constraints": [
@@ -1863,11 +1907,12 @@
         "id": "arrival-webhook-000",
         "kind": "webhook",
         "payload": {
-          "amount_cents": 412000,
-          "customer_id": "lumen",
+          "amount_cents": 37900,
+          "currency": "USD",
+          "customer_id": "ironvale",
           "event": "finance.invoice.paid",
           "invoice_id": "inv-5124",
-          "payment_id": "pay-5124"
+          "payment_id": "pay-inv-5124"
         }
       },
       {

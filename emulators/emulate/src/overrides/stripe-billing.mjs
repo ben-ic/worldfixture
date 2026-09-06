@@ -73,11 +73,50 @@ function invoiceStore(store) {
   };
 }
 
+function recurringFields(price) {
+  return price.type === "recurring" && price.recurring ? { interval: price.recurring.interval,
+    interval_count: price.recurring.interval_count ?? 1, trial_period_days: price.recurring.trial_period_days ?? null,
+    usage_type: price.recurring.usage_type ?? "licensed" } : null;
+}
+
+function sourceRecurrence(source) {
+  if (source.recurring == null) return null;
+  const recurring = source.recurring;
+  if (!recurring || typeof recurring !== "object" || Array.isArray(recurring)
+    || !["day", "week", "month", "year"].includes(recurring.interval)
+    || !Number.isSafeInteger(recurring.interval_count ?? 1) || (recurring.interval_count ?? 1) < 1
+    || !["licensed", "metered"].includes(recurring.usage_type ?? "licensed")
+    || recurring.trial_period_days != null && (!Number.isSafeInteger(recurring.trial_period_days) || recurring.trial_period_days < 0)) {
+    throw new Error(`Stripe billing: price ${source.id ?? "without ID"} has invalid recurring fields`);
+  }
+  return { ...recurring, interval_count: recurring.interval_count ?? 1 };
+}
+
+// Preserve the native list pagination, filters, product expansion, and errors.
+// Only add the source recurrence fields missing from its price formatter.
+function registerPriceRecurrence(app, store) {
+  app.use("*", async (c, next) => {
+    if (c.req.method !== "GET" || !/^\/v1\/prices(?:\/[^/]+)?$/.test(c.req.path)) return next();
+    const original = c.json;
+    c.json = function(value, ...options) {
+      const augment = row => {
+        if (row?.object !== "price") return row;
+        const price = getStripeStore(store).prices.findOneBy("stripe_id", row.id);
+        return price ? { ...row, recurring: recurringFields(price) } : row;
+      };
+      const result = value?.object === "list" && Array.isArray(value.data)
+        ? { ...value, data: value.data.map(augment) } : augment(value);
+      return original.call(this, result, ...options);
+    };
+    try { await next(); } finally { c.json = original; }
+  });
+}
+
 function formatPrice(price) {
   if (!price) return null;
   return { id: price.stripe_id, object: "price", active: price.active, billing_scheme: "per_unit", created: Math.floor(new Date(price.created_at).getTime() / 1000),
     currency: price.currency, custom_unit_amount: null, livemode: false, lookup_key: null, metadata: price.metadata ?? {}, nickname: null,
-    product: price.product_id, recurring: price.type === "recurring" ? { interval: "month", interval_count: 1, trial_period_days: null, usage_type: "licensed" } : null,
+    product: price.product_id, recurring: recurringFields(price),
     tax_behavior: "unspecified", tiers_mode: null, transform_quantity: null, type: price.type,
     unit_amount: price.unit_amount, unit_amount_decimal: String(price.unit_amount) };
 }
@@ -153,9 +192,9 @@ function formatSubscription(subscription, prices) {
   const formattedPrice = formatPrice(price);
   const plan = price ? { id: price.stripe_id, object: "plan", active: price.active, amount: price.unit_amount,
     amount_decimal: String(price.unit_amount), billing_scheme: "per_unit", created: formattedPrice.created,
-    currency: price.currency, discounts: null, interval: "month", interval_count: 1, livemode: false,
+    currency: price.currency, discounts: null, interval: formattedPrice.recurring?.interval ?? null, interval_count: formattedPrice.recurring?.interval_count ?? null, livemode: false,
     metadata: price.metadata ?? {}, meter: null, nickname: null, product: price.product_id, tiers_mode: null,
-    transform_usage: null, trial_period_days: null, usage_type: "licensed" } : null;
+    transform_usage: null, trial_period_days: formattedPrice.recurring?.trial_period_days ?? null, usage_type: formattedPrice.recurring?.usage_type ?? null } : null;
   const item = { id: `si_${subscription.stripe_id.slice(4)}`, object: "subscription_item", billing_thresholds: null,
     created: subscription.created, current_period_end: subscription.current_period_end,
     current_period_start: subscription.current_period_start, discounts: [], metadata: {}, plan,
@@ -396,9 +435,11 @@ export function seedStripeBilling(store, config = {}) {
       if (!declaredIds.has(customer.stripe_id) && !declaredEmails.has(customer.email)) stripe.customers.delete(customer.id);
     }
   }
-  for (const source of config.prices ?? []) {
+  const recurringPrices = (config.prices ?? []).map(source => ({ source, recurring: sourceRecurrence(source) }));
+  for (const { source, recurring } of recurringPrices) {
     const price = source.id ? stripe.prices.findOneBy("stripe_id", source.id) : null;
-    if (price && source.recurring) stripe.prices.update(price.id, { type: "recurring", metadata: { ...price.metadata, worldfixture_customer_id: source.worldfixture_customer_id } });
+    if (price) stripe.prices.update(price.id, { type: recurring ? "recurring" : "one_time", recurring,
+      metadata: { ...price.metadata, ...source.metadata, ...(source.worldfixture_customer_id ? { worldfixture_customer_id: source.worldfixture_customer_id } : {}) } });
   }
   for (const source of config.subscriptions ?? []) {
     billing.subscriptions.insert({ stripe_id: source.id ?? stripeId("sub"), customer_id: source.customer,
@@ -423,6 +464,7 @@ export function seedStripeBilling(store, config = {}) {
 
 export function extendStripePlugin(upstream) {
   return { ...upstream, register(app, store, webhooks, baseUrl, tokenMap) {
+    registerPriceRecurrence(app, store);
     upstream.register(app, store, webhooks, baseUrl, tokenMap);
     registerStripeBilling(app, store, webhooks);
   } };

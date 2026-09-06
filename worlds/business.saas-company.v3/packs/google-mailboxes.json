@@ -1,0 +1,704 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "id": "pack.google-mailboxes",
+  "contributes": {
+    "communication": {
+      "mailboxes": [
+        {
+          "owner_id": "maya-chen",
+          "labels": []
+        },
+        {
+          "owner_id": "jon-bell",
+          "labels": []
+        },
+        {
+          "owner_id": "noor-alvarez",
+          "labels": []
+        },
+        {
+          "owner_id": "david-banerjee",
+          "labels": []
+        },
+        {
+          "owner_id": "elena-petrov",
+          "labels": []
+        },
+        {
+          "owner_id": "amara-diallo",
+          "labels": []
+        },
+        {
+          "owner_id": "rowan-whitfield",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "sofia-marchetti",
+          "labels": []
+        },
+        {
+          "owner_id": "lucas-meyer",
+          "labels": []
+        },
+        {
+          "owner_id": "hana-ito",
+          "labels": []
+        },
+        {
+          "owner_id": "samira-okafor",
+          "labels": []
+        },
+        {
+          "owner_id": "imani-brooks",
+          "labels": []
+        },
+        {
+          "owner_id": "theo-martin",
+          "labels": []
+        },
+        {
+          "owner_id": "priyanka-nair",
+          "labels": []
+        },
+        {
+          "owner_id": "tomas-novak",
+          "labels": []
+        },
+        {
+          "owner_id": "ada-lindqvist",
+          "labels": []
+        },
+        {
+          "owner_id": "kwame-mensah",
+          "labels": []
+        },
+        {
+          "owner_id": "fatima-haddad",
+          "labels": []
+        },
+        {
+          "owner_id": "oscar-ruiz",
+          "labels": []
+        },
+        {
+          "owner_id": "mei-zhang",
+          "labels": []
+        },
+        {
+          "owner_id": "daniel-osei",
+          "labels": []
+        },
+        {
+          "owner_id": "ingrid-solberg",
+          "labels": []
+        },
+        {
+          "owner_id": "rafael-costa",
+          "labels": []
+        },
+        {
+          "owner_id": "yuki-tanaka",
+          "labels": []
+        },
+        {
+          "owner_id": "zara-ahmed",
+          "labels": []
+        },
+        {
+          "owner_id": "nikolai-petrov",
+          "labels": []
+        },
+        {
+          "owner_id": "clara-dubois",
+          "labels": []
+        },
+        {
+          "owner_id": "marcus-webb",
+          "labels": []
+        },
+        {
+          "owner_id": "aiko-yamamoto",
+          "labels": []
+        },
+        {
+          "owner_id": "ben-hartley",
+          "labels": []
+        },
+        {
+          "owner_id": "leila-farouk",
+          "labels": []
+        },
+        {
+          "owner_id": "simon-novotny",
+          "labels": []
+        },
+        {
+          "owner_id": "grace-okonkwo",
+          "labels": []
+        },
+        {
+          "owner_id": "henrik-larsen",
+          "labels": []
+        },
+        {
+          "owner_id": "isabel-moreno",
+          "labels": []
+        },
+        {
+          "owner_id": "jamal-rashid",
+          "labels": []
+        },
+        {
+          "owner_id": "keiko-sato",
+          "labels": []
+        },
+        {
+          "owner_id": "liam-doherty",
+          "labels": []
+        },
+        {
+          "owner_id": "mira-kovac",
+          "labels": []
+        },
+        {
+          "owner_id": "nathan-ford",
+          "labels": []
+        },
+        {
+          "owner_id": "olivia-barnes",
+          "labels": []
+        },
+        {
+          "owner_id": "pedro-silva",
+          "labels": []
+        },
+        {
+          "owner_id": "qing-liu",
+          "labels": []
+        },
+        {
+          "owner_id": "ravi-kapoor",
+          "labels": []
+        },
+        {
+          "owner_id": "sara-lindgren",
+          "labels": []
+        },
+        {
+          "owner_id": "tobias-krause",
+          "labels": []
+        },
+        {
+          "owner_id": "ulla-virtanen",
+          "labels": []
+        },
+        {
+          "owner_id": "victor-almeida",
+          "labels": []
+        },
+        {
+          "owner_id": "wren-callahan",
+          "labels": []
+        },
+        {
+          "owner_id": "xiomara-reyes",
+          "labels": []
+        },
+        {
+          "owner_id": "yusuf-demir",
+          "labels": []
+        },
+        {
+          "owner_id": "zoe-patterson",
+          "labels": []
+        },
+        {
+          "owner_id": "arjun-mehta",
+          "labels": []
+        },
+        {
+          "owner_id": "bianca-rossi",
+          "labels": []
+        },
+        {
+          "owner_id": "callum-fraser",
+          "labels": []
+        },
+        {
+          "owner_id": "dalia-mansour",
+          "labels": []
+        },
+        {
+          "owner_id": "erik-johansson",
+          "labels": []
+        },
+        {
+          "owner_id": "farida-bello",
+          "labels": []
+        },
+        {
+          "owner_id": "gustavo-herrera",
+          "labels": []
+        },
+        {
+          "owner_id": "helena-novak",
+          "labels": []
+        },
+        {
+          "owner_id": "idris-coulibaly",
+          "labels": []
+        },
+        {
+          "owner_id": "jenna-whitlock",
+          "labels": []
+        },
+        {
+          "owner_id": "kasper-nielsen",
+          "labels": []
+        },
+        {
+          "owner_id": "lena-fischer",
+          "labels": []
+        },
+        {
+          "owner_id": "mateo-vargas",
+          "labels": []
+        },
+        {
+          "owner_id": "nour-khalil",
+          "labels": []
+        },
+        {
+          "owner_id": "omar-bakri",
+          "labels": []
+        },
+        {
+          "owner_id": "paloma-ortiz",
+          "labels": []
+        },
+        {
+          "owner_id": "quentin-leroy",
+          "labels": []
+        },
+        {
+          "owner_id": "rina-chowdhury",
+          "labels": []
+        },
+        {
+          "owner_id": "sean-murphy",
+          "labels": []
+        },
+        {
+          "owner_id": "tara-bergstrom",
+          "labels": []
+        },
+        {
+          "owner_id": "ugo-bianchi",
+          "labels": []
+        },
+        {
+          "owner_id": "vera-ilyina",
+          "labels": []
+        },
+        {
+          "owner_id": "wesley-chan",
+          "labels": []
+        },
+        {
+          "owner_id": "xander-rooij",
+          "labels": []
+        },
+        {
+          "owner_id": "yara-nasser",
+          "labels": []
+        },
+        {
+          "owner_id": "zeno-papadakis",
+          "labels": []
+        },
+        {
+          "owner_id": "alina-popescu",
+          "labels": []
+        },
+        {
+          "owner_id": "bruno-cardoso",
+          "labels": []
+        },
+        {
+          "owner_id": "celine-aubert",
+          "labels": []
+        },
+        {
+          "owner_id": "dev-sharma",
+          "labels": []
+        },
+        {
+          "owner_id": "eero-makinen",
+          "labels": []
+        },
+        {
+          "owner_id": "freya-nilsen",
+          "labels": []
+        },
+        {
+          "owner_id": "gabriel-sousa",
+          "labels": []
+        },
+        {
+          "owner_id": "hiro-nakamura",
+          "labels": []
+        },
+        {
+          "owner_id": "iris-vandenberg",
+          "labels": []
+        },
+        {
+          "owner_id": "jakub-wisniewski",
+          "labels": []
+        },
+        {
+          "owner_id": "karin-holmberg",
+          "labels": []
+        },
+        {
+          "owner_id": "luca-ferrari",
+          "labels": []
+        },
+        {
+          "owner_id": "maya-osei",
+          "labels": []
+        },
+        {
+          "owner_id": "nils-andersson",
+          "labels": []
+        },
+        {
+          "owner_id": "ophelia-hart",
+          "labels": []
+        },
+        {
+          "owner_id": "pavel-dvorak",
+          "labels": []
+        },
+        {
+          "owner_id": "rosa-delgado",
+          "labels": []
+        },
+        {
+          "owner_id": "stefan-weber",
+          "labels": []
+        },
+        {
+          "owner_id": "tessa-lindholm",
+          "labels": []
+        },
+        {
+          "owner_id": "uma-krishnan",
+          "labels": []
+        },
+        {
+          "owner_id": "viktor-horvath",
+          "labels": []
+        },
+        {
+          "owner_id": "priya-raman",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "callan-reed",
+          "labels": []
+        },
+        {
+          "owner_id": "alys-brenner",
+          "labels": []
+        },
+        {
+          "owner_id": "anders-holm",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "bea-nowak",
+          "labels": []
+        },
+        {
+          "owner_id": "boris-katz",
+          "labels": []
+        },
+        {
+          "owner_id": "ravi-sundaram",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "carla-nunes",
+          "labels": []
+        },
+        {
+          "owner_id": "nadia-farouk",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "owen-pritchard",
+          "labels": []
+        },
+        {
+          "owner_id": "dmitri-volkov",
+          "labels": []
+        },
+        {
+          "owner_id": "marta-sokolova",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "esme-lefevre",
+          "labels": []
+        },
+        {
+          "owner_id": "duncan-reid",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "felix-braun",
+          "labels": []
+        },
+        {
+          "owner_id": "ines-carvalho",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "gita-rao",
+          "labels": []
+        },
+        {
+          "owner_id": "gareth-powell",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "hugo-meier",
+          "labels": []
+        },
+        {
+          "owner_id": "tanya-oyelaran",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "ilse-de-vries",
+          "labels": []
+        },
+        {
+          "owner_id": "alan-whitmore",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "jonas-ekstrom",
+          "labels": []
+        },
+        {
+          "owner_id": "bridget-kelly",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "kara-boyle",
+          "labels": []
+        },
+        {
+          "owner_id": "cormac-byrne",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "dina-vasquez",
+          "labels": []
+        },
+        {
+          "owner_id": "lars-pedersen",
+          "labels": []
+        },
+        {
+          "owner_id": "emil-berg",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "maud-thibault",
+          "labels": []
+        },
+        {
+          "owner_id": "fiona-grant",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "nikhil-verma",
+          "labels": []
+        },
+        {
+          "owner_id": "gideon-marks",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "olga-ivanova",
+          "labels": []
+        },
+        {
+          "owner_id": "hollie-prentice",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "piotr-zielinski",
+          "labels": []
+        },
+        {
+          "owner_id": "idris-salim",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "rania-aziz",
+          "labels": []
+        },
+        {
+          "owner_id": "jana-kral",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "sven-larsson",
+          "labels": []
+        },
+        {
+          "owner_id": "kieran-walsh",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "tomasz-kowalski",
+          "labels": []
+        },
+        {
+          "owner_id": "lorna-mackay",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "ursula-mayer",
+          "labels": []
+        },
+        {
+          "owner_id": "miles-okafor",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "vikram-chandra",
+          "labels": []
+        },
+        {
+          "owner_id": "nina-petrova",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "wanda-nowicka",
+          "labels": []
+        },
+        {
+          "owner_id": "oskar-lind",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "yannis-petrou",
+          "labels": []
+        },
+        {
+          "owner_id": "paula-mendes",
+          "labels": [
+            "Finance"
+          ]
+        },
+        {
+          "owner_id": "zofia-kaminska",
+          "labels": []
+        },
+        {
+          "owner_id": "fern-ellery",
+          "labels": []
+        },
+        {
+          "owner_id": "gus-nakamura",
+          "labels": []
+        },
+        {
+          "owner_id": "harriet-vaughn",
+          "labels": []
+        },
+        {
+          "owner_id": "ivo-marek",
+          "labels": []
+        },
+        {
+          "owner_id": "joan-ferris",
+          "labels": []
+        },
+        {
+          "owner_id": "kofi-adjei",
+          "labels": []
+        },
+        {
+          "owner_id": "lena-brandt",
+          "labels": []
+        },
+        {
+          "owner_id": "mo-chowdhury",
+          "labels": []
+        },
+        {
+          "owner_id": "niamh-doyle",
+          "labels": []
+        },
+        {
+          "owner_id": "otto-frey",
+          "labels": []
+        }
+      ]
+    }
+  }
+}

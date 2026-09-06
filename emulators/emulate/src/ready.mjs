@@ -25,10 +25,8 @@
 //   * A BODY SUBSTRING, NOT A STATUS. Every vendor here answers 404 with a JSON
 //     body on an unknown path, so a status-only check passes against a route the
 //     vendor never meant to serve.
-//   * AWS IS NEVER PROBED. Its listener still serves live, writable `/s3/`
-//     routes, so the resolver refuses it outright and SeaweedFS stays the only
-//     S3 owner. A readiness check here would be the first thing to make it look
-//     startable. It is reported as excluded, with the reason, and never called.
+//   * AWS IS PROBED through its IAM Query route. Its S3 routes are not
+//     registered; separate protocol checks verify that ownership boundary.
 //   * THE CHECKS COME FROM `service.json`. The manifest is what the resolver
 //     pins and what the contract tests measure. A second copy in this file would
 //     be a second truth that drifts.
@@ -41,13 +39,6 @@ export const READY_PATH = "/_worldfixture/ready";
 export const API_VERSION = "worldfixture.composer-ready/v1";
 
 const MANIFEST = join(dirname(dirname(fileURLToPath(import.meta.url))), "service.json");
-
-// Vendors this composer will not answer for, and why. A vendor is here because
-// starting it is refused elsewhere; this list keeps the endpoint from quietly
-// contradicting that refusal.
-export const UNPROVABLE_VENDORS = {
-  aws: "the `@emulators/aws` listener serves live, writable S3 routes that SeaweedFS owns, so it is never selected and never probed",
-};
 
 // vendor -> its declared protocol check. Read from the manifest the resolver
 // pins, so there is one place a check is written down.
@@ -103,16 +94,9 @@ const describe = (check) => ({
 // vendor this run did not start is absent rather than reported as broken.
 export async function readiness(started, { checks = loadVendorChecks(), timeoutMs = 2_000, fetchImpl = fetch } = {}) {
   const probed = [];
-  const excluded = [];
   const undeclared = [];
 
   for (const entry of started) {
-    const reason = UNPROVABLE_VENDORS[entry.vendor];
-    if (reason) {
-      excluded.push({ vendor: entry.vendor, port: entry.port, reason });
-      continue;
-    }
-
     const check = checks.get(entry.vendor);
     if (!check) {
       // A started vendor with no measured check cannot be reported ready. Saying
@@ -132,7 +116,8 @@ export async function readiness(started, { checks = loadVendorChecks(), timeoutM
     api_version: API_VERSION,
     ready: undeclared.length === 0 && vendors.length > 0 && vendors.every((entry) => entry.ready),
     vendors,
-    excluded: excluded.sort((left, right) => left.vendor.localeCompare(right.vendor)),
+    // Retain the response field for consumers of composer-ready/v1.
+    excluded: [],
     undeclared,
   };
 }

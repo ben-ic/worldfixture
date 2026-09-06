@@ -15,8 +15,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
 
-      # Two contract tests and several runtime cases read a built world. They
-      # skip without one, and a skipped guard is not a guard.
+      - name: Install compiler dependencies
+        run: python3 -m pip install .
+
+      # Contract and runtime tests require the built artifacts they read.
       - name: Build the worlds the tests read
         run: |
           for world in worlds/*/world.json; do
@@ -56,12 +58,64 @@ jobs:
       - name: Emulators
         run: cd emulators/emulate && node --test
 
+  coupling:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: Install compiler dependencies
+        run: python3 -m pip install .
+
+      - name: Build every source world for the matrix
+        run: |
+          for world in worlds/*/world.json; do
+            PYTHONPATH=compiler python3 -m worldfixture_compiler build \
+              "$world" --output "dist/$(basename "$(dirname "$world")")"
+          done
+
+      - name: Test the evidence checks and alien generator
+        run: |
+          npm --prefix emulators/emulate ci
+          npm run test:coupling:unit
+          PYTHONPATH=compiler python3 -m unittest tests.contracts.test_coupling_fixture
+
+      - name: Build the current product image
+        run: docker buildx build --load -t worldfixture:coupling-ci .
+
+      - name: Check world selection through direct and host launch
+        run: npm run test:world-selection -- --image worldfixture:coupling-ci --report .worldfixture/coupling/p1-selection --run
+
+      # This is strict from its first run. Known defects remain visible; there
+      # is no continue-on-error or missing-Docker skip that can turn them green.
+      - name: Check all worlds through their own provider APIs
+        run: npm run test:coupling -- --image worldfixture:coupling-ci --report .worldfixture/coupling-ci
+
+      - name: Keep the measured failures and generation seeds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coupling-evidence
+          path: |
+            .worldfixture/coupling-ci
+            .worldfixture/coupling/p1-selection
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
   determinism:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
+
+      - name: Install compiler dependencies
+        run: python3 -m pip install .
 
       # The promise the product rests on. PYTHONHASHSEED differs between the two
       # builds because dict ordering is the likeliest way it would quietly break.

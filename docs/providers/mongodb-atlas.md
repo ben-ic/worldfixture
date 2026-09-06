@@ -68,12 +68,13 @@ clusters, database users, databases, and collections through live Admin routes.
 It has no Atlas write control. Reset restarts and reseeds the store. Stop does
 not preserve this state.
 
-Implementation: emulate.dev. The WorldFixture correction in
-`emulators/emulate/src/overrides/mongoatlas-projects.mjs` changes the seed
-only. Its test is
-`emulators/emulate/src/overrides/mongoatlas-projects.test.mjs`. Compiler tests
-cover the projection. No API route has a current Atlas contract test or
-production recording. No SDK, driver, or CLI version has a WorldFixture test.
+Implementation: emulate.dev. The composer seeds the selected world without
+the provider's sample seed hook. The test in
+`emulators/emulate/src/main.test.mjs` reads declared projects, clusters, and
+database users through live Admin routes. It also verifies that a world can
+declare a project named `Project0`. Compiler tests cover the projection.
+These local tests do not prove production Atlas parity. No SDK, driver, or CLI
+version has a WorldFixture test.
 
 Provider authority: [MongoDB Atlas Administration API](https://www.mongodb.com/docs/atlas/api/) and
 [Atlas App Services end of life](https://www.mongodb.com/docs/atlas/app-services/).

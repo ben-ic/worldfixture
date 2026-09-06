@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 
+import { loadManifests } from "./manifests.mjs";
+import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
+
 import {
   HostLauncherError,
+  HOST_SURFACES,
   hostContainerName,
   launchHostInstance,
   runInHostInstance,
@@ -14,6 +18,21 @@ import {
   stopHostInstance,
   translateBindings,
 } from "./host-launcher.mjs";
+
+test("every published service port has an image declaration and host mapping", () => {
+  const root = new URL("../../", import.meta.url);
+  const dockerfile = readFileSync(new URL("Dockerfile", root), "utf8").replace(/\\\n/g, " ");
+  const exposed = new Set([...dockerfile.matchAll(/^EXPOSE (.+)$/gm)].flatMap(match => match[1].trim().split(/\s+/).map(Number)));
+  const hosted = new Set(HOST_SURFACES.map(surface => surface.containerPort));
+  for (const manifest of loadManifests(new URL("emulators", root).pathname)) {
+    for (const port of manifest.runtime.ports.filter(port => port.published)) {
+      const fixed = SINGLE_CONTAINER_PORTS[`${manifest.name}/${port.name}`];
+      assert.ok(fixed, `${manifest.name}/${port.name} has a stable port`);
+      assert.ok(exposed.has(fixed), `${manifest.name}/${port.name} (${fixed}) is exposed by the image`);
+      assert.ok(hosted.has(fixed), `${manifest.name}/${port.name} (${fixed}) is mapped by the host launcher`);
+    }
+  }
+});
 
 function inspection(stateDir, overrides = {}) {
   return {
@@ -407,4 +426,182 @@ test("a spawn failure is not mistaken for a command that exited non-zero", async
   } finally {
     rmSync(stateDir, { recursive: true, force: true });
   }
+});
+
+const originalWorld = { id: "consumer.unusual", version: "v7", digest: "a".repeat(64) };
+
+function recordedWorldFixture(t, selection = originalWorld) {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-selection-"));
+  t.after(() => rmSync(stateDir, { recursive: true, force: true }));
+  const instance = {
+    api_version: "worldfixture.host-instance/v1",
+    container_id: "abc123worldfixture", container_name: hostContainerName(stateDir),
+    state_dir: stateDir, requested_world: selection,
+  };
+  writeFileSync(join(stateDir, "instance.json"), JSON.stringify(instance));
+  writeFileSync(join(stateDir, "host-bindings.json"), JSON.stringify({ SLACK_BASE_URL: "http://localhost:4703" }));
+  writeFileSync(join(stateDir, "bindings.json"), "{\"private\":\"retained\"}");
+  writeFileSync(join(stateDir, "environment.lock.json"), JSON.stringify({ world: { digest: "b".repeat(64) } }));
+  const calls = [];
+  const runner = async (_command, args) => {
+    calls.push(args);
+    assert.equal(args[0], "inspect", "a refused selection must only inspect Docker");
+    return { stdout: JSON.stringify(inspection(stateDir)) };
+  };
+  const options = {
+    stateDir, runner, selectPorts: async () => assert.fail("must not reserve ports"),
+    prepareContainerArgs: async () => assert.fail("must not prepare or stage an existing instance"),
+  };
+  const snapshot = () => Object.fromEntries(readdirSync(stateDir).sort().map(name => [name, readFileSync(join(stateDir, name), "utf8")]));
+  return { options, calls, snapshot, instance };
+}
+
+test("requestedWorld reuses its original selection despite a rebased lock digest", async (t) => {
+  const fixture = recordedWorldFixture(t);
+  const before = fixture.snapshot();
+  const result = await launchHostInstance({ ...fixture.options, requestedWorld: { ...originalWorld } });
+  assert.equal(result.reused, true);
+  assert.deepEqual(result.instance.requested_world, originalWorld);
+  assert.deepEqual(fixture.snapshot(), before);
+  assert.equal(fixture.calls.length, 1);
+});
+
+test("requestedWorld rejects changed id, version or digest without state mutations", async (t) => {
+  for (const key of ["id", "version", "digest"]) {
+    const fixture = recordedWorldFixture(t);
+    const before = fixture.snapshot();
+    const requestedWorld = { ...originalWorld, [key]: key === "digest" ? "c".repeat(64) : "different" };
+    await assert.rejects(launchHostInstance({ ...fixture.options, requestedWorld }), error => {
+      assert.ok(error instanceof HostLauncherError);
+      assert.equal(error.code, "host_world_mismatch");
+      assert.match(error.message, /running instance was started from/);
+      assert.match(error.repair, /--state/);
+      return true;
+    });
+    assert.deepEqual(fixture.snapshot(), before);
+    assert.equal(fixture.calls.length, 1);
+  }
+});
+
+test("requestedWorld refuses absent, malformed or unsupported original selection records", async (t) => {
+  for (const selection of [null, {}, { ...originalWorld, digest: "invalid" }, originalWorld]) {
+    const fixture = recordedWorldFixture(t, selection);
+    if (selection === null) delete fixture.instance.requested_world;
+    if (selection === originalWorld) fixture.instance.api_version = "worldfixture.host-instance/v0";
+    writeFileSync(join(fixture.options.stateDir, "instance.json"), JSON.stringify(fixture.instance));
+    const before = fixture.snapshot();
+    await assert.rejects(launchHostInstance({ ...fixture.options, requestedWorld: originalWorld }),
+      error => error instanceof HostLauncherError && error.code === "host_world_unverified");
+    assert.deepEqual(fixture.snapshot(), before);
+  }
+});
+
+test("requestedWorld cannot use stale record selection to prove a recovered container", async (t) => {
+  const fixture = recordedWorldFixture(t);
+  fixture.instance.container_id = "old-container";
+  writeFileSync(join(fixture.options.stateDir, "instance.json"), JSON.stringify(fixture.instance));
+  const before = fixture.snapshot();
+  await assert.rejects(launchHostInstance({ ...fixture.options, requestedWorld: originalWorld }),
+    error => error instanceof HostLauncherError && error.code === "host_world_unverified");
+  assert.deepEqual(fixture.snapshot(), before);
+});
+
+test("legacy callers without requestedWorld still reuse recorded bindings", async (t) => {
+  const fixture = recordedWorldFixture(t, null);
+  const before = fixture.snapshot();
+  assert.equal((await launchHostInstance(fixture.options)).reused, true);
+  assert.deepEqual(fixture.snapshot(), before);
+});
+
+test("invalid requestedWorld fails before Docker reads or state mutations", async (t) => {
+  for (const requestedWorld of [null, {}, { ...originalWorld, id: " " }, { ...originalWorld, version: 7 }, { ...originalWorld, digest: "sha256:abc" }]) {
+    const fixture = recordedWorldFixture(t);
+    const before = fixture.snapshot();
+    await assert.rejects(launchHostInstance({ ...fixture.options, requestedWorld }),
+      error => error instanceof HostLauncherError && error.code === "invalid_requested_world");
+    assert.equal(fixture.calls.length, 0);
+    assert.deepEqual(fixture.snapshot(), before);
+  }
+});
+
+test("requestedWorld persists the original selection and preserves container arguments", async (t) => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-selection-start-"));
+  t.after(() => rmSync(stateDir, { recursive: true, force: true }));
+  const requestedWorld = { ...originalWorld };
+  const containerArgs = ["up", "--world", "/state/input-world", "--no-rebase", "--only", "slack,google"];
+  let running = false, runArgs;
+  const runner = async (_command, args) => {
+    if (args[0] === "inspect") {
+      if (!running) {
+        // A caller's mutable object cannot change selection during launch.
+        requestedWorld.digest = "d".repeat(64);
+        throw missing();
+      }
+      return { stdout: JSON.stringify(inspection(stateDir)) };
+    }
+    if (args[0] === "image") return { stdout: "sha256:image\n" };
+    assert.equal(args[0], "run");
+    runArgs = args;
+    running = true;
+    writeFileSync(join(stateDir, "environment.lock.json"), JSON.stringify({ world: { digest: "b".repeat(64) } }));
+    writeFileSync(join(stateDir, "bindings.json"), JSON.stringify({ SLACK_BASE_URL: "http://127.0.0.1:4703" }));
+    return { stdout: "abc123worldfixture\n" };
+  };
+  const options = { stateDir, runner, selectPorts: async () => [], requestedWorld, containerArgs };
+  const launched = await launchHostInstance(options);
+  assert.equal(launched.reused, false);
+  assert.deepEqual(launched.instance.requested_world, originalWorld);
+  assert.deepEqual(JSON.parse(readFileSync(join(stateDir, "instance.json"), "utf8")).requested_world, originalWorld);
+  assert.deepEqual(runArgs.slice(runArgs.indexOf("sha256:image") + 1), containerArgs);
+  assert.deepEqual(containerArgs, ["up", "--world", "/state/input-world", "--no-rebase", "--only", "slack,google"]);
+  assert.equal((await launchHostInstance({ ...options, requestedWorld: originalWorld })).reused, true);
+});
+
+test("prepareContainerArgs stages once for a new start even when Docker retries a port", async (t) => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-selection-prepare-"));
+  t.after(() => rmSync(stateDir, { recursive: true, force: true }));
+  const stagedArgs = ["up", "--world", "/state/input-world", "--no-rebase", "--only", "slack"];
+  let prepared = 0, runs = 0;
+  const runner = async (_command, args) => {
+    if (args[0] === "inspect") throw missing();
+    if (args[0] === "image") return { stdout: "sha256:image\n" };
+    assert.equal(args[0], "run");
+    runs += 1;
+    assert.equal(prepared, 1);
+    assert.deepEqual(args.slice(args.indexOf("sha256:image") + 1), stagedArgs);
+    if (runs === 1) throw Object.assign(new Error("port refused"), {
+      stderr: "Bind for 0.0.0.0:3306 failed: port is already allocated",
+    });
+    writeFileSync(join(stateDir, "environment.lock.json"), "{}");
+    writeFileSync(join(stateDir, "bindings.json"), "{}");
+    return { stdout: "abc123worldfixture\n" };
+  };
+  const result = await launchHostInstance({
+    stateDir, runner, requestedWorld: originalWorld, selectPorts: async () => [],
+    containerArgs: ["must-be-replaced"],
+    prepareContainerArgs: async () => {
+      prepared += 1;
+      assert.equal(runs, 0);
+      writeFileSync(join(stateDir, "staged-selection.json"), JSON.stringify(originalWorld));
+      return stagedArgs;
+    },
+  });
+  assert.equal(result.reused, false);
+  assert.equal(prepared, 1);
+  assert.equal(runs, 2);
+  assert.deepEqual(JSON.parse(readFileSync(join(stateDir, "staged-selection.json"), "utf8")), originalWorld);
+});
+
+test("prepareContainerArgs failure leaves prior records intact and prevents launch", async (t) => {
+  const fixture = recordedWorldFixture(t);
+  const before = fixture.snapshot();
+  const runner = async (_command, args) => {
+    assert.equal(args[0], "inspect");
+    throw missing();
+  };
+  await assert.rejects(launchHostInstance({
+    ...fixture.options, runner, requestedWorld: originalWorld,
+    prepareContainerArgs: async () => { throw new Error("staging failed"); },
+  }), /staging failed/);
+  assert.deepEqual(fixture.snapshot(), before);
 });

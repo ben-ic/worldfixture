@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://worldfixture.dev/schemas/causal-rule.v1.schema.json",
+  "title": "Executable WorldFixture causal rule",
+  "type": "object",
+  "required": ["api_version", "id", "when", "emit"],
+  "additionalProperties": false,
+  "properties": {
+    "api_version": {"const": "worldfixture.causal-rule/v1"},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
+    "when": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+\\.v[1-9][0-9]*$"},
+    "requires": {"type": "array", "items": {"type": "string", "pattern": "^[a-z_][a-z0-9_.]*$"}},
+    "emit": {"type": "array", "minItems": 1, "items": {
+      "type": "object", "required": ["type", "with"], "additionalProperties": false,
+      "properties": {
+        "type": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+\\.v[1-9][0-9]*$"},
+        "after": {"type": "string", "pattern": "^[0-9]+(ms|s|m)$"},
+        "with": {"type": "object", "additionalProperties": {"$ref": "#/$defs/term"}}
+      }
+    }}
+  },
+  "$defs": {
+    "term": {"oneOf": [
+      {"type": "object", "required": ["copy"], "additionalProperties": false, "properties": {"copy": {"type": "string", "pattern": "^[a-z_][a-z0-9_.]*$"}}},
+      {"type": "object", "required": ["value"], "additionalProperties": false, "properties": {"value": {}}},
+      {"type": "object", "required": ["lookup"], "additionalProperties": false, "properties": {"lookup": {
+        "type": "object", "required": ["collection", "match"], "additionalProperties": false,
+        "properties": {
+          "collection": {"type": "string", "pattern": "^[a-z_][a-z0-9_.]*$"},
+          "match": {"type": "object", "required": ["field", "value"], "additionalProperties": false, "properties": {
+            "field": {"type": "string", "pattern": "^[a-z_][a-z0-9_]*$"}, "value": {"$ref": "#/$defs/term"}
+          }},
+          "select": {"type": "string", "pattern": "^[a-z_][a-z0-9_]*$"}
+        }
+      }}},
+      {"type": "array", "items": {"$ref": "#/$defs/term"}}
+    ]}
+  }
+}

@@ -16,7 +16,7 @@
 import { randomUUID } from "node:crypto";
 
 import { appendEvent } from "./state.mjs";
-import { eligible } from "./rules.mjs";
+import { queueEffects } from "./causal-queue.mjs";
 import { send as sendMail } from "./smtp.mjs";
 import { send as sendSlack, whoAmI } from "./slack.mjs";
 
@@ -98,13 +98,13 @@ export async function sendSlackMessage(db, { baseUrl, token, person, channel, te
 // provider action is the runtime's job and is the one place code is allowed in.
 // Delivery goes through SMTP, not into Cyrus, so a message the server refused is
 // not a message that was delivered.
-export async function deliver(db, emission, { world, bindings, clock = () => Date.now(), sendMail: post = sendMail }) {
+export async function deliver(db, emission, { world, bindings, clock = () => Date.now(), rules = [], sendMail: post = sendMail }) {
   if (emission.type !== "mail.notification.requested.v1") {
     throw new Error(`no delivery for ${emission.type}`);
   }
 
   const address = bindings.SMTP_HOST_PORT;
-  if (!address) return { delivered: [], skipped: "this instance did not start SMTP" };
+  if (!address) throw new Error("Selected rule requires mail.smtp-submission.v1");
 
   const { recipients, author, channel, text } = emission.payload;
   const people = new Map((world.people ?? []).map((person) => [person.id, person]));
@@ -114,11 +114,11 @@ export async function deliver(db, emission, { world, bindings, clock = () => Dat
   const membership = [...new Set([].concat(...[].concat(recipients ?? [])))];
   const notify = membership.filter((personId) => personId !== author).map((personId) => people.get(personId));
   const from = people.get(author);
+  if (!from?.email || notify.some(person => !person?.email)) throw new Error("Notification references an unknown person or email");
 
   const delivered = [];
 
   for (const person of notify) {
-    if (!person?.email) continue;
     await post(address, {
       from: from.email,
       to: person.email,
@@ -133,10 +133,11 @@ export async function deliver(db, emission, { world, bindings, clock = () => Dat
       actor_id: person.id,
       source: "mail",
       occurred_at: new Date(clock()).toISOString(),
-      provider_evidence: { to: person.email, channel, via: "smtp" },
+      provider_evidence: { to: person.email, channel, via: "smtp", causal_rule: emission.rule },
       caused_by: emission.caused_by,
     };
     appendEvent(db, event);
+    queueEffects(db, event, { world, rules });
     delivered.push(person);
   }
 
@@ -144,17 +145,8 @@ export async function deliver(db, emission, { world, bindings, clock = () => Dat
 }
 
 // One command, its fact, and everything that fact caused.
-export async function submit(db, request, { world, rules, bindings }) {
+export async function submit(db, request, { world, rules }) {
   const { event, identity } = await sendSlackMessage(db, request);
-  const emissions = eligible(rules, event, { world });
-
-  const effects = [];
-  for (const emission of emissions) {
-    // A bounded delay is part of the rule language. Honouring it here keeps
-    // "after" meaning what it says rather than being decoration.
-    if (emission.after_ms > 0) await new Promise((resolve) => setTimeout(resolve, emission.after_ms));
-    effects.push({ emission, ...(await deliver(db, emission, { world, bindings })) });
-  }
-
+  const effects = queueEffects(db, event, { world, rules });
   return { event, identity, effects };
 }

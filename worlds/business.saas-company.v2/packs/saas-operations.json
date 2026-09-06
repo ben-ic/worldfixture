@@ -163,7 +163,7 @@
               "author_id": "elena-petrov",
               "entity_refs": {
                 "issue_id": "issue-318",
-                "release_id": "release-2-8"
+                "story_id": "story-release-28"
               },
               "id": "chat-release-001",
               "text": "Audit page copy is final. Export timeout is the only item that can still change the release date. I need a go or no-go by Monday noon.",
@@ -716,6 +716,9 @@
       ]
     },
     "software": {
+      "operator_teams": ["engineering"],
+      "operator_ids": ["maya-chen"],
+      "operator_limit": null,
       "repositories": [
         {
           "description": "Core job orchestration and connector runtime",

@@ -1,20 +1,29 @@
 import { useEffect, useState } from "react";
 import { post, request } from "../api.js";
+import { serviceScreen } from "../navigation.mjs";
+import { ALL_ORGANIZATIONS, NO_ORGANIZATION, peopleSelection, resourceCountText, surfaceResources } from "../runtime-data.mjs";
 import { ActivityTable, Bindings } from "../components/RuntimeViews.jsx";
-import { Avatar, Button, CopyButton, PageHead, Panel } from "../components/Primitives.jsx";
+import { Avatar, Button, CopyButton, Notice, PageHead, Panel } from "../components/Primitives.jsx";
 
 export function People({ data, actor, setActor }) {
+  const [organizationId, setOrganizationId] = useState(() => data.world.organizationId ?? ALL_ORGANIZATIONS);
+  const [query, setQuery] = useState("");
+  useEffect(() => { setOrganizationId(data.world.organizationId ?? ALL_ORGANIZATIONS); setQuery(""); }, [data.world.id, data.world.version, data.world.organizationId]);
+  const selected = peopleSelection(data, { organizationId, query });
+  const organization = selected.organizations.find((entry) => entry.id === organizationId);
   return <><PageHead title="People" subtitle="World records with organization and provider identities." command="worldfixture people"/>
-    <Panel title={`People in ${data.world.company}`}><div className="data-row people-columns table-head"><span>PERSON</span><span>ORGANIZATION</span><span>PROVIDER IDENTITIES</span><span>CONTROL</span></div>
-      {data.people.map((person) => <div className="data-row people-columns" key={person.id}><span className="person"><Avatar name={person.name}/><span><strong>{person.name}</strong><small>{person.role}</small></span></span><span>{person.organization_name ?? person.organization_id}</span><code className="muted truncate">{[person.slack_id, person.email, person.github_login].filter(Boolean).join(" · ")}</code><Button kind="small" onClick={() => setActor(person)}>{actor.id === person.id ? "Acting now" : `Act as ${person.name.split(" ")[0]}`}</Button></div>)}
+    <div className="action-form"><label>ORGANIZATION<select value={organizationId} onChange={(event) => setOrganizationId(event.target.value)}><option value={ALL_ORGANIZATIONS}>All people in this world · {selected.worldPeople} people</option>{selected.organizations.map((entry) => <option value={entry.id} key={entry.id}>{entry.name}</option>)}</select></label><label>FIND A PERSON<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, role, or email"/></label><span className="muted">{selected.summary}</span></div>
+    <Panel title={organizationId === ALL_ORGANIZATIONS ? "People in this world" : organizationId === NO_ORGANIZATION ? "People with no organization" : `People in ${organization?.name ?? organizationId}`} tools={<span className="muted">{selected.people.length} of {selected.scope.length} shown</span>}><div className="data-row people-columns table-head"><span>PERSON</span><span>ORGANIZATION</span><span>PROVIDER IDENTITIES</span><span>CONTROL</span></div>
+      {selected.people.map((person) => <div className="data-row people-columns" key={person.id}><span className="person"><Avatar name={person.name}/><span><strong>{person.name}</strong><small>{person.role}</small></span></span><span>{person.organization_name || person.organization_id || "No organization"}</span><code className="muted truncate">{[person.slack_id, person.email, person.github_login].filter(Boolean).join(" · ")}</code><Button kind="small" onClick={() => setActor(person)}>{actor?.id === person.id ? "Acting now" : `Act as ${person.name.split(" ")[0]}`}</Button></div>)}
+      {selected.people.length === 0 && <div className="empty">No people match this organization and search.</div>}
     </Panel></>;
 }
 
-export function Activity({ data, onRefresh }) {
-  return <><PageHead title="Activity" subtitle="Observed provider actions and settled causal consequences." command="worldfixture events"/><ActivityTable data={data} onRefresh={onRefresh}/></>;
+export function Activity({ data, onRefresh, onAction }) {
+  return <><PageHead title="Activity" subtitle="Observed provider actions and settled causal consequences." command="worldfixture events"/><ActivityTable data={data} onRefresh={onRefresh} onAction={onAction}/></>;
 }
 
-export function Target({ data }) {
+export function Target({ data, onAction }) {
   const [connector, setConnector] = useState(null);
   const [url, setUrl] = useState("http://localhost:3000");
   const [plan, setPlan] = useState(null);
@@ -26,7 +35,7 @@ export function Target({ data }) {
 
   async function load() {
     try { setConnector(await request("/api/connector")); setError(null); }
-    catch (failure) { setError(failure.message); }
+    catch (failure) { setConnector(null); setPlan(null); setResult(null); setError(failure.message); }
   }
   useEffect(() => { load(); }, []);
 
@@ -115,7 +124,7 @@ export function Target({ data }) {
       <div>{result.summary ?? result.status}{countList(result.counts) && ` · ${countList(result.counts)}`}</div>
       {result.delivered && <div className="muted">Delivered <code>{result.delivered.kind}</code>{result.delivered.subject && <> about <code>{result.delivered.subject.worldfixture_ref}</code></>}{result.delivered.actor && <> from <code>{result.delivered.actor.worldfixture_ref}</code></>}.</div>}
     </div><SliceAccount scale={result.scale}/><SchemaErrors errors={result.schema_errors}/></div>}
-    <div className="section"><Panel title="Application environment"><div className="panel-pad muted">Start the application with its normal development command. The connector reads the ignored <code>.worldfixture/token</code> file or <code>WORLDFIXTURE_TOKEN</code>. The token is not shown in the browser.</div><Bindings data={data} complete/></Panel></div>
+    <div className="section"><Panel title="Application environment"><div className="panel-pad muted">Start the application with its normal development command. The connector reads the ignored <code>.worldfixture/token</code> file or <code>WORLDFIXTURE_TOKEN</code>. The token is not shown in the browser.</div><Bindings data={data} complete onAction={onAction}/></Panel></div>
   </>;
 }
 
@@ -170,12 +179,42 @@ export function Settings({ data, onReset }) {
   </>;
 }
 
-const SERVICE_SCREENS = { slack: "Chat", google: "Gmail", mail: "Local Mail", github: "Code", s3: "Files", notion: "Notion", stripe: "Stripe", linear: "Linear", okta: "Okta", clerk: "Clerk", twilio: "Twilio", resend: "Resend", vercel: "Vercel", mongoatlas: "MongoDB Atlas", http: "Website" };
-
 export function Services({ data, setScreen }) {
-  return <><PageHead title="Services" subtitle="Selected services are active. Other services can be added by a future instance reconfiguration." command="environment lock"/>
+  return <><PageHead title="Services" subtitle="Every selected service surface, its current state, and its connection settings." command="environment lock"/>
     <Panel title="Selected for this instance"><div className="data-row resource-columns table-head"><span>SERVICE</span><span>IMPLEMENTATION</span><span>STATE</span><span>ACTION</span></div>
-      {data.surfaces.map((service) => <div className="data-row resource-columns" key={service.id}><span><strong>{service.name}</strong><small>{service.implementation} {service.version}</small></span><code className="muted">{service.service}</code><code className={service.state === "ready" ? "green" : "yellow"}>{service.state}</code>{SERVICE_SCREENS[service.id] ? <Button kind="small" onClick={() => setScreen(SERVICE_SCREENS[service.id])}>Open</Button> : <Button kind="small" disabled>Running</Button>}</div>)}
-    </Panel><div className="section"><Panel title="Available after reconfiguration"><div className="data-row resource-columns"><span><strong>Additional provider service</strong><small>Resolve a new environment lock</small></span><span className="muted">Not selected for this instance</span><code className="dim">not selected</code><Button kind="small" disabled title="Instance reconfiguration is not implemented yet">Start</Button></div></Panel></div>
+      {(data.surfaces ?? []).map((service) => <div className="data-row resource-columns" key={service.id}><span><strong>{service.name}</strong><small>{service.implementation} {service.version}</small></span><code className="muted">{service.service}</code><code className={service.state === "ready" ? "green" : "yellow"}>{service.state ?? "unknown"}</code><span className="inline-actions"><Button kind="small" onClick={() => setScreen(serviceScreen(service))}>Open</Button><Button kind="small" onClick={() => setScreen(`service:${service.id}`)}>Details</Button></span></div>)}
+      {!data.surfaces?.length && <div className="empty">No service surfaces are selected for this instance.</div>}
+    </Panel>
+  </>;
+}
+
+export function ServiceDetail({ data, surfaceId, setScreen, onAction }) {
+  const surface = (data.surfaces ?? []).find((entry) => entry.id === surfaceId);
+  const [working, setWorking] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  useEffect(() => { setResult(null); setError(null); }, [surfaceId]);
+  if (!surface) return <><PageHead title="Service unavailable" subtitle="This surface is not selected for the current instance."/><Button onClick={() => setScreen("Services")}>View selected services</Button></>;
+  const resources = surfaceResources(data, surface);
+  const screen = serviceScreen(surface);
+  async function probe() {
+    setWorking(true); setError(null);
+    try {
+      const response = await post("/api/probe", {});
+      const measured = response.surfaces?.find((entry) => entry.id === surface.id);
+      if (!measured) throw new Error("The runtime returned no probe result for this surface.");
+      setResult(measured);
+      if (measured.ready) onAction?.({ type: "probe", surface: surface.id, target: "services", success: true });
+    } catch (failure) { setError(failure.message); }
+    finally { setWorking(false); }
+  }
+  return <><PageHead title={surface.name} subtitle="Selected capabilities, measured state, and connection bindings."/>
+    <Panel title="Service details"><div className="detail-grid"><strong>Runtime state</strong><span>{surface.state ?? "unknown"}</span><strong>Service</strong><code>{surface.service ?? surface.id}</code><strong>Implementation</strong><span>{surface.implementation} {surface.version}</span><strong>Selected capabilities</strong><span>{surface.capabilities?.join(" · ") || "Capability metadata is unavailable."}</span></div>
+      <div className="panel-pad inline-actions">{screen !== `service:${surface.id}` && <Button onClick={() => setScreen(screen)}>Open workspace</Button>}<Button onClick={probe} disabled={working}>{working ? "Probing…" : "Probe service"}</Button><Button onClick={() => setScreen("Services")}>All services</Button></div>
+      {error && <Notice kind="error">Probe unavailable: {error}</Notice>}
+      {result && <Notice kind={result.ready ? "" : "error"}>{result.ready ? "Probe passed" : "Probe failed"} · {result.latency_ms} ms{result.detail && ` · ${result.detail}`}</Notice>}
+    </Panel>
+    <div className="section"><Panel title="Resource reads">{resources.available ? resources.resources.map((resource) => <div className="data-row" key={resource.label}><strong>{resource.label}</strong><span>{resourceCountText(resource)}</span>{resource.error && <span className="muted">{resource.error}</span>}</div>) : <div className="panel-pad"><Notice kind="warning">Resource data is unavailable. {resources.error}</Notice></div>}</Panel></div>
+    <div className="section"><Bindings data={data} surfaceId={surface.id} complete onAction={onAction}/></div>
   </>;
 }

@@ -1,3 +1,6 @@
+import { executionPreflight } from './execution-preflight.mjs';
+import { resolveProjection, resolveTokenReference } from './bindings.mjs';
+import { oauthClientEntries } from '../../emulators/emulate/src/oauth-client-config.mjs';
 // The environment resolver: one environment specification plus the available
 // service manifests and one world artifact, in; one immutable environment lock,
 // out.
@@ -13,13 +16,11 @@
 // first services out of the original platform, and both of which a resolver
 // keyed on capability names alone gets wrong:
 //
-//   * S3 HAS EXACTLY ONE OWNER. SeaweedFS is the S3 implementation. The
-//     composer's AWS vendor also serves a live, writable `/s3/` -- measured, not
-//     assumed -- so withholding its projection was never enough. The composer
-//     declares that surface under `disclaims`, and `closeDisclaimedSurfaces`
-//     below shuts the port rather than trusting the omission. When the port
-//     cannot be shut because something else selected needs it, that is a real
-//     conflict and resolution fails by name.
+//   * S3 HAS EXACTLY ONE OWNER. SeaweedFS is the S3 implementation. A service
+//     with an extra route for a capability it does not own must declare that
+//     surface under `disclaims`. `closeDisclaimedSurfaces` shuts its port. If
+//     another selected capability needs that port, resolution fails by name.
+//     The composer now registers only IAM, SQS and STS on its AWS listener.
 //
 //   * CYRUS AND GMAIL ARE NOT RIVALS. They carry the same person's mail on
 //     purpose: one is the world's own mailbox over IMAP, the other is the
@@ -30,11 +31,12 @@
 //     conflict through whenever two rivals happened to sit in different
 //     families.
 
+import { capabilityProjections, capabilityWorldErrors } from './capability-world.mjs';
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { disclaimersOf, portsByName, projectionsOf, providersOf, readinessChecks } from "./manifests.mjs";
+import { disclaimersOf, portsByName, providersOf, readinessChecks } from "./manifests.mjs";
 
 export const API_VERSION = "worldfixture.environment/v1";
 export const LOCK_API_VERSION = "worldfixture.environment-lock/v1";
@@ -166,10 +168,11 @@ function dependencyEnvironment(record, chosen) {
         });
       }
       const bind = (target.entry.binds ?? []).find((entry) => entry.name === dependency.bind);
-      if (!bind || !["port.url", "port.host_port"].includes(bind.from)) {
+      if (!bind || !["port.url", "port.host_port", "generated", "projection", "constant"].includes(bind.from)
+        || (bind.from === "projection" && (!bind.file || !bind.pointer))) {
         throw new ResolutionError(
           "dependency_not_bindable",
-          `${profile} requires ${dependency.profile}/${dependency.bind}, which is not a port binding`,
+          `${profile} requires ${dependency.profile}/${dependency.bind}, which has no supported dependency binding`,
           { profile, dependency: dependency.profile, bind: dependency.bind },
         );
       }
@@ -177,7 +180,11 @@ function dependencyEnvironment(record, chosen) {
       names.add(dependency.environment);
       environment.push({
         name: dependency.environment,
-        from: `capability.${bind.from}`,
+        from: bind.from.startsWith("port.") ? `capability.${bind.from}` : bind.from,
+        key: bind.key,
+        file: bind.file,
+        pointer: bind.pointer,
+        value: bind.value,
         profile: dependency.profile,
         attribute: dependency.bind,
         service: target.service,
@@ -196,7 +203,7 @@ function dependencyEnvironment(record, chosen) {
 // A non-optional port is opened whether or not an application calls it: SeaweedFS
 // will not start without its master and volume ports. An optional port is opened
 // only when something needs it, which is what makes the composer pay for the
-// vendors a run actually uses instead of all fourteen.
+// vendors a run actually uses instead of every vendor.
 function portsToOpen(manifest, selectedPorts) {
   const declared = portsByName(manifest);
   const wanted = new Set();
@@ -354,7 +361,7 @@ function resolveBindings(spec, chosen) {
 
 // ---- resolution ----------------------------------------------------------
 
-export function resolveEnvironment(spec, { manifests, artifactPath }) {
+export function resolveEnvironment(spec, { manifests, artifactPath, deferApplicationConnection = false }) {
   if (spec.api_version !== API_VERSION) {
     throw new ResolutionError(
       "unknown_api_version",
@@ -365,7 +372,16 @@ export function resolveEnvironment(spec, { manifests, artifactPath }) {
 
   const { manifest: artifact, world } = resolveWorld(spec, artifactPath);
   artifact.files = artifact.files ?? {};
+  const primary = world.people?.find(person => person.primary);
+  if (!spec.target?.identity && primary) spec = { ...spec, target: { ...spec.target, identity: primary.id } };
+  if (spec.target?.identity && !world.people?.some(person => person.id === spec.target.identity)) {
+    throw new ResolutionError("identity_required", `${world.id}:${world.version}: target.identity must name a declared world person`, { identity: spec.target.identity });
+  }
   const chosen = selectImplementations(spec, manifests);
+  for (const [profile, { manifest, entry }] of chosen) {
+    const errors = capabilityWorldErrors(manifest, entry, { world, artifact, artifactPath, identity: spec.target?.identity });
+    if (errors.length) throw new ResolutionError("capability_world_requirement", `${world.id}:${world.version}: ${profile}: ${errors.join("; ")}`, { profile, errors });
+  }
 
   // Which service owns each profile any selected service could serve. Used only
   // to decide whether a disclaimed surface has a real owner in this run.
@@ -410,14 +426,36 @@ export function resolveEnvironment(spec, { manifests, artifactPath }) {
     }
   }
 
-  return buildLock(spec, { artifact, world, chosen, selected, closedConflicts, artifactPath });
+  for (const [name, source] of Object.entries(resolveBindings(spec, chosen))) {
+    if (source.from === "projection" && source.pointer === "/tokens" && !resolveTokenReference(artifactPath, source).reference) {
+      throw new ResolutionError("identity_required", `${world.id}:${world.version}: ${name} has no declared authentication token for its target and capability`, { binding: name, profile: source.profile });
+    }
+    if (source.from === "projection.credential") {
+      const reference = resolveProjection(artifactPath, source);
+      const overlay = JSON.parse(readFileSync(join(artifactPath, "projections/emulator-overlay.json"), "utf8"));
+      if (!reference || !oauthClientEntries(overlay).some(client => client.client_secret_ref === reference)) {
+        throw new ResolutionError("identity_required", `${world.id}:${world.version}: ${name} has no declared native client credential reference`, { binding: name, profile: source.profile });
+      }
+    }
+    if (source.from === "projection" && source.profile.startsWith("mail.") && source.person) {
+      const mail = JSON.parse(readFileSync(join(artifactPath, "projections/mail.json"), "utf8"));
+      const account = mail.users?.find(user => user.id === source.person);
+      const value = source.attribute === "password" ? account?.password_ref : account?.login;
+      if (typeof value !== "string" || !value) throw new ResolutionError("identity_required", `${world.id}:${world.version}: ${name} has no declared mailbox ${source.attribute} for ${source.person}`, { binding: name, profile: source.profile });
+    }
+  }
+  const execution = executionPreflight(world, { capabilities: [...chosen.keys()], artifactPath,
+    rules: [...(world.agentic?.causal_rules ?? []), ...(spec.rules ?? [])], applicationTarget: spec.target?.application_url,
+    allowUnselected: spec.execution?.mode === "selected-capabilities", deferApplicationConnection });
+  if (execution.errors.length) throw new ResolutionError("invalid_execution_contract", execution.errors.join("; "), { errors: execution.errors });
+  return buildLock(spec, { artifact, world, chosen, selected, closedConflicts, artifactPath, execution });
 }
 
-function buildLock(spec, { artifact, world, chosen, selected, closedConflicts, artifactPath }) {
+function buildLock(spec, { artifact, world, chosen, selected, closedConflicts, artifactPath, execution }) {
   const projections = {};
 
   for (const [name, record] of [...selected].sort(([a], [b]) => (a < b ? -1 : 1))) {
-    for (const entry of projectionsOf(record.manifest)) {
+    for (const entry of capabilityProjections(record.manifest, [...record.profiles].map(profile => record.manifest.provides.find(entry => entry.profile === profile)))) {
       const file = entry.file;
       const digest = artifact.files?.[file];
 
@@ -449,8 +487,8 @@ function buildLock(spec, { artifact, world, chosen, selected, closedConflicts, a
   }
 
   for (const value of Object.values(projections)) {
-    value.read_by.sort();
-    value.verified_by.sort();
+    value.read_by = [...new Set(value.read_by)].sort();
+    value.verified_by = [...new Set(value.verified_by)].sort();
   }
 
   const services = [...selected]
@@ -475,7 +513,7 @@ function buildLock(spec, { artifact, world, chosen, selected, closedConflicts, a
           ...(record.manifest.runtime.environment ?? []),
           ...dependencyEnvironment(record, chosen),
         ],
-        projections: projectionsOf(record.manifest),
+        projections: capabilityProjections(record.manifest, [...record.profiles].map(profile => record.manifest.provides.find(entry => entry.profile === profile))),
         lifecycle: record.manifest.lifecycle ?? {},
       };
     });
@@ -502,7 +540,8 @@ function buildLock(spec, { artifact, world, chosen, selected, closedConflicts, a
     bindings: resolveBindings(spec, chosen),
     // The world's own rules and the run's, pinned together. A run applies
     // exactly these; a rule added later is a new lock.
-    rules: [...(world.agentic?.causal_rules ?? []), ...(spec.rules ?? [])],
+    rules: execution.rules,
+    execution: { timeline: execution.timeline, rule_diagnostics: execution.ruleDiagnostics, binding_diagnostics: spec.execution?.binding_diagnostics ?? [], application_connection: execution.applicationConnection },
     closed_conflicts: closedConflicts,
     target: spec.target ?? { kind: "none" },
   };

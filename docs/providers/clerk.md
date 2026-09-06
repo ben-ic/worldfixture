@@ -8,7 +8,7 @@ memberships, invitations, sessions, and a small OAuth/OIDC flow. Support label:
 
 ## What does not work
 
-Clients, phone numbers, OAuth applications, SAML and enterprise connections,
+Client management, phone numbers, OAuth application management, SAML and enterprise connections,
 billing, machines, M2M tokens, roles, permissions, sign-in tokens, and Clerk
 webhooks do not work. Complete production authorization, pagination, and errors
 also do not work. These operations are **Not supported**. Production behavior
@@ -19,8 +19,10 @@ and `@clerk/backend` are **Not verified against the production provider**.
 Use `CLERK_BASE_URL` and `CLERK_TOKEN`. Send
 `Authorization: Bearer TOKEN_VALUE` and JSON bodies.
 
-WorldFixture uses `@emulators/clerk` 0.10.0 and a WorldFixture user-seed
-correction.
+WorldFixture uses `@emulators/clerk` 0.10.0 with declared-user and OAuth client
+seeding. [Declare OAuth applications in world source](../guides/worlds.md#declare-oauth-clients).
+Authorization-code exchange requires a registered client and exact callback.
+Public clients require S256 PKCE. Refresh tokens are not supported.
 
 ## Route reference
 
@@ -41,6 +43,9 @@ and timestamps. Organization objects include `id`, `name`, `slug`, metadata,
 member limits, and timestamps. Session objects include `id`, `user_id`,
 `status`, timestamps, and local token data.
 
+`GET /v1/users` returns a user array. Use `limit` and `offset` for pagination.
+Organization lists retain their `data` and `total_count` fields.
+
 ## State, reset, Workbench, and proof
 
 API writes change the store that the API and Workbench read. The Workbench
@@ -48,10 +53,12 @@ reads users, organizations, and sessions from the live API. It has no Clerk
 write control. Reset restarts and reseeds the store. Stop does not preserve this
 state.
 
-Implementation: emulate.dev. The WorldFixture correction in
-`emulators/emulate/src/overrides/clerk-users.mjs` changes the seed only. Its
-test is `emulators/emulate/src/overrides/clerk-users.test.mjs`. Compiler tests
-cover the projection. No route has a Clerk contract test or production
-recording. No official SDK version has a WorldFixture test.
+Implementation: emulate.dev, with WorldFixture's declared OAuth client checks
+and public user-list response correction. Tests in
+`emulators/emulate/src/overrides/identity-lists.test.mjs` check user list shape,
+authentication, pagination, filtering, and organization response fields.
+`emulators/emulate/src/overrides/declared-oauth.test.mjs` checks OAuth behavior.
+Compiler tests cover the projection. No production recording or official SDK
+version has a WorldFixture test.
 
 Provider authority: [Clerk Backend API](https://clerk.com/docs/reference/backend-api).

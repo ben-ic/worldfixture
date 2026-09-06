@@ -9,9 +9,19 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createHash } from 'node:crypto';
 
 export function readWorld(artifactPath) {
   return JSON.parse(readFileSync(join(artifactPath, "world.json"), "utf8"));
+}
+
+// Native user names follow the compiler's documented identity adapter. The
+// canonical person ID remains unchanged in world records and connector data.
+export function providerLogin(person) {
+  if (person.github_login !== undefined) return person.github_login;
+  if (/^[a-z][a-z0-9-]+$/.test(person.id)) return person.id;
+  const slug = person.id.replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
+  return `${slug}-${createHash('sha256').update(person.id).digest('hex').slice(0, 10)}`;
 }
 
 export function primaryOrganization(world) {

@@ -16,17 +16,37 @@ export function seedGitHubIssues(store, config) {
   let issues = 0;
 
   for (const declared of config.repos) {
-    if (!Array.isArray(declared.issues) || declared.issues.length === 0) continue;
-
     const full = `${declared.owner}/${declared.name}`;
-    const repo = gs.repos.all().find((item) => item.full_name === full || item.name === declared.name);
-    if (!repo) continue;
+    const repo = gs.repos.all().find((item) => item.full_name === full);
+    if (!repo) throw new Error(`GitHub did not seed declared repository ${full}`);
+    for (const collaborator of declared.collaborators ?? []) {
+      const userId = userIdByLogin.get(collaborator.username);
+      if (!userId) throw new Error(`GitHub repository ${full} has unknown collaborator ${collaborator.username}`);
+      if (!['pull', 'triage', 'push', 'maintain', 'admin'].includes(collaborator.permission)) throw new Error(`GitHub repository ${full} has an invalid collaborator permission`);
+      const existing = gs.collaborators.findBy('repo_id', repo.id).find(row => row.user_id === userId);
+      if (existing) gs.collaborators.update(existing.id, { permission: collaborator.permission });
+      else gs.collaborators.insert({ repo_id: repo.id, user_id: userId, permission: collaborator.permission });
+    }
 
-    for (const issue of declared.issues) {
+    for (const issue of declared.issues ?? []) {
       const author = userIdByLogin.get(issue.author);
-      // An issue from someone the world does not have would be attributed to
-      // whoever happened to be first. Drop it instead.
-      if (!author) continue;
+      if (!author) throw new Error(`GitHub issue ${full}#${issue.number} has unknown author ${issue.author}`);
+      if (gs.issues.findBy('repo_id', repo.id).some(row => row.number === issue.number)) throw new Error(`GitHub issue ${full}#${issue.number} is declared more than once`);
+      const assignees = (issue.assignees ?? []).map(login => {
+        const userId = userIdByLogin.get(login);
+        if (!userId) throw new Error(`GitHub issue ${full}#${issue.number} has unknown assignee ${login}`);
+        return userId;
+      });
+      const labels = (issue.labels ?? []).map(value => {
+        const name = typeof value === 'string' ? value : value?.name;
+        if (typeof name !== 'string' || !name) throw new Error(`GitHub issue ${full}#${issue.number} has an invalid label`);
+        let label = gs.labels.findBy('repo_id', repo.id).find(row => row.name === name);
+        if (!label) {
+          label = gs.labels.insert({ node_id: '', repo_id: repo.id, name, description: value?.description ?? null, color: value?.color ?? 'ededed', default: false });
+          gs.labels.update(label.id, { node_id: `LA_${repo.id}_${label.id}` });
+        }
+        return label.id;
+      });
 
       gs.issues.insert({
         node_id: `I_${repo.id}_${issue.number}`,
@@ -41,8 +61,8 @@ export function seedGitHubIssues(store, config) {
         user_id: author,
         // `formatIssue` maps both of these without a guard, so they must be
         // arrays even when empty.
-        assignee_ids: (issue.assignees ?? []).map((login) => userIdByLogin.get(login)).filter((id) => id !== undefined),
-        label_ids: [],
+        assignee_ids: assignees,
+        label_ids: labels,
         milestone_id: null,
         comments: 0,
         closed_at: null,

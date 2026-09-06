@@ -20,7 +20,7 @@ export function seedSlackHistory(store, config) {
 
   for (const declared of config.channels) {
     const channel = ss.channels.findOneBy("name", declared.name);
-    if (!channel) continue;
+    if (!channel) throw new Error(`Slack did not seed declared channel ${declared.name}`);
 
     // The channel may predate this seed, in which case it kept upstream's topic.
     const topic = declared.topic ?? "";
@@ -34,19 +34,20 @@ export function seedSlackHistory(store, config) {
 
     // Upstream seeds every user into every channel, so the world's own
     // membership is lost and `conversations.history` gates nothing. Restore it.
-    if (Array.isArray(declared.members) && declared.members.length > 0) {
-      const memberIds = declared.members.map((name) => userIdByName.get(name)).filter((id) => id !== undefined);
-      if (memberIds.length > 0) {
-        ss.channels.update(channel.id, { members: memberIds, num_members: memberIds.length });
-        memberCount += 1;
-      }
+    if (Array.isArray(declared.members)) {
+      const memberIds = declared.members.map(name => {
+        const id = userIdByName.get(name);
+        if (id === undefined) throw new Error(`Slack channel ${declared.name} has an unknown declared member ${name}`);
+        return id;
+      });
+      ss.channels.update(channel.id, { members: memberIds, num_members: memberIds.length });
+      memberCount += 1;
     }
 
     for (const message of declared.messages ?? []) {
       const user = userIdByName.get(message.user);
-      // A message from someone the workspace does not have is dropped rather
-      // than attributed to the wrong person.
-      if (!user) continue;
+      // Refuse an unknown author before inserting the message.
+      if (!user) throw new Error(`Slack message has an unknown declared author ${message.user}`);
       // Mirror the defaults the runtime insert path sets. `formatSlackMessage`
       // reads `reactions.length` unguarded, so a seeded message without them
       // makes every later `conversations.history` call fail with a 500.

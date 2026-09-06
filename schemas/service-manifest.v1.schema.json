@@ -4,41 +4,83 @@
   "title": "WorldFixture service manifest v1",
   "description": "One language-neutral service declaration. A valid manifest plus the contract tests is enough to add a service; no core registration is required. Revised after the first four services were described by it, which found three things the first draft could not say: that a service answers on several protocols and needs one readiness check per protocol; that the supervisor, not the image, allocates the ports and supplies the environment; and that an implementation can serve an upstream surface it does not own, which a resolver cannot see because a `provides` list only ever adds. Hence `readiness` also accepting a list, `ports` and `environment`, and `disclaims`. Every field added in that revision is optional, so a manifest written against the first draft still validates.",
   "type": "object",
-  "required": ["api_version", "name", "version", "runtime", "provides"],
+  "required": [
+    "api_version",
+    "name",
+    "version",
+    "runtime",
+    "provides"
+  ],
   "properties": {
-    "api_version": {"const": "worldfixture.service/v1"},
-    "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
-    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "api_version": {
+      "const": "worldfixture.service/v1"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
     "runtime": {
       "type": "object",
-      "required": ["readiness"],
+      "required": [
+        "readiness"
+      ],
       "properties": {
         "image": {
           "description": "An immutable image reference. A lock never follows a mutable tag. Omitted when the service runs as a child process inside the one default image, where `command` is the whole answer.",
           "type": "string",
           "pattern": "@sha256:[0-9a-f]{64}$"
         },
-        "command": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
         "container": {
           "description": "How to run this service as a local container when its system packages are not installed in the checkout environment. `image` is the published, digest-pinned form; this is the buildable one, and the digest of what was actually built is recorded against the run rather than in the lock. A service can also declare `command`: checkout mode uses this container, while the all-in-one image uses the command and never starts Docker inside Docker.",
           "type": "object",
-          "required": ["tag"],
+          "required": [
+            "tag"
+          ],
           "properties": {
-            "tag": {"type": "string"},
+            "tag": {
+              "type": "string"
+            },
             "build": {
               "description": "A build context, relative to the service directory.",
               "type": "string"
             },
-            "platform": {"type": "string"},
+            "platform": {
+              "type": "string"
+            },
             "mounts": {
               "type": "array",
               "items": {
                 "type": "object",
-                "required": ["source", "target"],
+                "required": [
+                  "source",
+                  "target"
+                ],
                 "properties": {
-                  "source": {"enum": ["world.path"]},
-                  "target": {"type": "string"},
-                  "mode": {"enum": ["ro", "rw"]}
+                  "source": {
+                    "enum": [
+                      "world.path"
+                    ]
+                  },
+                  "target": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "enum": [
+                      "ro",
+                      "rw"
+                    ]
+                  }
                 }
               }
             }
@@ -49,11 +91,33 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "protocol", "env"],
+            "required": [
+              "name",
+              "protocol",
+              "env"
+            ],
             "properties": {
-              "name": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
-              "protocol": {"enum": ["http", "smtp", "imap", "lmtp", "s3", "grpc", "tcp", "postgres", "mysql"]},
-              "container_port": {"description": "The default this image ships, used when the service runs unsupervised. A service whose ports are wholly supplied by the supervisor has none.", "type": "integer"},
+              "name": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "protocol": {
+                "enum": [
+                  "http",
+                  "smtp",
+                  "imap",
+                  "lmtp",
+                  "s3",
+                  "grpc",
+                  "tcp",
+                  "postgres",
+                  "mysql"
+                ]
+              },
+              "container_port": {
+                "description": "The default this image ships, used when the service runs unsupervised. A service whose ports are wholly supplied by the supervisor has none.",
+                "type": "integer"
+              },
               "env": {
                 "description": "The environment variable the supervisor sets to open this port.",
                 "type": "string",
@@ -61,9 +125,15 @@
               },
               "env_format": {
                 "description": "How the value is written. `port` is a bare number; `host_port` is `<bind>:<port>` in one variable, which is what a service with no separate bind_env expects.",
-                "enum": ["port", "host_port"]
+                "enum": [
+                  "port",
+                  "host_port"
+                ]
               },
-              "bind_env": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+              "bind_env": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*$"
+              },
               "published": {
                 "description": "Whether the target application reaches this port. A private back channel binds loopback and is never printed as a binding.",
                 "type": "boolean"
@@ -80,24 +150,52 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "from"],
+            "required": [
+              "name",
+              "from"
+            ],
             "properties": {
-              "name": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"},
+              "name": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*$"
+              },
               "from": {
                 "description": "`world.path` is the mounted artifact directory; `world.sha256` its content digest; `runtime.token` the private token the service uses to reach the runtime; `runtime.state` is the private per-instance state directory; `constant` takes `value`; `generated` takes a stable project-local value named by `key`.",
-                "enum": ["world.path", "world.sha256", "runtime.token", "runtime.state", "constant", "generated"]
+                "enum": [
+                  "world.path",
+                  "world.sha256",
+                  "runtime.token",
+                  "runtime.state",
+                  "constant",
+                  "generated"
+                ]
               },
-              "value": {"type": "string"},
-              "key": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
-              "required": {"type": "boolean"}
+              "value": {
+                "type": "string"
+              },
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9._-]+$"
+              },
+              "required": {
+                "type": "boolean"
+              }
             }
           }
         },
         "readiness": {
           "description": "Protocol-level readiness checks, not process liveness checks, and not a marker file written once at startup: a check must re-answer on every poll. A multi-protocol service declares one check per protocol that must be answering before the runtime calls it ready. The single-object form is the original draft and still validates.",
           "oneOf": [
-            {"$ref": "#/$defs/readinessCheck"},
-            {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/readinessCheck"}}
+            {
+              "$ref": "#/$defs/readinessCheck"
+            },
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/readinessCheck"
+              }
+            }
           ]
         }
       }
@@ -108,9 +206,14 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["profile"],
+        "required": [
+          "profile"
+        ],
         "properties": {
-          "profile": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"},
+          "profile": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"
+          },
           "port": {
             "description": "Which of this service's ports serves the profile. Required in practice for any service with more than one port, or the resolver cannot turn a capability into a binding.",
             "type": "string"
@@ -120,23 +223,64 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["name", "from"],
+              "required": [
+                "name",
+                "from"
+              ],
               "properties": {
-                "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
-                "from": {
-                  "description": "Port bindings are computed from the profile's port. `port.connection_url` also uses the declared scheme and local service credentials. `projection` reads `pointer` out of this service's projection, which is how a per-person credential is resolved without putting one in the manifest. `generated` takes a stable project-local value named by `key`.",
-                  "enum": ["port.url", "port.host", "port.port", "port.host_port", "port.connection_url", "projection", "constant", "generated"]
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
                 },
-                "pointer": {"type": "string"},
-                "file": {"type": "string"},
-                "value": {"type": "string"},
-                "key": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
-                "scheme": {"type": "string", "pattern": "^[a-z][a-z0-9+.-]*$"},
-                "username": {"type": "string"},
-                "password": {"type": "string"},
-                "password_from": {"enum": ["generated"]},
-                "password_key": {"type": "string", "pattern": "^[a-z][a-z0-9._-]+$"},
-                "database": {"type": "string"},
+                "from": {
+                  "description": "Port bindings are computed from the profile's port. `port.connection_url` also uses the declared scheme and local service credentials. `projection` reads `pointer` out of this service's projection, which is how a per-person credential is resolved without putting one in the manifest. `generated` takes a stable project-local value named by `key`. `projection.credential` reads a secret reference from the projection and resolves it from run credentials.",
+                  "enum": [
+                    "port.url",
+                    "port.host",
+                    "port.port",
+                    "port.host_port",
+                    "port.connection_url",
+                    "projection",
+                    "projection.credential",
+                    "constant",
+                    "generated"
+                  ]
+                },
+                "pointer": {
+                  "type": "string"
+                },
+                "file": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9._-]+$"
+                },
+                "scheme": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9+.-]*$"
+                },
+                "username": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string"
+                },
+                "password_from": {
+                  "enum": [
+                    "generated"
+                  ]
+                },
+                "password_key": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9._-]+$"
+                },
+                "database": {
+                  "type": "string"
+                },
                 "per_person": {
                   "description": "True when the attribute resolves differently for each world person, such as a Slack token.",
                   "type": "boolean"
@@ -149,11 +293,93 @@
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["profile", "bind", "environment"],
+              "required": [
+                "profile",
+                "bind",
+                "environment"
+              ],
               "properties": {
-                "profile": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"},
-                "bind": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
-                "environment": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$"}
+                "profile": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"
+                },
+                "bind": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "environment": {
+                  "type": "string",
+                  "pattern": "^[A-Z][A-Z0-9_]*$"
+                }
+              }
+            }
+          },
+          "world": {
+            "type": "object",
+            "properties": {
+              "requires": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "projections": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "file"
+                  ],
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "subtree": {
+                      "type": "string"
+                    },
+                    "verified": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              },
+              "identities": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "collection",
+                    "fields",
+                    "scope"
+                  ],
+                  "properties": {
+                    "collection": {
+                      "type": "string"
+                    },
+                    "fields": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "scope": {
+                      "enum": [
+                        "all",
+                        "target"
+                      ]
+                    }
+                  }
+                }
+              },
+              "any_requires": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -165,18 +391,33 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["profile", "reason"],
+        "required": [
+          "profile",
+          "reason"
+        ],
         "properties": {
-          "profile": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"},
-          "reason": {"type": "string"},
-          "port": {"type": "string"}
+          "profile": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]*\\.v[0-9]+$"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "port": {
+            "type": "string"
+          }
         }
       }
     },
     "world": {
       "type": "object",
       "properties": {
-        "requires": {"type": "array", "items": {"type": "string"}},
+        "requires": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "projection": {
           "description": "The one artifact projection this service loads before readiness. Use `projections` instead when a service reads more than one file, or reads part of a file another service owns.",
           "type": "string",
@@ -188,9 +429,14 @@
           "minItems": 1,
           "items": {
             "type": "object",
-            "required": ["file"],
+            "required": [
+              "file"
+            ],
             "properties": {
-              "file": {"type": "string", "pattern": "^(world\\.json|manifest\\.json|projections/[a-z0-9-]+\\.json)$"},
+              "file": {
+                "type": "string",
+                "pattern": "^(world\\.json|manifest\\.json|projections/[a-z0-9-]+\\.json)$"
+              },
               "subtree": {
                 "description": "A JSON pointer to the part this service owns. Absent means the whole file.",
                 "type": "string",
@@ -208,37 +454,70 @@
     "events": {
       "type": "object",
       "properties": {
-        "consumes": {"type": "array", "items": {"type": "string"}},
-        "produces": {"type": "array", "items": {"type": "string"}}
+        "consumes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "produces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "lifecycle": {
       "description": "What this service can actually do, over an interface something can call. A capability that exists in-process but is not exposed is not a lifecycle claim. A service that cannot export recoverable changes must say so; it cannot own rules that need guaranteed downstream delivery.",
       "type": "object",
       "properties": {
-        "seed": {"type": "boolean"},
-        "reset": {"type": "boolean"},
+        "seed": {
+          "type": "boolean"
+        },
+        "reset": {
+          "type": "boolean"
+        },
         "reset_mechanism": {
           "description": "`restore` replays an exported snapshot and is exact whatever the seed clock did. `restart` re-runs the service and is exact only when it holds no wall-clock state. The release gate wants byte-equivalent starting projections, so the runtime has to know which it is getting.",
-          "enum": ["restore", "restart"]
+          "enum": [
+            "restore",
+            "restart"
+          ]
         },
-        "verify": {"type": "boolean"},
-        "recoverable_changes": {"type": "boolean"},
+        "verify": {
+          "type": "boolean"
+        },
+        "recoverable_changes": {
+          "type": "boolean"
+        },
         "state": {
           "type": "object",
           "properties": {
-            "export": {"type": "boolean"},
-            "import": {"type": "boolean"},
-            "format": {"type": "string"},
+            "export": {
+              "type": "boolean"
+            },
+            "import": {
+              "type": "boolean"
+            },
+            "format": {
+              "type": "string"
+            },
             "clear_paths": {
               "description": "Absolute, service-owned temporary paths the process runner clears before a restart reset. Container runs get a new writable layer instead.",
               "type": "array",
-              "items": {"type": "string", "pattern": "^/tmp/[A-Za-z0-9._/-]+$"}
+              "items": {
+                "type": "string",
+                "pattern": "^(?:/tmp/(?:seaweedfs|worldfixture-[a-z0-9_-]+)(?:/[a-zA-Z0-9._-]+)*|[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*)$"
+              }
             },
             "snapshot_paths": {
               "description": "State paths copied after accepted readiness and restored before restart. Runtime sockets and lock files must not be listed.",
               "type": "array",
-              "items": {"type": "string", "pattern": "^/tmp/[A-Za-z0-9._/-]+$"}
+              "items": {
+                "type": "string",
+                "pattern": "^(?:/tmp/(?:seaweedfs|worldfixture-[a-z0-9_-]+)(?:/[a-zA-Z0-9._-]+)*|[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*)$"
+              }
             }
           }
         }
@@ -247,25 +526,53 @@
     "ui": {
       "description": "An optional service UI on its own origin. It must not read another service's credentials.",
       "type": "object",
-      "required": ["port"],
+      "required": [
+        "port"
+      ],
       "properties": {
-        "port": {"type": "string"},
-        "path": {"type": "string"},
-        "title": {"type": "string"}
+        "port": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
       }
     }
   },
   "$defs": {
     "readinessCheck": {
       "type": "object",
-      "required": ["port"],
+      "required": [
+        "port"
+      ],
       "properties": {
-        "port": {"type": "string"},
-        "path": {"type": "string"},
-        "protocol": {"enum": ["http", "smtp", "imap", "lmtp", "s3", "tcp", "postgres", "mysql"]},
+        "port": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "protocol": {
+          "enum": [
+            "http",
+            "smtp",
+            "imap",
+            "lmtp",
+            "s3",
+            "tcp",
+            "postgres",
+            "mysql"
+          ]
+        },
         "kind": {
           "description": "`protocol` asks whether the surface is answering now and must re-answer on every poll. `seed_gate` asks whether startup finished loading the world and may be a marker written once, which is all that a shell entry point can offer. A service with mutable seeded state usually needs both: s3's filer document proves every declared object was stored, and only a call to the S3 port proves the store still answers. Defaults to `protocol`.",
-          "enum": ["protocol", "seed_gate"]
+          "enum": [
+            "protocol",
+            "seed_gate"
+          ]
         },
         "expect": {
           "description": "What a ready answer looks like: an HTTP status, or the prefix of a protocol greeting such as `220` for SMTP or `* OK` for IMAP. A non-status value is matched against the response body, which is what distinguishes the route the check intends from any other route that also returns 200.",
@@ -273,10 +580,18 @@
         },
         "method": {
           "description": "The HTTP method, when the cheapest honest answer is not a GET. Slack's `auth.test` answers `not_authed` on POST and 404 on GET, so a GET check would have proven only that something was listening.",
-          "enum": ["GET", "POST", "HEAD"]
+          "enum": [
+            "GET",
+            "POST",
+            "HEAD"
+          ]
         },
-        "username": {"type": "string"},
-        "database": {"type": "string"}
+        "username": {
+          "type": "string"
+        },
+        "database": {
+          "type": "string"
+        }
       }
     }
   }

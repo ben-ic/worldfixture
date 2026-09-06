@@ -12,12 +12,12 @@ import test from "node:test";
 
 import { KINDS, deliverArrival } from "./arrivals.mjs";
 import { advanceClock, startClock } from "./clock.mjs";
-import { armTimeline, due, pending, playDue, playOne, startScheduler, timelineState } from "./scheduler.mjs";
+import { armTimeline, due, pending, playDue, playOne, timelineState } from "./scheduler.mjs";
 import { forgetSlackCaches } from "./slack.mjs";
 import { eventsAfter, openState, resetState } from "./state.mjs";
 
 const T0 = 1_800_000_000_000;
-const CREDENTIALS = { values: { "token:slack_token_maya-chen": randomBytes(24).toString("hex") } };
+const CREDENTIALS = { values: { "token:slack_token_maya-chen": randomBytes(24).toString("hex"), "token:google_token_maya-chen": "recipient-test-token" } };
 
 const WORLD = {
   id: "test.world",
@@ -113,7 +113,7 @@ test("arming replaces the schedule, so another world's arrivals cannot survive",
 test("a world with no timeline arms nothing and says so", () => {
   const db = fresh();
   assert.deepEqual(armTimeline(db, { id: "empty" }), { armed: 0, total: 0 });
-  assert.deepEqual(timelineState(db), { total: 0, delivered: 0, pending: 0, next_due_ms: null });
+  assert.deepEqual(timelineState(db), { total: 0, delivered: 0, pending: 0, in_flight: 0, failed: 0, skipped: 0, uncertain: 0, next_due_ms: null });
   db.close();
 });
 
@@ -223,12 +223,16 @@ test("a scheduled message fires the causal rules, like a typed one", async () =>
 
   assert.equal(played.status, "delivered");
 
+  assert.equal(delivered.length, 0);
+  assert.equal(played.queued_effects, 1);
+  await playDue(db, { world: WORLD, rules, bindings: { SMTP_HOST_PORT: "127.0.0.1:2525" }, now: () => T0,
+    sendMail: async (_address, message) => delivered.push(message) }, { now: T0 });
   // Jon is the other channel member; Maya wrote it, so she is not notified.
   const events = eventsAfter(db, 0, 20);
   const notifications = events.filter((event) => event.type === "mail.notification.delivered.v1");
   assert.equal(notifications.length, 1, `expected one notification, got ${events.map((e) => e.type).join(", ")}`);
   assert.equal(notifications[0].actor_id, "jon-bell");
-  assert.equal(played.notified, 1);
+  assert.equal(delivered.length, 1);
   db.close();
 });
 
@@ -258,27 +262,32 @@ test("a mail arrival goes over SMTP and is recorded as received", async () => {
   db.close();
 });
 
-test("via gmail uses the emulator's own messages.insert", async () => {
-  const db = fresh();
-  const stub = providers();
-
+test("via gmail uses the recipient credential and records the returned provider ID", async () => {
+  const db = fresh(), calls = [];
+  let submitted;
   const played = await deliverArrival(db, {
-    id: "x",
-    kind: "incoming-email",
+    id: "x", kind: "incoming-email",
     payload: { via: "gmail", from_id: "priya-raman", to_id: "maya-chen", subject: "s", body_text: "b" },
   }, {
     world: WORLD, credentials: CREDENTIALS,
-    bindings: { GOOGLE_BASE_URL: "http://google.test", GOOGLE_TOKEN: "t" },
-    commandId: "cmd_1",
-    now: () => T0,
-    fetchImpl: stub.fetchImpl,
+    bindings: { GOOGLE_BASE_URL: "http://google.test", GOOGLE_TOKEN: "must-not-use-this-token" },
+    commandId: "cmd_1", now: () => T0,
+    fetchImpl: async (url, options) => {
+      calls.push(String(url));
+      assert.equal(options.headers.authorization, "Bearer recipient-test-token");
+      if (url.endsWith("/userinfo")) return Response.json({ email: "maya@northstar.test" });
+      if (url.endsWith("/labels")) return Response.json({ labels: [{ id: "INBOX" }, { id: "UNREAD" }] });
+      if (options.method === "POST") { submitted = JSON.parse(options.body); return Response.json({ id: "provider-created-id" }); }
+      return Response.json({ id: "provider-created-id", threadId: "thread-x", labelIds: submitted.labelIds,
+        payload: { mimeType: "text/plain", body: { data: Buffer.from("b").toString("base64url") },
+          headers: ["from", "to", "subject"].map(name => ({ name, value: submitted[name] })) } });
+    },
   });
-
   assert.equal(played.status, "delivered");
-  assert.equal(played.via, "gmail");
-  const insert = stub.calls.find((call) => call.url.includes("/gmail/v1/users/me/messages"));
-  assert.ok(insert, "Gmail was not asked to insert the message");
-  assert.equal(insert.method, "POST");
+  assert.equal(played.message_id, "provider-created-id");
+  assert.equal(submitted.id, undefined);
+  assert.ok(calls.some(url => url.includes("/gmail/v1/users/maya%40northstar.test/messages")));
+  assert.equal(eventsAfter(db, 0, 10)[0].provider_evidence.message_id, "provider-created-id");
   db.close();
 });
 
@@ -313,19 +322,11 @@ test("a webhook with a subscriber is posted to it", async () => {
   db.close();
 });
 
-test("an application event with no connector is skipped with the reason", async () => {
+test("an application event with no connector fails with the reason", async () => {
   const db = fresh();
-  const played = await deliverArrival(db, {
-    id: "task-done",
-    kind: "application-event",
-    payload: { kind: "task.completed", data: { task_id: "task-1" } },
-  }, {
-    world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
-    applicationConnector: () => null,
-  });
-
-  assert.equal(played.status, "skipped");
-  assert.match(played.reason, /no application connector/);
+  await assert.rejects(deliverArrival(db, { id: "app", kind: "application-event", payload: { kind: "task.completed" } }, {
+    world: WORLD, bindings: {}, commandId: "cmd_1", now: () => T0,
+  }), /no application connector is connected/);
   db.close();
 });
 
@@ -364,7 +365,7 @@ test("an application event is delivered through the connected app", async () => 
   assert.equal(calls[1].url, "http://app.test/__worldfixture/events");
   assert.equal(calls[1].options.headers.authorization, "Bearer secret");
   const body = JSON.parse(calls[1].options.body);
-  assert.equal(body.event_id, "task-done");
+  assert.equal(body.event_id, "wf:test.world::task-done");
   assert.equal(body.kind, "task.completed");
   assert.deepEqual(body.data, { task_id: "task-1" });
   const event = eventsAfter(db, 0, 10).find((entry) => entry.type === "application.event.delivered.v1");
@@ -372,18 +373,15 @@ test("an application event is delivered through the connected app", async () => 
   db.close();
 });
 
-test("a chat arrival for a channel the world does not have is skipped by name", async () => {
+test("a chat arrival for an unknown channel fails with the channel name", async () => {
   const db = fresh();
-  const played = await deliverArrival(db, {
+  await assert.rejects(deliverArrival(db, {
     id: "x", kind: "chat-message", payload: { author_id: "maya-chen", channel_id: "channel-missing", text: "hi" },
-  }, { world: WORLD, credentials: CREDENTIALS, bindings: { SLACK_BASE_URL: "http://slack.test" }, commandId: "cmd_1", now: () => T0 });
-
-  assert.equal(played.status, "skipped");
-  assert.match(played.reason, /no channel "channel-missing"/);
+  }, { world: WORLD, credentials: CREDENTIALS, bindings: { SLACK_BASE_URL: "http://slack.test" }, commandId: "cmd_1", now: () => T0 }), /no channel "channel-missing"/);
   db.close();
 });
 
-test("an arrival for a service this instance did not start is skipped, not failed", async () => {
+test("a selected arrival with a missing provider fails instead of reporting a skip", async () => {
   const db = fresh();
   for (const [kind, payload] of [
     ["chat-message", { author_id: "maya-chen", channel_id: "channel-release", text: "x" }],
@@ -391,23 +389,15 @@ test("an arrival for a service this instance did not start is skipped, not faile
     ["github-comment", { owner: "o", repository: "r", issue_number: 1, body: "b" }],
     ["stripe-payment", { amount_cents: 100 }],
     ["s3-object", { bucket: "b", key: "k", body: "x" }],
-  ]) {
-    const played = await deliverArrival(db, { id: kind, kind, payload }, {
-      world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
-    });
-    assert.equal(played.status, "skipped", kind);
-    assert.match(played.reason, /did not start/, kind);
-  }
+  ]) await assert.rejects(deliverArrival(db, { id: kind, kind, payload }, {
+    world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
+  }), /did not start|requires the selected/);
   db.close();
 });
 
-test("an unknown kind is skipped by name rather than passing unremarked", async () => {
+test("an unknown executable kind is rejected", async () => {
   const db = fresh();
-  const played = await deliverArrival(db, { id: "x", kind: "telepathy", payload: {} }, {
-    world: WORLD, credentials: CREDENTIALS, bindings: {}, commandId: "cmd_1", now: () => T0,
-  });
-  assert.equal(played.status, "skipped");
-  assert.match(played.reason, /cannot play a "telepathy" arrival yet/);
+  await assert.rejects(deliverArrival(db, { id: "x", kind: "telepathy", payload: {} }, { world: WORLD }), /Unknown executable timeline kind/);
   assert.equal(Object.keys(KINDS).includes("telepathy"), false);
   db.close();
 });
@@ -456,43 +446,7 @@ test("playDue plays everything due, in world order, and only once", async () => 
 
   // A second pass plays nothing again.
   assert.deepEqual(await playDue(db, context, { now: T0 }), []);
-  assert.deepEqual(timelineState(db), { total: 3, delivered: 2, pending: 1, next_due_ms: 90_000 });
-  db.close();
-});
-
-test("the loop ticks, suspends without stopping, and resumes", async () => {
-  const db = fresh();
-  armTimeline(db, WORLD);
-  const stub = providers();
-  const played = [];
-
-  const scheduler = startScheduler(db, {
-    world: WORLD, credentials: CREDENTIALS,
-    bindings: { SLACK_BASE_URL: "http://slack.test", SMTP_HOST_PORT: "127.0.0.1:2525" },
-    rules: [],
-    now: () => T0,
-    fetchImpl: stub.fetchImpl,
-    sendMail: async () => {},
-  }, { tickMs: 5, now: () => T0, onPlayed: (entries) => played.push(...entries) });
-
-  advanceClock(db, 25_000, { now: T0 });
-  await scheduler.tick();
-  assert.deepEqual(played.map((entry) => entry.arrival), ["a-first"]);
-
-  // Suspend is what reset uses. The scheduler must go quiet and stay alive.
-  await scheduler.suspend();
-  assert.equal(scheduler.suspended, true);
-  advanceClock(db, 100_000, { now: T0 });
-  await scheduler.tick();
-  assert.equal(played.length, 1, "a suspended scheduler played an arrival");
-
-  scheduler.resume();
-  await scheduler.tick();
-  assert.deepEqual(played.map((entry) => entry.arrival), ["a-first", "b-second", "c-mail"]);
-
-  await scheduler.stop();
-  await scheduler.tick();
-  assert.equal(played.length, 3, "a stopped scheduler played an arrival");
+  assert.deepEqual(timelineState(db), { total: 3, delivered: 2, pending: 1, in_flight: 0, failed: 0, skipped: 0, uncertain: 0, next_due_ms: 90_000 });
   db.close();
 });
 
@@ -512,14 +466,31 @@ test("reset clears the schedule so the world can play its timeline again", async
 
   // What `worldfixture reset` does, then what the runtime does after it.
   resetState(db);
-  assert.deepEqual(timelineState(db), { total: 0, delivered: 0, pending: 0, next_due_ms: null });
+  assert.deepEqual(timelineState(db), { total: 0, delivered: 0, pending: 0, in_flight: 0, failed: 0, skipped: 0, uncertain: 0, next_due_ms: null });
 
   startClock(db, { anchor: WORLD.clock.anchor, now: T0 });
   armTimeline(db, WORLD);
 
   // The accepted start of this world includes three things that have not
   // happened yet. A reset that left them spent would not be that start.
-  assert.deepEqual(timelineState(db), { total: 3, delivered: 0, pending: 3, next_due_ms: 20_000 });
+  assert.deepEqual(timelineState(db), { total: 3, delivered: 0, pending: 3, in_flight: 0, failed: 0, skipped: 0, uncertain: 0, next_due_ms: 20_000 });
   assert.deepEqual(await playDue(db, context, { now: T0 }), []);
   db.close();
+});
+
+
+test('scheduled Slack event and SMTP Date use due world time while native Slack evidence stays intact', async () => {
+  const db = fresh(), mail = [], stub = providers();
+  try {
+    armTimeline(db, WORLD); advanceClock(db, 100000, { now: T0 });
+    const played = await playDue(db, { world: WORLD, credentials: CREDENTIALS, rules: [], now: () => T0,
+      bindings: { SLACK_BASE_URL: 'http://slack.test', SMTP_HOST_PORT: 'smtp.test:25' }, fetchImpl: stub.fetchImpl,
+      sendMail: async (_address, message) => { mail.push(message); } }, { now: T0 });
+    assert.equal(played.length, 3);
+    const events = eventsAfter(db, 0);
+    const first = events.find(row => row.provider_evidence?.arrival === 'a-first');
+    assert.equal(first.occurred_at, new Date(Date.parse(WORLD.clock.anchor) + 20000).toISOString());
+    assert.ok(first.provider_evidence.message_ts);
+    assert.equal(mail[0].date, new Date(Date.parse(WORLD.clock.anchor) + 90000).toUTCString());
+  } finally { db.close(); }
 });

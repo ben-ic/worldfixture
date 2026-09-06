@@ -15,6 +15,10 @@ the selected world.
 “Partial” means that only the route families below are registered. A registered
 route is not proof of full GitHub behavior.
 
+OAuth applications must be [declared in world source](../guides/worlds.md#declare-oauth-clients).
+The local flow checks the declared client, exact callback URL, and selected
+world user. Undeclared sample clients are rejected.
+
 ## What works
 
 You can read and change common users, repositories, issues, pull requests,

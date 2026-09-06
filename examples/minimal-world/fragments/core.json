@@ -111,6 +111,18 @@
     "support": {
       "cases": []
     },
+    "timeline": [
+      {
+        "id": "arrival-export-check",
+        "after_seconds": 30,
+        "kind": "chat-message",
+        "payload": {
+          "author_id": "tomas-vidal",
+          "channel_id": "channel-general",
+          "text": "I am checking the export retry for duplicate rows."
+        }
+      }
+    ],
     "work": {
       "projects": [
         {

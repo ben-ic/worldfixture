@@ -1,0 +1,173 @@
+{
+  "api_version": "worldfixture.world-fragment/v1",
+  "id": "pack.finance-settlements",
+  "contributes": {
+    "commerce": {
+      "orders": [
+        {
+          "id": "order-finance-example-paid",
+          "number": "WF-FINANCE-PAID",
+          "shopper_id": "wes-agyeman",
+          "channel": "storefront",
+          "currency": "USD",
+          "placed_on": "2027-03-10",
+          "status": "returned",
+          "payment_status": "partially_refunded",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 2,
+              "unit_amount_cents": 2600
+            }
+          ],
+          "subtotal_cents": 5200,
+          "shipping_cents": 795,
+          "discount_cents": 0,
+          "total_cents": 5995,
+          "note": "Two Harbour mugs paid once; one mug returned and refunded on 12 March."
+        },
+        {
+          "id": "order-finance-example-cancelled",
+          "number": "WF-FINANCE-CANCELLED",
+          "shopper_id": "wes-agyeman",
+          "channel": "storefront",
+          "currency": "USD",
+          "placed_on": "2027-03-11",
+          "status": "cancelled",
+          "payment_status": "unpaid",
+          "items": [
+            {
+              "product_id": "prod-harbour-mug",
+              "quantity": 1,
+              "unit_amount_cents": 2600
+            }
+          ],
+          "subtotal_cents": 2600,
+          "shipping_cents": 0,
+          "discount_cents": 0,
+          "total_cents": 2600,
+          "note": "Cancelled before payment."
+        }
+      ]
+    },
+    "finance": {
+      "customers": [
+        {
+          "id": "shop-wes-agyeman",
+          "contact_id": "wes-agyeman",
+          "organization_id": "everyday-mail",
+          "name": "Wes Agyeman — one-time purchases",
+          "billing_mode": "one_time",
+          "revenue_account": "retail-sales"
+        }
+      ],
+      "anchor_invoices": [
+        {
+          "id": "inv-finance-example-paid",
+          "number": "WF-FINANCE-PAID",
+          "customer_id": "shop-wes-agyeman",
+          "order_id": "order-finance-example-paid",
+          "issued_on": "2027-03-10",
+          "due_on": "2027-03-10",
+          "amount_cents": 5995,
+          "currency": "USD",
+          "status": "paid",
+          "description": "Two Harbour mugs and delivery"
+        }
+      ],
+      "payments": [
+        {
+          "id": "pay-finance-example-paid",
+          "customer_id": "shop-wes-agyeman",
+          "invoice_id": "inv-finance-example-paid",
+          "order_id": "order-finance-example-paid",
+          "paid_on": "2027-03-10",
+          "amount_cents": 5995,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-imogen-bell",
+          "invoice_id": "inv-202702-club-imogen-bell",
+          "customer_id": "club-imogen-bell",
+          "paid_on": "2027-03-17",
+          "amount_cents": 3900,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-jonas-wirth",
+          "invoice_id": "inv-202702-club-jonas-wirth",
+          "customer_id": "club-jonas-wirth",
+          "paid_on": "2027-03-16",
+          "amount_cents": 3900,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-kaia-nakamura",
+          "invoice_id": "inv-202702-club-kaia-nakamura",
+          "customer_id": "club-kaia-nakamura",
+          "paid_on": "2027-03-15",
+          "amount_cents": 6400,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-leo-santoro",
+          "invoice_id": "inv-202702-club-leo-santoro",
+          "customer_id": "club-leo-santoro",
+          "paid_on": "2027-03-17",
+          "amount_cents": 3900,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-orla-brennan",
+          "invoice_id": "inv-202702-club-orla-brennan",
+          "customer_id": "club-orla-brennan",
+          "paid_on": "2027-03-16",
+          "amount_cents": 3900,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-quinn-abara",
+          "invoice_id": "inv-202702-club-quinn-abara",
+          "customer_id": "club-quinn-abara",
+          "paid_on": "2027-03-15",
+          "amount_cents": 3900,
+          "currency": "USD",
+          "status": "succeeded"
+        },
+        {
+          "id": "pay-inv-202702-club-vera-pahlsson",
+          "invoice_id": "inv-202702-club-vera-pahlsson",
+          "customer_id": "club-vera-pahlsson",
+          "paid_on": "2027-03-17",
+          "amount_cents": 3900,
+          "currency": "USD",
+          "status": "succeeded"
+        }
+      ],
+      "refunds": [
+        {
+          "id": "refund-finance-example-partial",
+          "payment_id": "pay-finance-example-paid",
+          "refunded_on": "2027-03-12",
+          "amount_cents": 2600,
+          "currency": "USD",
+          "status": "succeeded"
+        }
+      ]
+    },
+    "clock": {
+      "rebase": {
+        "relative_paths": [
+          "finance.payments",
+          "finance.refunds"
+        ]
+      }
+    }
+  }
+}

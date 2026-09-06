@@ -13,6 +13,8 @@ import time
 import urllib.request
 from email.message import EmailMessage
 
+from s3_signing import s3_request
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 STATE = os.environ.get("WORLDFIXTURE_STATE", str(ROOT / ".worldfixture/runs/local"))
 MARKER = f"WF_PYTHON_{int(time.time() * 1000)}"
@@ -78,8 +80,8 @@ def main():
     key = f"python-example/{MARKER}.json"
     object_url = env["S3_BASE_URL"] + "/northstar-relay-exports/" + key
     payload = json.dumps({"marker": MARKER, "website_status": status})
-    request(object_url, method="PUT", data=payload, content_type="application/json")
-    _, stored = request(object_url)
+    s3_request(object_url, env, method="PUT", data=payload, content_type="application/json")
+    _, stored = s3_request(object_url, env)
     if json.loads(stored)["marker"] != MARKER:
         raise RuntimeError("S3 did not return the object it accepted")
 

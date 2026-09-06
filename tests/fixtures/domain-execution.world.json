@@ -1,0 +1,38 @@
+{
+  "api_version": "worldfixture.world-source/v1",
+  "id": "test.domain-execution",
+  "version": "v1",
+  "title": "Domain execution test",
+  "synthetic_notice": "All records in this test are synthetic and describe no real person.",
+  "scenario": {"id": "domain-execution", "class": "normal", "title": "Scheduled order and causal records"},
+  "clock": {"anchor": "2031-01-01T00:00:00Z", "timezone": "UTC", "locale": "en"},
+  "people": [{"id": "person.one", "name": "Tavi"}],
+  "commerce": {
+    "products": [{"id": "product.one", "name": "Declared product", "price_cents": 125, "currency": "EUR", "status": "active"}],
+    "orders": []
+  },
+  "social": {"posts": [], "reviews": [], "comments": []},
+  "timeline": [{
+    "id": "arrival.order", "after_seconds": 1, "kind": "domain-operation",
+    "payload": {
+      "api_version": "worldfixture.runtime-operation/v1", "type": "commerce.order.place.v1", "actor_id": "person.one",
+      "record": {"id": "order.one", "shopper_id": "person.one", "currency": "EUR", "items": [{"product_id": "product.one", "quantity": 2, "unit_amount_cents": 125}], "subtotal_cents": 250, "shipping_cents": 50, "total_cents": 300, "status": "placed"}
+    }
+  }],
+  "agentic": {"causal_rules": [
+    {
+      "api_version": "worldfixture.causal-rule/v1", "id": "rule.order-post", "when": "commerce.order.placed.v1",
+      "emit": [{"type": "social.post.publish.v1", "after": "2s", "with": {
+        "actor_id": {"copy": "actor_id"},
+        "record": {"value": {"id": "post.one", "author_id": "person.one", "title": "Order accepted", "body": "The declared order was placed."}}
+      }}]
+    },
+    {
+      "api_version": "worldfixture.causal-rule/v1", "id": "rule.post-comment", "when": "domain.record.created.v1",
+      "emit": [{"type": "social.comment.publish.v1", "with": {
+        "actor_id": {"copy": "actor_id"},
+        "record": {"value": {"id": "comment.one", "author_id": "person.one", "parent_id": "post.one", "parent_kind": "post", "body": "Accepted through the domain API."}}
+      }}]
+    }
+  ]}
+}

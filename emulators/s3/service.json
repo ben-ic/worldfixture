@@ -18,7 +18,7 @@
         "port": "s3",
         "protocol": "s3",
         "path": "/",
-        "expect": "ListAllMyBucketsResult",
+        "expect": "AccessDenied",
         "kind": "protocol"
       }
     ],
@@ -93,6 +93,18 @@
         "name": "WORLDFIXTURE_WORLD_PATH",
         "from": "world.path",
         "required": true
+      },
+      {
+        "name": "AWS_ACCESS_KEY_ID",
+        "from": "generated",
+        "key": "s3.access_key_id",
+        "required": true
+      },
+      {
+        "name": "AWS_SECRET_ACCESS_KEY",
+        "from": "generated",
+        "key": "s3.secret_access_key",
+        "required": true
       }
     ],
     "container": {
@@ -144,7 +156,17 @@
           "from": "constant",
           "value": "true"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/aws.json",
+            "subtree": "/s3",
+            "verified": false
+          }
+        ]
+      }
     },
     {
       "profile": "aws.s3.objects.v1",
@@ -181,7 +203,17 @@
           "from": "constant",
           "value": "true"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/aws.json",
+            "subtree": "/s3",
+            "verified": false
+          }
+        ]
+      }
     },
     {
       "profile": "aws.s3.multipart.v1",
@@ -191,14 +223,21 @@
           "name": "base_url",
           "from": "port.url"
         }
-      ]
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/aws.json",
+            "subtree": "/s3",
+            "verified": false
+          }
+        ]
+      }
     }
   ],
   "world": {
-    "requires": [
-      "identity.organizations.v1",
-      "communication.documents.v1"
-    ],
+    "requires": [],
     "projections": [
       {
         "file": "projections/aws.json",

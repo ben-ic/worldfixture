@@ -1,15 +1,16 @@
 import {readFileSync, statSync} from "node:fs";
 import {createServer} from "node:http";
-import {dirname, join} from "node:path";
-import {fileURLToPath} from "node:url";
+import {join} from "node:path";
 
 import {feedItemsAt} from "./feed.mjs";
 
 const maxProjectionBytes = 4 * 1024 * 1024;
 const worldPath = process.env.WORLDFIXTURE_WORLD_PATH;
-const projectionPath = worldPath
-  ? join(worldPath, "projections", "http-targets.json")
-  : join(dirname(fileURLToPath(import.meta.url)), "test", "self-test.json");
+if (!worldPath) {
+  console.error("worldfixture: missing world: WORLDFIXTURE_WORLD_PATH is required");
+  process.exit(64);
+}
+const projectionPath = join(worldPath, "projections", "http-targets.json");
 const listen = process.env.WORLDFIXTURE_HTTP_TARGETS_LISTEN ?? "0.0.0.0:8080";
 const configuredPublicUrl = process.env.WORLDFIXTURE_HTTP_TARGETS_PUBLIC_URL;
 const publicOrigin = configuredPublicUrl ? normalizePublicUrl(configuredPublicUrl) : null;
@@ -39,7 +40,7 @@ function loadProjection(path) {
     ...value.feeds.map((item) => item.path),
     ...value.pages.map((item) => item.path),
     ...value.probes.map((item) => item.path),
-    value.api?.openapi_path,
+    ...(value.api?.openapi_path === undefined ? [] : [value.api.openapi_path]),
     ...Object.keys(value.api?.responses ?? {}),
   ];
   if (paths.some((path) => typeof path !== "string" || !path.startsWith("/") || path.includes(".."))) {
@@ -155,6 +156,15 @@ function document_(title, body) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>${style}</style></head><body>${body}</body></html>`;
 }
 
+function pageSections(page) {
+  return [
+    ...(page.body === undefined || page.body === null ? [] : [`<section><p>${escapeHtml(page.body)}</p></section>`]),
+    ...(Array.isArray(page.sections) ? page.sections : []).map((section) =>
+      `<section><h2>${escapeHtml(section.heading)}</h2><p>${escapeHtml(section.body)}</p></section>`
+    ),
+  ].join("");
+}
+
 // The visitor arrives here one click from an application they have never used.
 // The old page opened with "This is not the app you launched", which answers a
 // question nobody asked and leaves the two that matter — what IS this, and what
@@ -173,9 +183,7 @@ function renderRoot(page, origin) {
   // explaining something the visitor cannot see.
   const sections = [
     `<section><h2>${escapeHtml(page.heading)}</h2><p>${escapeHtml(page.summary)}</p></section>`,
-    ...page.sections.map((section) =>
-      `<section><h2>${escapeHtml(section.heading)}</h2><p>${escapeHtml(section.body)}</p></section>`
-    ),
+    pageSections(page),
   ].join("");
   return document_(`Test data for this WorldFixture session`, `<header>` +
     `<div class="eyebrow">WorldFixture session data</div>` +
@@ -218,9 +226,7 @@ function renderPage(page, origin) {
   counters.set(page.path, count + 1);
   const variants = Array.isArray(page.request_variants) ? page.request_variants : [];
   const variant = variants.length ? variants[Math.min(count, variants.length - 1)] : null;
-  const sections = page.sections.map((section) =>
-    `<section><h2>${escapeHtml(section.heading)}</h2><p>${escapeHtml(section.body)}</p></section>`
-  ).join("");
+  const sections = pageSections(page);
   const change = variant ? `<aside><strong>Live note</strong><p>${escapeHtml(variant)}</p></aside>` : "";
   const note = pageNote(page);
   const explanation = `<section class="explanation"><div class="label">${escapeHtml(note.label)}</div><h2>${escapeHtml(note.heading)}</h2><p>${escapeHtml(note.body)}</p><a class="home" href="${escapeHtml(origin)}/">What is all this?</a></section>`;
@@ -276,13 +282,13 @@ const server = createServer((request, response) => {
       ready: true,
       world_id: projection.world_id,
       world_version: projection.world_version,
-      source: worldPath ? "verified-world" : "build-self-test",
+      source: "verified-world",
     }, method);
   }
   if (pathname === "/metrics") {
     return send(response, 200, "text/plain; version=0.0.4; charset=utf-8", renderMetrics(), method);
   }
-  if (pathname === projection.api.openapi_path) {
+  if (pathname === projection.api?.openapi_path) {
     return sendJson(response, 200, {
       ...projection.api.document,
       servers: [{url: contentOrigin(request), description: "This WorldFixture session"}],
@@ -291,7 +297,7 @@ const server = createServer((request, response) => {
   if (pathname === "/feeds/" && projection.feeds[0]) {
     return send(response, 200, "text/html; charset=utf-8", renderFeedPreview(projection.feeds[0], contentOrigin(request)), method);
   }
-  if (Object.hasOwn(projection.api.responses, pathname)) {
+  if (Object.hasOwn(projection.api?.responses ?? {}, pathname)) {
     return sendJson(response, 200, projection.api.responses[pathname], method);
   }
   const feed = projection.feeds.find((item) => item.path === pathname);
@@ -308,7 +314,7 @@ const server = createServer((request, response) => {
     counters.set(probe.path, count + 1);
     const status = probe.statuses[count % probe.statuses.length];
     const state = status >= 200 && status < 400 ? "operational" : "unavailable";
-    const body = `${probe.name}\nStatus: ${state}\nSynthetic demo service monitored by Uptime Kuma and Gatus.\n`;
+    const body = `${probe.name}\nStatus: ${state}\n${probe.body === undefined ? "" : `${probe.body}\n`}`;
     return send(response, status, "text/plain; charset=utf-8", body, method);
   }
   if (pathname === "/favicon.ico") return send(response, 204, "image/x-icon", "", method);

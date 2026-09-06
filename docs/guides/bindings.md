@@ -1,7 +1,9 @@
 # Environment variables and bindings
 
-Run `npx worldfixture env` after each start. The output contains the host-side
-values for this run.
+Run `npx worldfixture env` after each start or world switch. The output contains
+the host-side values for the active world. `npx worldfixture run -- <command>`
+passes the same values to a new application process, including `WORKBENCH_URL`
+and `WORLDFIXTURE_TOKEN`.
 
 ## Three address types
 
@@ -29,3 +31,9 @@ origin, and `public_url` is either a string or `null`.
 
 Tokens and mail credentials are local synthetic credentials. Do not commit
 them. A new run can create new connection values.
+
+A personal token must belong to the selected person. A missing token cannot
+use another person's shared token. An alias for the same person's token is
+accepted. Organization and service credentials, such as the Stripe, Resend,
+and Twilio account credentials, keep their declared scope. A world switch creates new provider
+credentials; read the new values before you reconnect the application.

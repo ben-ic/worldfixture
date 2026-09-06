@@ -1,18 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { post, request } from "../api.js";
 import { Avatar, Button, Notice, PageHead, Panel } from "../components/Primitives.jsx";
+import { collectionRead } from "../runtime-data.mjs";
 
 function ActionResult({ result }) {
   if (!result) return null;
   return <Notice kind={result.error ? "error" : ""}>{result.error ?? result.message}</Notice>;
 }
 
-function useAction(onChanged) {
+function ProviderRefresh({ data, provider, surface = provider, collection, onChanged, onAction }) {
+  async function refresh() {
+    const fresh = await onChanged();
+    if (fresh && (collection ? collectionRead(fresh.providers?.[provider], collection).status === "complete" : fresh.providers?.[provider]?.status === "ready")) onAction?.({ type: "read", surface, target: collection ?? "resources", success: true });
+  }
+  return <><Button onClick={refresh}>Refresh resources</Button>{data.providers[provider]?.error && <Notice kind="error">{data.providers[provider].error}</Notice>}</>;
+}
+
+function useAction(onChanged, onAction, surface) {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   async function run(path, input) {
     setBusy(true); setResult(null);
-    try { const value = await post(path, input); setResult(value); await onChanged(false); return value; }
+    try { const value = await post(path, input); setResult(value); if (value.ok === true) onAction?.({ type: path.startsWith("/api/inspect/") ? "read" : "write", surface, target: path, success: true, eventId: value.event?.id }); await onChanged(); return value; }
     catch (error) { setResult({ error: error.message }); }
     finally { setBusy(false); }
   }
@@ -26,7 +35,7 @@ function useAction(onChanged) {
 // `runtime/src/workbench.mjs` now resolves the id through the provider's own
 // `users.list`, and the raw id stays here as the fallback for an id even Slack
 // cannot name.
-export function Chat({ data, actor, onChanged, liveRevision }) {
+export function Chat({ data, actor, onChanged, liveRevision, onAction }) {
   const channels = data.providers.slack.channels;
   // The latest conversation is the least surprising entry point in every
   // dynamic world. The same timestamp rule applies to channels and DMs.
@@ -34,13 +43,13 @@ export function Chat({ data, actor, onChanged, liveRevision }) {
   const [channel, setChannel] = useState(firstChannel?.id);
   const [history, setHistory] = useState(null);
   const [error, setError] = useState(null);
-  const action = useAction(onChanged);
-  async function load() {
+  const action = useAction(onChanged, onAction, "slack");
+  async function load(manual = false) {
     if (!channel) return;
-    try { setError(null); setHistory(await request(`/api/provider/slack?channel=${encodeURIComponent(channel)}`)); }
-    catch (failure) { setError(failure.message); }
+    try { setError(null); setHistory(await request(`/api/provider/slack?channel=${encodeURIComponent(channel)}`)); if (manual) onAction?.({ type: "read", surface: "slack", target: "history", success: true }); }
+    catch (failure) { setHistory(null); setError(failure.message); }
   }
-  useEffect(() => { load(); }, [channel, liveRevision]);
+  useEffect(() => { setHistory(null); load(); }, [channel, liveRevision]);
   async function submit(event) {
     event.preventDefault();
     // The form element is captured BEFORE the post. React clears
@@ -50,14 +59,16 @@ export function Chat({ data, actor, onChanged, liveRevision }) {
     // the box still held the text that had already been sent.
     const form = event.currentTarget;
     const text = new FormData(form).get("text");
-    const value = await action.run("/api/actions/slack", { channel, text, person_id: actor.id });
+    const value = await action.run("/api/actions/slack", { channel, text, person_id: actor?.id });
     if (value) { form.reset(); await load(); }
   }
+  if (data.providers.slack.status === "error" || data.providers.slack.status === "not-selected") return <ProviderRefresh data={data} provider="slack" onChanged={onChanged} onAction={onAction}/>;
   return <><PageHead title="Chat" subtitle="Slack through the real Web API. Read and post as a world person." command="Slack Web API"/>
+    <Button disabled={!channel} onClick={() => load(true)}>Refresh conversation</Button>
     <div className="panel channel-layout"><nav className="channel-rail">{[...channels].sort((left, right) => (right.latestTs ?? 0) - (left.latestTs ?? 0)).map((item) => <button className={item.id === channel ? "active" : ""} key={item.id} onClick={() => setChannel(item.id)}>{item.is_im ? "○" : "#"} {item.displayName ?? item.name ?? item.id}</button>)}</nav>
       <div><header className="panel-head"><strong>Channel history · 20 newest</strong><code>conversations.history</code></header>
         {error ? <Notice kind="error">{error}</Notice> : history ? <div className="messages">{history.messages?.length ? history.messages.map((message) => <article className="message" key={message.ts}><div><Avatar name={message.user_name ?? message.user ?? "WF"}/><strong>{message.user_name ?? message.user ?? "World person"}</strong><code>{message.ts}</code></div><p>{message.text}</p></article>) : <div className="empty">No messages in this channel.</div>}</div> : <div className="loading">Loading Slack history…</div>}
-        <form className="action-form" onSubmit={submit}><label>MESSAGE<textarea name="text" required placeholder={`Message this channel as ${actor.name}`}/></label><div><Button kind="primary" disabled={action.busy}>{action.busy ? "Posting…" : "Post message"}</Button><span className="muted">Sent with this person’s own Slack token.</span></div><ActionResult result={action.result}/></form>
+        <form className="action-form" onSubmit={submit}><label>MESSAGE<textarea name="text" required placeholder={`Message this channel as ${actor?.name ?? "No actor selected"}`}/></label><div><Button kind="primary" disabled={action.busy || !actor}>{action.busy ? "Posting…" : "Post message"}</Button><span className="muted">Sent with this person’s own Slack token.</span></div><ActionResult result={action.result}/></form>
       </div></div></>;
 }
 
@@ -73,28 +84,45 @@ function FolderTabs({ folder, setFolder, inboxCount, sentCount }) {
   return <div className="folder-tabs"><button className={folder === "inbox" ? "active" : ""} onClick={() => setFolder("inbox")}>Inbox <code>{inboxCount}</code></button><button className={folder === "sent" ? "active" : ""} onClick={() => setFolder("sent")}>Sent <code>{sentCount}</code></button></div>;
 }
 
-export function Gmail({ data, actor, onChanged }) {
-  const action = useAction(onChanged);
+export function Gmail({ actor, onChanged, onAction }) {
+  const action = useAction(onChanged, onAction, "google");
   const [folder, setFolder] = useState("inbox");
-  const [draft, setDraft] = useState({ to: "jon@worldfixture.test", subject: "Workbench follow-up", text: "Sent through the real Gmail API from WorldFixture." });
-  const folders = data.providers.gmail;
-  const mailbox = folders[folder] ?? { messages: [], resultSizeEstimate: 0 };
+  const [draft, setDraft] = useState({ to: "", subject: "", text: "" });
+  const mailboxRequest = useRef(0);
+  const [folders, setFolders] = useState(null);
+  const [error, setError] = useState(null);
+  async function load(manual = false) {
+    if (!actor) return;
+    const sequence = ++mailboxRequest.current;
+    try {
+      const value = await request(`/api/provider/gmail?person_id=${encodeURIComponent(actor.id)}`);
+      if (sequence !== mailboxRequest.current) return;
+      setFolders(value); setError(null);
+      if (manual) onAction?.({ type: "read", surface: "google", target: "mailbox", success: true });
+    } catch (failure) { if (sequence === mailboxRequest.current) { setFolders(null); setError(failure.message); } }
+  }
+  useEffect(() => { setFolders(null); setError(null); setDraft({ to: "", subject: "", text: "" }); load(); return () => { mailboxRequest.current += 1; }; }, [actor?.id]);
+  const mailbox = folders?.[folder] ?? { messages: [], resultSizeEstimate: 0 };
   const edit = (name) => (event) => setDraft((current) => ({ ...current, [name]: event.target.value }));
   const reply = (message) => {
     setDraft({ to: replyAddress(folder === "sent" ? message.to : message.from), subject: replySubject(message.subject), text: "", thread_id: message.threadId, in_reply_to: message.messageId });
     requestAnimationFrame(() => document.querySelector("#gmail-compose textarea")?.focus());
   };
-  async function submit(event) { event.preventDefault(); const value = await action.run("/api/actions/gmail", { ...draft, person_id: actor.id }); if (value) setFolder("sent"); }
+  async function submit(event) { event.preventDefault(); const value = await action.run("/api/actions/gmail", { ...draft, person_id: actor?.id }); if (value) { setFolder("sent"); await load(); } }
+  if (!actor) return <Notice>Select a world person to read Gmail.</Notice>;
+  if (error) return <Notice kind="error">{error}</Notice>;
+  if (!folders) return <Notice>Loading the selected mailbox…</Notice>;
   return <><PageHead title="Gmail" subtitle="Google Workspace mail through the Gmail API." command="Google Gmail API"/>
-    <Panel title="Gmail mailbox · 20 newest" tools={<FolderTabs folder={folder} setFolder={setFolder} inboxCount={folders.inbox?.resultSizeEstimate ?? 0} sentCount={folders.sent?.resultSizeEstimate ?? 0}/>}><div className="data-row mail-columns table-head"><span>MESSAGE</span><span>{folder === "sent" ? "TO" : "FROM"}</span><span>DATE</span><span></span></div>{mailbox.messages?.length ? mailbox.messages.map((message) => <div className="data-row mail-columns" key={message.id}><span><strong>{message.subject ?? "Gmail message"}</strong><small>{message.threadId}</small></span><code className="muted truncate">{folder === "sent" ? message.to : message.from}</code><span>{message.date ?? "—"}</span><Button kind="small" onClick={() => reply(message)}>Reply</Button></div>) : <div className="empty">This Gmail folder is empty.</div>}{mailbox.resultSizeEstimate > mailbox.messages.length && <div className="list-more muted">Showing the 20 newest. {mailbox.resultSizeEstimate - mailbox.messages.length} older messages are hidden.</div>}</Panel>
-    <div className="section"><Panel title={`Compose as ${actor.name}`} tools={<code className="blue">messages.send</code>}><form id="gmail-compose" className="action-form compose-form" onSubmit={submit}><label>TO<input name="to" type="email" required value={draft.to} onChange={edit("to")}/></label><label>SUBJECT<input name="subject" required value={draft.subject} onChange={edit("subject")}/></label><label>MESSAGE<textarea name="text" required value={draft.text} onChange={edit("text")} placeholder="Write a Gmail message…"/></label><div><Button kind="primary" disabled={action.busy}>{action.busy ? "Sending…" : draft.in_reply_to ? "Send reply" : "Send message"}</Button>{draft.in_reply_to && <Button type="button" onClick={() => setDraft({ to: "", subject: "", text: "" })}>Cancel reply</Button>}</div><ActionResult result={action.result}/></form></Panel></div>
+    <Button onClick={() => load(true)}>Refresh mailbox</Button>
+    <Panel title={`${folders.email} · 20 newest`} tools={<FolderTabs folder={folder} setFolder={setFolder} inboxCount={folders.inbox?.resultSizeEstimate ?? 0} sentCount={folders.sent?.resultSizeEstimate ?? 0}/>}><div className="data-row mail-columns table-head"><span>MESSAGE</span><span>{folder === "sent" ? "TO" : "FROM"}</span><span>DATE</span><span></span></div>{mailbox.messages?.length ? mailbox.messages.map((message) => <div className="data-row mail-columns" key={message.id}><span><strong>{message.subject ?? "Gmail message"}</strong><small>{message.threadId}</small></span><code className="muted truncate">{folder === "sent" ? message.to : message.from}</code><span>{message.date ?? "—"}</span><Button kind="small" onClick={() => reply(message)}>Reply</Button></div>) : <div className="empty">This Gmail folder is empty.</div>}{mailbox.resultSizeEstimate > mailbox.messages.length && <div className="list-more muted">Showing the 20 newest. {mailbox.resultSizeEstimate - mailbox.messages.length} older messages are hidden.</div>}</Panel>
+    <div className="section"><Panel title={`Compose as ${actor?.name ?? "No actor selected"}`} tools={<code className="blue">messages.send</code>}><form id="gmail-compose" className="action-form compose-form" onSubmit={submit}><label>TO<input name="to" type="email" required value={draft.to} onChange={edit("to")}/></label><label>SUBJECT<input name="subject" required value={draft.subject} onChange={edit("subject")}/></label><label>MESSAGE<textarea name="text" required value={draft.text} onChange={edit("text")} placeholder="Write a Gmail message…"/></label><div><Button kind="primary" disabled={action.busy || !actor}>{action.busy ? "Sending…" : draft.in_reply_to ? "Send reply" : "Send message"}</Button>{draft.in_reply_to && <Button type="button" onClick={() => setDraft({ to: "", subject: "", text: "" })}>Cancel reply</Button>}</div><ActionResult result={action.result}/></form></Panel></div>
   </>;
 }
 
-export function Mail({ data, actor, onChanged }) {
-  const action = useAction(onChanged);
+export function Mail({ data, actor, onChanged, onAction }) {
+  const action = useAction(onChanged, onAction, "mail");
   const [folder, setFolder] = useState("inbox");
-  const [draft, setDraft] = useState({ to: data.bindings.IMAP_USERNAME, subject: "Workbench SMTP check", text: "Sent through SMTP and visible through IMAP." });
+  const [draft, setDraft] = useState({ to: "", subject: "", text: "" });
   const folders = data.providers.mail;
   const mailbox = folders[folder] ?? { mailbox: folder === "sent" ? "Sent" : "INBOX", exists: 0, messages: [] };
   const edit = (name) => (event) => setDraft((current) => ({ ...current, [name]: event.target.value }));
@@ -102,38 +130,40 @@ export function Mail({ data, actor, onChanged }) {
     setDraft({ to: replyAddress(folder === "sent" ? message.headers.to : message.headers.from), subject: replySubject(message.headers.subject), text: "", in_reply_to: message.headers["message-id"] });
     requestAnimationFrame(() => document.querySelector("#smtp-compose textarea")?.focus());
   };
-  async function submit(event) { event.preventDefault(); const value = await action.run("/api/actions/mail", { ...draft, person_id: actor.id }); if (value) setFolder("sent"); }
+  async function submit(event) { event.preventDefault(); const value = await action.run("/api/actions/mail", { ...draft, person_id: actor?.id }); if (value) setFolder("sent"); }
+  if (data.providers.mail.status === "error" || data.providers.mail.status === "not-selected") return <ProviderRefresh data={data} provider="mail" onChanged={onChanged} onAction={onAction}/>;
   return <><PageHead title="Local Mail" subtitle="Mail that stays in this WorldFixture instance. Read it through IMAP and send it through SMTP." command="SMTP submission · IMAP4rev1"/>
+    <ProviderRefresh data={data} provider="mail" onChanged={onChanged} onAction={onAction}/>
     <Panel title="Local mailboxes · 20 newest" tools={<FolderTabs folder={folder} setFolder={setFolder} inboxCount={folders.inbox?.exists ?? 0} sentCount={folders.sent?.exists ?? 0}/>}><div className="data-row mail-columns table-head"><span>MESSAGE</span><span>{folder === "sent" ? "TO" : "FROM"}</span><span>DATE</span><span></span></div>{mailbox.messages?.length ? mailbox.messages.map((message) => <div className="data-row mail-columns" key={message.seq}><span><strong>{message.headers.subject ?? "Mail message"}</strong><small>sequence {message.seq} · IMAP</small></span><code className="muted truncate">{folder === "sent" ? message.headers.to : message.headers.from}</code><span>{message.headers.date ?? "—"}</span><Button kind="small" onClick={() => reply(message)}>Reply</Button></div>) : <div className="empty">This IMAP folder is empty.</div>}{mailbox.exists > mailbox.messages.length && <div className="list-more muted">Showing the 20 newest. {mailbox.exists - mailbox.messages.length} older messages are hidden.</div>}</Panel>
-    <div className="section"><Panel title={`Compose as ${actor.name}`} tools={<code className="blue">SMTP submission</code>}><form id="smtp-compose" className="action-form compose-form" onSubmit={submit}><label>TO<input name="to" type="email" required value={draft.to} onChange={edit("to")}/></label><label>SUBJECT<input name="subject" required value={draft.subject} onChange={edit("subject")}/></label><label>MESSAGE<textarea name="text" required value={draft.text} onChange={edit("text")} placeholder="Write a local mail message…"/></label><div><Button kind="primary" disabled={action.busy}>{action.busy ? "Sending…" : draft.in_reply_to ? "Send reply" : "Send through SMTP"}</Button>{draft.in_reply_to && <Button type="button" onClick={() => setDraft({ to: "", subject: "", text: "" })}>Cancel reply</Button>}</div><ActionResult result={action.result}/></form></Panel></div>
+    <div className="section"><Panel title={`Compose as ${actor?.name ?? "No actor selected"}`} tools={<code className="blue">SMTP submission</code>}><form id="smtp-compose" className="action-form compose-form" onSubmit={submit}><label>TO<input name="to" type="email" required value={draft.to} onChange={edit("to")}/></label><label>SUBJECT<input name="subject" required value={draft.subject} onChange={edit("subject")}/></label><label>MESSAGE<textarea name="text" required value={draft.text} onChange={edit("text")} placeholder="Write a local mail message…"/></label><div><Button kind="primary" disabled={action.busy || !actor}>{action.busy ? "Sending…" : draft.in_reply_to ? "Send reply" : "Send through SMTP"}</Button>{draft.in_reply_to && <Button type="button" onClick={() => setDraft({ to: "", subject: "", text: "" })}>Cancel reply</Button>}</div><ActionResult result={action.result}/></form></Panel></div>
   </>;
 }
 
-// OPEN ISSUES ARE COUNTED, NOT READ. The GitHub emulator emits
-// `open_issues_count` as a literal 0 and never increments it when issues are
-// inserted, and `??` does not fall back over 0 -- so `open_issues_count ?? …`
-// printed 0 for every repository in every world, directly under a panel header
-// reporting the real total. The same bug was fixed in the sidebar and missed
-// here, which is why the count is now derived in both places rather than read.
-export function Code({ data, actor, onChanged }) {
+// Count the issues shown by this read for each repository. This keeps the
+// repository rows consistent with the issue list above them.
+export function Code({ data, actor, onChanged, onAction }) {
   const repositories = data.providers.github.repositories;
   const issues = data.providers.github.issues ?? [];
-  const action = useAction(onChanged);
-  async function submit(event) { event.preventDefault(); const form = Object.fromEntries(new FormData(event.currentTarget)); await action.run("/api/actions/github-issue", { ...form, person_id: actor.id }); }
+  const action = useAction(onChanged, onAction, "github");
+  async function submit(event) { event.preventDefault(); const form = Object.fromEntries(new FormData(event.currentTarget)); await action.run("/api/actions/github-issue", { ...form, person_id: actor?.id }); }
+  if (data.providers.github.status === "error" || data.providers.github.status === "not-selected") return <ProviderRefresh data={data} provider="github" onChanged={onChanged} onAction={onAction}/>;
   return <><PageHead title="Code" subtitle="GitHub repositories and issues through the real REST API." command="GitHub REST API"/>
+    <ProviderRefresh data={data} provider="github" onChanged={onChanged} onAction={onAction}/>
     {issues.length > 0 && <Panel title={`Open issues · ${issues.length}`}><div className="data-row github-issue-columns table-head"><span>ISSUE</span><span>REPOSITORY</span><span>AUTHOR</span><span>UPDATED</span></div>{issues.map((issue) => <div className="data-row github-issue-columns" key={issue.id ?? issue.url}><span><strong>{issue.title}</strong><small>#{issue.number}</small></span><code className="muted truncate">{issue.repository?.full_name ?? issue.repository_url?.split("/repos/").at(-1) ?? "—"}</code><span>{issue.user?.login ?? "—"}</span><span>{issue.updated_at ? new Date(issue.updated_at).toLocaleDateString() : "—"}</span></div>)}</Panel>}
     <div className="section"><Panel title="Repositories"><div className="data-row resource-columns table-head"><span>REPOSITORY</span><span>DEFAULT BRANCH</span><span>OPEN ISSUES</span><span>STATE</span></div>{repositories.map((repository) => <div className="data-row resource-columns" key={repository.id ?? repository.full_name}><strong>{repository.full_name ?? repository.name}</strong><code className="muted">{repository.default_branch ?? "main"}</code><code>{issues.filter((issue) => issue.repository_url?.endsWith(`/repos/${repository.full_name}`)).length}</code><code className="green">ready</code></div>)}</Panel></div>
-    <div className="section"><Panel title={`Create an issue as ${actor.name}`} tools={<code className="blue">POST /issues</code>}><form className="action-form" onSubmit={submit}><label>REPOSITORY<select name="repository">{repositories.map((repository) => <option key={repository.full_name}>{repository.full_name}</option>)}</select></label><label>TITLE<input name="title" required defaultValue="Release follow-up from Workbench"/></label><label>BODY<textarea name="text" required defaultValue="Created through the real GitHub API."/></label><Button kind="primary" disabled={action.busy}>{action.busy ? "Creating…" : "Create issue"}</Button><ActionResult result={action.result}/></form></Panel></div>
+    <div className="section"><Panel title={`Create an issue as ${actor?.name ?? "No actor selected"}`} tools={<code className="blue">POST /issues</code>}><form className="action-form" onSubmit={submit}><label>REPOSITORY<select name="repository">{repositories.map((repository) => <option key={repository.full_name}>{repository.full_name}</option>)}</select></label><label>TITLE<input name="title" required defaultValue="Release follow-up from Workbench"/></label><label>BODY<textarea name="text" required defaultValue="Created through the real GitHub API."/></label><Button kind="primary" disabled={action.busy || !actor}>{action.busy ? "Creating…" : "Create issue"}</Button><ActionResult result={action.result}/></form></Panel></div>
   </>;
 }
 
-export function Files({ data, actor, onChanged }) {
+export function Files({ data, actor, onChanged, onAction }) {
   const buckets = data.providers.s3.details;
-  const action = useAction(onChanged);
-  async function submit(event) { event.preventDefault(); const form = Object.fromEntries(new FormData(event.currentTarget)); await action.run("/api/actions/s3", { ...form, person_id: actor.id }); }
+  const action = useAction(onChanged, onAction, "s3");
+  async function submit(event) { event.preventDefault(); const form = Object.fromEntries(new FormData(event.currentTarget)); await action.run("/api/actions/s3", { ...form, person_id: actor?.id }); }
+  if (data.providers.s3.status === "error" || data.providers.s3.status === "not-selected") return <ProviderRefresh data={data} provider="s3" onChanged={onChanged} onAction={onAction}/>;
   return <><PageHead title="Files" subtitle="Standalone SeaweedFS through its S3-compatible API." command="S3 ListObjectsV2 · PutObject"/>
+    <ProviderRefresh data={data} provider="s3" onChanged={onChanged} onAction={onAction}/>
     <div className="bucket-grid">{buckets.map((bucket) => <Panel key={bucket.name} title={bucket.name} tools={<code>{bucket.objects.length} objects</code>}>{bucket.objects.length ? bucket.objects.map((object) => <div className="data-row file-columns" key={object.key}><code className="truncate">{object.key}</code><span>{object.size.toLocaleString()} bytes</span></div>) : <div className="empty">This bucket is empty.</div>}</Panel>)}</div>
-    <div className="section"><Panel title="Put an object" tools={<code className="blue">S3 PutObject</code>}><form className="action-form" onSubmit={submit}><label>BUCKET<select name="bucket">{buckets.map((bucket) => <option key={bucket.name}>{bucket.name}</option>)}</select></label><label>OBJECT KEY<input name="key" required defaultValue="workbench/note.txt"/></label><label>CONTENT<textarea name="text" required defaultValue="Created through the SeaweedFS S3 API."/></label><Button kind="primary" disabled={action.busy}>{action.busy ? "Writing…" : "Put object"}</Button><ActionResult result={action.result}/></form></Panel></div>
+    <div className="section"><Panel title="Put an object" tools={<code className="blue">S3 PutObject</code>}><form className="action-form" onSubmit={submit}><label>BUCKET<select name="bucket">{buckets.map((bucket) => <option key={bucket.name}>{bucket.name}</option>)}</select></label><label>OBJECT KEY<input name="key" required defaultValue="workbench/note.txt"/></label><label>CONTENT<textarea name="text" required defaultValue="Created through the SeaweedFS S3 API."/></label><Button kind="primary" disabled={action.busy || !actor}>{action.busy ? "Writing…" : "Put object"}</Button><ActionResult result={action.result}/></form></Panel></div>
   </>;
 }
 
@@ -160,9 +190,25 @@ function EmptyNotion({ children }) {
   return <div className="empty">{children}</div>;
 }
 
-export function Notion({ data, onChanged }) {
+function notionCollectionCount(notion, name) {
+  const read = collectionRead(notion, name);
+  return read.count === null ? `Unavailable · ${read.error}` : read.count;
+}
+
+function NotionCollectionPanel({ notion, collection, title, children, ...props }) {
+  const read = collectionRead(notion, collection);
+  const observed = read.status === "partial" && read.rows.length > 0;
+  return <Panel {...props} title={`${title} · ${read.count === null ? "Unavailable" : read.count}`}>
+    {read.count === null && <Notice kind="warning">{read.error}{observed ? ` Showing ${read.rows.length} observed records; the total is unavailable.` : ""}</Notice>}
+    {(read.status === "complete" || observed) && children}
+  </Panel>;
+}
+
+export function Notion({ data, onChanged, onAction }) {
   const notion = data.providers.notion ?? { users: [], pages: [], databases: [], dataSources: [], views: [], comments: [], fileUploads: [], agents: [], agentSessions: [], asyncTasks: [], changes: [] };
-  const action = useAction(onChanged);
+  const action = useAction(onChanged, onAction, "notion");
+  const pages = notion.pages ?? [];
+  const users = notion.users ?? [];
   const databases = notion.databases ?? [];
   const dataSources = notion.dataSources ?? [];
   const views = notion.views ?? [];
@@ -199,8 +245,9 @@ export function Notion({ data, onChanged }) {
     const value = await action.run("/api/inspect/notion/webhook-value", { kind, id });
     if (value?.result) setRevealedWebhookValues((current) => ({ ...current, [`${kind}:${id}`]: value.result }));
   }
-  return <div className="notion-surface"><PageHead title="Notion" subtitle="Pages, databases, and people in this workspace." command={`${notion.pages.length} pages`}/>
-    {!notion.available && <Notice kind="error">Notion is unavailable. The Workbench kept the page usable and shows empty provider data.</Notice>}
+  if (notion.status === "error" || notion.status === "not-selected") return <ProviderRefresh data={data} provider="notion" collection="pages" onChanged={onChanged} onAction={onAction}/>;
+  return <div className="notion-surface"><PageHead title="Notion" subtitle="Pages, databases, and people in this workspace." command={collectionRead(notion, "pages").count === null ? "Page count unavailable" : `${pages.length} pages`}/>
+    <ProviderRefresh data={data} provider="notion" collection="pages" onChanged={onChanged} onAction={onAction}/>
     <ActionResult result={action.result}/>
     <details className="technical-details notion-evidence"><summary>API and support details</summary><Panel title="Workbench support and evidence" tools={<code className="blue">Visible coverage, not a completeness claim</code>}>
       <div className="data-row resource-columns table-head"><span>SURFACE</span><span>EVIDENCE</span><span>VISIBLE HERE</span><span>LIMIT</span></div>
@@ -213,123 +260,131 @@ export function Notion({ data, onChanged }) {
       <div className="data-row resource-columns"><strong>Workers</strong><code>@notionhq/workers@0.9.0 runtime</code><span>Not connected to this Workbench</span><span className="muted">No live Worker state is claimed</span></div>
       <div className="data-row resource-columns"><strong>Admin</strong><code>Notion-Version 2026-06-01</code><span>Selected governance resources</span><span className="muted">Requires an organization token</span></div>
     </Panel></details>
-    <Panel className="notion-pages" title={`Pages · ${notion.pages.length}`} tools={<code className="blue">Workspace content</code>}>
+    <NotionCollectionPanel className="notion-pages" notion={notion} collection="pages" title="Pages" tools={<code className="blue">Workspace content</code>}>
       <div className="data-row resource-columns table-head"><span>PAGE</span><span>ID</span><span>UPDATED</span><span>STATE</span></div>
-      {notion.pages.map((page) => <button className="data-row resource-columns clickable-row" key={page.id} onClick={() => setSelectedPage(page)}><strong>{notionTitle(page)}</strong><code className="muted truncate">{page.id}</code><span>{page.last_edited_time}</span><code className={page.in_trash ? "yellow" : "green"}>{page.in_trash ? "in trash" : "available"}</code></button>)}
-      {!notion.pages.length && <EmptyNotion>No pages are visible to the selected Notion token.</EmptyNotion>}
-    </Panel>
-    <div className="section"><Panel title={`Databases · ${databases.length}`} tools={<code className="blue">GET /v1/databases/:id</code>}>
+      {pages.map((page) => <button className="data-row resource-columns clickable-row" key={page.id} onClick={() => setSelectedPage(page)}><strong>{notionTitle(page)}</strong><code className="muted truncate">{page.id}</code><span>{page.last_edited_time}</span><code className={page.in_trash ? "yellow" : "green"}>{page.in_trash ? "in trash" : "available"}</code></button>)}
+      {!pages.length && <EmptyNotion>No pages are visible to the selected Notion token.</EmptyNotion>}
+    </NotionCollectionPanel>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="databases" title="Databases" tools={<code className="blue">GET /v1/databases/:id</code>}>
       <div className="data-row resource-columns table-head"><span>DATABASE</span><span>ID</span><span>PARENT</span><span>STATE</span></div>
       {databases.map((database) => <div className="data-row resource-columns" key={notionId(database)}><strong>{notionText(database.title, "Untitled database")}</strong><code className="muted truncate">{notionId(database)}</code><code className="muted truncate">{database.parent?.page_id ?? database.parent?.database_id ?? database.parent?.type ?? "workspace"}</code><code className={database.in_trash || database.archived ? "yellow" : "green"}>{notionState(database)}</code></div>)}
       {!databases.length && <EmptyNotion>No databases are visible to the selected Notion token.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Data sources · ${dataSources.length}`} tools={<code className="blue">GET /v1/data_sources/:id</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="dataSources" title="Data sources" tools={<code className="blue">GET /v1/data_sources/:id</code>}>
       <div className="data-row resource-columns table-head"><span>DATA SOURCE</span><span>ID</span><span>PROPERTIES</span><span>STATE</span></div>
       {dataSources.map((source) => <div className="data-row resource-columns" key={notionId(source)}><span><strong>{notionText(source.title ?? source.name, "Untitled data source")}</strong><small>{source.parent?.database_id ?? source.database_id ?? "No database"}</small></span><code className="muted truncate">{notionId(source)}</code><code>{Object.keys(source.properties ?? {}).length}</code><code className={source.in_trash || source.archived ? "yellow" : "green"}>{notionState(source)}</code></div>)}
       {!dataSources.length && <EmptyNotion>No data sources are visible to the selected Notion token.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Views · ${views.length}`} tools={<code className="blue">GET /v1/views</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="views" title="Views" tools={<code className="blue">GET /v1/views</code>}>
       <div className="data-row resource-columns table-head"><span>VIEW</span><span>ID</span><span>TYPE</span><span>DATA SOURCE</span></div>
       {views.map((view) => <div className="data-row resource-columns" key={notionId(view)}><strong>{notionText(view.name ?? view.title, "Untitled view")}</strong><code className="muted truncate">{notionId(view)}</code><code>{view.type ?? "—"}</code><code className="muted truncate">{view.parent?.data_source_id ?? view.data_source_id ?? "—"}</code></div>)}
       {!views.length && <EmptyNotion>No saved views are visible to the selected Notion token.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Comments · ${comments.length}`} tools={<code className="blue">GET /v1/comments</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="comments" title="Comments" tools={<code className="blue">GET /v1/comments</code>}>
       <div className="data-row resource-columns table-head"><span>COMMENT</span><span>ID</span><span>AUTHOR</span><span>UPDATED</span></div>
       {comments.map((comment) => <div className="data-row resource-columns" key={notionId(comment)}><strong className="truncate">{notionText(comment.rich_text, "Empty comment")}</strong><code className="muted truncate">{notionId(comment)}</code><code className="muted truncate">{comment.created_by?.id ?? "—"}</code><span>{comment.last_edited_time ?? comment.created_time ?? "—"}</span></div>)}
       {!comments.length && <EmptyNotion>No comments are visible to the selected Notion token.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`File uploads · ${fileUploads.length}`} tools={<code className="blue">GET /v1/file_uploads</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="fileUploads" title="File uploads" tools={<code className="blue">GET /v1/file_uploads</code>}>
       <div className="data-row resource-columns table-head"><span>FILE</span><span>ID</span><span>SIZE</span><span>STATUS</span></div>
       {fileUploads.map((upload) => <div className="data-row resource-columns" key={notionId(upload)}><strong>{upload.filename ?? "Unnamed file"}</strong><code className="muted truncate">{notionId(upload)}</code><span>{upload.content_length ?? "—"}</span><code className={upload.status === "uploaded" ? "green" : "yellow"}>{upload.status ?? "unknown"}</code></div>)}
       {!fileUploads.length && <EmptyNotion>No Notion file uploads have been created.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Async tasks · ${asyncTasks.length}`} tools={<code className="blue">IDs from inspection · GET /v1/async_tasks/:id supported</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="asyncTasks" title="Async tasks" tools={<code className="blue">IDs from inspection · GET /v1/async_tasks/:id supported</code>}>
       <div className="data-row resource-columns table-head"><span>TASK</span><span>ID</span><span>STATUS</span><span>UPDATED</span></div>
       {asyncTasks.slice(-20).reverse().map((task) => <div className="data-row resource-columns" key={notionId(task)}><strong>{task.type ?? task.kind ?? task.operation ?? "Notion task"}</strong><code className="muted truncate">{notionId(task)}</code><code className={task.status === "failed" || task.status === "error" ? "yellow" : "green"}>{task.status ?? "unknown"}</code><span>{task.last_edited_time ?? task.updated_at ?? task.created_at ?? "—"}</span></div>)}
       {!asyncTasks.length && <EmptyNotion>No asynchronous tasks have been recorded.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Recent mutations · ${notion.changes?.length ?? 0}`} tools={<code className="blue">latest 20</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="changes" title="Recent mutations" tools={<code className="blue">latest 20</code>}>
       <div className="data-row resource-columns table-head"><span>CHANGE</span><span>OBJECT</span><span>ACTOR</span><span>TIME</span></div>
       {changes.map((change) => <div className="data-row resource-columns" key={change.sequence ?? `${change.topic}-${change.object_id}`}><strong>{change.topic ?? change.type ?? "mutation"}</strong><code className="muted truncate">{change.object_id ?? change.object?.id ?? "—"}</code><code className="muted truncate">{change.actor_id ?? change.actor?.id ?? "—"}</code><span>{change.occurred_at ?? change.created_at ?? "—"}</span></div>)}
       {!changes.length && <EmptyNotion>No Notion mutations have been recorded.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Workspace users · ${notion.users.length}`} tools={<code className="blue">GET /v1/users</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="users" title="Workspace users" tools={<code className="blue">GET /v1/users</code>}>
       <div className="data-row resource-columns table-head"><span>USER</span><span>EMAIL</span><span>TYPE</span><span>STATE</span></div>
-      {notion.users.map((user) => <div className="data-row resource-columns" key={user.id}><strong>{user.name}</strong><code className="muted truncate">{user.person?.email ?? "—"}</code><code>{user.type}</code><code className="green">available</code></div>)}
-      {!notion.users.length && <EmptyNotion>No workspace users are visible.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Current Agent API · ${agents.length}`} tools={<code className="blue">POST /v1/agents/query</code>}>
+      {users.map((user) => <div className="data-row resource-columns" key={user.id}><strong>{user.name}</strong><code className="muted truncate">{user.person?.email ?? "—"}</code><code>{user.type}</code><code className="green">available</code></div>)}
+      {!users.length && <EmptyNotion>No workspace users are visible.</EmptyNotion>}
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="agents" title="Current Agent API" tools={<code className="blue">POST /v1/agents/query</code>}>
       <div className="data-row resource-columns table-head"><span>AGENT</span><span>STATUS</span><span>CREDIT LIMIT</span><span>ACTION</span></div>
       {agents.map((agent) => <div className="data-row resource-columns" key={agent.id}><span><strong>{agent.name}</strong><small className="truncate">{agent.description ?? "No description"}</small></span><code className={agent.status === "active" ? "green" : "yellow"}>{agent.status}</code><form className="inline-actions" onSubmit={(event) => updateAgentCredit(event, agent)}><input name="credit_limit" type="number" min="0" placeholder="No limit" defaultValue={typeof agent.credit_limit === "number" ? agent.credit_limit : ""}/><Button kind="small" disabled={action.busy}>Set</Button></form><Button kind="small" onClick={() => updateAgentStatus(agent)} disabled={agent.status === "deleted" || action.busy}>{agent.status === "active" ? "Disable" : "Enable"}</Button></div>)}
       {!agents.length && <EmptyNotion>No Custom Agents are visible to this token.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Agent sessions · ${agentSessions.length}`} tools={<code className="blue">POST /v1/sessions/query</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="agentSessions" title="Agent sessions" tools={<code className="blue">POST /v1/sessions/query</code>}>
       <div className="data-row resource-columns table-head"><span>SESSION</span><span>AGENT</span><span>MESSAGES</span><span>STATUS</span></div>
       {agentSessions.map((session) => <div className="data-row resource-columns" key={session.id}><strong className="truncate">{session.title}</strong><code className="muted truncate">{session.agent_id}</code><span>{session.message_count ?? 0}</span><code className={session.status === "completed" ? "green" : "yellow"}>{session.status}</code></div>)}
       {!agentSessions.length && <EmptyNotion>No Agent sessions have run.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title="MCP connection"><div className="detail-grid"><strong>Transport</strong><span>Streamable HTTP</span><strong>MCP URL</strong><code>{notion.mcpUrl ?? "Not selected"}</code><strong>Advertised tools</strong><span>Search and fetch; page, database, data-source, view, comment, file, attachment, and skill operations; Custom Agent and session operations; identity reads; and async task reads. OpenAI clients receive <code>search</code> and <code>fetch</code> aliases.</span><strong>Authorization</strong><span>OAuth authorization code with PKCE S256</span><strong>Sessions</strong><span>{notion.mcpSessions?.length ?? 0}</span><strong>Calls</strong><span>{notion.mcpCalls?.length ?? 0}</span></div></Panel></div>
-    <div className="section"><Panel title={`OAuth grants · ${connectionTokens.length}`} tools={<code className="blue">Redacted Workbench inspection and revocation</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><Panel title="MCP connection"><div className="detail-grid"><strong>Transport</strong><span>Streamable HTTP</span><strong>MCP URL</strong><code>{notion.mcpUrl ?? "Not selected"}</code><strong>Advertised tools</strong><span>Search and fetch; page, database, data-source, view, comment, file, attachment, and skill operations; Custom Agent and session operations; identity reads; and async task reads. OpenAI clients receive <code>search</code> and <code>fetch</code> aliases.</span><strong>Authorization</strong><span>OAuth authorization code with PKCE S256</span><strong>Sessions</strong><span>{notionCollectionCount(notion, "mcpSessions")}</span><strong>Calls</strong><span>{notionCollectionCount(notion, "mcpCalls")}</span></div></Panel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="connectionTokens" title="OAuth grants" tools={<code className="blue">Redacted Workbench inspection and revocation</code>}>
       <div className="data-row resource-columns table-head"><span>CLIENT</span><span>USER</span><span>GENERATION</span><span>STATE</span></div>
       {connectionTokens.map((token) => <div className="data-row resource-columns" key={`${token.client_id}-${token.user_id}-${token.generation}`}><code className="truncate">{token.client_id}</code><code className="muted truncate">{token.user_id}</code><span>{token.generation}</span>{token.active ? <Button kind="small" onClick={() => revokeTokens(token)}>Revoke</Button> : <code className="muted">revoked</code>}</div>)}
       {!connectionTokens.length && <EmptyNotion>No OAuth connection tokens have been issued.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Enterprise legal holds · ${legalHolds.length}`} tools={<code className="blue">Admin 2026-06-01</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="legalHolds" title="Enterprise legal holds" tools={<code className="blue">Admin 2026-06-01</code>}>
       <div className="data-row resource-columns table-head"><span>HOLD</span><span>STATUS</span><span>USERS</span><span>START</span></div>
       {legalHolds.map((hold) => <div className="data-row resource-columns" key={hold.id}><strong>{hold.name ?? hold.id}</strong><code className={hold.status === "active" ? "green" : "muted"}>{hold.status}</code><span>{hold.users?.total ?? 0}</span><span>{new Date(hold.start_date).toLocaleDateString()}</span></div>)}
       {!legalHolds.length && <EmptyNotion>No legal holds exist.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Enterprise permission groups · ${adminGroups.length}`} tools={<code className="blue">/admin/v1/spaces/:id/groups</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="groups" title="Enterprise permission groups" tools={<code className="blue">/admin/v1/spaces/:id/groups</code>}>
       <form className="action-form" onSubmit={createAdminGroup}><label>GROUP NAME<input name="name" required maxLength="200" placeholder="Release reviewers"/></label><Button kind="primary" disabled={action.busy}>Create group</Button></form>
       <div className="data-row resource-columns table-head"><span>GROUP</span><span>ID</span><span></span><span>STATE</span></div>
       {adminGroups.map((group) => <div className="data-row resource-columns" key={group.id}><strong>{group.name}</strong><code className="muted truncate">{group.id}</code><span></span><code className="green">available</code></div>)}
       {!adminGroups.length && <EmptyNotion>No enterprise permission groups exist.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Enterprise Admin Agent records · ${adminAgents.length}`} tools={<code className="blue">GET /admin/v1/spaces/:id/agents</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="adminAgents" title="Enterprise Admin Agent records" tools={<code className="blue">GET /admin/v1/spaces/:id/agents</code>}>
       <div className="data-row resource-columns table-head"><span>AGENT</span><span>TYPE</span><span>STATUS</span><span>ALIVE</span></div>
       {adminAgents.map((agent) => <div className="data-row resource-columns" key={agent.id}><strong>{agent.name ?? agent.id}</strong><code>{agent.type}</code><code className={agent.status === "active" ? "green" : "yellow"}>{agent.status}</code><span>{agent.alive ? "yes" : "no"}</span></div>)}
       {!adminAgents.length && <EmptyNotion>No enterprise Agent records are visible.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Personal access tokens · ${personalAccessTokens.length}`} tools={<code className="blue">GET /admin/v1/spaces/:id/personal_access_tokens</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="personalAccessTokens" title="Personal access tokens" tools={<code className="blue">GET /admin/v1/spaces/:id/personal_access_tokens</code>}>
       <div className="data-row resource-columns table-head"><span>TOKEN</span><span>CREATOR</span><span>STATUS</span><span>ACTION</span></div>
       {personalAccessTokens.map((token) => <div className="data-row resource-columns" key={token.id}><strong>{token.name ?? token.id}</strong><code className="muted truncate">{token.creator?.email ?? token.creator?.id}</code><code className={token.status === "active" ? "green" : "muted"}>{token.status}</code>{token.status === "active" ? <Button kind="small" onClick={() => revokeAdminPat(token)}>Revoke</Button> : <span>—</span>}</div>)}
       {!personalAccessTokens.length && <EmptyNotion>No personal access tokens are recorded.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`MCP client connections · ${mcpClientConnections.length}`} tools={<code className="blue">GET /admin/v1/mcp_client_connections</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="mcpClientConnections" title="MCP client connections" tools={<code className="blue">GET /admin/v1/mcp_client_connections</code>}>
       <div className="data-row resource-columns table-head"><span>CLIENT</span><span>USER</span><span>MANAGED</span><span>ACTION</span></div>
       {mcpClientConnections.map((connection) => <div className="data-row resource-columns" key={`${connection.client.key}-${connection.user.id}`}><strong>{connection.client.name}</strong><code className="muted truncate">{connection.user.id}</code><span>{connection.is_enterprise_managed ? "yes" : "no"}</span><Button kind="small" onClick={() => revokeAdminMcp(connection)}>Revoke</Button></div>)}
       {!mcpClientConnections.length && <EmptyNotion>No MCP client connections are recorded.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Webhook subscriptions · ${webhookSubscriptions.length}`} tools={<code className="blue">connection settings emulation</code>}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="webhookSubscriptions" title="Webhook subscriptions" tools={<code className="blue">connection settings emulation</code>}>
       {!notion.liveWebhookDelivery && <Notice>Webhook events are signed and captured locally. External delivery is disabled.</Notice>}
       {!notion.webhookSecretRevealEnabled && <Notice>Webhook value reveal is disabled. Set <code>WORLDFIXTURE_WORKBENCH_REVEAL_WEBHOOK_SECRETS=1</code> for a development run.</Notice>}
       <form className="action-form" onSubmit={createWebhook}><label>HTTPS URL<input name="url" type="url" required defaultValue="https://hooks.worldfixture.test/notion"/></label><label>EVENT TYPES<input name="event_types" required defaultValue="page.created,page.properties_updated,page.content_updated"/></label><Button kind="primary" disabled={action.busy}>{action.busy ? "Saving…" : "Create subscription"}</Button></form>
       <div className="data-row resource-columns table-head"><span>URL</span><span>EVENTS</span><span>STATE</span><span>ACTION</span></div>
       {webhookSubscriptions.map((subscription) => <div key={subscription.notion_id}><div className="data-row resource-columns"><code className="truncate">{subscription.url}</code><span className="truncate">{subscription.event_types.join(", ")}</span><code className={subscription.status === "active" ? "green" : "yellow"}>{subscription.status}</code><span>{subscription.status === "pending" && <Button kind="small" onClick={() => verifyWebhook(subscription)}>Verify</Button>} {subscription.status === "pending" && notion.webhookSecretRevealEnabled && <Button kind="small" onClick={() => revealWebhookValue("verification_token", subscription.notion_id)}>Reveal token</Button>} <Button kind="small" onClick={() => deleteWebhook(subscription)}>Delete</Button></span></div>{revealedWebhookValues[`verification_token:${subscription.notion_id}`] && <pre className="secret-reveal">{revealedWebhookValues[`verification_token:${subscription.notion_id}`].verification_token}</pre>}</div>)}
       {!webhookSubscriptions.length && <EmptyNotion>No webhook subscriptions exist.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Captured webhook deliveries · ${webhookDeliveries.length}`}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="webhookDeliveries" title="Captured webhook deliveries">
       <div className="data-row resource-columns table-head"><span>EVENT</span><span>ENTITY</span><span>SIGNATURE FINGERPRINT</span><span>STATE</span></div>
       {webhookDeliveries.slice(-20).reverse().map((delivery) => <div key={delivery.notion_id}><div className="data-row resource-columns"><strong>{delivery.event_type}</strong><code className="muted truncate">{delivery.payload?.entity?.id ?? "—"}</code><code className="muted truncate">{delivery.signature_fingerprint ?? "hidden"}</code><span><code className="green">{delivery.status}</code> {notion.webhookSecretRevealEnabled && <Button kind="small" onClick={() => revealWebhookValue("delivery", delivery.notion_id)}>Reveal request</Button>}</span></div>{revealedWebhookValues[`delivery:${delivery.notion_id}`] && <pre className="secret-reveal">{JSON.stringify(revealedWebhookValues[`delivery:${delivery.notion_id}`], null, 2)}</pre>}</div>)}
       {!webhookDeliveries.length && <EmptyNotion>No webhook events have been captured.</EmptyNotion>}
-    </Panel></div>
-    <div className="section"><Panel title={`Recent MCP calls · ${notion.mcpCalls?.length ?? 0}`}>
+    </NotionCollectionPanel></div>
+    <div className="section"><NotionCollectionPanel notion={notion} collection="mcpCalls" title="Recent MCP calls">
       <div className="data-row resource-columns table-head"><span>TOOL</span><span>USER</span><span>SESSION</span><span>RESULT</span></div>
       {(notion.mcpCalls ?? []).slice(-20).reverse().map((call) => <div className="data-row resource-columns" key={call.sequence}><code>{call.tool}</code><code className="muted truncate">{call.user_id}</code><code className="muted truncate">{call.session_id ?? "stateless"}</code><code className={call.is_error ? "yellow" : "green"}>{call.is_error ? "error" : "success"}</code></div>)}
-    </Panel></div>
+    </NotionCollectionPanel></div>
     {selectedPage && <aside className="detail-drawer"><header><strong>{notionTitle(selectedPage)}</strong><Button kind="small" onClick={() => setSelectedPage(null)}>Close</Button></header><div className="notion-page-detail"><span>PAGE</span><h2>{notionTitle(selectedPage)}</h2><p>Updated {selectedPage.last_edited_time ?? "at an unknown time"}</p><code>{selectedPage.id}</code>{selectedPage.url && <Button onClick={() => window.open(selectedPage.url, "_blank")}>Open page URL</Button>}</div></aside>}
   </div>;
 }
 
-export function Website({ data }) {
-  const targets = data.providers.website.targets ?? [];
-  const groups = ["RSS", "Changing page", "stable probe", "failing probe", "flapping probe", "OpenAPI", "JSON API", "Metrics"];
-  return <><PageHead title="Website" subtitle="One local site with pages, RSS, JSON, metrics, and predictable failures." command="SITE_BASE_URL"/>
-    <Panel title="Live preview" tools={<Button kind="small" onClick={() => window.open(data.bindings.SITE_BASE_URL, "_blank")}>Open in a new tab</Button>}><iframe className="website-preview" src={data.bindings.SITE_BASE_URL} title="World website preview"/><div className="website-fallback"><strong>Current response</strong><p className="muted">{data.providers.website.preview}</p><code>{data.bindings.SITE_BASE_URL}</code></div></Panel>
-    <div className="section"><Panel title="Targets in this world"><div className="target-groups">{groups.map((group) => {
-      const matches = targets.filter((target) => target.kind === group);
-      if (!matches.length) return null;
-      return <div className="target-group" key={group}><strong>{group}</strong><span>{group.includes("probe") ? "Repeat the request to see its configured status sequence." : group === "RSS" ? "Subscribe with a reader. More items can arrive while this run is active." : "Open the active local target."}</span>{matches.map((target) => <a key={target.url} href={target.url} target="_blank" rel="noreferrer"><span>{target.name}</span><code>{target.path}</code></a>)}</div>;
-    })}</div></Panel></div>
+export function Website({ data, onAction }) {
+  const website = data.providers.website;
+  const targets = website.targets ?? [];
+  const groups = [...new Set(targets.map(target => target.kind ?? "Other"))];
+  const [proof, setProof] = useState(null);
+  async function inspect(target) {
+    try {
+      const value = await request(`/api/provider/http?path=${encodeURIComponent(target.path)}`);
+      setProof(value);
+      if (value.ok) onAction?.({ type: "read", surface: "http", target: "http-target", success: true });
+    } catch (error) { setProof({ error: error.message }); }
+  }
+  if (website.status === "not-selected") return <Notice>This run has no HTTP service.</Notice>;
+  return <><PageHead title="Website" subtitle="HTTP targets declared by this world." command="SITE_BASE_URL"/>
+    {website.error && <Notice kind="error">{website.error}</Notice>}
+    <Panel title="Live preview" tools={website.previewUrl && <Button kind="small" onClick={() => window.open(website.previewUrl, "_blank")}>Open in a new tab</Button>}>{website.previewUrl ? <iframe className="website-preview" src={website.previewUrl} title="World website preview"/> : <Notice>No declared HTTP target is available for a preview.</Notice>}<div className="website-fallback"><strong>Current response</strong><p className="muted">{website.preview}</p><code>{website.previewUrl ?? "Unavailable"}</code></div></Panel>
+    {proof && <Notice kind={proof.error || !proof.ok ? "warning" : ""}>{proof.error ?? `${proof.path}: HTTP ${proof.status}`}</Notice>}
+    <div className="section"><Panel title="Targets in this world"><div className="target-groups">{groups.map(group => <div className="target-group" key={group}><strong>{group}</strong>{targets.filter(target => (target.kind ?? "Other") === group).map(target => <div key={target.url}><a href={target.url} target="_blank" rel="noreferrer"><span>{target.name}</span><code>{target.path}</code></a><Button kind="small" onClick={() => inspect(target)}>Check response</Button></div>)}</div>)}</div></Panel></div>
   </>;
 }

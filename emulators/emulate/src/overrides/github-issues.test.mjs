@@ -48,20 +48,12 @@ test("the author is the world's person, not whoever seeded first", () => {
   assert.equal(gs.users.get(issue.user_id).login, "hanaito");
 });
 
-test("an issue from someone the world lacks is dropped, not misattributed", () => {
-  const world = structuredClone(WORLD);
-  world.repos[0].issues = [{ number: 999, title: "t", body: null, state: "open", author: "nobody", assignees: [] }];
-  const { result, gs } = githubWith(world);
-  assert.equal(result.issues, 0);
-  assert.equal(gs.issues.all().find((i) => i.number === 999), undefined);
+test("an issue from an unknown author fails instead of dropping source data", () => {
+  const variant = structuredClone(WORLD);
+  variant.repos[0].issues[0].author = "nobody";
+  assert.throws(() => githubWith(variant), /unknown author nobody/);
 });
 
-// Closes: `open_issues_count` is a stored field upstream maintains from the issue
-// and pull-request ROUTES, and seeding writes the store directly, so it stayed at
-// the `0` a repository is created with. Measured on a running composer:
-// `GET /repos/northstar-relay/relay-core` said `open_issues_count: 0` while
-// `…/issues?state=open` returned eight. It read `0` for every repository in every
-// world.
 test("open_issues_count matches the issues the repository actually serves", () => {
   const world = {
     ...WORLD,

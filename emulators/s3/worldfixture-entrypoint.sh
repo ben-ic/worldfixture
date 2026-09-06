@@ -1,7 +1,11 @@
 #!/bin/sh
 set -eu
+if [ -z "${WORLDFIXTURE_WORLD_PATH:-}" ]; then
+  echo "worldfixture: missing world: WORLDFIXTURE_WORLD_PATH is required" >&2
+  exit 64
+fi
 
-required='WORLDFIXTURE_MASTER_PORT WORLDFIXTURE_MASTER_GRPC_PORT WORLDFIXTURE_VOLUME_PORT WORLDFIXTURE_VOLUME_GRPC_PORT WORLDFIXTURE_FILER_PORT WORLDFIXTURE_FILER_GRPC_PORT WORLDFIXTURE_S3_PORT WORLDFIXTURE_S3_GRPC_PORT WORLDFIXTURE_WORLD_PATH'
+required='WORLDFIXTURE_MASTER_PORT WORLDFIXTURE_MASTER_GRPC_PORT WORLDFIXTURE_VOLUME_PORT WORLDFIXTURE_VOLUME_GRPC_PORT WORLDFIXTURE_FILER_PORT WORLDFIXTURE_FILER_GRPC_PORT WORLDFIXTURE_S3_PORT WORLDFIXTURE_S3_GRPC_PORT WORLDFIXTURE_WORLD_PATH AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY'
 
 for name in $required; do
   eval "value=\${$name:-}"
@@ -24,6 +28,7 @@ filer="http://127.0.0.1:$WORLDFIXTURE_FILER_PORT"
 s3="http://127.0.0.1:$WORLDFIXTURE_S3_PORT"
 data_dir=/tmp/seaweedfs
 seed_dir=/tmp/worldfixture-s3
+umask 077
 mkdir -p "$data_dir" "$seed_dir"
 
 # The projection is read once, before the server starts, so a malformed world
@@ -34,6 +39,19 @@ jq -r '.s3.buckets[].name' "$projection" > "$seed_dir/buckets.txt"
 jq -r '(.s3.objects // []) | length' "$projection" > "$seed_dir/object-count"
 object_count=$(cat "$seed_dir/object-count")
 bucket_count=$(wc -l < "$seed_dir/buckets.txt" | tr -d ' ')
+
+# Static credentials use SeaweedFS's supported S3 identity configuration. The
+# embedded IAM API stays disabled. Seed requests use the same run identity as
+# application requests, so bucket ownership and ListBuckets agree.
+region=$(jq -er '.region // .s3.buckets[0].region | select(type == "string" and test("^[a-z0-9-]+$"))' "$projection")
+jq -n '{identities: [{name: "worldfixture-run", credentials: [{accessKey: env.AWS_ACCESS_KEY_ID, secretKey: env.AWS_SECRET_ACCESS_KEY}], actions: ["Admin"]}]}' > "$seed_dir/identity.json"
+jq -nr --arg region "$region" '
+  "user = " + ((env.AWS_ACCESS_KEY_ID + ":" + env.AWS_SECRET_ACCESS_KEY) | tojson),
+  "aws-sigv4 = " + (("aws:amz:" + $region + ":s3") | tojson)
+' > "$seed_dir/curl.conf"
+# Prevent SeaweedFS from adding a second environment-based identity or logging
+# its access key. Both private files remain in the owned reset snapshot.
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 
 # A bucket name and an object key both end up in a URL path and in a shell
 # variable. Refuse anything outside the character set this fixture can carry
@@ -99,11 +117,6 @@ trap shutdown INT TERM
 # the profile's own test warns about: a hostname that resolves, routes, and answers
 # nothing.
 #
-# WHAT THE SIGNATURE DOES, measured against this build rather than assumed:
-# `-s3.iam=false` with no `-s3.config` leaves the S3 endpoint with no identity at
-# all. Every request is served, signed correctly or not, and a presigned URL's
-# signature and expiry are both ignored. README.md states this plainly; nothing here
-# authenticates anything.
 /usr/bin/weed -logtostderr=true server \
   -dir="$data_dir" \
   -volume.fileSizeLimitMB=64 \
@@ -127,6 +140,7 @@ trap shutdown INT TERM
   -s3 \
   -iam=false \
   -s3.iam=false \
+  -s3.config="$seed_dir/identity.json" \
   -s3.ip.bind=0.0.0.0 \
   -s3.port="$WORLDFIXTURE_S3_PORT" \
   -s3.port.grpc="$WORLDFIXTURE_S3_GRPC_PORT" \
@@ -152,7 +166,7 @@ until wget -q -O /dev/null "$filer/healthz"; do
 done
 
 attempt=0
-until [ "$(curl -s -o /dev/null -w '%{http_code}' "$s3/")" = "200" ]; do
+until [ "$(curl -K "$seed_dir/curl.conf" -s -o /dev/null -w '%{http_code}' "$s3/")" = "200" ]; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge 120 ] || ! kill -0 "$server_pid" 2>/dev/null; then
     fail "SeaweedFS S3 endpoint did not start"
@@ -170,7 +184,7 @@ if [ ! -e "$seed_dir/seeded-v1" ]; then
 # world's own `last_modified` has to survive to something a client can read back,
 # and this is the only header SeaweedFS carries through.
 while IFS= read -r bucket; do
-  code=$(curl -sS -o /dev/null -w '%{http_code}' -X PUT "$s3/$bucket")
+  code=$(curl -K "$seed_dir/curl.conf" -sS -o /dev/null -w '%{http_code}' -X PUT "$s3/$bucket")
   case "$code" in
     # 409 is BucketAlreadyOwnedByYou. Creating a bucket that is already there is
     # what an idempotent seed looks like on a restart, not a failure.
@@ -190,8 +204,11 @@ while [ "$index" -lt "$object_count" ]; do
   # bytes are the projection's bytes and a document that does not end in a
   # newline does not acquire one.
   jq -j --argjson i "$index" '.s3.objects[$i].content' "$projection" > "$seed_dir/body"
-  code=$(curl -sS -o /dev/null -w '%{http_code}' -X PUT \
+  # Older curl versions in the combined image need the explicit file payload
+  # hash. Without it, SeaweedFS refuses the signed PUT with SignatureDoesNotMatch.
+  code=$(curl -K "$seed_dir/curl.conf" -sS -o /dev/null -w '%{http_code}' -X PUT \
     --data-binary "@$seed_dir/body" \
+    -H "x-amz-content-sha256: $(sha256sum "$seed_dir/body" | cut -d ' ' -f 1)" \
     -H "Content-Type: $content_type" \
     -H "X-Amz-Meta-Last-Modified: $last_modified" \
     -H "X-Amz-Meta-Owner: $owner" \

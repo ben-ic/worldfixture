@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://worldfixture.dev/schemas/world-definition.v1.schema.json",
   "title": "WorldFixture world source v1",
-  "description": "One resolved world source. The compiler core validates this envelope. A world that declares a profile also has to satisfy that profile's records.",
+  "description": "One resolved world source. The envelope and each declared canonical section validate independently; applicable provider adapters derive native identities without changing canonical records.",
   "type": "object",
   "required": [
     "api_version",
@@ -11,44 +11,118 @@
     "title",
     "synthetic_notice",
     "scenario",
-    "clock"
+    "clock",
+    "timeline"
   ],
   "properties": {
-    "api_version": {"const": "worldfixture.world-source/v1"},
-    "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
-    "version": {"type": "string", "pattern": "^v[0-9]+$"},
-    "profile": {
-      "description": "Which built-in profile validates and projects this world. A world without a profile is records and a timeline only.",
-      "type": "string",
-      "enum": ["business.operations/v1"]
+    "api_version": {
+      "const": "worldfixture.world-source/v1"
     },
-    "title": {"type": "string", "minLength": 1},
-    "synthetic_notice": {"type": "string", "minLength": 20},
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9.-]+$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+$"
+    },
+    "profile": {
+      "description": "Optional compatibility adapter for historical business finance generation. It does not require unrelated sections or a primary actor.",
+      "type": "string",
+      "enum": [
+        "business.operations/v1"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "synthetic_notice": {
+      "type": "string",
+      "minLength": 20
+    },
     "scenario": {
       "type": "object",
-      "required": ["id", "class", "title"],
+      "required": [
+        "id",
+        "class",
+        "title"
+      ],
       "properties": {
-        "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
-        "class": {"enum": ["normal", "data-quality", "bad-actor", "fraud", "operational-failure"]},
-        "title": {"type": "string", "minLength": 1}
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]+$"
+        },
+        "class": {
+          "enum": [
+            "normal",
+            "data-quality",
+            "bad-actor",
+            "fraud",
+            "operational-failure"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-    "categories": {"type": "array", "items": {"type": "string"}},
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "clock": {
       "type": "object",
-      "required": ["anchor", "timezone", "locale"],
+      "required": [
+        "anchor",
+        "timezone",
+        "locale"
+      ],
       "properties": {
-        "anchor": {"type": "string", "format": "date-time"},
-        "timezone": {"type": "string"},
-        "locale": {"type": "string"},
+        "anchor": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "locale": {
+          "type": "string"
+        },
         "rebase": {
           "description": "Which branches carry scenario-relative dates that a rebase may shift.",
           "type": "object",
-          "required": ["relative_paths"],
+          "required": [
+            "relative_paths"
+          ],
           "properties": {
+            "finance_history": {
+              "description": "Original recurring finance schedule and cumulative whole-day rebase shift.",
+              "type": "object",
+              "required": [
+                "origin_anchor",
+                "day_shift"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "origin_anchor": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "day_shift": {
+                  "type": "integer"
+                }
+              }
+            },
             "relative_paths": {
               "type": "array",
-              "items": {"type": "string", "pattern": "^[a-z_]+(?:\\.[a-z_]+)*$"}
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z_]+(?:\\.[a-z_]+)*$"
+              }
             }
           }
         }
@@ -59,65 +133,587 @@
       "type": "array"
     },
     "timeline": {
+      "description": "At least one authored arrival is required. A selected runtime schedule may exclude arrivals whose capabilities are not selected.",
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "after_seconds", "kind"],
+        "required": [
+          "id",
+          "after_seconds",
+          "kind",
+          "payload"
+        ],
         "properties": {
-          "id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]+$"},
-          "after_seconds": {"type": "integer", "minimum": 0},
-          "kind": {"enum": ["incoming-email", "chat-message", "github-comment", "stripe-payment", "s3-object", "application-event", "webhook"]},
-          "payload": {"type": "object"}
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9.-]+$"
+          },
+          "after_seconds": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "kind": {
+            "enum": [
+              "incoming-email",
+              "chat-message",
+              "github-comment",
+              "stripe-payment",
+              "s3-object",
+              "application-event",
+              "webhook",
+              "domain-operation"
+            ]
+          },
+          "payload": {
+            "type": "object"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "domain-operation"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "payload": {
+                  "$ref": "runtime-operation.v1.schema.json"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "organizations": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/record"
+          }
+        ],
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "primary": {
+            "type": "boolean"
+          }
         }
       }
     },
-    "organizations": {"type": "array"},
-    "people": {"type": "array"},
-    "communication": {"type": "object"},
-    "work": {"type": "object"},
-    "software": {"type": "object"},
-    "finance": {"type": "object"},
+    "people": {
+      "type": "array",
+      "items": {
+        "allOf": [
+          {
+            "$ref": "#/$defs/record"
+          }
+        ],
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "primary": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string",
+            "pattern": "^[^@]+@[^@]+\\.test$"
+          },
+          "organization_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "github_login": {
+            "type": "string"
+          },
+          "slack_id": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "communication": {
+      "type": "object",
+      "properties": {
+        "mailboxes": {
+          "description": "Google account/Gmail mailbox owners and custom labels. Calendar and Drive owners must be declared too; content is never silently filtered. An explicit empty array is valid when no Google-owned content remains. When absent, the legacy compiler derives mailboxes and labels from people, mail and Gmail arrivals.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "owner_id",
+              "labels"
+            ],
+            "properties": {
+              "owner_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9.-]+$"
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              }
+            }
+          }
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "mail": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "calendars": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "calendar_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        }
+      }
+    },
+    "work": {
+      "type": "object",
+      "properties": {
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "time_entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        }
+      }
+    },
+    "software": {
+      "type": "object",
+      "properties": {
+        "operator_teams": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "operator_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "operator_limit": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "oauth_clients": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "apple",
+              "clerk",
+              "okta",
+              "google",
+              "microsoft",
+              "github",
+              "slack",
+              "linear",
+              "vercel"
+            ]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "client_id",
+                "redirect_uris"
+              ],
+              "properties": {
+                "client_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primary": {
+                  "type": "boolean"
+                },
+                "redirect_uris": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "format": "uri"
+                  }
+                },
+                "client_secret_ref": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "not": {
+                "required": [
+                  "client_secret"
+                ]
+              }
+            }
+          }
+        },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        }
+      }
+    },
+    "finance": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Za-z]{3}$"
+        },
+        "history_months": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "customers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "billing_mode": {
+                "enum": [
+                  "recurring_monthly",
+                  "one_time"
+                ]
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3}$"
+              },
+              "revenue_account": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "required": [
+                    "billing_mode"
+                  ],
+                  "properties": {
+                    "billing_mode": {
+                      "const": "one_time"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "revenue_account"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "payments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "customer_id",
+              "amount_cents",
+              "paid_on",
+              "status"
+            ],
+            "anyOf": [
+              {
+                "required": [
+                  "invoice_id"
+                ]
+              },
+              {
+                "required": [
+                  "order_id"
+                ]
+              }
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "customer_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "invoice_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "order_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "amount_cents": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "paid_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3}$"
+              },
+              "status": {
+                "const": "succeeded"
+              },
+              "revenue_account": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "refunds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "payment_id",
+              "amount_cents",
+              "refunded_on",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "payment_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "amount_cents": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "refunded_on": {
+                "type": "string",
+                "format": "date"
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Za-z]{3}$"
+              },
+              "status": {
+                "const": "succeeded"
+              }
+            }
+          }
+        },
+        "suppliers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "invoices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "bills": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "ledger_entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "anchor_invoices": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        }
+      }
+    },
     "commerce": {
       "description": "Optional catalog and order book for a world that sells goods to people. An order states its own subtotal and total, and the compiler checks both against its own lines.",
       "type": "object",
       "properties": {
-        "products": {"type": "array"},
-        "orders": {"type": "array"}
+        "products": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "orders": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        }
       }
     },
     "social": {
       "description": "Optional public activity: posts a world publishes, reviews people leave on its products, and comments on either.",
       "type": "object",
       "properties": {
-        "posts": {"type": "array"},
-        "reviews": {"type": "array"},
-        "comments": {"type": "array"}
-      }
-    },
-    "support": {"type": "object"},
-    "stories": {"type": "array"},
-    "agentic": {"type": "object"},
-    "model_facts": {"type": "array"}
-  },
-  "allOf": [
-    {
-      "if": {"properties": {"profile": {"const": "business.operations/v1"}}, "required": ["profile"]},
-      "then": {
-        "required": ["organizations", "people", "communication", "work", "software", "finance", "timeline"],
-        "properties": {
-          "organizations": {"type": "array", "minItems": 1},
-          "people": {"type": "array", "minItems": 2},
-          "work": {
-            "type": "object",
-            "required": ["projects", "tasks", "time_entries"],
-            "properties": {
-              "projects": {"type": "array"},
-              "tasks": {"type": "array"},
-              "time_entries": {"type": "array"}
-            }
+        "posts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
           }
         }
       }
+    },
+    "support": {
+      "type": "object",
+      "properties": {
+        "cases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/record"
+          }
+        }
+      }
+    },
+    "stories": {
+      "type": "array"
+    },
+    "agentic": {
+      "type": "object",
+      "properties": {
+        "causal_rules": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "causal-rule.v1.schema.json"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "execution",
+                  "reason"
+                ],
+                "properties": {
+                  "execution": {
+                    "const": "descriptive"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "not": {
+                  "required": [
+                    "api_version"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "model_facts": {
+      "type": "array"
     }
-  ]
+  },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9.-]+$"
+        }
+      }
+    }
+  }
 }

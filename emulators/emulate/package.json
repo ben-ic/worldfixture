@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
+    "postinstall": "node scripts/patch-core-rate-limit.mjs",
     "test": "node --test"
   },
   "dependencies": {

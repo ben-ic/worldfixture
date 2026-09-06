@@ -1,49 +1,56 @@
 # AWS IAM, SQS, and STS
 
-The WorldFixture product status for these three services is **Not supported**.
+WorldFixture exposes a local subset of IAM, SQS, and STS through
+`@emulators/aws` 0.10.0. Overall status: **Supported but partial**.
+These routes are **Not verified against the production provider**.
+
+## Connect
+
+Use `AWS_BASE_URL` and `AWS_TOKEN` from `worldfixture env`. Send a form-encoded
+`POST` request to the service path with `Action` and the required action fields.
+Authentication requires the current run's bearer token with the service scope.
+Unknown, sample, and other-provider credentials are rejected.
+
+```sh
+curl "$AWS_BASE_URL/iam/" \
+  -H "Authorization: Bearer $AWS_TOKEN" \
+  --data-urlencode Action=ListUsers \
+  --data-urlencode Version=2010-05-08
+```
+
+IAM, SQS, and STS use this local bearer-token contract. AWS SDK authentication
+and SigV4 requests to these three services are **Not supported**. Use the
+separate [S3 service](./s3.md) for signed object-storage requests.
 
 ## What works
 
-Nothing in IAM, SQS, or STS is available through a running WorldFixture world.
-Use [S3 object storage](./s3.md) for object storage.
+| Method and path | Actions |
+| --- | --- |
+| `POST /iam/` | `CreateUser`, `GetUser`, `DeleteUser`, `ListUsers`, `CreateAccessKey`, `ListAccessKeys`, `DeleteAccessKey`, `CreateRole`, `GetRole`, `DeleteRole`, `ListRoles` |
+| `POST /sqs/` | `CreateQueue`, `DeleteQueue`, `ListQueues`, `GetQueueUrl`, `GetQueueAttributes`, `SendMessage`, `ReceiveMessage`, `DeleteMessage`, `PurgeQueue` |
+| `POST /sts/` | `GetCallerIdentity`, `AssumeRole` |
+
+Responses use the local AWS Query XML format. IAM operators come from the
+world's `software.operator_teams`, `operator_ids`, and `operator_limit` policy.
+An empty selection or zero limit selects no operators. Old sources without
+these fields retain the documented legacy selection.
+
+The projected AWS account and region determine returned account IDs, ARNs, and
+queue URLs. Pass the returned `QueueUrl` to subsequent SQS calls. Queue URLs
+from another account are rejected. Reset restores the accepted users, roles,
+and queues and removes later API changes.
+
+The AWS listener has no S3 routes. SeaweedFS owns S3 state, credentials, bucket
+listing, and object operations.
 
 ## What does not work
 
-All IAM, SQS, and STS API operations, SDK calls, state, reset behavior, events,
-and webhooks are **Not supported**.
+The complete AWS APIs, SDK parity, production IAM permission evaluation, and
+production STS credentials are **Not supported**. The local bearer credential
+controls access to each implemented service; it does not reproduce IAM policy
+evaluation.
 
-## Why these services are not supported
-
-The installed `@emulators/aws` 0.10.0 package contains IAM, SQS, STS, and S3
-code. WorldFixture does not start this package listener. Its listener also
-contains another writable S3 implementation. That implementation conflicts with
-the selected SeaweedFS S3 service.
-
-The resolver rejects the advertised `aws.iam.v1`, `aws.sqs.v1`, and
-`aws.sts.v1` profiles. The service manifest has no AWS readiness check. Users
-do not get functional IAM, SQS, or STS bindings.
-
-## Code that exists but is not a product API
-
-This table is an audit of the unavailable package code. It is not a support
-claim.
-
-| Unavailable endpoint | Actions present in package code |
-| --- | --- |
-| `POST /sqs/` with form or query `Action` | `CreateQueue`, `DeleteQueue`, `ListQueues`, `GetQueueUrl`, `GetQueueAttributes`, `SendMessage`, `ReceiveMessage`, `DeleteMessage`, `PurgeQueue` |
-| `POST /iam/` with form or query `Action` | `CreateUser`, `GetUser`, `DeleteUser`, `ListUsers`, `CreateAccessKey`, `ListAccessKeys`, `DeleteAccessKey`, `CreateRole`, `GetRole`, `DeleteRole`, `ListRoles` |
-| `POST /sts/` with form or query `Action` | `GetCallerIdentity`, `AssumeRole` |
-
-Authentication, request signing, response contracts, SDK behavior, persistence,
-reset, events, and webhooks for these endpoints are all **Not supported** as
-WorldFixture product behavior.
-
-Do not point an AWS SDK at the unavailable listener. Use [S3 object
-storage](./s3.md) for the supported standalone object service.
-
-## Evidence
-
-Tests and manifests: `runtime/src/resolve.test.mjs`,
-`emulators/emulate/src/ready.test.mjs`, the disclaimer in
-`emulators/emulate/service.json`, and compiler contract tests under
-`tests/contracts/`.
+Tests: `emulators/emulate/src/overrides/aws-control-plane.test.mjs`,
+`tests/contracts/test_aws_operators.py`, `runtime/src/resolve.test.mjs`, and
+`tests/image/coupling-aws-test.mjs`. The live matrix checks declared operators,
+route ownership, authentication, API writes, S3 isolation, and normal reset.

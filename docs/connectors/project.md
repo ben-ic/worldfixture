@@ -51,6 +51,12 @@ the two-terminal local flow, it can instead read `.worldfixture/token` from the
 app root. File loading must be development-only. It must refuse connector
 actions when neither source contains a token.
 
+After a world switch, use `WORLDFIXTURE_TOKEN` from the active run bindings. The
+project token file does not supply the new generation's token. Update the
+application environment, then confirm its URL with
+`worldfixture switch --connect <application-url>`. The new timeline stays in
+setup until the connection check succeeds.
+
 Application code reads the token only at runtime. A coding agent must not open,
 read, print, or copy the real token while it implements or tests a connector.
 Tests must use a separate dummy token.
