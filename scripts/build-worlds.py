@@ -3,7 +3,6 @@
 import os
 import subprocess
 import sys
-import tomllib
 import venv
 from pathlib import Path
 
@@ -16,12 +15,16 @@ def main():
         print("Preparing the local compiler environment...", flush=True)
         venv.EnvBuilder(with_pip=True).create(environment)
 
-    # Use the same requirements as compiler installation and CI. Keep these
+    # The same file compiler installation and CI install from, so a package
+    # build cannot resolve a different version than either of them. Keep these
     # packages out of the user's system Python, including Homebrew Python.
-    project = tomllib.loads((root / "pyproject.toml").read_text())
+    #
+    # Read as a requirements file rather than parsed out of `pyproject.toml`:
+    # the pin moved into `requirements.txt` and pyproject now declares it
+    # `dynamic`, so `project.dependencies` is no longer there to read.
     subprocess.run(
         [str(python), "-m", "pip", "install", "--disable-pip-version-check",
-         *project["project"]["dependencies"]],
+         "-r", str(root / "requirements.txt")],
         cwd=root, check=True,
     )
     for world in (

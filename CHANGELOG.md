@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.5
 
 - Streaming now loops without restoring provider state. The existing `--repeat`
   option keeps provider data and delivery history. Reset remains a separate action.
@@ -35,6 +35,19 @@
   and provider service ownership remain intact.
 - CI checks runtime state access as a non-root Linux user and prints redacted
   CLI diagnostics when world selection fails. Fixed the example app's lint errors.
+
+### Release record
+
+- Package: `worldfixture@0.2.5` on npm, also tagged `latest`.
+- Image: `ghcr.io/ben-ic/worldfixture:0.2.5`, `linux/amd64` and `linux/arm64`,
+  also tagged `latest`.
+- Digest: `sha256:de90b87caba05396b7570807fed2ae50d85e0f82ab302cfabc8ad1ed21d9d41e`
+- Source commit: `c62ebcefd3abf55f0be5e9b9492753e56622130a`, recorded in the
+  image as `org.opencontainers.image.revision`.
+- Verified: both architectures carry the `0.2.5` version label and that
+  revision; `up --only slack` against the published tag reached readiness and
+  stopped cleanly on native arm64. 488 runtime tests and 269 compiler tests
+  passed on the source commit.
 
 ## 0.2.4
 

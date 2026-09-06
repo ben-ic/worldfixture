@@ -91,7 +91,7 @@ test('append cursor reaches late additions and repeat refuses zero-duration arcs
   const zero = fixture(t, [operation('zero')]); await assert.rejects(zero.control.initialize({ repeat: true }), /positive duration/);
 });
 test('legacy repeat loops without restoring; explicit reset remains separate', async t => {
-  const { control, instance, db } = fixture(t); await control.initialize({ repeat: true });
+  const { control, instance } = fixture(t); await control.initialize({ repeat: true });
   await control.command({ action: 'advance', duration: '1s' });
   await control.tick(); assert.equal(instance.restores, 0); assert.equal(control.status().repeat.cycle, 2);
   assert.equal(control.status().timeline.pending, 1); assert.equal(control.status().timeline.delivered, 1);

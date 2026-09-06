@@ -67,6 +67,6 @@
     "node": ">=22"
   },
   "worldfixture": {
-    "image": "ghcr.io/ben-ic/worldfixture:sha-d9139dc"
+    "image": "ghcr.io/ben-ic/worldfixture:0.2.5"
   }
 }
