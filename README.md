@@ -8,6 +8,7 @@
 [Website](https://worldfixture.com/) ·
 [Documentation](https://worldfixture.com/docs/) ·
 [Quick start](https://worldfixture.com/docs/getting-started/quick-start) ·
+[Event streaming](#stream-scheduled-events) ·
 [Provider support](https://worldfixture.com/docs/providers/)
 
 WorldFixture runs stateful local provider services for development, demos, and
@@ -43,6 +44,28 @@ and [Timeline controls](https://worldfixture.com/docs/guides/timeline).
 All people, organizations, domains, messages, and financial records are
 synthetic. WorldFixture is pre-release software. It implements selected
 provider operations and does not claim full provider parity.
+
+## Stream scheduled events
+
+The world keeps changing after startup. Scheduled messages, email, GitHub
+comments, payments, and S3 objects arrive through local provider APIs and
+protocols. Your application can read the new data from those same services.
+
+Use **Timeline** to watch delivery, pause or resume world time, and advance by
+a duration such as `90s` or `5m`. The event marks show delivered and pending
+records. Select a mark to inspect its events.
+
+[![Live Timeline with the running world clock, pause and advance controls, delivery counts, and a selected group of delivered events.](docs/public/workbench/timeline-streaming.png)](docs/public/workbench/timeline-streaming.png)
+
+The result appears in the provider. Here, four scheduled messages have arrived
+in Slack's **#release-3-2** channel. **Refresh conversation** reads the current
+channel history.
+
+[![Slack release channel after streaming, with scheduled messages from Jon Bell, Daniel Osei, Bianca Rossi, and Lucas Meyer.](docs/public/workbench/streaming-chat.png)](docs/public/workbench/streaming-chat.png)
+
+These captures show a running `business.saas-company:v3` world with all selected
+services ready. See [Timeline controls](https://worldfixture.com/docs/guides/timeline)
+for starting positions, event details, and repeat with baseline restore.
 
 ## Requirements
 
@@ -96,12 +119,7 @@ connection values. Credentials are hidden.
 
 [![Workbench Overview with the world summary, connection values, and ready Slack and GitHub services.](docs/public/workbench/overview.png)](docs/public/workbench/overview.png)
 
-**Chat** shows Slack channels and message history. Select a world person to
-read and post through the same provider API that your application uses.
-
-[![Workbench Chat with Slack channels, messages with sender names, and a message composer.](docs/public/workbench/chat.png)](docs/public/workbench/chat.png)
-
-These screenshots show `business.saas-company:v3` with Slack and GitHub
+This Overview capture shows `business.saas-company:v3` with Slack and GitHub
 selected. Your services, counts, and ports can differ. Select an image to open
 it at full size. See the [Workbench guide](https://worldfixture.com/docs/guides/workbench)
 for more screenshots and instructions.

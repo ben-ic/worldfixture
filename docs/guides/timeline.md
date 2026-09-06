@@ -5,6 +5,30 @@ authored schedule. All runnable authored worlds need at least one timeline
 arrival. Selecting only some capabilities can leave a run with no active arrivals;
 the CLI reports those exclusions.
 
+## Watch events arrive
+
+Open **Timeline** in the Workbench to watch the world clock and scheduled
+delivery. The counts show pending, in-flight, delivered, failed, skipped, and
+uncertain outcomes. Select an event mark to inspect the records in that group.
+
+![Timeline with a running clock, pause and advance controls, delivery counts, and two delivered records in the selected group.](/workbench/timeline-streaming.png)
+
+The scheduled data reaches the provider services. This Chat capture shows four
+scheduled messages in Slack's **#release-3-2** channel. Open **Chat**, select the
+channel, and use **Refresh conversation** to read its current history.
+
+![Slack release channel showing scheduled messages from Jon Bell, Daniel Osei, Bianca Rossi, and Lucas Meyer.](/workbench/streaming-chat.png)
+
+These screenshots show `business.saas-company:v3` in a separate local run.
+The Timeline capture shows a running clock. The Chat capture shows messages
+read after a pause. Your counts, times, and selected services can differ.
+
+<!-- Browser captures from 2026-09-06. Started worldfixture:ci-owner-fix with
+     --setup in a separate project, applied 0s, and observed live deliveries.
+     Captured Chat after pausing at t+1m 13s. Resumed and captured Timeline
+     at t+1m 31s with a delivered event group selected. No test message was
+     posted through the composer, and no application connector was configured. -->
+
 ## Read, pause, and advance
 
 ```sh
