@@ -3,11 +3,13 @@
 import assert from 'node:assert/strict';
 import { spawn, execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, relative, sep } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { parseArgs, promisify } from 'node:util';
+
+import { SELECTION_PATHS, snapshot } from './coupling-selection-snapshot.mjs';
 
 const { values } = parseArgs({ options: {
   repo: { type: 'string', default: resolve(dirname(fileURLToPath(import.meta.url)), '../..') },
@@ -128,20 +130,6 @@ async function complete(args, cwd) {
   catch (error) { task.child.kill('SIGTERM'); throw error; }
   return task;
 }
-function snapshot(path, selected) {
-  const result = {};
-  const walk = file => {
-    if (!existsSync(file)) return;
-    const stat = statSync(file), name = relative(path, file);
-    if (stat.isDirectory()) {
-      if (!selected) result[name] = { directory: true, mode: stat.mode, mtime: stat.mtimeMs };
-      for (const child of readdirSync(file).sort()) walk(join(file, child));
-    }
-    else if (stat.isFile() && (!selected || selected(name))) result[name] = { sha256: hash(readFileSync(file)), mode: stat.mode, mtime: stat.mtimeMs };
-  };
-  walk(path);
-  return result;
-}
 async function request(base, path, token) {
   const response = await fetch(`${base.replace(/\/$/, '')}${path}`, { signal: AbortSignal.timeout(10000), ...(token ? { headers: { authorization: `Bearer ${token}` } } : {}) });
   assert.equal(response.status, 200, path);
@@ -174,8 +162,7 @@ async function measureWorld(bindings, world, source) {
   }
   return { domain_world: [world.id, world.version], identity_counts: counts };
 }
-const selectionFiles = name => name.startsWith('project/') || name.startsWith('state/input-world/') || name.startsWith('selected-build/') ||
-  ['state/instance.json', 'state/host-bindings.json', 'state/host-addresses.json', 'state/environment.json', 'state/environment.lock.json'].includes(name);
+
 
 async function negatives() {
   for (const direct of [false, true]) for (const [label, flags] of [
@@ -317,7 +304,7 @@ async function checkCase(item, index) {
     if (mode === 'host') {
       const instance = read(join(state, 'instance.json'));
       assert.deepEqual(instance.requested_world, { id: world.id, version: world.version, digest: world.digest });
-      const beforeMismatch = snapshot(base, selectionFiles);
+      const beforeMismatch = snapshot(base, SELECTION_PATHS);
       const other = worlds.find(row => row.id !== world.id || row.version !== world.version);
       const projectUrl = read(join(project, '.worldfixture/project.json')).application_url;
       assert.notEqual(projectUrl, 'http://localhost:3999');
@@ -325,7 +312,7 @@ async function checkCase(item, index) {
         '--application-url', 'http://localhost:3999', '--image', imageId], project);
       tasks.push(refusal);
       assert.notEqual(refusal.exit().code, 0, 'Mismatched world must not reuse the host');
-      assert.deepEqual(snapshot(base, selectionFiles), beforeMismatch, 'Mismatched host selection changed staged data or project/instance files');
+      assert.deepEqual(snapshot(base, SELECTION_PATHS), beforeMismatch, 'Mismatched host selection changed staged data or project/instance files');
       assert.equal(read(join(state, 'instance.json')).container_id, instance.container_id);
       assert.equal(read(join(project, '.worldfixture/project.json')).application_url, projectUrl);
       const reused = await complete(args, project);
