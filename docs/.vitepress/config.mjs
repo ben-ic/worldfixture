@@ -19,6 +19,25 @@ export default defineConfig({
   // in that small image instead of deriving page dates from a checkout.
   lastUpdated: false,
   ignoreDeadLinks: false,
+  markdown: {
+    // WRAP EVERY TABLE IN SOMETHING THAT CAN SCROLL.
+    //
+    // VitePress ships `.vp-doc table { display: block; overflow-x: auto }` so a
+    // table wider than the column scrolls inside it. `custom.css` overrides that
+    // with `display: table; width: 100%` to make tables fill the column, which
+    // also takes the scrolling away, and `th` and inline `code` in cells are
+    // both `nowrap`. A wide table could then neither shrink nor scroll: it ran
+    // out under the "On this page" outline and drew on top of it.
+    //
+    // Wrapping keeps both properties. The table still fills the column when it
+    // fits, and the wrapper scrolls when it does not.
+    config: (md) => {
+      md.renderer.rules.table_open = (tokens, index, options, environment, self) =>
+        `<div class="table-scroll">${self.renderToken(tokens, index, options)}`;
+      md.renderer.rules.table_close = (tokens, index, options, environment, self) =>
+        `${self.renderToken(tokens, index, options)}</div>`;
+    },
+  },
   head: [
     ["link", { rel: "icon", href: asset("favicon.ico"), sizes: "32x32" }],
     ["link", { rel: "icon", href: asset("favicon.svg"), type: "image/svg+xml" }],

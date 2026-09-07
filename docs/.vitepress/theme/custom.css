@@ -11,7 +11,12 @@
 .VPHomeHero .text { max-width: 680px; }
 .VPHomeHero .tagline { max-width: 640px; }
 .VPHomeFeatures .VPFeature { height: 100%; }
-.vp-doc table { display: table; width: 100%; }
+/* Tables fill the column, and scroll inside `.table-scroll` when they cannot
+   fit. `config.mjs` adds that wrapper; without it `display: table` would take
+   away the scrolling VitePress gives a table by default, and a wide one would
+   run out under the "On this page" outline. */
+.vp-doc .table-scroll { overflow-x: auto; margin: 20px 0; }
+.vp-doc .table-scroll > table { display: table; width: 100%; margin: 0; }
 .vp-doc th { white-space: nowrap; }
 .support-label { white-space: nowrap; font-weight: 650; }
 .vp-doc table code { white-space: nowrap; }
