@@ -18,7 +18,8 @@ shared synthetic dataset. Connect your app through local APIs and protocols,
 inspect live state in the Workbench, and reset it. No production accounts or
 credentials are required.
 
-For example, DropLive uses WorldFixture for product demos.
+For example, [droplive.io](https://droplive.io/) uses WorldFixture for product
+demos.
 
 ```sh
 npx worldfixture up
