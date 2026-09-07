@@ -141,12 +141,26 @@ test("a published port is exposed widely and a private one stays on this machine
   const byName = Object.fromEntries([...allocation.values()].map((entry) => [entry.port, entry]));
   await release();
 
-  assert.equal(byName.imap.publishOn, "0.0.0.0", "IMAP is an application surface");
-  assert.equal(byName.health.publishOn, "127.0.0.1", "the health port is a back channel");
-  assert.equal(byName.mailbox.publishOn, "127.0.0.1", "the mailbox UI is not an application surface");
+  // An application surface and a back channel are now exposed the same way. The
+  // application that reaches IMAP runs on this machine, so this machine is as
+  // far as the port has to go; publishing it on every interface put a fixture
+  // on the local network to no purpose.
   for (const port of Object.values(byName)) {
+    assert.equal(port.publishOn, "127.0.0.1", `${port.port} is exposed on this machine only`);
     assert.equal(port.bind, "0.0.0.0", `${port.port} binds widely inside its container`);
   }
+});
+
+// The one argument that widens it, so the default cannot drift back by accident.
+test("publishing beyond this machine takes an explicit argument", async () => {
+  const lock = lockFor(["mail.imap.v1"]);
+  const { allocation, release } = await allocate(lock, { publishHost: "0.0.0.0" });
+  const byName = Object.fromEntries([...allocation.values()].map((entry) => [entry.port, entry]));
+  await release();
+
+  assert.equal(byName.imap.publishOn, "0.0.0.0", "an application surface widens when asked");
+  assert.equal(byName.health.publishOn, "127.0.0.1", "a back channel never widens");
+  assert.equal(byName.mailbox.publishOn, "127.0.0.1", "a private UI never widens");
 });
 
 test("a child process binds narrowly for a private port", async () => {

@@ -36,6 +36,22 @@ function reserve(host, port = 0) {
 export async function allocate(lock, {
   loopback = "127.0.0.1",
   publicHost = "0.0.0.0",
+  // WHERE THE HOST EXPOSES A PUBLISHED PORT. Loopback, and it takes an argument
+  // to make it anything else.
+  //
+  // This used to be `publicHost`, so a published port was exposed on every
+  // interface of the machine running it. Under `--direct` that put around
+  // twenty listeners on the local network -- Postgres, MySQL, SMTP, IMAP, S3
+  // and every provider emulator -- on whatever wifi the developer happened to
+  // be using. The passwords are generated per project, so the databases were
+  // not open, but a fixture has no business being reachable from the next desk
+  // in order to be reachable from the application on the same machine.
+  //
+  // It was never necessary: `host-launcher.mjs` publishes `127.0.0.1:` for the
+  // container route that every ordinary `up` takes, and that is the route the
+  // whole product runs on. The two launch paths simply disagreed, and only the
+  // one nobody reads was wrong.
+  publishHost = loopback,
   runner = "container",
   fixedPorts,
   preservedAllocation = new Map(),
@@ -85,9 +101,10 @@ export async function allocate(lock, {
           // unreachable however it were published.
           serverPort: contained ? port.container_port : reservation.port,
           bind: contained ? publicHost : port.published ? publicHost : loopback,
-          // What a published container port is exposed on. A private port stays
-          // bound to this machine even though the service inside binds widely.
-          publishOn: port.published ? publicHost : loopback,
+          // What a published container port is exposed on. Every port stays
+          // bound to this machine even though the service inside binds widely;
+          // `publishHost` is the one argument that widens it.
+          publishOn: port.published ? publishHost : loopback,
           contained,
           host: loopback,
         });
