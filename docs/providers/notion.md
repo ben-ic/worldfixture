@@ -166,18 +166,18 @@ Notion responses.
 
 | Endpoint | Status | Contract evidence |
 | --- | --- | --- |
-| `GET /v1/users` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/users/:user_id` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/users/me` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/users` | **Supported and contract-tested** | [`notion.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/users/:user_id` | **Supported and contract-tested** | [`notion.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/users/me` | **Supported and contract-tested** | [`notion.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/vendors/notion/notion.test.mjs) |
 | `POST /v1/search` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
-| `GET /v1/pages/:page_id` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/pages/:page_id` | **Supported and contract-tested** | [`notion.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/vendors/notion/notion.test.mjs) |
 | `GET /v1/pages/:page_id/properties/:property_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
 | `POST /v1/pages` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-content-rest.test.mjs`, `notion-sdk.test.mjs` |
 | `PATCH /v1/pages/:page_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
 | `POST /v1/pages/:page_id/move` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
 | `GET`, `PATCH /v1/pages/:page_id/markdown` | **Supported but partial** | `notion-content-rest.test.mjs`; supports common Markdown blocks and update commands |
-| `GET /v1/blocks/:block_id` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
-| `GET /v1/blocks/:block_id/children` | **Supported and contract-tested** | [`notion.test.mjs`](../../emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/blocks/:block_id` | **Supported and contract-tested** | [`notion.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/vendors/notion/notion.test.mjs) |
+| `GET /v1/blocks/:block_id/children` | **Supported and contract-tested** | [`notion.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/vendors/notion/notion.test.mjs) |
 | `PATCH /v1/blocks/:block_id/children` | **Supported and contract-tested** | `notion-rest-write.test.mjs`, `notion-sdk.test.mjs` |
 | `PATCH /v1/blocks/:block_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |
 | `DELETE /v1/blocks/:block_id` | **Supported and contract-tested** | `notion-rest-write.test.mjs` |

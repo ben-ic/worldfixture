@@ -33,7 +33,7 @@ npx worldfixture env --json
 ## JavaScript with the official Slack SDK
 
 Install the pinned official SDK and run the checked example in
-[`examples/onboarding/slack.mjs`](../../examples/onboarding/slack.mjs):
+[`examples/onboarding/slack.mjs`](https://github.com/ben-ic/worldfixture/blob/main/examples/onboarding/slack.mjs):
 
 ```sh
 npm --prefix examples/onboarding install

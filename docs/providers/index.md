@@ -65,8 +65,8 @@ container or older image keeps its previous limit. Restarting an application
 alone does not change the provider limit.
 
 The version-checked patch is in
-[`patch-core-rate-limit.mjs`](../../emulators/emulate/scripts/patch-core-rate-limit.mjs).
-[`core-rate-limit.test.mjs`](../../emulators/emulate/src/core-rate-limit.test.mjs)
+[`patch-core-rate-limit.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/scripts/patch-core-rate-limit.mjs).
+[`core-rate-limit.test.mjs`](https://github.com/ben-ic/worldfixture/blob/main/emulators/emulate/src/core-rate-limit.test.mjs)
 tests the cutoff, separate tokens, hourly recovery, and unchanged authentication.
 
 ## Official SDK proof
