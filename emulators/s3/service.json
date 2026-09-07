@@ -1,7 +1,7 @@
 {
   "api_version": "worldfixture.service/v1",
   "name": "s3",
-  "version": "4.41.2",
+  "version": "4.41.3",
   "runtime": {
     "command": [
       "/usr/local/bin/worldfixture-s3"
@@ -116,7 +116,7 @@
       }
     ],
     "container": {
-      "tag": "worldfixture-s3:local-4.41.2",
+      "tag": "worldfixture-s3:local-4.41.3",
       "user": "host",
       "build": ".",
       "platform": "linux/amd64",

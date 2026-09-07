@@ -73,8 +73,9 @@ ports from the session. The image's `ENV` values exist so the image can be
 inspected and so a direct local run fails on a collision instead of quietly
 picking an upstream default.
 
-The checkout runner uses `worldfixture-s3:local-4.41.2`. This versioned tag
-prevents it from reusing an older local image with wider internal bindings.
+The checkout runner uses `worldfixture-s3:local-4.41.3`. This versioned tag
+prevents it from reusing an older local image with wider internal bindings or
+the previous relay startup order.
 
 All SeaweedFS listeners bind `127.0.0.1`, including S3 gRPC. In a container,
 `socat` forwards only S3 HTTP on port 61006 from the container's IPv4 address
@@ -82,6 +83,10 @@ to SeaweedFS on loopback. This separate relay is needed because SeaweedFS 4.41
 uses one bind setting for both S3 HTTP and gRPC. Docker publishes only S3 HTTP,
 on host loopback. The master, volume, filer, and all gRPC ports have no host
 publication and cannot accept connections from another container.
+
+The relay must accept TCP connections before SeaweedFS starts. This prevents
+the combined image from reporting reset complete while S3 forwarding is still
+starting. The normal seed and protocol checks then prove the backend is ready.
 
 The host `--direct` runner executes the filer readiness request inside the S3
 container. In the combined image, the supervisor reaches the filer directly

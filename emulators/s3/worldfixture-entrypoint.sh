@@ -76,9 +76,15 @@ while [ "$index" -lt "$object_count" ]; do
 done
 
 proxy_pids=""
+server_pid=""
 terminate() {
   for pid in $proxy_pids; do kill -TERM "$pid" 2>/dev/null || true; done
-  kill -TERM "$server_pid" 2>/dev/null || true
+  if [ -n "$server_pid" ]; then kill -TERM "$server_pid" 2>/dev/null || true; fi
+}
+
+wait_children() {
+  for pid in $proxy_pids; do wait "$pid" 2>/dev/null || true; done
+  if [ -n "$server_pid" ]; then wait "$server_pid" 2>/dev/null || true; fi
 }
 
 shutdown() {
@@ -87,10 +93,51 @@ shutdown() {
   # again as soon as the child record exits.
   trap - INT TERM
   terminate
-  wait "$server_pid" 2>/dev/null || true
+  wait_children
   exit 0
 }
 trap shutdown INT TERM
+
+fail() {
+  echo "$1" >&2
+  terminate
+  wait_children
+  exit 1
+}
+
+# Start forwarding before SeaweedFS can answer readiness. A restored seed gate
+# can answer as soon as the filer starts, and the image probes S3 on loopback.
+# Starting the relay after those checks lets reset return an unreachable S3 URL.
+# A specific container address avoids colliding with SeaweedFS on loopback.
+bind=${WORLDFIXTURE_S3_BIND:-127.0.0.1}
+case "$bind" in
+  127.0.0.1) addresses="" ;;
+  0.0.0.0) addresses=$(hostname -i) ;;
+  *) echo "unsupported S3 bind: $bind" >&2; exit 64 ;;
+esac
+for address in $addresses; do
+  case "$address" in
+    127.*|*:*|localhost) continue ;;
+  esac
+  # Raw TCP forwarding preserves signed paths, headers, bodies, and streaming.
+  socat "TCP4-LISTEN:$WORLDFIXTURE_S3_PORT,bind=$address,reuseaddr,fork" \
+    "TCP4:127.0.0.1:$WORLDFIXTURE_S3_PORT" &
+  proxy_pid=$!
+  proxy_pids="$proxy_pids $proxy_pid"
+  attempt=0
+  until socat -T 1 -u "TCP4:$address:$WORLDFIXTURE_S3_PORT,connect-timeout=1" \
+      OPEN:/dev/null 2>/dev/null; do
+    attempt=$((attempt + 1))
+    if [ "$attempt" -ge 120 ] || ! kill -0 "$proxy_pid" 2>/dev/null; then
+      fail "S3 HTTP forwarding did not start"
+    fi
+    sleep 0.25
+  done
+  kill -0 "$proxy_pid" 2>/dev/null || fail "S3 HTTP forwarding stopped"
+done
+if [ "$bind" = "0.0.0.0" ] && [ -z "$proxy_pids" ]; then
+  fail "S3 forwarding requires a container IPv4 address"
+fi
 
 # WHERE THE SPACE BOUND ACTUALLY COMES FROM, since it is not this command.
 #
@@ -113,8 +160,8 @@ trap shutdown INT TERM
 # tmpfs is the difference between a fixture that stops accepting uploads and a µVM
 # under memory pressure. 16 MiB of the ~128-256 MB scratch.
 #
-# All SeaweedFS HTTP and gRPC APIs stay on loopback. S3 HTTP alone is
-# forwarded below: SeaweedFS 4.41 shares its S3 bind flag with S3 gRPC.
+# All SeaweedFS HTTP and gRPC APIs stay on loopback. The relay forwards S3
+# HTTP alone: SeaweedFS 4.41 shares its S3 bind flag with S3 gRPC.
 /usr/bin/weed -logtostderr=true server \
   -dir="$data_dir" \
   -volume.fileSizeLimitMB=64 \
@@ -146,13 +193,6 @@ trap shutdown INT TERM
   -s3.concurrentFileUploadLimit=4 \
   -s3.concurrentUploadLimitMB=128 &
 server_pid=$!
-
-fail() {
-  echo "$1" >&2
-  terminate
-  wait "$server_pid" || true
-  exit 1
-}
 
 attempt=0
 until wget -q -O /dev/null "$filer/healthz"; do
@@ -240,27 +280,6 @@ else
   echo "worldfixture-s3: restored accepted storage snapshot"
 fi
 
-# The same S3 port can listen on loopback and a specific container address.
-# A wildcard relay would collide with SeaweedFS's own loopback listener.
-# Forward raw TCP so signed paths, headers, bodies, and streaming stay intact.
-# Host process runs need no relay; the supervisor sets the S3 bind explicitly.
-bind=${WORLDFIXTURE_S3_BIND:-127.0.0.1}
-case "$bind" in
-  127.0.0.1) addresses="" ;;
-  0.0.0.0) addresses=$(hostname -i) ;;
-  *) echo "unsupported S3 bind: $bind" >&2; terminate; exit 64 ;;
-esac
-for address in $addresses; do
-  case "$address" in
-    127.*|*:*|localhost) continue ;;
-  esac
-  socat "TCP4-LISTEN:$WORLDFIXTURE_S3_PORT,bind=$address,reuseaddr,fork" \
-    "TCP4:127.0.0.1:$WORLDFIXTURE_S3_PORT" &
-  proxy_pids="$proxy_pids $!"
-done
-if [ "$bind" = "0.0.0.0" ] && [ -z "$proxy_pids" ]; then
-  fail "S3 forwarding requires a container IPv4 address"
-fi
 # A failed relay is a failed service, including after startup.
 while kill -0 "$server_pid" 2>/dev/null; do
   for pid in $proxy_pids; do

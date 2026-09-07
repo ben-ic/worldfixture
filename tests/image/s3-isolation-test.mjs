@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { chmodSync, copyFileSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -21,7 +21,12 @@ else {
   const root = join(import.meta.dirname, '../..'), scratch = mkdtempSync(join(tmpdir(), 'wf-s3-isolation-'));
   const state = join(scratch, 'state'), bin = join(root, 'runtime/bin/worldfixture.mjs');
   const execute = promisify(execFile), name = `wf-s3-isolation-${randomUUID()}`;
-  const docker = async args => (await execute('docker', args, { timeout: 60000, maxBuffer: 2 * 1024 * 1024 })).stdout;
+  const docker = async (args, timeout = 60000) => {
+    const pending = execute('docker', args, { timeout, maxBuffer: 2 * 1024 * 1024 });
+    const { stdout } = await pending;
+    assert.equal(pending.child.killed, false, `docker ${args[0]} timed out after ${timeout}ms`);
+    return stdout;
+  };
   const cli = async args => (await execute(process.execPath, [bin, ...args, '--state', state], {
     cwd: scratch, env: { ...process.env, WORLDFIXTURE_SINGLE_CONTAINER: '0' }, timeout: 120000, maxBuffer: 2 * 1024 * 1024 })).stdout;
   const json = async (url, input) => {
@@ -57,6 +62,12 @@ else {
       await cli(['status']);
     } else {
       const args = ['run', '--detach', '--name', name, '-p', '127.0.0.1::4715', '-p', '127.0.0.1::61006'];
+      // Force the relay to start slowly. Image readiness must not accept the
+      // loopback backend before the endpoint reached through Docker is ready.
+      const relayBin = join(scratch, 'relay-bin'); mkdirSync(relayBin);
+      writeFileSync(join(relayBin, 'socat'), '#!/bin/sh\ncase "$1" in TCP4-LISTEN:*) sleep 3 ;; esac\nexec /usr/bin/socat "$@"\n', { mode: 0o555 });
+      args.push('--mount', `type=bind,source=${relayBin},target=/test-s3-relay,readonly`,
+        '--env', 'PATH=/test-s3-relay:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin');
       if (values.checkout) for (const [source, target] of [
         ['runtime/src', '/opt/worldfixture/runtime/src'], ['emulators/s3/service.json', '/opt/worldfixture/emulators/s3/service.json'],
         [entrypoint, '/usr/local/bin/worldfixture-s3'],
@@ -92,7 +103,7 @@ else {
       const privatePorts = [61000, 61001, 61002, 61003, 61004, 61005, 61007];
       for (const port of privatePorts) {
         const listeners = rows.filter(row => row.port === port);
-        assert.ok(listeners.length, `internal listener ${port} missing`);
+        assert.ok(listeners.length, `internal listener ${port} missing; observed ${JSON.stringify(rows)}`);
         assert.ok(listeners.every(row => row.address === '0100007F'), `internal listener ${port} must be IPv4 loopback`);
       }
       const ip = Object.values(inspection.NetworkSettings.Networks)[0].IPAddress;
@@ -140,12 +151,21 @@ else {
     await json(`${workbench}/api/reset`, {});
     for (const key of keys) assert.equal((await s3Fetch(`${bindings.S3_BASE_URL}/${bindings.S3_BUCKET}/${key}`, {}, bindings)).status, 404, 'reset removes test writes');
     await checkNetwork(); await exercise('reset');
-    if (values.mode === 'direct') await cli(['switch', 'business.saas-company:v3', '--no-rebase']);
-    else await docker(['exec', container, 'node', 'runtime/bin/worldfixture.mjs', 'switch', 'business.saas-company:v3', '--no-rebase', '--state', '/state']);
+    const switched = values.mode === 'direct' ? await cli(['switch', 'business.saas-company:v3', '--no-rebase'])
+      : await docker(['exec', container, 'node', 'runtime/bin/worldfixture.mjs', 'switch', 'business.saas-company:v3', '--no-rebase', '--state', '/state'], 900000);
+    assert.match(switched, /World switch complete\. Generation /);
     if (values.mode === 'direct') container = JSON.parse(readFileSync(join(state, 'addresses.json'), 'utf8'))['s3/filer'].container;
     await checkNetwork(); await exercise('switch');
     console.log(`PASS ${values.mode}: seven private HTTP/gRPC listeners refuse sibling access; S3 HTTP forwarding works.`);
     if (values.keep) { console.log(`Review world stays open. Workbench: ${workbench}. Press Ctrl-C to clean up.`); await once(process, 'SIGINT'); }
+  } catch (error) {
+    if (output) console.error(output);
+    if (container) {
+      const logs = await execute('docker', ['logs', '--tail', '100', container]).catch(logError => ({ stderr: logError.message }));
+      console.error(logs.stdout ?? '', logs.stderr ?? '');
+      console.error(await docker(['exec', container, 'cat', '/proc/net/tcp', '/proc/net/tcp6']).catch(detailError => detailError.message));
+    }
+    throw error;
   } finally {
     await app?.close(); await store?.close();
     if (child && child.exitCode === null) { const exited = once(child, 'exit'); child.kill('SIGTERM'); await exited; }
