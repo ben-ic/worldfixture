@@ -66,7 +66,7 @@ import {
 import { inbox } from "./imap.mjs";
 import { loadManifests } from "./manifests.mjs";
 import { OpenError, openUrl, openWorkbench, TESTED_PLATFORMS } from "./open.mjs";
-import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
+import { listenHost, SINGLE_CONTAINER_PORTS } from "./ports.mjs";
 import { gatewayPathsForBindings } from "./gateway.mjs";
 import { connectorTarget, ensureProject, readProject, readProjectToken } from "./project.mjs";
 import { aggregate, probe } from "./readiness.mjs";
@@ -736,7 +736,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
       artifactPath,
       stateDir,
       port: inOneContainer ? 4715 : 0,
-      host: inOneContainer ? "0.0.0.0" : "127.0.0.1",
+      host: listenHost({ inContainer: inOneContainer }),
     });
     writeSessionJson(`${stateDir}/workbench.json`, { url: workbench.url, state: "loading" });
   };
@@ -748,6 +748,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
       stateDir,
       serviceRoot,
       runner: inOneContainer ? "process" : "container",
+      inContainer: inOneContainer,
       fixedPorts: inOneContainer ? SINGLE_CONTAINER_PORTS : undefined,
       runtimeToken: applicationEnvironment?.token ?? process.env.WORLDFIXTURE_TOKEN,
       generatedSecretsPath,
@@ -831,6 +832,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
         includePostgres: project?.config.services.includes('postgres'), includeMySQL: project?.config.services.includes('mysql'), only, environmentSpec,
       },
       startOptions: { serviceRoot, runner: inOneContainer ? 'process' : 'container',
+        inContainer: inOneContainer,
         fixedPorts: inOneContainer ? SINGLE_CONTAINER_PORTS : undefined, runtimeToken: instance.runtimeToken },
       activateTimeline: (current, options) => armInstanceTimeline(current, readWorld(current.artifactPath), {
         bindings: current.applicationBindings, stateDir: current.stateDir, verbose: flags.verbose, ...options,

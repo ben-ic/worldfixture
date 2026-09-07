@@ -96,10 +96,11 @@ test('explicit capabilities retain their bindings and required dependencies with
   assert.deepEqual(Object.keys(switched.lock.bindings).sort(), Object.keys(environmentSpec.bindings).sort());
 });
 
-test('the real CLI starts exactly three providers, exports ready bindings, and stops their process', { timeout: 60000 }, async t => {
+test('the real CLI starts exactly three providers on loopback, exports ready bindings, and stops their process', { timeout: 60000 }, async t => {
   const root = scratch(t), state = join(root, 'state');
   const child = spawn(process.execPath, [BIN, 'up', '--direct', '--environment', SAMPLE, '--state', state, '--no-rebase', '--setup', '--no-sample-app'], {
-    cwd: root, env: { ...process.env, WORLDFIXTURE_SINGLE_CONTAINER: '0' }, stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: root, env: { ...process.env, WORLDFIXTURE_SINGLE_CONTAINER: '0',
+      NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --import=${new URL('../../tests/helpers/loopback-only.mjs', import.meta.url).href}` }, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let output = '', stopped = false;
   const stop = async () => {

@@ -14,7 +14,7 @@ const world = JSON.parse(readFileSync('/world/world.json'));
 const lock = resolveEnvironment({api_version: 'worldfixture.environment/v1', world: {use: `${world.id}:${world.version}`},
   requires: ['domain.collections.v1'], bindings: {DOMAIN_BASE_URL: 'domain.collections.v1/base_url', DOMAIN_TOKEN: 'domain.collections.v1/token'},
   rules: [], target: {kind: 'none'}}, {artifactPath: '/world', manifests: loadManifests('/opt/worldfixture/emulators')});
-const instance = await start(lock, {artifactPath: '/world', stateDir: '/state', serviceRoot: '/opt/worldfixture/emulators', runner: 'process', fixedPorts: SINGLE_CONTAINER_PORTS});
+const instance = await start(lock, {artifactPath: '/world', stateDir: '/state', serviceRoot: '/opt/worldfixture/emulators', runner: 'process', inContainer: true, fixedPorts: SINGLE_CONTAINER_PORTS});
 const bindings = instance.bindings(), db = instance.state, now = Date.now();
 const context = {world, bindings, rules: lock.rules, now: () => now};
 const report = {world: lock.world, checks: [], cycles: [], responses: []};

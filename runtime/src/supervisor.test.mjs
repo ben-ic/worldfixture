@@ -131,7 +131,7 @@ test("every opened port gets a distinct host port", async () => {
   assert.ok(numbers.every((number) => number > 1024));
 });
 
-test("a published port is exposed widely and a private one stays on this machine", async () => {
+test("container ports stay on host loopback while accepting forwarded connections", async () => {
   // Mail runs in a container, so every listener inside it binds every interface
   // -- the supervisor probes from outside that namespace, and a loopback-bound
   // listener would be unreachable however it were published. What narrows a
@@ -151,19 +151,18 @@ test("a published port is exposed widely and a private one stays on this machine
   }
 });
 
-// The one argument that widens it, so the default cannot drift back by accident.
-test("publishing beyond this machine takes an explicit argument", async () => {
+test("legacy allocation address options cannot publish beyond this machine", async () => {
   const lock = lockFor(["mail.imap.v1"]);
-  const { allocation, release } = await allocate(lock, { publishHost: "0.0.0.0" });
+  const { allocation, release } = await allocate(lock, { publishHost: "0.0.0.0", publicHost: "::", loopback: "0.0.0.0" });
   const byName = Object.fromEntries([...allocation.values()].map((entry) => [entry.port, entry]));
   await release();
 
-  assert.equal(byName.imap.publishOn, "0.0.0.0", "an application surface widens when asked");
+  assert.equal(byName.imap.publishOn, "127.0.0.1", "allocation cannot enable LAN publication");
   assert.equal(byName.health.publishOn, "127.0.0.1", "a back channel never widens");
   assert.equal(byName.mailbox.publishOn, "127.0.0.1", "a private UI never widens");
 });
 
-test("a child process binds narrowly for a private port", async () => {
+test("a host child process binds narrowly even for an application port", async () => {
   // The composer shares this network namespace, so its own bind address is the
   // boundary and nothing needs publishing.
   const lock = lockFor(["slack.messaging.v1"]);
@@ -172,7 +171,7 @@ test("a child process binds narrowly for a private port", async () => {
   await release();
 
   assert.equal(slack.contained, false);
-  assert.equal(slack.bind, "0.0.0.0", "Slack is an application surface");
+  assert.equal(slack.bind, "127.0.0.1", "a host application surface stays local");
   assert.equal(slack.serverPort, slack.number, "a child process binds the port this machine dials");
 });
 
@@ -183,7 +182,7 @@ test("the process runner reuses chosen stable ports in one namespace", async () 
   const reserved = await allocate(lock, { runner: 'process' });
   const fixedPorts = Object.fromEntries([...reserved.allocation].map(([key, port]) => [key, port.number]));
   await reserved.release();
-  const { allocation, release } = await allocate(lock, { runner: 'process', fixedPorts });
+  const { allocation, release } = await allocate(lock, { runner: 'process', inContainer: true, fixedPorts });
 
   try {
     assert.equal(allocation.get("emulate/slack").number, fixedPorts["emulate/slack"]);
@@ -234,7 +233,7 @@ test("the composer gets a bind variable because it declares one", async () => {
   await release();
 
   assert.match(environment.WORLDFIXTURE_PORT_SLACK, /^\d+$/);
-  assert.equal(environment.WORLDFIXTURE_BIND_SLACK, "0.0.0.0");
+  assert.equal(environment.WORLDFIXTURE_BIND_SLACK, "127.0.0.1");
 });
 
 test("a required environment value with no source fails before anything starts", async () => {

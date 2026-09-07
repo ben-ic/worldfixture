@@ -28,31 +28,20 @@ function reserve(host, port = 0) {
   });
 }
 
-// Allocate one host port per port the lock opens.
-//
-// `bind` follows `published`: a surface an application reaches binds every
-// interface, and a private back channel stays on loopback. A fixture that binds
-// more than it needs to is a fixture reachable from more than it should be.
+const loopback = "127.0.0.1";
+
+// Docker forwards to a container interface, not to container loopback. This
+// exception is for container transport only; host listeners stay on loopback.
+export function listenHost({ inContainer = false, published = true } = {}) {
+  return inContainer && published ? "0.0.0.0" : loopback;
+}
+
+// Allocate one host port per port the lock opens. The runner selects how a
+// service starts; inContainer says where the supervisor itself runs. A process
+// runner on the host must not inherit the image's network access.
 export async function allocate(lock, {
-  loopback = "127.0.0.1",
-  publicHost = "0.0.0.0",
-  // WHERE THE HOST EXPOSES A PUBLISHED PORT. Loopback, and it takes an argument
-  // to make it anything else.
-  //
-  // This used to be `publicHost`, so a published port was exposed on every
-  // interface of the machine running it. Under `--direct` that put around
-  // twenty listeners on the local network -- Postgres, MySQL, SMTP, IMAP, S3
-  // and every provider emulator -- on whatever wifi the developer happened to
-  // be using. The passwords are generated per project, so the databases were
-  // not open, but a fixture has no business being reachable from the next desk
-  // in order to be reachable from the application on the same machine.
-  //
-  // It was never necessary: `host-launcher.mjs` publishes `127.0.0.1:` for the
-  // container route that every ordinary `up` takes, and that is the route the
-  // whole product runs on. The two launch paths simply disagreed, and only the
-  // one nobody reads was wrong.
-  publishHost = loopback,
   runner = "container",
+  inContainer = false,
   fixedPorts,
   preservedAllocation = new Map(),
 } = {}) {
@@ -69,9 +58,11 @@ export async function allocate(lock, {
 
       for (const port of service.ports) {
         const key = `${service.name}/${port.name}`;
+        const bind = listenHost({ inContainer: contained || inContainer, published: contained || port.published });
         const retained = preservedAllocation.get(key);
         if (retained) {
           if (retained.protocol !== port.protocol || retained.published !== port.published || retained.contained !== contained) throw new Error(`Preserved application port changed: ${key}`);
+          if (retained.bind !== bind || retained.publishOn !== loopback || retained.host !== loopback) throw new Error(`Preserved application port has incompatible network access: ${key}`);
           if (fixedPorts?.[key] !== undefined && fixedPorts[key] !== retained.number) throw new Error(`Preserved application port cannot move: ${key}`);
           allocation.set(key, retained); continue;
         }
@@ -95,16 +86,12 @@ export async function allocate(lock, {
           published: port.published,
           // The number this machine dials.
           number: reservation.port,
-          // The number and interface the service itself binds. Everything in a
-          // container binds every interface, because the supervisor probes it
-          // from outside the namespace and a loopback-bound listener would be
-          // unreachable however it were published.
+          // Separate service containers must accept the supervisor's mapped
+          // connections. In the image, private services share its loopback.
           serverPort: contained ? port.container_port : reservation.port,
-          bind: contained ? publicHost : port.published ? publicHost : loopback,
-          // What a published container port is exposed on. Every port stays
-          // bound to this machine even though the service inside binds widely;
-          // `publishHost` is the one argument that widens it.
-          publishOn: port.published ? publishHost : loopback,
+          bind,
+          // Both launch paths publish host ports on loopback only.
+          publishOn: loopback,
           contained,
           host: loopback,
         });

@@ -104,7 +104,7 @@ requires:${JSON.stringify(requires)},
 bindings:${JSON.stringify(bindings)},rules:[],execution:{mode:'selected-capabilities'},target:{kind:'none',identity:world.people.find(p=>p.primary)?.id}};
 const lock=resolveEnvironment(spec,{manifests:loadManifests(serviceRoot),artifactPath});
 writeFileSync(stateDir+'/environment.lock.json',serializeLock(lock));writeFileSync(stateDir+'/environment.json',JSON.stringify(spec));
-const instance=await start(lock,{artifactPath,stateDir,serviceRoot,runner:'process',fixedPorts:SINGLE_CONTAINER_PORTS});
+const instance=await start(lock,{artifactPath,stateDir,serviceRoot,runner:'process',inContainer:true,fixedPorts:SINGLE_CONTAINER_PORTS});
 instance.applicationBindings=instance.bindings();
 const workbench=await startWorkbench(instance,{artifactPath,stateDir,port:4715,host:'0.0.0.0'});
 instance.applicationBindings.WORKBENCH_URL=workbench.url;

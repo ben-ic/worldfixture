@@ -11,7 +11,7 @@ if (!worldPath) {
   process.exit(64);
 }
 const projectionPath = join(worldPath, "projections", "http-targets.json");
-const listen = process.env.WORLDFIXTURE_HTTP_TARGETS_LISTEN ?? "0.0.0.0:8080";
+const listen = process.env.WORLDFIXTURE_HTTP_TARGETS_LISTEN ?? "127.0.0.1:8080";
 const configuredPublicUrl = process.env.WORLDFIXTURE_HTTP_TARGETS_PUBLIC_URL;
 const publicOrigin = configuredPublicUrl ? normalizePublicUrl(configuredPublicUrl) : null;
 

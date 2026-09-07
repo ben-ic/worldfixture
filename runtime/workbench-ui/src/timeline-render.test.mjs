@@ -5,9 +5,10 @@ import { after, test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
+import "../../../tests/helpers/loopback-only.mjs";
 
 const server = await createServer({ root: resolve(dirname(fileURLToPath(import.meta.url)), ".."),
-  server: { middlewareMode: true, hmr: false, watch: null }, logLevel: "silent" });
+  server: { middlewareMode: true, hmr: false, ws: false, watch: null }, logLevel: "silent" });
 after(() => server.close());
 const { Timeline, TimelineControls, TimelineRecords, TimelineAxis, TimelineOutcome } = await server.ssrLoadModule("/src/screens/Timeline.jsx");
 const render = (component, props) => renderToStaticMarkup(createElement(component, props));

@@ -90,7 +90,7 @@ docker build --platform=linux/amd64 -t worldfixture-mail:test .
 docker run -d --name worldfixture-mail-test \
   -v /path/to/artifact:/world:ro \
   -e WORLDFIXTURE_WORLD_PATH=/world \
-  -p 4980:8080 -p 4981:8025 \
+  -p 127.0.0.1:4980:8080 -p 127.0.0.1:4981:8025 \
   worldfixture-mail:test
 docker exec worldfixture-mail-test /usr/share/worldfixture-mail/protocol-test.sh
 ```

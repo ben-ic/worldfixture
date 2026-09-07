@@ -79,6 +79,10 @@ resolve from the current working directory. For example:
 
 Startup prints `Selected world: <id>:<version> (<source>)` and `Artifact: <path>`.
 The source is `selector`, `worldPath`, `environment`, `projectWorld`, or `defaultWorld`.
+Both normal `up` and checkout `up --direct` use loopback for host access. Neither
+command publishes to the LAN. Container listeners still accept the connections
+that Docker forwards from those local host ports.
+
 `--direct` and container launch use the same selected artifact. `--no-rebase`
 keeps its original dates in both modes.
 

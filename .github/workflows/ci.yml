@@ -95,6 +95,9 @@ jobs:
             --mount "type=bind,source=$PWD/tests/image/host-ownership-check.mjs,target=/check.mjs,readonly" \
             worldfixture:coupling-ci /check.mjs | tee .worldfixture/coupling/host-ownership/report.json
 
+      - name: Check image network bindings and world switching
+        run: node tests/image/network-bindings-test.mjs --run --image worldfixture:coupling-ci
+
       - name: Check world selection through direct and host launch
         run: npm run test:world-selection -- --image worldfixture:coupling-ci --report .worldfixture/coupling/p1-selection --run
 

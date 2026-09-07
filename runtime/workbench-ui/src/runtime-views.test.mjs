@@ -5,9 +5,10 @@ import { after, test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createServer } from "vite";
+import "../../../tests/helpers/loopback-only.mjs";
 
 const server = await createServer({ root: resolve(dirname(fileURLToPath(import.meta.url)), ".."),
-  server: { middlewareMode: true, hmr: false, watch: null }, logLevel: "silent" });
+  server: { middlewareMode: true, hmr: false, ws: false, watch: null }, logLevel: "silent" });
 after(() => server.close());
 const { Overview } = await server.ssrLoadModule("/src/screens/Overview.jsx");
 const { People, ServiceDetail } = await server.ssrLoadModule("/src/screens/WorkbenchScreens.jsx");

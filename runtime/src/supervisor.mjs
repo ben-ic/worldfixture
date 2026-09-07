@@ -171,7 +171,7 @@ function startChild(service, environment, { cwd, allocation, worldPath, runner, 
 // the container's own lifetime. `--rm` and `--init` mean a stopped run leaves
 // neither a container nor a zombie, which is the same promise the process path
 // makes.
-function dockerInvocation(service, environment, { allocation, worldPath, credentialsPath }) {
+export function dockerInvocation(service, environment, { allocation, worldPath, credentialsPath }) {
   const spec = service.container;
   const args = ["run", "--rm", "--init", "--name", spec.name];
 
@@ -179,6 +179,7 @@ function dockerInvocation(service, environment, { allocation, worldPath, credent
 
   for (const port of service.ports) {
     const assigned = allocation.get(`${service.name}/${port.name}`);
+    if (assigned.publishOn !== "127.0.0.1") throw new Error(`Host publication must use loopback: ${service.name}/${port.name}`);
     args.push("-p", `${assigned.publishOn}:${assigned.number}:${assigned.serverPort}`);
   }
 
@@ -443,6 +444,7 @@ export async function start(lock, {
   readyTimeoutMs = 300_000,
   now = () => Date.now(),
   runner = "container",
+  inContainer = false,
   fixedPorts,
   runtimeToken = process.env.WORLDFIXTURE_TOKEN || randomUUID(),
   generatedSecretsPath = join(stateDir, "generated-secrets.json"),
@@ -490,7 +492,7 @@ export async function start(lock, {
   const id = randomUUID();
   const lockSha256 = createHash("sha256").update(serializeLock(lock)).digest("hex");
   const worldSha256 = lock.world.artifact_sha256;
-  const { allocation, release } = await allocate(lock, { runner, fixedPorts, preservedAllocation });
+  const { allocation, release } = await allocate(lock, { runner, inContainer, fixedPorts, preservedAllocation });
   const state = openState(join(stateDir, "state.sqlite"));
   // A fresh provider seed starts a fresh schedule. Connector receipts survive:
   // the application is preserved and event IDs include the world identity.

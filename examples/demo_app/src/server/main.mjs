@@ -14,7 +14,7 @@ const store = await createStore(env);
 const world = { id: env.WORLDFIXTURE_WORLD_ID ?? 'unbound', version: env.WORLDFIXTURE_WORLD_VERSION ?? 'unknown' };
 const connector = createConnector({ store, token: env.WORLDFIXTURE_TOKEN, world, enabled: true });
 const dev = process.argv.includes('--dev');
-const vite = dev ? await (await import('vite')).createServer({ root, server: { middlewareMode: true }, appType: 'spa' }) : null;
+const vite = dev ? await (await import('vite')).createServer({ root, server: { middlewareMode: true, hmr: { host: '127.0.0.1' } }, appType: 'spa' }) : null;
 const app = createApplication({ providers, store, connector, actions: ACTIONS, env, staticRoot: resolve(root, 'dist'), middleware: vite?.middlewares,
   onCredentials(credentials) { Object.assign(env, credentials); currentProviders = createProviders(env); },
 });

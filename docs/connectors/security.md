@@ -3,6 +3,23 @@
 A connector can create and remove application data. Treat it as a local
 development control interface.
 
+WorldFixture binds host services and publishes Docker host ports on
+`127.0.0.1`. This applies to normal `up` and checkout `up --direct`. Neither
+command enables LAN publication. Read the allocated ports from `worldfixture
+env`; the port numbers can change between runs.
+
+Inside a container, application listeners must accept connections through the
+container network interface for Docker forwarding to work. These listeners can
+be reached by other containers on the same Docker network. Keep untrusted
+containers off that network. Host loopback publication does not authenticate
+Workbench requests or isolate services within the container network.
+
+On Linux, Docker port forwarding can bypass ordinary `ufw` rules. Always name
+the loopback address in manual `-p` mappings. Docker versions before 28.0.0 also
+have a documented limit on localhost publication isolation. See
+[Docker port publishing](https://docs.docker.com/engine/network/port-publishing/)
+and [Docker and ufw](https://docs.docker.com/engine/network/packet-filtering-firewalls/#docker-and-ufw).
+
 An implementation must:
 
 - be disabled in production;

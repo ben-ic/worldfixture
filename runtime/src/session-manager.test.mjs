@@ -84,7 +84,7 @@ test('an old read error becomes a stale-generation response after switch', async
 });
 test('startup failure restores the old baseline with a new generation and explicit loss notice', async t => {
   let calls = 0;
-  const value = fixture(t, { start: async (lock, options) => { if (++calls === 1) throw new Error('Seed rejected'); return value.make(lock.world.id, { ...options, lock }); } });
+  const value = fixture(t, { startOptions: { inContainer: true }, start: async (lock, options) => { assert.equal(options.inContainer, true); if (++calls === 1) throw new Error('Seed rejected'); return value.make(lock.world.id, { ...options, lock }); } });
   const original = value.manager.generation;
   await assert.rejects(value.manager.switchWorld({ world: 'b' }, original), error => error.code === 'switch_failed_rolled_back' && error.detail.manual_provider_changes_lost);
   assert.equal(value.manager.instance.lock.world.id, 'a'); assert.notEqual(value.manager.generation, original); assert.equal(value.manager.status().reconnect_required, true);

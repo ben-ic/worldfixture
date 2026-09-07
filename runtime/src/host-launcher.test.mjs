@@ -34,6 +34,25 @@ test("every published service port has an image declaration and host mapping", (
   }
 });
 
+test("normal up publishes every host surface on loopback, including optional databases", async t => {
+  const stateDir = mkdtempSync(join(tmpdir(), "worldfixture-local-publication-"));
+  t.after(() => rmSync(stateDir, { recursive: true, force: true }));
+  let runArgs;
+  const runner = async (_command, args) => {
+    if (args[0] === "inspect") throw missing();
+    if (args[0] === "image") return { stdout: "sha256:image\n" };
+    if (args[0] === "run") { runArgs = args; throw new Error("captured publication arguments"); }
+    return { stdout: "" };
+  };
+  await assert.rejects(launchHostInstance({
+    stateDir, image: "worldfixture:test", projectConfig: { services: ["postgres", "mysql"] }, runner,
+    selectPorts: async surfaces => surfaces.map((surface, index) => ({ ...surface, hostPort: 40000 + index, release: async () => {} })),
+  }));
+  const mappings = runArgs.filter((_arg, index) => runArgs[index - 1] === "--publish");
+  assert.equal(mappings.length, HOST_SURFACES.length);
+  assert.ok(mappings.every(value => /^127\.0\.0\.1:\d+:\d+$/.test(value)));
+});
+
 function inspection(stateDir, overrides = {}) {
   return {
     Id: "abc123worldfixture",
