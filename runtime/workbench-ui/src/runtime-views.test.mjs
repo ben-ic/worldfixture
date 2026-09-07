@@ -100,6 +100,7 @@ test("Website frame uses the declared preview URL and never substitutes the bind
 test('Overview puts streaming before connections and keeps service inventory collapsed', () => {
   const output = render(Overview, { data, setScreen() {} });
   assert.ok(output.indexOf('Event stream') < output.indexOf('Connect your app'));
+  assert.match(output, /href="\/api\/postman" download=""/);
   assert.match(output, /<details class="overview-services"><summary>/);
   assert.doesNotMatch(output, /Reset world services|secret-real-value/);
 });

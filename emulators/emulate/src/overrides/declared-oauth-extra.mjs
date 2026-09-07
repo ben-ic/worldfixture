@@ -2,6 +2,7 @@
 // create users' codes/tokens; policy receipts live in the normal Store snapshot.
 import { createHash, timingSafeEqual } from "node:crypto";
 import { getSlackStore } from "@emulators/slack";
+import { materializeNativeRedirect, oauthRedirectControl, redirectAllowed, validLoopbackTemplate } from "./oauth-redirects.mjs";
 
 const POLICIES = {
   google: { key: "oauth_clients", authorize: "/o/oauth2/v2/auth", callback: "/o/oauth2/v2/auth/callback", token: "/oauth2/token", identity: "email", grants: ["authorization_code", "refresh_token"], pkce: true },
@@ -37,6 +38,9 @@ function clientsOf(provider, policy, config) {
     const grants = client.grant_types ?? policy.grants;
     requirePolicy(Array.isArray(grants) && grants.length > 0 && grants.every(grant => policy.grants.includes(grant)) && new Set(grants).size === grants.length, `${provider} has an unsupported grant type`);
     for (const field of ["scopes", "user_scopes"]) requirePolicy(client[field] === undefined || Array.isArray(client[field]) && client[field].every(nonempty), `${field} must be an array of strings`);
+    requirePolicy(client.loopback_redirect_uris === undefined || Array.isArray(client.loopback_redirect_uris)
+      && client.loopback_redirect_uris.every(validLoopbackTemplate), "loopback_redirect_uris must be port-free HTTP IP-literal templates");
+    requirePolicy(client.allow_runtime_redirects === undefined || typeof client.allow_runtime_redirects === "boolean", "allow_runtime_redirects must be boolean");
     return { ...structuredClone(client), grant_types: grants };
   });
 }
@@ -62,7 +66,7 @@ function clientAuth(c, fields, policy) {
   return { id, secret };
 }
 
-export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getStore } = {}) {
+export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getStore, controlToken = process.env.WORLDFIXTURE_TOKEN } = {}) {
   const policy = POLICIES[provider];
   requirePolicy(policy, "unsupported extra OAuth provider");
   requirePolicy(provider !== "linear" || typeof getStore === "function", "Linear needs its normal getStore accessor");
@@ -73,6 +77,8 @@ export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getSt
   };
   const plugin = { ...upstream, seed: undefined, register(app, store, ...args) {
     app.use("*", async (c, next) => {
+      const controlled = await oauthRedirectControl(c, { store, provider, stateKey: keyOf(provider), controlToken });
+      if (controlled) return controlled;
       const path = c.req.path;
       const action = path === policy.authorize && c.req.method === "GET" ? "authorize"
         : path === policy.callback && c.req.method === "POST" ? "callback"
@@ -82,7 +88,7 @@ export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getSt
       if (!action) return next();
       const declaration = store.getData(keyOf(provider));
       if (!declaration) return deny(c);
-      const state = { ...declaration, codes: store.getData(`${keyOf(provider)}.codes`), refresh: store.getData(`${keyOf(provider)}.refresh`) };
+      const state = { ...declaration, codes: store.getData(`${keyOf(provider)}.codes`), refresh: store.getData(`${keyOf(provider)}.refresh`), runtimeRedirects: store.getData(`${keyOf(provider)}.runtimeRedirects`) ?? new Map() };
       if (!(state.codes instanceof Map) || !(state.refresh instanceof Map)) return deny(c);
       let fields, auth;
       try { fields = await fieldsOf(c); auth = clientAuth(c, fields, policy); }
@@ -95,7 +101,7 @@ export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getSt
       let receipt;
       if (action !== "token") {
         if (!client.grant_types.includes("authorization_code")) return deny(c, "unauthorized_client", 400);
-        if (!client.redirect_uris.includes(fields.redirect_uri)) return deny(c, "invalid_request", 400);
+        if (!redirectAllowed(client, fields.redirect_uri, state.runtimeRedirects.get(client.client_id))) return deny(c, "invalid_request", 400);
         if (fields.response_type && fields.response_type !== "code") return deny(c, "unsupported_response_type", 400);
         if (fields.response_mode && !(provider === "microsoft" ? ["query", "form_post"] : ["query"]).includes(fields.response_mode)) return deny(c, "invalid_request", 400);
         if (provider === "linear" && fields.actor && fields.actor !== "user") return deny(c, "unauthorized_client", 400);
@@ -118,6 +124,9 @@ export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getSt
           receipt = state.refresh.get(digest(fields.refresh_token));
           if (!receipt || receipt.client_id !== client.client_id || scope.some(item => !receipt.scope.includes(item))) return deny(c, "invalid_grant", 400);
         }
+      }
+      if (action !== "token" && !client.redirect_uris.includes(fields.redirect_uri)) {
+        materializeNativeRedirect(store, provider, keyOf(provider), client, fields.redirect_uri);
       }
       if (action === "authorize") return next();
       // Core's context does not expose c.res. Observe the native response
@@ -164,10 +173,11 @@ export function wrapDeclaredOAuthExtra(provider, upstream, upstreamSeed, { getSt
     const identities = users.map(user => user?.[identityField]);
     requirePolicy(new Set(identities).size === identities.length, `${provider} source identities must be unique`);
     requirePolicy(identities.every(nonempty), `${provider} users need their declared ${identityField}`);
-    upstreamSeed(store, baseUrl, { ...structuredClone(config), [policy.key]: clients }, ...args);
+    upstreamSeed(store, baseUrl, { ...structuredClone(config), [policy.key]: clients.map(({ loopback_redirect_uris, allow_runtime_redirects, ...client }) => client) }, ...args);
     store.setData(keyOf(provider), { clients, identities });
     store.setData(`${keyOf(provider)}.codes`, new Map());
     store.setData(`${keyOf(provider)}.refresh`, new Map());
+    store.setData(`${keyOf(provider)}.runtimeRedirects`, new Map());
   }
   return { plugin, seedFromConfig };
 }

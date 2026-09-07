@@ -8,6 +8,7 @@ import * as github from "@emulators/github";
 import * as slack from "@emulators/slack";
 import * as vercel from "@emulators/vercel";
 import { wrapDeclaredOAuthExtra } from "./declared-oauth-extra.mjs";
+import { MAX_MATERIALIZED_REDIRECTS } from "./oauth-redirects.mjs";
 
 const linear = await import(new URL("dist-7HIQBPU6.js", import.meta.resolve("emulate")));
 const packages = { google, microsoft, github, slack, linear, vercel };
@@ -38,14 +39,46 @@ function configuration(provider) {
   }
   return config;
 }
-function fixture(provider, config = configuration(provider)) {
+function fixture(provider, config = configuration(provider), options = {}) {
   const mod = packages[provider];
-  const lifecycle = wrapDeclaredOAuthExtra(provider, mod[`${provider}Plugin`], mod.seedFromConfig, { getStore: mod.getLinearStore });
+  const lifecycle = wrapDeclaredOAuthExtra(provider, mod[`${provider}Plugin`], mod.seedFromConfig,
+    { getStore: mod.getLinearStore, ...options });
   assert.equal(lifecycle.plugin.seed, undefined);
   const server = createServer(lifecycle.plugin);
   lifecycle.seedFromConfig(server.store, server.baseUrl, config, server.webhooks);
   return { ...server, lifecycle, config, provider, routes: routes[provider] };
 }
+
+test("runtime callback control needs its token and completes the native extra-provider flow", async () => {
+  const config = configuration("google");
+  config.oauth_clients[0].allow_runtime_redirects = true;
+  const f = fixture("google", config, { controlToken: "control-secret" });
+  const redirect_uri = "https://connected.example.test/oauth/google/callback";
+  const unauthorized = await f.app.request("/__worldfixture/oauth/redirects", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ client_id: CLIENT, redirect_uri }) });
+  assert.equal(unauthorized.status, 401);
+  const registered = await f.app.request("/__worldfixture/oauth/redirects", { method: "POST", headers: {
+    authorization: "Bearer control-secret", "content-type": "application/json",
+  }, body: JSON.stringify({ client_id: CLIENT, redirect_uri }) });
+  assert.equal(registered.status, 200);
+  const { code } = await authorize(f, { redirect_uri });
+  assert.equal((await exchange(f, code, { redirect_uri })).status, 200);
+});
+
+test("public loopback callbacks keep the native redirect list bounded", async () => {
+  const config = configuration("google");
+  config.oauth_clients[0].loopback_redirect_uris = ["http://127.0.0.1/oauth/google/callback"];
+  const f = fixture("google", config);
+  for (let index = 0; index < MAX_MATERIALIZED_REDIRECTS + 8; index += 1) {
+    const redirect_uri = `http://127.0.0.1:${41000 + index}/oauth/google/callback`;
+    const response = await request(f, `${f.routes[1]}?${new URLSearchParams({ client_id: CLIENT, redirect_uri })}`);
+    assert.equal(response.status, 200);
+  }
+  const native = f.store.collection("google.oauth_clients", ["client_id"]).findOneBy("client_id", CLIENT);
+  assert.equal(native.redirect_uris.length, config.oauth_clients[0].redirect_uris.length + MAX_MATERIALIZED_REDIRECTS);
+  assert.equal(native.redirect_uris.includes("http://127.0.0.1:41000/oauth/google/callback"), false);
+  assert.equal(native.redirect_uris.includes(`http://127.0.0.1:${41000 + MAX_MATERIALIZED_REDIRECTS + 7}/oauth/google/callback`), true);
+});
 async function request(f, path, fields, headers = {}) {
   const response = await f.app.request(path, fields ? { method: "POST", body: new URLSearchParams(fields), headers: { "content-type": "application/x-www-form-urlencoded", ...headers } } : { headers });
   const text = await response.text();
@@ -75,6 +108,19 @@ const exchange = (f, code, extra = {}, headers) => request(f, f.routes[3], { gra
 const rejected = result => result.status >= 400 && !result.value?.access_token;
 
 for (const provider of Object.keys(packages)) {
+  test(`${provider}: a declared loopback callback changes only its local port`, async () => {
+    const config = configuration(provider);
+    const dynamic = `http://127.0.0.1:49152/oauth/${provider}/callback`;
+    config[routes[provider][0]][0].loopback_redirect_uris = [`http://127.0.0.1/oauth/${provider}/callback`];
+    const f = fixture(provider, config), { code } = await authorize(f, { redirect_uri: dynamic });
+    assert.equal((await exchange(f, code, { redirect_uri: dynamic })).status, 200);
+    for (const redirect_uri of [
+      `http://127.0.0.1:49152/oauth/${provider}/other`,
+      `http://localhost:49152/oauth/${provider}/callback`,
+      `https://127.0.0.1:49152/oauth/${provider}/callback`,
+    ]) assert.ok(rejected(await request(f, `${f.routes[1]}?${new URLSearchParams({ client_id: CLIENT, redirect_uri })}`)));
+  });
+
   test(`${provider}: declared confidential flow uses native routes and actual source identity`, async () => {
     const f = fixture(provider), { code } = await authorize(f), token = await exchange(f, code);
     assert.equal(token.status, 200, token.text.slice(0, 100));

@@ -49,7 +49,7 @@ class OAuthClientsTest(unittest.TestCase):
             self.assertEqual({provider: {key: []}}, oauth_projection(world(provider, [])))
 
     def test_shipped_worlds_without_declarations_preserve_complete_compiled_bytes(self):
-        for name in ["business.saas-company.v2", "business.saas-company.v3", "consumer.retail-brand.v1"]:
+        for name in ["business.saas-company.v2", "consumer.retail-brand.v1"]:
             with self.subTest(world=name):
                 source, _ = load_world(ROOT / "worlds" / name / "world.json")
                 self.assertNotIn("oauth_clients", source.get("software", {}))
@@ -91,6 +91,17 @@ class OAuthClientsTest(unittest.TestCase):
         for redirects in bad:
             with self.subTest(redirects=redirects), self.assertRaisesRegex(ValueError, "oauth-fixture:v1 software.oauth_clients google/authored-client"):
                 oauth_projection(world(rows=[client(redirect_uris=redirects)]))
+
+    def test_loopback_redirect_templates_fix_the_host_path_and_query(self):
+        for uri in ["http://127.0.0.1/callback", "http://[::1]/callback?provider=google", "http://localhost/oauth/google/callback"]:
+            row = client(loopback_redirect_uris=[uri], allow_runtime_redirects=True)
+            self.assertEqual([uri], oauth_projection(world(rows=[row]))["google"]["oauth_clients"][0]["loopback_redirect_uris"])
+        for uri in ["https://127.0.0.1/callback", "http://127.0.0.1:3000/callback", "http://0.0.0.0/callback", "http://127.0.0.1/callback#fragment", "http://user@127.0.0.1/callback", "http://localhost:3000/callback", "http://127.0.0.1/*"]:
+            with self.subTest(uri=uri), self.assertRaisesRegex(ValueError, "loopback_redirect_uris"):
+                oauth_projection(world(rows=[client(loopback_redirect_uris=[uri])]))
+        for mutation in [{"loopback_redirect_uris": "http://127.0.0.1/callback"}, {"allow_runtime_redirects": "yes"}]:
+            with self.assertRaises(ValueError):
+                oauth_projection(world(rows=[client(**mutation)]))
 
     def test_unsupported_grants_and_response_modes_fail_for_every_provider(self):
         for provider in CLIENT_COLLECTIONS:

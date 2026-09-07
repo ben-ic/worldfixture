@@ -1,6 +1,6 @@
 {
   "name": "worldfixture",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Run a local software world and seed a connected application.",
   "keywords": [
     "fixture",
@@ -37,6 +37,8 @@
     "docs:dev": "npm --prefix docs run dev",
     "docs:diagrams": "node scripts/render-architecture.mjs",
     "docs:diagrams:check": "node scripts/render-architecture.mjs --check",
+    "postman:routes": "node scripts/build-postman-routes.mjs",
+    "postman:routes:check": "node scripts/build-postman-routes.mjs --check",
     "docs:build": "npm --prefix docs run build",
     "docs:check": "node scripts/check-docs.mjs",
     "site:build": "WORLDFIXTURE_ANALYTICS=1 npm --prefix docs run build && WORLDFIXTURE_ANALYTICS=1 node scripts/build-site.mjs",
@@ -78,6 +80,6 @@
     "node": ">=22"
   },
   "worldfixture": {
-    "image": "ghcr.io/ben-ic/worldfixture:0.2.6"
+    "image": "ghcr.io/ben-ic/worldfixture:0.2.7"
   }
 }

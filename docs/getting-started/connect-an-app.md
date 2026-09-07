@@ -1,8 +1,19 @@
 # Connect an application
 
-Every run selects free host ports and writes the actual connection values to
+Every run first tries the preferred host ports. For example, Slack uses `4703`
+and the Workbench uses `4715`. If another process uses a preferred port,
+WorldFixture selects a free fallback. It writes the actual connection values to
 its local state directory. Always read these values. Do not copy a port from a
 different run.
+
+You can also open the Workbench and select
+[**Download Postman collection**](http://127.0.0.1:4715/api/postman). The download
+contains the active HTTP URLs and synthetic credentials. It includes every
+registered route for each selected provider, every supported AWS action, and
+every operation in the world's OpenAPI document. If WorldFixture prints a
+Workbench port other than `4715`, change the port in this link. Download the
+collection again after a new run or world switch. SMTP, IMAP, PostgreSQL, and
+MySQL use other protocols, so they are not in the collection.
 
 A world switch creates new credentials. Read `worldfixture env` again and update
 or restart the application with the new values. If you use an application
@@ -54,7 +65,7 @@ eval "$(npx worldfixture env)"
 python3 examples/onboarding/slack.py
 ```
 
-The example sets `base_url` from `SLACK_BASE_URL`. It uses the dynamic host port
+The example sets `base_url` from `SLACK_BASE_URL`. It uses the actual host port
 from the active run.
 
 ## curl

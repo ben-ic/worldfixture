@@ -5,7 +5,14 @@ import { createOAuth } from '../src/server/oauth.mjs';
 
 const sessionId = 'test-session-with-at-least-32-characters';
 const providers = ['slack', 'github', 'google', 'microsoft', 'apple'];
-const env = Object.fromEntries(providers.map((id, index) => [`${id.toUpperCase()}_BASE_URL`, `http://127.0.0.1:${19000 + index}`]));
+const env = Object.fromEntries(providers.flatMap((id, index) => {
+  const prefix = id.toUpperCase();
+  return [
+    [`${prefix}_BASE_URL`, `http://127.0.0.1:${19000 + index}`],
+    [`${prefix}_CLIENT_ID`, `worldfixture-${id}-client`],
+    [`${prefix}_CLIENT_SECRET`, `worldfixture-${id}-secret`],
+  ];
+}));
 const pair = await generateKeyPair('RS256', { extractable: true });
 const key = { ...await exportJWK(pair.publicKey), kid: 'test-key', alg: 'RS256', use: 'sig' };
 
@@ -23,13 +30,14 @@ async function fixture({ badNonce = false, badAudience = false, refusal = false 
       assert.equal(options.headers.Accept, 'application/json');
       assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
       const form = options.body;
-      assert.equal(form.get('client_id'), 'account-desk-local');
+      assert.equal(form.get('client_id'), env[`${authorization.hostname === '127.0.0.1' ? providers[Number(authorization.port) - 19000].toUpperCase() : ''}_CLIENT_ID`]);
+      assert.equal(form.get('client_secret'), env[`${providers[Number(authorization.port) - 19000].toUpperCase()}_CLIENT_SECRET`]);
       assert.equal(form.get('redirect_uri'), authorization.searchParams.get('redirect_uri'));
       if (authorization.searchParams.has('code_challenge')) assert.ok(form.get('code_verifier'));
       else assert.equal(form.get('code_verifier'), null);
       if (refusal) return Response.json({ error: 'invalid_code', error_description: 'DO-NOT-LEAK-provider-secret' });
       const idToken = await new SignJWT({ sub: 'selected-person', tid: 'world-tenant', nonce: badNonce ? 'wrong-nonce' : authorization.searchParams.get('nonce'), email: 'person@demo.test' })
-        .setProtectedHeader({ alg: 'RS256', kid: 'test-key' }).setIssuer(parsed.origin).setAudience(badAudience ? 'wrong-app' : 'account-desk-local')
+        .setProtectedHeader({ alg: 'RS256', kid: 'test-key' }).setIssuer(parsed.origin).setAudience(badAudience ? 'wrong-app' : form.get('client_id'))
         .setIssuedAt(Math.floor(clock / 1000)).setExpirationTime(Math.floor(clock / 1000) + 3600).sign(pair.privateKey);
       return Response.json({ access_token: 'private-test-access-token', expires_in: 3600, id_token: idToken });
     }
@@ -45,6 +53,7 @@ test('OAuth starts only local selected providers and binds dynamic app callback'
   for (const provider of providers) {
     const url = new URL(oauth.start(provider, { sessionId }));
     assert.equal(url.origin, env[`${provider.toUpperCase()}_BASE_URL`]);
+    assert.equal(url.searchParams.get('client_id'), env[`${provider.toUpperCase()}_CLIENT_ID`]);
     assert.equal(url.searchParams.get('redirect_uri'), `http://127.0.0.1:25175/oauth/${provider}/callback`);
     assert.equal(url.searchParams.get('response_type'), 'code');
     assert.ok(url.searchParams.get('state').length >= 40);
@@ -55,6 +64,16 @@ test('OAuth starts only local selected providers and binds dynamic app callback'
   assert.throws(() => createOAuth({}, { origin: 'http://127.0.0.1:3000' }).start('google', { sessionId }), /not selected/);
   assert.throws(() => createOAuth({ GOOGLE_BASE_URL: 'https://accounts.google.com' }, { origin: 'http://127.0.0.1:3000' }).start('google', { sessionId }), /Only local/);
   assert.throws(() => createOAuth({ ...env, NODE_ENV: 'production' }, { origin: 'http://127.0.0.1:3000' }).start('google', { sessionId }), /disabled in production/);
+});
+
+test('Account Desk overrides can replace generated OAuth bindings', () => {
+  const oauth = createOAuth({
+    ...env,
+    ACCOUNT_DESK_GOOGLE_CLIENT_ID: 'account-desk-override',
+    ACCOUNT_DESK_GOOGLE_CLIENT_SECRET: 'account-desk-override-secret',
+  }, { origin: 'http://127.0.0.1:3000' });
+  const url = new URL(oauth.start('google', { sessionId }));
+  assert.equal(url.searchParams.get('client_id'), 'account-desk-override');
 });
 
 test('all five code flows exchange server-side and expose no tokens in safe metadata', async () => {

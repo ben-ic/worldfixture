@@ -25,15 +25,31 @@ function configuration(provider) {
       : { team_id: "TEAM_AUTHORED", key_id: "KEY_AUTHORED" }) }] };
 }
 
-function fixture(provider, config = configuration(provider)) {
+function fixture(provider, config = configuration(provider), options = {}) {
   const mod = PACKAGES[provider];
-  const lifecycle = wrapDeclaredOAuth(provider, mod[`${provider}Plugin`], mod.seedFromConfig);
+  const lifecycle = wrapDeclaredOAuth(provider, mod[`${provider}Plugin`], mod.seedFromConfig, options);
   assert.equal(lifecycle.plugin.seed, undefined);
   const server = createServer(lifecycle.plugin);
   lifecycle.seedFromConfig(server.store, server.baseUrl, config, server.webhooks);
   return { ...server, lifecycle, config, provider,
     prefix: provider === "apple" ? "/auth" : provider === "clerk" ? "/oauth" : "/oauth2/authored-server/v1" };
 }
+
+test("runtime callback control needs its token and completes the native OAuth flow", async () => {
+  const config = configuration("apple");
+  config.oauth_clients[0].allow_runtime_redirects = true;
+  const f = fixture("apple", config, { controlToken: "control-secret" });
+  const redirect_uri = "https://connected.example.test/oauth/apple/callback";
+  const unauthorized = await f.app.request("/__worldfixture/oauth/redirects", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ client_id: CLIENT, redirect_uri }) });
+  assert.equal(unauthorized.status, 401);
+  const registered = await f.app.request("/__worldfixture/oauth/redirects", { method: "POST", headers: {
+    authorization: "Bearer control-secret", "content-type": "application/json",
+  }, body: JSON.stringify({ client_id: CLIENT, redirect_uri }) });
+  assert.equal(registered.status, 200);
+  const { code } = await authorize(f, { redirect_uri });
+  assert.equal((await exchange(f, code, { redirect_uri })).status, 200);
+});
 
 async function request(app, path, fields, headers = {}) {
   const response = await app.request(path, fields ? { method: "POST", body: new URLSearchParams(fields),
@@ -65,6 +81,19 @@ async function exchange(f, code, extra = {}) {
 }
 
 for (const provider of Object.keys(PACKAGES)) {
+  test(`${provider}: a declared loopback callback changes only its local port`, async () => {
+    const config = configuration(provider);
+    const dynamic = `http://127.0.0.1:49152/oauth/${provider}/callback`;
+    config[keys[provider]][0].loopback_redirect_uris = [`http://127.0.0.1/oauth/${provider}/callback`];
+    const f = fixture(provider, config), { code } = await authorize(f, { redirect_uri: dynamic });
+    assert.equal((await exchange(f, code, { redirect_uri: dynamic })).status, 200);
+    for (const redirect_uri of [
+      `http://127.0.0.1:49152/oauth/${provider}/other`,
+      `http://localhost:49152/oauth/${provider}/callback`,
+      `https://127.0.0.1:49152/oauth/${provider}/callback`,
+    ]) assert.ok((await request(f.app, `${f.prefix}/authorize?${new URLSearchParams({ client_id: CLIENT, redirect_uri })}`)).status >= 400);
+  });
+
   test(`${provider}: declared source identity and current client complete the public code flow`, async () => {
     const f = fixture(provider);
     const { code, page } = await authorize(f);

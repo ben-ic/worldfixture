@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { createServer } from "node:http";
 import test from "node:test";
@@ -12,16 +12,43 @@ import {
   sanitizePublicBindings,
   providerBrowserUrl,
   providerOverview,
+  registerOAuthRedirect,
   linearOverview,
   twilioOverview,
   selectNotionWebhookReveal,
   slackChannelTopic,
   startWorkbench,
+  validWorkbenchRequest,
   workbenchWebhookSecretRevealEnabled,
 } from "./workbench.mjs";
 
 const ROOT = join(import.meta.dirname, "../..");
 const CREDENTIALS = { values: { "token:slack_token": randomBytes(24).toString("hex") } };
+
+test("Workbench rejects foreign Host and cross-origin browser writes", () => {
+  assert.equal(validWorkbenchRequest({ method: "GET", headers: { host: "attacker.example" } }), false);
+  assert.equal(validWorkbenchRequest({ method: "GET", headers: { host: "127.0.0.1:4715" } }), true);
+  assert.equal(validWorkbenchRequest({ method: "POST", headers: {
+    host: "127.0.0.1:4715", origin: "http://attacker.example", "sec-fetch-site": "cross-site",
+  } }), false);
+  assert.equal(validWorkbenchRequest({ method: "POST", headers: {
+    host: "localhost:4715", origin: "http://localhost:4715", "sec-fetch-site": "same-origin",
+  } }), true);
+});
+
+test("OAuth callback registration uses the active client and runtime credential", async () => {
+  let received;
+  const added = await registerOAuthRedirect({ GOOGLE_BASE_URL: "http://google.test", GOOGLE_CLIENT_ID: "local-client" },
+    "runtime-secret", { provider: "google", redirect_uri: "http://127.0.0.1:5173/oauth/google/callback" },
+    async (url, options) => {
+      received = { url, options, body: JSON.parse(options.body) };
+      return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+  assert.equal(received.url, "http://google.test/__worldfixture/oauth/redirects");
+  assert.equal(received.options.headers.authorization, "Bearer runtime-secret");
+  assert.deepEqual(received.body, { client_id: "local-client", redirect_uri: "http://127.0.0.1:5173/oauth/google/callback" });
+  assert.equal(added.client_id, "local-client");
+});
 
 test("Gmail reads use the selected declared mailbox credential", async () => {
   const tokens = [];
@@ -126,6 +153,80 @@ test("provider links use the active browser binding and keep their resource path
     providerBrowserUrl("http://localhost:4716/notion/dff277c5163349f0864817c5e4afcfda?v=abc", "http://127.0.0.1:53480"),
     "http://127.0.0.1:53480/notion/dff277c5163349f0864817c5e4afcfda?v=abc",
   );
+});
+
+test("Workbench downloads a no-store Postman collection for the active run", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "wf-postman-"));
+  const instance = {
+    state: { prepare: () => ({ get: () => ({ seq: 0 }) }) },
+    credentials: CREDENTIALS,
+    applicationBindings: {
+      WORKBENCH_URL: "http://127.0.0.1:58999",
+      SLACK_BASE_URL: "http://127.0.0.1:58831",
+      SLACK_TOKEN: "active-slack-token",
+    },
+    lock: { world: { artifact_sha256: "test" }, services: [] },
+    serviceStates: new Map(),
+  };
+  const workbench = await startWorkbench(instance, {
+    artifactPath: join(ROOT, "dist/business.saas-company.v3"), stateDir: directory,
+  });
+  try {
+    const response = await fetch(`${workbench.url}/api/postman`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.match(response.headers.get("content-disposition"), /business\.saas-company\.v3\.postman_collection\.json/);
+    const collection = await response.json();
+    assert.equal(collection.variable.find(value => value.key === "WORKBENCH_URL").value, "http://127.0.0.1:58999");
+    assert.equal(collection.variable.find(value => value.key === "SLACK_TOKEN").value, "active-slack-token");
+    assert.match(JSON.stringify(collection), /\/slack\/api\/auth\.test/);
+  } finally {
+    await workbench.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("Workbench adds OAuth callbacks only for the connected application origin", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "wf-oauth-callback-"));
+  const requests = [];
+  const provider = createServer(async (request, response) => {
+    let raw = ""; for await (const chunk of request) raw += chunk;
+    requests.push({ url: request.url, authorization: request.headers.authorization, body: JSON.parse(raw) });
+    response.writeHead(200, { "content-type": "application/json" });
+    response.end(JSON.stringify({ ok: true }));
+  });
+  await new Promise(resolve => provider.listen(0, "127.0.0.1", resolve));
+  writeFileSync(join(directory, "application-connector.json"), JSON.stringify({
+    url: "http://127.0.0.1:5173", transport_url: "http://127.0.0.1:5173",
+  }));
+  const instance = {
+    state: { prepare: () => ({ get: () => ({ seq: 0 }) }) }, credentials: CREDENTIALS,
+    runtimeToken: "runtime-secret", applicationBindings: {
+      GOOGLE_BASE_URL: `http://127.0.0.1:${provider.address().port}`, GOOGLE_CLIENT_ID: "local-client",
+    }, lock: { world: { artifact_sha256: "world-build" }, services: [] }, serviceStates: new Map(),
+  };
+  const workbench = await startWorkbench(instance, {
+    artifactPath: join(ROOT, "dist/business.saas-company.v3"), stateDir: directory,
+  });
+  const add = redirect_uri => fetch(`${workbench.url}/api/oauth/redirects`, { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ provider: "google", redirect_uri }) });
+  try {
+    const foreign = await add("http://localhost:5173/oauth/google/callback");
+    assert.equal(foreign.status, 400);
+    assert.equal(requests.length, 0);
+    const accepted = await add("http://127.0.0.1:5173/oauth/google/callback");
+    assert.equal(accepted.status, 200);
+    assert.equal(requests[0].authorization, "Bearer runtime-secret");
+    assert.equal(requests[0].body.client_id, "local-client");
+    const saved = await (await fetch(`${workbench.url}/api/oauth/redirects`)).json();
+    assert.deepEqual(saved.redirects[0], {
+      provider: "google", client_id: "local-client", redirect_uri: "http://127.0.0.1:5173/oauth/google/callback",
+      artifact_sha256: "world-build", generation: "unmanaged",
+    });
+  } finally {
+    await workbench.close(); await new Promise(resolve => provider.close(resolve));
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("Linear Workbench data comes from the live GraphQL API", async () => {

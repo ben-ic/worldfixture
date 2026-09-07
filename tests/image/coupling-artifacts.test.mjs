@@ -212,12 +212,16 @@ test("domain evidence must cover complete records and each nested collection", (
 });
 
 test('declared OAuth clients and nested policy arrays require measured provider evidence', () => {
-  const inventory = inventoryCollections({ software: { oauth_clients: { google: [{ client_id: 'authored', name: 'Authored client', redirect_uris: ['http://callback.test'], scopes: ['email'], grant_types: ['authorization_code'] }], slack: [] } } });
+  const inventory = inventoryCollections({ software: { oauth_clients: { google: [{ client_id: 'authored', name: 'Authored client', redirect_uris: ['http://callback.test'], loopback_redirect_uris: ['http://127.0.0.1/callback'], scopes: ['email'], grant_types: ['authorization_code'] }], slack: [] } } });
   assert.ok(inventory.every(row => row.kind === 'data'));
   assert.ok(collectionCoverage(inventory).every(row => row.status === 'failed'));
   const evidence = inventory.map(row => ({ collection: row.canonicalPath, provider: row.mapping.provider, path: '/oauth/token', status: 'passed' }));
   assert.ok(collectionCoverage(inventory, { evidence }).every(row => row.status === 'passed'));
   evidence.find(row => row.collection.endsWith('[].redirect_uris')).status = 'failed';
   assert.equal(collectionCoverage(inventory, { evidence }).find(row => row.check.endsWith('[].redirect_uris')).status, 'failed');
+  const loopback = evidence.find(row => row.collection.endsWith('[].loopback_redirect_uris'));
+  loopback.status = 'failed';
+  assert.equal(collectionCoverage(inventory, { evidence }).find(row => row.check.endsWith('[].loopback_redirect_uris')).status, 'failed');
+  assert.equal(collectionCoverage(inventory, { evidence: evidence.filter(row => row !== loopback) }).find(row => row.check.endsWith('[].loopback_redirect_uris')).status, 'failed');
   assert.ok(collectionCoverage(inventory, { evidence: [{ collection: 'software.oauth_clients.google', provider: 'slack', path: '/api/oauth.v2.access', status: 'passed' }] }).every(row => row.status === 'failed'));
 });

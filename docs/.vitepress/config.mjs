@@ -73,6 +73,7 @@ export default defineConfig({
           { text: "Control world time", link: "/guides/timeline" },
           { text: "How it fits your workflow", link: "/architecture" },
           { text: "Workbench", link: "/guides/workbench" },
+          { text: "Test APIs with Postman", link: "/guides/postman" },
           { text: "Bindings", link: "/guides/bindings" },
           { text: "Events and webhooks", link: "/guides/events-and-webhooks" },
           { text: "Native provider webhooks", link: "/guides/native-webhooks" },

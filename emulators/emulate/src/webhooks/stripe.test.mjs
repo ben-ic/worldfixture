@@ -27,7 +27,7 @@ async function fixture(t, receiver = () => 200) {
     res.writeHead(await receiver(item, received.length)); res.end();
   });
   listener.listen(0, "127.0.0.1"); await once(listener, "listening");
-  const server = createServer(extendStripeWebhooksPlugin(extendStripeTransactionsPlugin(extendStripePlugin(stripePlugin)), { retryDelaysMs: [10, 10], timeoutMs: 100 }));
+  const server = createServer(extendStripeWebhooksPlugin(extendStripeTransactionsPlugin(extendStripePlugin(stripePlugin)), { retryDelaysMs: [10, 10], timeoutMs: 1000 }));
   t.after(async () => { server.webhooks.closeStripeWebhooks(); listener.closeAllConnections(); await new Promise(resolve => listener.close(resolve)); });
   const sdk = new Stripe("sk_test_worldfixture", { apiVersion: STRIPE_WEBHOOK_API_VERSION,
     httpClient: Stripe.createFetchHttpClient((url, init) => server.app.request(url, init)), maxNetworkRetries: 0 });

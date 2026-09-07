@@ -36,8 +36,11 @@ export function createOAuth(env, { origin, fetcher = globalThis.fetch, now = () 
     const base = localUrl(binding);
     if (base.pathname !== '/' || base.search || base.hash) throw fail('OAuth requires a generated provider origin without a path.');
     const app = localUrl(typeof origin === 'function' ? origin() : origin);
-    const clientId = env[`ACCOUNT_DESK_${definition.prefix}_CLIENT_ID`] || 'account-desk-local';
-    const clientSecret = env[`ACCOUNT_DESK_${definition.prefix}_CLIENT_SECRET`];
+    const clientId = env[`ACCOUNT_DESK_${definition.prefix}_CLIENT_ID`]
+      || env[`${definition.prefix}_CLIENT_ID`]
+      || 'account-desk-local';
+    const clientSecret = env[`ACCOUNT_DESK_${definition.prefix}_CLIENT_SECRET`]
+      || env[`${definition.prefix}_CLIENT_SECRET`];
     return { ...definition, base: base.origin, app: app.origin, clientId, clientSecret, redirectUri: `${app.origin}/oauth/${id}/callback` };
   }
   async function json(configured, path, options = {}) {

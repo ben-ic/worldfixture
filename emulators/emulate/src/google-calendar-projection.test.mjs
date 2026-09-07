@@ -29,6 +29,10 @@ for (const world of ["business.saas-company.v2", "business.saas-company.v3", "co
       env: { ...process.env, PYTHONPATH: join(root, "compiler") },
       maxBuffer: 8 * 1024 * 1024,
     }));
+    // This test seeds raw compiler output without the runtime credential
+    // resolver. OAuth clients need generated run secrets, but calendar reads do
+    // not need an OAuth client declaration.
+    delete fixture.seed.oauth_clients;
     const email = fixture.seed.users[0].email;
     const { plugin, seedFromConfig } = await VENDORS.google.load();
     const { app, store } = createServer(plugin, {

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>WorldFixture — a fake company your software can interact with</title>
-<meta name="description" content="Run local Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events. Build, test, and demo without production accounts or empty sandboxes.">
+<title>WorldFixture: a fake company your software can interact with</title>
+<meta name="description" content="Run local, emulated Slack, GitHub, Gmail, Stripe, S3, and more with shared people and history. New activity arrives over time, so you can see how your app responds.">
 <meta name="keywords" content="slack emulator, github emulator, stripe test data, imap smtp emulator, s3 local, seed data, synthetic data, dev environment, demo data, integration testing, mcp, agent testing">
 <link rel="canonical" href="https://worldfixture.com/">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -18,312 +18,262 @@
 <meta property="og:site_name" content="WorldFixture">
 <meta property="og:url" content="https://worldfixture.com/">
 <meta property="og:title" content="A fake company your software can interact with">
-<meta property="og:description" content="Run local Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events. npx worldfixture up.">
-<meta property="og:image" content="https://worldfixture.com/og.png">
+<meta property="og:description" content="Run local, emulated Slack, GitHub, Gmail, Stripe, S3, and more with shared people and history. New activity arrives over time, so you can see how your app responds. npx worldfixture up.">
+<meta property="og:image" content="https://worldfixture.com/og.png?v=84c2022513cc">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="WorldFixture homepage with local emulators and the npx worldfixture up command.">
+<meta property="og:image:alt" content="WorldFixture: A fake company your software can interact with. Local, emulated services with shared people, history, and new activity over time. npx worldfixture up.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="A fake company your software can interact with">
-<meta name="twitter:description" content="Run local Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events. npx worldfixture up.">
-<meta name="twitter:image" content="https://worldfixture.com/og.png">
+<meta name="twitter:description" content="Run local, emulated Slack, GitHub, Gmail, Stripe, S3, and more with shared people and history. New activity arrives over time, so you can see how your app responds. npx worldfixture up.">
+<meta name="twitter:image" content="https://worldfixture.com/og.png?v=84c2022513cc">
+<meta name="twitter:image:alt" content="WorldFixture: A fake company your software can interact with. Local, emulated services with shared people, history, and new activity over time. npx worldfixture up.">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"WorldFixture","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Linux, Windows","description":"A local synthetic company with provider-compatible services, shared history, and scheduled events for development, tests, and demos.","license":"https://www.apache.org/licenses/LICENSE-2.0","codeRepository":"https://github.com/ben-ic/worldfixture","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#090b0f;color:#e6e9f0;font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#e6e9f0;text-decoration:none}@keyframes wfcaret{0%,45%{opacity:1}50%,95%{opacity:0}100%{opacity:1}}a:hover{color:#7c9cff}[id]{scroll-margin-top:24px}@media(max-width:640px){.site-nav{position:relative!important}}@media(min-width:641px){[id]{scroll-margin-top:140px}}</style>
-<script src="./support.js"></script>
+<style>
+:root { color-scheme: dark; --bg: #090b0f; --surface: #10141c; --text: #e6e9f0; --muted: #a3abbd; --line: rgba(255,255,255,.12); --blue: #4f7cff; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Instrument Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+a:hover { color: #9ab3ff; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid #9ab3ff; outline-offset: 6px; border-radius: 4px; }
+.container { width: min(1080px, calc(100% - 48px)); margin-inline: auto; }
+.skip-link { position: absolute; top: -80px; left: 24px; z-index: 10; background: var(--text); color: var(--bg); padding: 12px 18px; }
+.skip-link:focus { top: 12px; }
+.site-header { height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; letter-spacing: -.03em; }
+.brand img { width: 30px; height: 30px; }
+.site-header nav { display: flex; gap: 28px; color: var(--muted); font-size: 14px; }
+.site-header nav a { padding-block: 12px; }
+.hero { padding: 72px 0 56px; text-align: center; }
+h1 { max-width: 930px; margin: 0 auto; font-size: clamp(42px, 6.1vw, 76px); font-weight: 500; line-height: 1.06; letter-spacing: -.055em; text-wrap: balance; }
+.hero p { max-width: 720px; margin: 26px auto 30px; color: var(--muted); font-size: 20px; line-height: 1.55; text-wrap: balance; }
+.cta { display: inline-flex; justify-content: center; align-items: center; gap: 22px; min-height: 48px; padding: 13px 23px; background: var(--blue); color: #fff; border: 1px solid transparent; border-radius: 6px; font: 500 15px 'Geist Mono', monospace; cursor: pointer; transition: background .15s; }
+.cta:hover { background: #638bff; color: #fff; }
+.cta code { font: inherit; }
+.cta svg { width: 18px; height: 18px; flex: none; }
+.cta .check-icon { display: none; }
+.cta[data-copied] .copy-icon { display: none; }
+.cta[data-copied] .check-icon { display: block; }
+.copy-status { display: block; min-height: 20px; margin-top: 10px; color: var(--muted); font: 13px/1.5 'Instrument Sans', system-ui, sans-serif; }
+h2 { margin: 0; font-size: clamp(28px, 3.6vw, 40px); font-weight: 500; letter-spacing: -.04em; line-height: 1.15; text-wrap: balance; }
+.example { padding-bottom: 96px; }
+.example > h2 { text-align: center; margin-bottom: 14px; font-size: clamp(24px, 3vw, 30px); }
+.example-intro { max-width: 650px; margin: 0 auto 30px; color: var(--muted); font-size: 17px; line-height: 1.6; text-align: center; text-wrap: balance; }
+.activity-image { display: block; width: 100%; height: auto; }
+.activity-figure { margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.activity-figure a { display: block; }
+.activity-figure figcaption { padding: 14px 20px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); }
+.world { margin: 0; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; box-shadow: 0 28px 80px rgba(0,0,0,.22); }
+.world figcaption { padding: 17px 24px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.world figcaption strong { color: var(--text); font-weight: 500; }
+.story { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); }
+.story article { padding: 26px 26px 32px; min-width: 0; }
+.story article + article { border-left: 1px solid var(--line); }
+.service { display: flex; align-items: center; gap: 9px; margin-bottom: 26px; font-size: 14px; font-weight: 600; }
+.service svg { width: 19px; height: 19px; flex: none; }
+.email { color: #79b9ff; }
+.slack { color: #c5a3f5; }
+.github { color: #8fd9b0; }
+.person { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+.avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 7px; color: #ddd4f5; background: #332a4c; font-size: 11px; font-weight: 600; flex: none; }
+.person strong { font-size: 13px; font-weight: 600; }
+.person small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.story h3 { margin: 0 0 10px; font-size: 16px; line-height: 1.4; font-weight: 500; }
+.story p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.issue { display: inline-flex; align-items: center; gap: 6px; margin: 18px 0 0; color: #8fd9b0; font-size: 12px; }
+.issue::before { content: ''; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; }
+.local { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: center; gap: 48px; padding-block: 76px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.local p { margin: 18px 0 0; max-width: 450px; font-size: 17px; color: var(--muted); line-height: 1.65; }
+.command { margin: 0; padding: 25px 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; font: 12px/1.9 'Geist Mono', monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.command .prompt { color: var(--muted); user-select: none; }
+.command .binding-name { color: #9ab3ff; }
+.command .binding-value { display: inline-block; color: var(--muted); }
+.command .export { color: var(--muted); }
+.faq { max-width: 720px; padding-block: 88px; }
+.faq h2 { margin-bottom: 30px; }
+details { border-bottom: 1px solid var(--line); }
+summary { position: relative; padding: 22px 36px 22px 0; font-size: 16px; line-height: 1.5; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: '+'; position: absolute; right: 4px; top: 22px; color: var(--muted); font-size: 20px; line-height: 1.2; }
+details[open] summary::after { content: '−'; }
+details p { margin: 0 30px 22px 0; color: var(--muted); line-height: 1.65; font-size: 15px; }
+details a { color: #9ab3ff; text-decoration: underline; text-underline-offset: 3px; }
+.close { padding: 32px 0 88px; text-align: center; }
+.close h2 { margin-bottom: 26px; }
+.site-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-block: 26px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.site-footer p { margin: 0; }
+.site-footer a { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 760px) {
+  .hero { padding: 48px 0 40px; }
+  .hero p { font-size: 18px; }
+  .story { grid-template-columns: 1fr; }
+  .story article { padding: 24px; }
+  .story article + article { border-left: 0; border-top: 1px solid var(--line); }
+  .service { margin-bottom: 18px; }
+  .example { padding-bottom: 64px; }
+  .local { grid-template-columns: 1fr; gap: 28px; padding-block: 56px; }
+  .faq { padding-block: 64px; }
+  .close { padding: 12px 0 64px; }
+}
+@media (max-width: 420px) {
+  .container { width: calc(100% - 36px); }
+  .site-header { height: 76px; gap: 16px; }
+  .brand { font-size: 15px; gap: 7px; }
+  .brand img { width: 26px; height: 26px; }
+  .site-header nav { gap: 18px; font-size: 13px; }
+  .hero { padding-top: 48px; }
+  h1 { font-size: 40px; }
+  .command { padding: 22px 18px; font-size: 11px; }
+  .site-footer { flex-direction: column; align-items: flex-start; gap: 10px; }
+}
+@media (prefers-reduced-motion: reduce) { .cta { transition: none; } }
+</style>
 </head>
 <body>
-<x-dc>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header container">
+  <a class="brand" href="/" aria-label="WorldFixture home"><img src="/logo.svg" width="30" height="30" alt="">WorldFixture</a>
+  <nav aria-label="Main navigation">
+    <a href="/docs/">Docs</a>
+    <a href="https://github.com/ben-ic/worldfixture">GitHub</a>
+  </nav>
+</header>
+<main id="main">
+  <section class="hero container" aria-labelledby="headline">
+    <h1 id="headline">A fake company your software can interact with.</h1>
+    <p>Run local, emulated Slack, GitHub, Gmail, Stripe, S3, and more with shared people and history. New activity arrives over time, so you can see how your app responds.</p>
+    <button class="cta" type="button" aria-label="Copy npx worldfixture up" title="Copy command">
+      <code>npx worldfixture up</code>
+      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h4"/></svg>
+      <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+    </button>
+    <span class="copy-status" role="status" aria-live="polite"></span>
+  </section>
 
-
-<div style="position:relative;min-height:100vh;background-color:#090b0f;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:48px 48px;background-position:center top">
-
-<!-- nav -->
-<div class="site-nav" style="border-bottom:1px solid rgba(255,255,255,.08);background:rgba(9,11,15,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5">
-<div style="max-width:1160px;margin:0 auto;padding:10px 24px;min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px">
-  <div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em"><span style="display:inline-block;width:14px;height:14px;background:#4f7cff;box-shadow:0 0 0 3px #090b0f,0 0 0 4px rgba(79,124,255,.5)"></span>WorldFixture</div>
-  <div style="display:flex;flex-wrap:wrap;gap:14px 24px;font-size:14px;color:#a3abbd"><a href="#example">Example</a><a href="#how">How it works</a><a href="#use">When to use it</a><a href="#worlds">Worlds</a><a href="#faq">FAQ</a></div>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-    <a href="/docs/" style="font-size:13px;color:#a3abbd;padding:8px 12px">Docs</a><a href="https://github.com/ben-ic/worldfixture" style="font-size:13px;color:#a3abbd;padding:8px 12px">GitHub</a>
-    <a href="#install" style="font:500 13px 'Geist Mono',monospace;background:#e6e9f0;color:#090b0f;padding:8px 14px;border-radius:4px">npx worldfixture up</a>
-  </div>
-</div></div>
-
-<!-- hero -->
-<div style="max-width:1160px;margin:0 auto;padding:clamp(40px,7vw,80px) clamp(20px,4vw,32px) 40px;display:flex;flex-direction:column;gap:clamp(28px,4vw,48px)">
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:clamp(28px,4vw,48px);align-items:end">
-    <div style="display:flex;flex-direction:column;gap:22px">
-      <div style="display:flex;gap:8px;align-items:center;font:500 12px 'Geist Mono',monospace;color:#8b93a7;letter-spacing:.02em"><span style="width:6px;height:6px;border-radius:50%;background:#4f7cff;display:inline-block"></span>OPEN SOURCE · RUNS LOCALLY · REPLAYABLE</div>
-      <h1 style="margin:0;font-size:clamp(38px,6.2vw,66px);line-height:1.02;letter-spacing:-.04em;font-weight:600;color:#e6e9f0;text-wrap:balance">A fake company your software can interact with.</h1>
-      <div style="font-size:clamp(18px,2.4vw,24px);line-height:1.3;letter-spacing:-.02em;font-weight:500;color:#c7cddb;text-wrap:balance">Run Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events.</div>
-      <div style="display:flex;align-items:center;gap:10px;font-size:clamp(15px,1.8vw,17px);line-height:1.4;color:#8b93a7;text-wrap:pretty"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.14);flex:none"></span>Build, test, and demo without production accounts or empty sandboxes.</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:6px">
-      <p style="margin:0;font-size:17px;line-height:1.5;color:#a3abbd;text-wrap:pretty">Demos should never be empty. Tests should run against an environment with data. Seed scripts fill databases and mocks return responses, but neither makes Slack, email, GitHub, and Stripe tell the same story. WorldFixture gives your app a whole company to interact with.</p>
-      <div id="install" style="display:flex;flex-direction:column;background:#0f1218;border:1px solid rgba(255,255,255,.14);border-radius:8px;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 6px 6px 18px;background:#090b0f">
-          <span style="font:clamp(13px,1.6vw,16px) 'Geist Mono',monospace;color:#e6e9f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0"><span style="color:#4f7cff">$ </span>npx worldfixture up</span>
-          <button onClick="{{ copy }}" style="border:0;background:#4f7cff;color:#fff;font:600 12px 'Instrument Sans',sans-serif;padding:9px 14px;border-radius:5px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#6a90ff">{{ copyLabel }}</button>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:7px;padding:13px 18px;border-top:1px solid rgba(255,255,255,.1)">
-          <sc-for list="{{ bootLines }}" as="b" hint-placeholder-count="4">
-            <div style="display:grid;grid-template-columns:14px minmax(0,1fr);gap:9px;align-items:baseline;font:12px/1.5 'Geist Mono',monospace;min-width:0">
-              <span style="color:#4ade80">{{ b.mark }}</span>
-              <span style="color:#a3abbd;min-width:0">{{ b.label }} <span style="color:#5c6578">{{ b.port }}</span></span>
-            </div>
-          </sc-for>
-        </div>
+  <section class="example container" aria-labelledby="example-heading">
+    <h2 id="example-heading">Test complete workflows without real customer accounts.</h2>
+    <p class="example-intro">Test search across tools, run automations, and check AI agent actions. The emails, messages, and issues below share one customer story.</p>
+    <figure class="world">
+      <figcaption><strong>Northstar Relay</strong> · Example company</figcaption>
+      <div class="story">
+        <article aria-label="Customer email">
+          <div class="service email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m3 7 9 6 9-6"/></svg>Email</div>
+          <div class="person"><span class="avatar" aria-hidden="true">PR</span><div><strong>Priya Raman</strong><small>Lumen Labs</small></div></div>
+          <h3>Renewal and export reliability</h3>
+          <p>Before we renew on Tuesday, can you confirm that scheduled exports work at our volume?</p>
+        </article>
+        <article aria-label="Related Slack conversation">
+          <div class="service slack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m10 3-3 18M17 3l-3 18M3 9h18M3 15h18"/></svg>Slack</div>
+          <div class="person"><span class="avatar" aria-hidden="true">DB</span><div><strong>David Banerjee</strong><small>#account-lumen</small></div></div>
+          <h3>Lumen's renewal is Tuesday.</h3>
+          <p>Priya needs an answer on exports. What can we promise from the fix in #902?</p>
+        </article>
+        <article aria-label="Related GitHub issue">
+          <div class="service github"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16v1"/></svg>GitHub</div>
+          <div class="person"><span class="avatar" aria-hidden="true">MC</span><div><strong>Maya Chen</strong><small>relay-exports · #902</small></div></div>
+          <h3>Scheduled exports exceed the worker lease</h3>
+          <p>The lease heartbeat passes at 268,000 rows. Lumen will test its saved export next.</p>
+          <span class="issue">Open</span>
+        </article>
       </div>
-      <div style="font-size:13px;line-height:1.5;color:#5c6578">Requires Docker and Node.js 22+. Stream the world in real time, advance its clock, or create your own world. No account, production API key, or model call.</div>
-    </div>
-  </div>
+    </figure>
+  </section>
 
-  <!-- world window -->
-  <div style="display:flex;flex-direction:column;background:#0f1218;border:1px solid rgba(255,255,255,.12);border-radius:10px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6)">
-    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px"><span style="display:flex;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span></span><span style="font:12px 'Geist Mono',monospace;color:#8b93a7;overflow-wrap:anywhere">business.saas-company:v3 · Northstar Relay · ready</span></div>
-      <div style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">shared history · live clock</div>
-    </div>
+  <section class="example container" aria-labelledby="activity-heading">
+    <h2 id="activity-heading">New activity while your app runs.</h2>
+    <p class="example-intro">Play scheduled messages and events through the local services. Pause or advance time to test what happens next.</p>
+    <figure class="activity-figure">
+      <a href="/uploads/timeline-streaming.png" aria-label="View the WorldFixture Timeline screenshot at full size">
+        <img class="activity-image" src="/uploads/timeline-streaming.png" width="1728" height="938" loading="lazy" decoding="async" alt="WorldFixture Timeline showing a running clock, scheduled events, and controls to pause, advance time, or loop the schedule.">
+      </a>
+      <figcaption>Scheduled events in a running world, shown in the WorldFixture Workbench.</figcaption>
+    </figure>
+  </section>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));overflow:hidden">
-      <!-- slack -->
-      <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);min-height:0;min-width:0;height:440px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#c084fc"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Slack · #account-lumen</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">local API</span></div>
-        <div ref="{{ slackRef }}" style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;flex:1;min-height:0;overflow-y:auto">
-          <sc-for list="{{ slack }}" as="m" hint-placeholder-count="4">
-            <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
-              <div style="width:26px;height:26px;border-radius:5px;background:{{ m.avatar }};color:#fff;font:600 10px 'Instrument Sans',sans-serif;display:flex;align-items:center;justify-content:center">{{ m.initials }}</div>
-              <div style="display:flex;flex-direction:column;gap:2px;min-width:0"><div style="display:flex;gap:8px;align-items:baseline;white-space:nowrap"><span style="font-size:13px;font-weight:600">{{ m.name }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578">{{ m.t }}</span></div><div style="font-size:13px;line-height:1.45;color:#c7cddb;text-wrap:pretty">{{ m.text }}</div></div>
-            </div>
-          </sc-for>
-        </div>
-      </div>
-      <!-- mail -->
-      <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);min-height:0;min-width:0;height:440px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#4ade80"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Mail · maya@northstar-relay.worldfixture.test</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">SMTP · IMAP</span></div>
-        <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
-          <sc-for list="{{ mail }}" as="e" hint-placeholder-count="5">
-            <div style="display:flex;flex-direction:column;gap:3px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);background:{{ e.bg }}">
-              <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-size:13px;font-weight:{{ e.weight }};color:#e6e9f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.from }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">{{ e.t }}</span></div>
-              <div style="font-size:13px;font-weight:{{ e.weight }};color:#c7cddb;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.subject }}</div>
-              <div style="font-size:12px;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.preview }}</div>
-            </div>
-          </sc-for>
-        </div>
-      </div>
-      <!-- github -->
-      <div style="display:flex;flex-direction:column;min-height:0;min-width:0;height:440px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#fb923c"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">GitHub · northstar-relay/relay-exports</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">local API</span></div>
-        <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;gap:8px;align-items:center"><span style="font:600 10px 'Geist Mono',monospace;background:rgba(74,222,128,.15);color:#4ade80;padding:2px 6px;border-radius:3px">OPEN</span><span style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Scheduled exports exceed the worker lease</span></div>
-          <div style="font:11px 'Geist Mono',monospace;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">#902 · customer-lumen · release-3.2</div>
-        </div>
-        <div ref="{{ ghRef }}" style="display:flex;flex-direction:column;gap:10px;padding:12px 16px;flex:1;min-height:0;overflow-y:auto">
-          <sc-for list="{{ github }}" as="g" hint-placeholder-count="3">
-            <div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:#0b0e14">
-              <div style="display:flex;gap:8px;align-items:center"><span style="font-size:12px;font-weight:600">{{ g.who }}</span><span style="font:10px 'Geist Mono',monospace;color:{{ g.kindColor }}">{{ g.kind }}</span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;margin-left:auto">{{ g.t }}</span></div>
-              <div style="font-size:12px;line-height:1.45;color:#c7cddb">{{ g.text }}</div>
-            </div>
-          </sc-for>
-        </div>
-      </div>
+  <section class="local container" aria-labelledby="local-heading">
+    <div>
+      <h2 id="local-heading">Run locally. Reset when you need to.</h2>
+      <p>Use the service URLs in your app. After a test, reset the services to their starting state.</p>
     </div>
+    <pre class="command" aria-label="Example service connection settings from npx worldfixture env"><code><span class="prompt" aria-hidden="true">$ </span>npx worldfixture env
 
-    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.08);background:#090b0f">
-      <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#a3abbd;min-width:0"><span style="width:8px;height:8px;background:#4f7cff;border-radius:2px;flex:none"></span>One customer risk, visible across Slack, mail, GitHub, Stripe, and more.</div>
-      <div style="font:11px 'Geist Mono',monospace;color:#5c6578;overflow-wrap:anywhere">{{ status }}</div>
-    </div>
-  </div>
-</div>
+<span class="export">export </span><span class="binding-name">GITHUB_BASE_URL</span>=<span class="binding-value">'http://127.0.0.1:58832'</span>
+<span class="export">export </span><span class="binding-name">GOOGLE_BASE_URL</span>=<span class="binding-value">'http://127.0.0.1:58833'</span>
+<span class="export">export </span><span class="binding-name">S3_BASE_URL</span>=<span class="binding-value">'http://127.0.0.1:58847'</span>
+<span class="export">export </span><span class="binding-name">SLACK_BASE_URL</span>=<span class="binding-value">'http://127.0.0.1:58831'</span>
+<span class="export">export </span><span class="binding-name">SMTP_HOST_PORT</span>=<span class="binding-value">'127.0.0.1:58845'</span>
+<span class="export">export </span><span class="binding-name">STRIPE_BASE_URL</span>=<span class="binding-value">'http://127.0.0.1:58829'</span></code></pre>
+  </section>
 
-<!-- end-to-end example -->
-<div id="example" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:flex;flex-direction:column;gap:24px">
-    <div style="max-width:760px;display:flex;flex-direction:column;gap:14px">
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">ONE COMPLETE USE CASE</div>
-      <h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">Find a customer at risk before the renewal call.</h2>
-      <p style="margin:0;color:#a3abbd;font-size:17px;line-height:1.6;text-wrap:pretty">Imagine that you are building a product that identifies customers at risk of churn. Start WorldFixture and your app sees Northstar Relay, a synthetic 99-person SaaS company with weeks of activity.</p>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px">
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">01 · CONNECT</span><strong style="font-size:16px">Point your app at local services</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">WorldFixture prints the URLs and credentials for Slack, GitHub, Gmail, Stripe, S3, and the other active services.</span></div>
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">02 · FIND THE SIGNAL</span><strong style="font-size:16px">See one risk across systems</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">Slack discusses Lumen's export failures. GitHub has the engineering issues. Email has the renewal and billing discussion. Stripe has the account and invoice.</span></div>
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">03 · STREAM IT</span><strong style="font-size:16px">Let the world run in real time</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">Email arrives, Slack conversations continue, GitHub issues get comments, files appear in S3, and Stripe payments complete through provider events as the clock moves.</span></div>
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">04 · REPLAY</span><strong style="font-size:16px">Reset the whole company</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">Return every WorldFixture-owned service, event, and clock to the accepted starting state. Run the same E2E test or demo again.</span></div>
-    </div>
-  </div>
-</div>
+  <section class="faq container" aria-labelledby="faq-heading">
+    <h2 id="faq-heading">Before you use it</h2>
+    <details>
+      <summary>Who is WorldFixture for?</summary>
+      <p>Developers building apps that read from or write to external services.</p>
+    </details>
+    <details>
+      <summary>What can I use it for?</summary>
+      <p>Test workflows across services, develop an integration, or demo your app with realistic activity.</p>
+    </details>
+    <details>
+      <summary>When is it useful?</summary>
+      <p>Before a customer demo, while building an integration, or when tests need the same starting data. It helps when people and records must match across several services.</p>
+    </details>
+    <details>
+      <summary>When are normal tests a better fit?</summary>
+      <p>Use unit tests and mocks for isolated logic, and a real test database for database behavior. Keep provider sandbox checks: WorldFixture implements <a href="/docs/providers/">selected API operations</a>, not complete copies of each provider.</p>
+    </details>
+    <details>
+      <summary>How does it compare to other tools?</summary>
+      <p>Faker generates data. WireMock lets you define API behavior. WorldFixture provides a company across local services, with shared history and events. It builds on emulate.dev for many of its APIs.</p>
+    </details>
+    <details>
+      <summary>What would a product demo look like?</summary>
+      <p>Connect your app to local services. Show it reading the existing data and responding as new events arrive.</p>
+    </details>
+  </section>
 
-<!-- how it works -->
-<div id="how" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(28px,4vw,48px);align-items:start">
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">HOW IT WORKS</div>
-      <h2 style="margin:0;font-size:clamp(25px,3.6vw,34px);line-height:1.12;letter-spacing:-.03em;font-weight:600">Use the interfaces your app already knows.</h2>
-      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55">There is no WorldFixture SDK that your application must know about. Mail uses SMTP and IMAP. Storage is S3-compatible. Slack, GitHub, Google, Notion, Stripe, and other services expose local APIs shaped like their providers. Use your normal client and change its base URL.</p>
-    </div>
-    <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden">
-      <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);font:500 11px 'Geist Mono',monospace;color:#8b93a7">POINT YOUR APP AT IT</div>
-      <pre style="margin:0;padding:18px 20px;background:#090b0f;font:13px/1.75 'Geist Mono',monospace;color:#c7cddb;overflow:auto"><span style="color:#5c6578">$</span> npx worldfixture env
-<span style="color:#7c9cff">SLACK_BASE_URL</span>=http://127.0.0.1:58831
-<span style="color:#7c9cff">SLACK_TOKEN</span>=xoxb-maya
-<span style="color:#7c9cff">GITHUB_BASE_URL</span>=http://127.0.0.1:58832
-<span style="color:#7c9cff">GOOGLE_BASE_URL</span>=http://127.0.0.1:58833
-<span style="color:#7c9cff">STRIPE_BASE_URL</span>=http://127.0.0.1:58829
-<span style="color:#7c9cff">SMTP_HOST_PORT</span>=127.0.0.1:58845
-<span style="color:#7c9cff">S3_ENDPOINT</span>=http://127.0.0.1:58847
-<span style="color:#5c6578">$</span> npm run dev</pre>
-      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#8b93a7;line-height:1.5">Ports are assigned for each run. Use <span style="font-family:'Geist Mono',monospace;color:#c7cddb">npx worldfixture env --json</span> when your setup needs machine-readable bindings.</div>
-    </div>
-  </div>
-</div>
-
-<!-- preseeded world -->
-<div id="world" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:clamp(28px,4vw,48px);align-items:stretch">
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">THE DEFAULT WORLD</div>
-      <h2 style="margin:0;font-size:clamp(25px,3.6vw,34px);line-height:1.12;letter-spacing:-.03em;font-weight:600">Northstar Relay, a 99-person SaaS company, late August</h2>
-      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55;text-wrap:pretty">The company does not contain random filler. Its customer, product, finance, and engineering stories cross service boundaries, so your app can reach the same conclusion from different sources.</p>
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7;margin-top:4px">THE LUMEN LABS STORY</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px">
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">RENEWAL RISK</div><div style="font-size:14px;line-height:1.45">Lumen's renewal call is Tuesday. Priya needs an honest answer about scheduled exports at their volume.</div></div>
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">ISSUE 902</div><div style="font-size:14px;line-height:1.45">The lease heartbeat passes at 268,000 rows on Northstar's fixture. Lumen will run its own saved export next.</div></div>
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">ISSUE 903</div><div style="font-size:14px;line-height:1.45">A cancelled export can still leave a partial object in the destination bucket. The fix is not closed.</div></div>
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">BILLING</div><div style="font-size:14px;line-height:1.45">Lumen's August invoice is above true usage. The billing run is on hold and a credit note will follow.</div></div>
-      </div>
-    </div>
-    <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:100%">
-      <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1.9fr) minmax(0,.9fr);gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);font:500 11px 'Geist Mono',monospace;color:#5c6578"><span>PERSON</span><span>SLACK</span><span>EMAIL</span><span>GITHUB</span></div>
-      <sc-for list="{{ people }}" as="p" hint-placeholder-count="10">
-        <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1.9fr) minmax(0,.9fr);gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;align-items:center;flex:1">
-          <span style="display:flex;flex-direction:column"><span style="font-weight:500">{{ p.name }}</span><span style="font-size:11px;color:#8b93a7">{{ p.role }}</span></span>
-          <span style="font:11.5px/1.4 'Geist Mono',monospace;color:#a3abbd;min-width:0;overflow-wrap:anywhere">{{ p.slack }}</span>
-          <span style="font:11.5px/1.4 'Geist Mono',monospace;color:#a3abbd;min-width:0;overflow-wrap:anywhere">{{ p.email }}</span>
-          <span style="font:11.5px/1.4 'Geist Mono',monospace;color:#a3abbd;min-width:0;overflow-wrap:anywhere">{{ p.github }}</span>
-        </div>
-      </sc-for>
-      <div style="padding:12px 16px;font:12px 'Geist Mono',monospace;color:#5c6578;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-top:auto"><span>99 employees, plus customers and vendors · 30 days of history</span><span>worldfixture people</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- when to use it -->
-<div id="use" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:flex;flex-direction:column;gap:24px">
-    <div style="max-width:760px;display:flex;flex-direction:column;gap:14px">
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">WHEN TO USE IT</div>
-      <h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">Use WorldFixture when your test crosses systems.</h2>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px">
-      <div style="border:1px solid rgba(124,156,255,.35);border-radius:8px;padding:22px;background:rgba(79,124,255,.07);display:flex;flex-direction:column;gap:14px"><div style="font:500 12px 'Geist Mono',monospace;color:#7c9cff">USE WORLDFIXTURE</div><div style="font-size:17px;font-weight:600">When behavior crosses systems or changes over time.</div><ul style="margin:0;padding-left:20px;color:#a3abbd;font-size:14px;line-height:1.7"><li>Local integration development</li><li>E2E tests with shared state and history</li><li>Repeatable product and sales demos</li><li>Webhook and scheduled-event flows</li><li>CI without production accounts</li></ul></div>
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:22px;background:#0f1218;display:flex;flex-direction:column;gap:14px"><div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">USE A NORMAL MOCK</div><div style="font-size:17px;font-weight:600">When one function makes one API call.</div><p style="margin:0;color:#a3abbd;font-size:14px;line-height:1.7">A small mock is easier and faster for isolated unit tests. WorldFixture also does not replace final checks against official provider sandboxes. It implements selected provider operations, not every operation.</p><a href="/docs/providers/" style="font-size:14px;color:#7c9cff">Check exact provider support →</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- worlds -->
-<div id="worlds" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:flex;flex-direction:column;gap:24px">
-    <div style="max-width:780px;display:flex;flex-direction:column;gap:14px">
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">MORE THAN ONE COMPANY</div>
-      <h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">Choose a world that fits the software.</h2>
-      <p style="margin:0;color:#a3abbd;font-size:16px;line-height:1.6">A world defines the organization, people, accounts, history, and scheduled events. Start with an included world, stream it in real time, control its clock, or create a world for your own scenario.</p>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px">
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:20px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">INCLUDED · DEFAULT</span><strong style="font-size:17px">Northstar Relay</strong><span style="font-size:14px;line-height:1.55;color:#8b93a7">A 99-person B2B SaaS company with customers, renewals, product work, incidents, invoices, and a live operating timeline.</span><code style="font:12px 'Geist Mono',monospace;color:#c7cddb">business.saas-company:v3</code></div>
-      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:20px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#4ade80">INCLUDED</span><strong style="font-size:17px">Marlow &amp; Pine</strong><span style="font-size:14px;line-height:1.55;color:#8b93a7">A consumer retail brand with shoppers, orders, subscription renewals, support cases, inventory, and finance activity.</span><code style="font:12px 'Geist Mono',monospace;color:#c7cddb">consumer.retail-brand:v1</code></div>
-      <div style="border:1px dashed rgba(255,255,255,.2);border-radius:7px;padding:20px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#8b93a7">YOUR OWN</span><strong style="font-size:17px">Build another world</strong><span style="font-size:14px;line-height:1.55;color:#8b93a7">Describe the people, organizations, records, provider projections, history, and scheduled activity that your product needs.</span><a href="/docs/guides/worlds" style="font-size:14px;color:#7c9cff">How worlds work →</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- faq -->
-<div id="faq" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(28px,5vw,72px);align-items:start">
-    <div style="display:flex;flex-direction:column;gap:14px"><div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">FAQ</div><h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">The obvious questions, answered.</h2><p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.6">WorldFixture is early. These are the boundaries that matter before you try it.</p></div>
-    <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.12)">
-      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Who is WorldFixture for?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">Developers of software that integrates with business services. It is most useful when an application reads several services or reacts to events.</p></details>
-      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Does it contact real accounts?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">No. Included companies, people, customers, credentials, and domains are synthetic. Included domains end in <code>.worldfixture.test</code>.</p></details>
-      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Is it a collection of response mocks?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">No. The local services keep state. Your app and the Workbench use that same state, and the services start from one shared world and clock.</p></details>
-      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Can I use my normal provider SDK?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">Yes, for supported operations. Configure the SDK with the local base URL and credentials that WorldFixture prints.</p></details>
-      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Can it send events to my app?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">Yes. Run the clock in real time or advance it directly. Supported services deliver native provider webhooks, and worlds can send generic HTTP webhooks.</p></details>
-      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Does it implement every provider API?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">No. Support is intentionally explicit and incomplete. Check the provider support index before you depend on an operation.</p></details>
-    </div>
-  </div>
-</div>
-
-<!-- footer cta -->
-<div style="border-top:1px solid rgba(255,255,255,.08)">
-<div style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px) 48px;display:flex;flex-direction:column;gap:40px">
-  <div style="display:flex;justify-content:space-between;align-items:end;gap:32px;flex-wrap:wrap">
-    <h2 style="margin:0;font-size:clamp(30px,4.4vw,44px);line-height:1.02;letter-spacing:-.035em;font-weight:600;max-width:560px">Give your software a world to live in.</h2>
-    <div style="display:flex;flex-wrap:wrap;gap:10px">
-      <a href="#install" style="font:500 14px 'Geist Mono',monospace;background:#4f7cff;color:#fff;padding:12px 18px;border-radius:5px" style-hover="background:#6a90ff;color:#fff">npx worldfixture up</a>
-      <a href="https://github.com/ben-ic/worldfixture" style="font:500 14px 'Instrument Sans',sans-serif;border:1px solid rgba(255,255,255,.18);color:#e6e9f0;padding:12px 18px;border-radius:5px">View on GitHub</a>
-    </div>
-  </div>
-  <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:13px;color:#5c6578;border-top:1px solid rgba(255,255,255,.08);padding-top:20px">
-    <span>Open source under Apache 2.0. Built on <a href="https://emulate.dev/" style="color:#8b93a7;text-decoration:underline;text-underline-offset:3px">emulate.dev</a>, Cyrus IMAP, SeaweedFS and SQLite.</span>
-    <span>Local only.</span>
-  </div>
-</div></div>
-
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{}">
-class Component extends DCLogic {
-  state = { copied: false, copyFailed: false };
-  slackRef = React.createRef(); ghRef = React.createRef();
-  avatars = { 'Maya Chen': '#7c5cff', 'David Banerjee': '#2a9d8f', 'Callan Reed': '#e76f51', 'Priya Raman': '#5c6578' };
-  seedSlack = [
-    { name: 'David Banerjee', t: '09:14', text: "Lumen renewal call is Tuesday. Priya's question has not changed: can we promise scheduled exports at their volume?" },
-    { name: 'Callan Reed', t: '09:18', text: 'At 268k rows with the lease heartbeat, yes. Without it, no. That is the honest answer.' },
-    { name: 'Maya Chen', t: '09:22', text: 'We also say issue 903 is not closed and what that means if they cancel a run.' },
-  ];
-  seedMail = [
-    { from: 'Priya Raman · Lumen Labs', t: 'Yesterday', subject: 'Renewal and export reliability', preview: 'Before Tuesday I need two things in writing. First, whether scheduled exports…', unread: true },
-    { from: 'Rowan Whitfield', t: 'Yesterday', subject: 'Invoice amount is above your actual usage', preview: 'Exports that resume were counted twice. Your August invoice is above…', unread: true },
-    { from: 'Maya Chen', t: 'Yesterday', subject: 'Re: Renewal and export reliability', preview: 'With the lease heartbeat in 3.2 we have three clean runs at 268,000 rows…', unread: false },
-    { from: 'GitHub', t: 'Mon', subject: '[relay-exports] Issue #903 updated', preview: 'Cancelled exports leave a partial object in the destination bucket', unread: false },
-  ];
-  seedGh = [
-    { who: 'callanreid', kind: 'commented', kindColor: '#8b93a7', t: 'Yesterday', text: 'Lease heartbeat is passing at 268k rows on the fixture. Three consecutive clean runs, no lease loss.' },
-    { who: 'mayachen', kind: 'commented', kindColor: '#fb923c', t: 'Yesterday', text: 'Issue 903 is still open. A cancelled run can leave a partial object in the destination bucket.' },
-  ];
-  renderVals() {
-    const { copied } = this.state;
-    const ini = n => n.split(' ').map(w => w[0]).join('');
-    const slack = this.seedSlack.map(m => ({ ...m, initials: ini(m.name), avatar: this.avatars[m.name] || '#3a4050' }));
-    const mail = this.seedMail.map(e => ({ ...e, weight: e.unread ? 600 : 400, bg: 'transparent' }));
-    return {
-      slack, mail, github: this.seedGh,
-      bootLines: [
-        { mark: '✓', label: 'slack, github, google, notion, stripe', port: '11 emulators' },
-        { mark: '✓', label: 'mail over smtp and imap', port: ':2525 · :1143' },
-        { mark: '✓', label: 'object storage, s3 compatible', port: ':8333' },
-        { mark: '✓', label: 'postgres and mysql, seeded to match', port: ':5432 · :3306' },
-      ],
-      status: 'shared state · scheduled events · one clock',
-      copyLabel: copied ? 'Copied' : this.state.copyFailed ? 'Copy failed' : 'Copy',
-      copy: async () => {
-        try {
-          await navigator.clipboard.writeText('npx worldfixture up');
-          this.setState({ copied: true, copyFailed: false });
-        } catch {
-          this.setState({ copied: false, copyFailed: true });
-        }
-        setTimeout(() => this.setState({ copied: false, copyFailed: false }), 1500);
-      },
-      people: [
-        { name: 'Maya Chen', role: 'Engineering lead', slack: 'U000000001', email: 'maya@northstar-relay.worldfixture.test', github: 'maya-chen' },
-        { name: 'David Banerjee', role: 'Customer success', slack: 'U000000004', email: 'david@northstar-relay.worldfixture.test', github: 'david-banerjee' },
-        { name: 'Callan Reed', role: 'Lumen Labs', slack: 'U000000101', email: 'callan@lumen-labs.worldfixture.test', github: '—' },
-        { name: 'Rowan Whitfield', role: 'Finance', slack: 'U000000007', email: 'rowan@northstar-relay.worldfixture.test', github: 'rowan-whitfield' },
-        { name: 'Priya Raman', role: 'Lumen Labs', slack: 'U000000100', email: 'priya@lumen-labs.worldfixture.test', github: '—' },
-      ],
-    };
-  }
+  <section class="close container" aria-labelledby="start-heading">
+    <h2 id="start-heading">Give your software a company.</h2>
+    <button class="cta" type="button" aria-label="Copy npx worldfixture up" title="Copy command">
+      <code>npx worldfixture up</code>
+      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h4"/></svg>
+      <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+    </button>
+    <span class="copy-status" role="status" aria-live="polite"></span>
+  </section>
+</main>
+<footer class="site-footer container">
+  <p>WorldFixture · <a href="https://github.com/ben-ic/worldfixture/blob/main/LICENSE">Open source · Apache 2.0</a></p>
+  <p>Built on <a href="https://emulate.dev/">emulate.dev</a>, Cyrus IMAP, SeaweedFS, and SQLite.</p>
+</footer>
+<script>
+for (const button of document.querySelectorAll('.cta')) {
+  const status = button.nextElementSibling;
+  let resetTimer;
+  button.addEventListener('click', async () => {
+    clearTimeout(resetTimer);
+    try {
+      await navigator.clipboard.writeText(button.querySelector('code').textContent);
+      button.setAttribute('data-copied', '');
+      status.textContent = 'Copied';
+    } catch {
+      button.removeAttribute('data-copied');
+      status.textContent = 'Copy failed. Select and copy the command.';
+      const range = document.createRange();
+      range.selectNodeContents(button.querySelector('code'));
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      return;
+    }
+    resetTimer = setTimeout(() => {
+      button.removeAttribute('data-copied');
+      status.textContent = '';
+    }, 2000);
+  });
 }
 </script>
 </body>

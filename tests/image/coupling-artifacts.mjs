@@ -113,7 +113,7 @@ for (const provider of ["apple", "clerk", "okta", "google", "microsoft", "github
   data(collection, provider, `emulator-overlay.${provider}`, "Declared-client authorize/callback/token plus source user identity; each exact redirect and grant policy", "client_id");
   mappings.get(collection).compilerUse = "compiler/worldfixture_compiler/oauth.py";
   mappings.get(collection).unservedFields = ["id"];
-  for (const field of ["redirect_uris", "scopes", "user_scopes", "grant_types", "response_types"]) {
+  for (const field of ["redirect_uris", "loopback_redirect_uris", "scopes", "user_scopes", "grant_types", "response_types"]) {
     const path = `${collection}[].${field}`;
     mappings.set(path, { ...mappings.get(collection), unservedFields: [], evidenceCollection: path, parent: collection, identity: "client_id plus exact declared policy value" });
   }

@@ -7,7 +7,8 @@ local URL:
 npx worldfixture open
 ```
 
-The port can change each time that you start a world.
+The Workbench normally uses port `4715`. It uses a free fallback if that port is
+busy.
 
 ## Find your way around
 
@@ -42,8 +43,26 @@ In **Overview**, find **Connect your app** and choose a service. Select **Copy .
 connection values together, or **Copy** beside one value. Tokens are hidden;
 **Show** reveals the selected token when you need it.
 
+Select [**Download Postman collection**](http://127.0.0.1:4715/api/postman) to get
+every registered route for all selected HTTP providers. It also has every
+supported AWS action and every operation in the world's OpenAPI document. The
+collection contains the actual URLs and synthetic credentials for the active
+run. If WorldFixture prints a Workbench port other than `4715`, change the port
+in this link. See [Test the APIs with Postman](./postman.md) for import and OAuth
+instructions.
+
 You can also run `npx worldfixture env`. Use these values instead of a fixed
 port. See [Connect an application](../getting-started/connect-an-app.md).
+
+For OAuth, the collection includes an **OAuth 2.0 — get a user token** request
+for each selected provider that has an active local client. It uses the current
+client ID, client secret, provider URL, and Postman callback URL.
+
+Most local apps need no callback setup. The default world accepts common OAuth
+callback paths on any port for `localhost`, `127.0.0.1`, and `[::1]`. If your
+app uses a different path or host, connect the app first. Then open **Settings**
+and add its exact callback URL. The callback must use the connected app's origin.
+You do not need to rebuild the world.
 
 ## Check service readiness
 

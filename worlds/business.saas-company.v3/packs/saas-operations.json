@@ -51825,6 +51825,218 @@
       ]
     },
     "software": {
+      "oauth_clients": {
+        "apple": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/apple",
+              "http://localhost/auth/apple/callback",
+              "http://localhost/oauth/apple/callback",
+              "http://127.0.0.1/api/auth/callback/apple",
+              "http://127.0.0.1/auth/apple/callback",
+              "http://127.0.0.1/oauth/apple/callback",
+              "http://[::1]/api/auth/callback/apple",
+              "http://[::1]/auth/apple/callback",
+              "http://[::1]/oauth/apple/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["openid", "email", "name"]
+          }
+        ],
+        "clerk": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/clerk",
+              "http://localhost/auth/clerk/callback",
+              "http://localhost/oauth/clerk/callback",
+              "http://127.0.0.1/api/auth/callback/clerk",
+              "http://127.0.0.1/auth/clerk/callback",
+              "http://127.0.0.1/oauth/clerk/callback",
+              "http://[::1]/api/auth/callback/clerk",
+              "http://[::1]/auth/clerk/callback",
+              "http://[::1]/oauth/clerk/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["openid", "email", "profile"]
+          }
+        ],
+        "github": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/github",
+              "http://localhost/auth/github/callback",
+              "http://localhost/oauth/github/callback",
+              "http://127.0.0.1/api/auth/callback/github",
+              "http://127.0.0.1/auth/github/callback",
+              "http://127.0.0.1/oauth/github/callback",
+              "http://[::1]/api/auth/callback/github",
+              "http://[::1]/auth/github/callback",
+              "http://[::1]/oauth/github/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["repo", "read:user", "user:email"]
+          }
+        ],
+        "google": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/google",
+              "http://localhost/auth/google/callback",
+              "http://localhost/oauth/google/callback",
+              "http://127.0.0.1/api/auth/callback/google",
+              "http://127.0.0.1/auth/google/callback",
+              "http://127.0.0.1/oauth/google/callback",
+              "http://[::1]/api/auth/callback/google",
+              "http://[::1]/auth/google/callback",
+              "http://[::1]/oauth/google/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": [
+              "openid",
+              "email",
+              "profile",
+              "https://www.googleapis.com/auth/gmail.modify",
+              "https://www.googleapis.com/auth/calendar",
+              "https://www.googleapis.com/auth/drive"
+            ]
+          }
+        ],
+        "linear": [
+          {
+            "allow_runtime_redirects": true,
+            "actor": "user",
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/linear",
+              "http://localhost/auth/linear/callback",
+              "http://localhost/oauth/linear/callback",
+              "http://127.0.0.1/api/auth/callback/linear",
+              "http://127.0.0.1/auth/linear/callback",
+              "http://127.0.0.1/oauth/linear/callback",
+              "http://[::1]/api/auth/callback/linear",
+              "http://[::1]/auth/linear/callback",
+              "http://[::1]/oauth/linear/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["read", "write"]
+          }
+        ],
+        "microsoft": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/microsoft",
+              "http://localhost/auth/microsoft/callback",
+              "http://localhost/oauth/microsoft/callback",
+              "http://127.0.0.1/api/auth/callback/microsoft",
+              "http://127.0.0.1/auth/microsoft/callback",
+              "http://127.0.0.1/oauth/microsoft/callback",
+              "http://[::1]/api/auth/callback/microsoft",
+              "http://[::1]/auth/microsoft/callback",
+              "http://[::1]/oauth/microsoft/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["openid", "email", "profile", "User.Read"]
+          }
+        ],
+        "okta": [
+          {
+            "allow_runtime_redirects": true,
+            "auth_server_id": "default",
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/okta",
+              "http://localhost/auth/okta/callback",
+              "http://localhost/oauth/okta/callback",
+              "http://127.0.0.1/api/auth/callback/okta",
+              "http://127.0.0.1/auth/okta/callback",
+              "http://127.0.0.1/oauth/okta/callback",
+              "http://[::1]/api/auth/callback/okta",
+              "http://[::1]/auth/okta/callback",
+              "http://[::1]/oauth/okta/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["openid", "email", "profile", "offline_access"]
+          }
+        ],
+        "slack": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/slack",
+              "http://localhost/auth/slack/callback",
+              "http://localhost/oauth/slack/callback",
+              "http://127.0.0.1/api/auth/callback/slack",
+              "http://127.0.0.1/auth/slack/callback",
+              "http://127.0.0.1/oauth/slack/callback",
+              "http://[::1]/api/auth/callback/slack",
+              "http://[::1]/auth/slack/callback",
+              "http://[::1]/oauth/slack/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": [
+              "channels:read",
+              "channels:history",
+              "groups:read",
+              "groups:history",
+              "im:read",
+              "im:history",
+              "mpim:read",
+              "mpim:history",
+              "users:read",
+              "chat:write"
+            ],
+            "user_scopes": ["users:read"]
+          }
+        ],
+        "vercel": [
+          {
+            "allow_runtime_redirects": true,
+            "client_id": "worldfixture-local",
+            "name": "WorldFixture local tools",
+            "primary": true,
+            "loopback_redirect_uris": [
+              "http://localhost/api/auth/callback/vercel",
+              "http://localhost/auth/vercel/callback",
+              "http://localhost/oauth/vercel/callback",
+              "http://127.0.0.1/api/auth/callback/vercel",
+              "http://127.0.0.1/auth/vercel/callback",
+              "http://127.0.0.1/oauth/vercel/callback",
+              "http://[::1]/api/auth/callback/vercel",
+              "http://[::1]/auth/vercel/callback",
+              "http://[::1]/oauth/vercel/callback"
+            ],
+            "redirect_uris": ["https://oauth.pstmn.io/v1/browser-callback"],
+            "scopes": ["user"]
+          }
+        ]
+      },
       "operator_teams": ["console", "data", "exports", "platform", "reliability", "security"],
       "operator_ids": ["amara-diallo", "jon-bell", "maya-chen"],
       "operator_limit": null,

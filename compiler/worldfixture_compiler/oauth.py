@@ -85,6 +85,7 @@ def oauth_projection(world: dict) -> dict:
             require("client_secret" not in client, f"{label} must use a generated secret reference, not client_secret")
             require(isinstance(client.get("primary", False), bool), f"{label} primary must be a boolean")
             require(isinstance(client.get("is_public", False), bool), f"{label} is_public must be a boolean")
+            require(isinstance(client.get("allow_runtime_redirects", False), bool), f"{label} allow_runtime_redirects must be a boolean")
             require(not client.get("is_public") or provider == "clerk", f"{label} does not support is_public")
             method = client.get("token_endpoint_auth_method")
             public = provider == "clerk" and client.get("is_public") is True or provider == "okta" and method == "none"
@@ -118,6 +119,18 @@ def oauth_projection(world: dict) -> dict:
                     valid = False
                 require(valid, f"{label} redirect URI must be an exact HTTP(S) URL without a fragment or user credentials")
             require(len(set(redirects)) == len(redirects), f"{label} has duplicate redirect URIs")
+            loopbacks = client.get("loopback_redirect_uris", [])
+            require(isinstance(loopbacks, list), f"{label} loopback_redirect_uris must be an array")
+            require(len(set(loopbacks)) == len(loopbacks), f"{label} has duplicate loopback redirect URIs")
+            for uri in loopbacks:
+                try:
+                    parsed = urlsplit(uri)
+                    valid = (_nonempty(uri) and parsed.scheme == "http" and parsed.hostname in {"localhost", "127.0.0.1", "::1"}
+                             and parsed.port is None and not parsed.fragment and not parsed.username and not parsed.password
+                             and not any(c.isspace() for c in uri) and "*" not in uri)
+                except (TypeError, ValueError):
+                    valid = False
+                require(valid, f"{label} loopback_redirect_uris must contain port-free HTTP localhost, 127.0.0.1, or [::1] templates")
             if "grant_types" in client:
                 grants = client["grant_types"]
                 allowed = GRANTS[provider] - ({"client_credentials"} if public else set())

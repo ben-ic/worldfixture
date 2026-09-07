@@ -4,6 +4,7 @@ import { createHash, createPublicKey, timingSafeEqual } from "node:crypto";
 import { importSPKI, jwtVerify } from "jose";
 import { getClerkStore } from "@emulators/clerk";
 import { getOktaStore } from "@emulators/okta";
+import { materializeNativeRedirect, oauthRedirectControl, redirectAllowed, validLoopbackTemplate } from "./oauth-redirects.mjs";
 
 const CLIENT_KEYS = { apple: "oauth_clients", clerk: "oauth_applications", okta: "oauth_clients" };
 const stateKey = provider => `worldfixture.${provider}.declaredOAuth`;
@@ -59,6 +60,9 @@ function clientPolicy(provider, config) {
     required(Array.isArray(grants) && grants.every(grant => supported.includes(grant)
       && (!publicClient || grant !== "client_credentials")), "unsupported client grant type");
     required(row.scopes === undefined || (Array.isArray(row.scopes) && row.scopes.every(nonempty)), "scopes must be an array of strings");
+    required(row.loopback_redirect_uris === undefined || (Array.isArray(row.loopback_redirect_uris)
+      && row.loopback_redirect_uris.every(validLoopbackTemplate)), "loopback_redirect_uris must be port-free HTTP IP-literal templates");
+    required(["allow_runtime_redirects"].every(field => row[field] === undefined || typeof row[field] === "boolean"), "runtime redirect options must be boolean");
     if (provider === "okta") required(row.auth_server_id === undefined || nonempty(row.auth_server_id), "auth_server_id must be a nonempty string");
     return { ...structuredClone(row), publicClient, grant_types: grants,
       auth_server_id: provider === "okta" ? row.auth_server_id ?? "default" : null };
@@ -116,16 +120,18 @@ async function authenticate(client, secret) {
   } catch { return false; }
 }
 
-export function wrapDeclaredOAuth(provider, upstream, upstreamSeed) {
+export function wrapDeclaredOAuth(provider, upstream, upstreamSeed, { controlToken = process.env.WORLDFIXTURE_TOKEN } = {}) {
   required(Object.hasOwn(CLIENT_KEYS, provider), "unsupported provider");
   const plugin = { ...upstream, seed: undefined, register(app, store, ...args) {
     app.use("*", async (c, next) => {
+      const controlled = await oauthRedirectControl(c, { store, provider, stateKey: stateKey(provider), controlToken });
+      if (controlled) return controlled;
       const route = routeOf(provider, c.req.path, c.req.method);
       if (!route) return next();
       const policy = store.getData(stateKey(provider));
       if (!policy) return deny(c);
       const state = { ...policy, codes: store.getData(`${stateKey(provider)}.codes`),
-        refresh: store.getData(`${stateKey(provider)}.refresh`) };
+        refresh: store.getData(`${stateKey(provider)}.refresh`), runtimeRedirects: store.getData(`${stateKey(provider)}.runtimeRedirects`) ?? new Map() };
       if (!(state.codes instanceof Map) || !(state.refresh instanceof Map)) return deny(c);
       let fields, credentials;
       try { fields = await fieldsOf(c); credentials = credentialsOf(c, fields); }
@@ -139,7 +145,7 @@ export function wrapDeclaredOAuth(provider, upstream, upstreamSeed) {
       let receipt;
       if (route.action === "authorize" || route.action === "callback") {
         if (!client.grant_types.includes("authorization_code")) return deny(c, "unauthorized_client", 400);
-        if (!client.redirect_uris.includes(fields.redirect_uri)) return deny(c, "invalid_request", 400);
+        if (!redirectAllowed(client, fields.redirect_uri, state.runtimeRedirects.get(client.client_id))) return deny(c, "invalid_request", 400);
         if (fields.response_type && fields.response_type !== "code") return deny(c, "unsupported_response_type", 400);
         if (fields.response_mode && !["query", "form_post"].includes(fields.response_mode)) return deny(c, "invalid_request", 400);
         if (client.publicClient && (!fields.code_challenge || fields.code_challenge_method !== "S256")) return deny(c, "invalid_request", 400);
@@ -162,6 +168,9 @@ export function wrapDeclaredOAuth(provider, upstream, upstreamSeed) {
           if (!receipt || receipt.client_id !== client.client_id || receipt.server !== route.server
             || scope.some(item => !receipt.scope.includes(item))) return deny(c, "invalid_grant", 400);
         }
+      }
+      if ((route.action === "authorize" || route.action === "callback") && !client.redirect_uris.includes(fields.redirect_uri)) {
+        materializeNativeRedirect(store, provider, stateKey(provider), client, fields.redirect_uri);
       }
       const original = { json: c.json, redirect: c.redirect, html: c.html };
       const saveCode = code => { if (route.action === "callback" && nonempty(code)) state.codes.set(digest(code), receipt); };
@@ -199,7 +208,7 @@ export function wrapDeclaredOAuth(provider, upstream, upstreamSeed) {
     const identities = users.flatMap(user => provider === "clerk" ? user.email_addresses ?? [] : [provider === "okta" ? user.login : user.email]);
     required(identities.every(nonempty), "users need source email/login identities");
     const nativeConfig = structuredClone(config);
-    nativeConfig[CLIENT_KEYS[provider]] = clients.map(({ publicClient, ...row }) => row);
+    nativeConfig[CLIENT_KEYS[provider]] = clients.map(({ publicClient, loopback_redirect_uris, allow_runtime_redirects, ...row }) => row);
     // Custom Okta authorization servers are protocol infrastructure. Declare
     // their IDs explicitly in client config; do not restore sample users/apps.
     if (provider === "okta") {
@@ -212,6 +221,7 @@ export function wrapDeclaredOAuth(provider, upstream, upstreamSeed) {
     store.setData(stateKey(provider), { clients, identities });
     store.setData(`${stateKey(provider)}.codes`, new Map());
     store.setData(`${stateKey(provider)}.refresh`, new Map());
+    store.setData(`${stateKey(provider)}.runtimeRedirects`, new Map());
   }
   return { plugin, seedFromConfig };
 }

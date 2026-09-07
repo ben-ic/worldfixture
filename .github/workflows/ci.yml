@@ -41,6 +41,9 @@ jobs:
       - name: Install the provider emulator's pinned dependencies
         run: npm --prefix emulators/emulate ci
 
+      - name: Check the generated Postman route inventory
+        run: npm run postman:routes:check
+
       # `ensureImage` builds a missing service image on demand, inside whatever
       # readiness budget the test allowed. That is fine on a machine that has
       # built it once; on a runner with an empty cache, building Cyrus from a

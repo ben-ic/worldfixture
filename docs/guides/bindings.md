@@ -9,13 +9,15 @@ and `WORLDFIXTURE_TOKEN`.
 
 | Address type | Use | Example shape |
 | --- | --- | --- |
-| Local browser or application URL | A process on your computer | `http://127.0.0.1:<dynamic-port>` |
+| Local browser or application URL | A process on your computer | `http://127.0.0.1:<host-port>` |
 | Internal container URL | A service inside the WorldFixture container | `http://127.0.0.1:<fixed-container-port>` |
 | Public provider URL | A real provider client outside WorldFixture | Do not use for a local run |
 
-Docker maps a fixed container port to a dynamic host port. The binding reports
-the host value. A Notion Page `url` also uses the advertised host-side Notion
-origin, and `public_url` is either a string or `null`.
+Docker first tries to map each fixed container port to the same preferred host
+port. It selects a free fallback only when that host port is busy. The binding
+reports the host value that this run uses. A Notion Page `url` also uses the
+advertised host-side Notion origin, and `public_url` is either a string or
+`null`.
 
 ## Main binding groups
 

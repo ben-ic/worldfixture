@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { PassThrough } from "node:stream";
 import { tmpdir } from "node:os";
@@ -65,4 +65,16 @@ test("the sample app connector uses the current Workbench generation", async (co
     generation: "generation-1",
     body: { applicationUrl: "http://127.0.0.1:5175" },
   });
+});
+
+test("the default world declares each Account Desk OAuth callback", () => {
+  const artifact = JSON.parse(readFileSync(new URL("../../dist/business.saas-company.v3/world.json", import.meta.url), "utf8"));
+  const clients = artifact.software.oauth_clients;
+  for (const provider of ["slack", "github", "google", "microsoft", "apple"]) {
+    const declared = clients[provider];
+    assert.equal(declared.length, 1, `${provider} must have one default client`);
+    assert.equal(declared[0].client_id, "worldfixture-local");
+    assert.ok(declared[0].loopback_redirect_uris.includes(`http://127.0.0.1/oauth/${provider}/callback`));
+    assert.ok(declared[0].redirect_uris.includes("https://oauth.pstmn.io/v1/browser-callback"));
+  }
 });

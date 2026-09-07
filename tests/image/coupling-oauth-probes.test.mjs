@@ -39,10 +39,30 @@ for (const provider of OAUTH_PROVIDERS) test(`${provider} actual native lifecycl
   assert.deepEqual(result.checks.filter(row => row.status === 'failed'), []);
   assert.ok(result.checks.some(row => row.check.endsWith('reset-code-rejected')));
   assert.ok(result.coverage.every(row => row.status === 'passed'));
+  assert.equal(result.coverage.find(row => row.collection.endsWith('[].loopback_redirect_uris')).status, 'passed');
+  for (const template of f.artifact.world.software.oauth_clients[provider][0].loopback_redirect_uris) {
+    for (const port of [43123, 43124]) {
+      const uri = new URL(template);
+      uri.port = String(port);
+      assert.ok(result.checks.some(row => row.check.endsWith('grant-lifecycle') && row.actual.redirect_uri === uri.href));
+    }
+  }
   const text = JSON.stringify(result);
   assert.equal(text.includes('current-source-secret'), false);
   assert.equal(text.includes('refresh_token":"'), false);
   assert.ok(result.responses.some(row => row.body.grant_issued));
+});
+
+test('a loopback redirect rejected by the provider fails measured policy coverage', async () => {
+  const f = await fixture('google');
+  const result = await probeDeclaredOAuthWorld({ ...f, resetImpl: undefined, fetchImpl: (url, options) => {
+    const request = new URL(url);
+    const redirect = request.searchParams.get('redirect_uri');
+    return request.pathname === '/o/oauth2/v2/auth' && redirect && new URL(redirect).port === '43124'
+      ? Promise.resolve(Response.json({ error: 'invalid_request' }, { status: 400 })) : f.fetchImpl(url, options);
+  } });
+  assert.ok(result.checks.some(row => row.status === 'failed' && row.detail?.includes('authorization returned HTTP 400')));
+  assert.equal(result.coverage.find(row => row.collection.endsWith('[].loopback_redirect_uris')).status, 'failed');
 });
 
 for (const provider of ['github', 'slack', 'vercel']) test(`${provider} OAuth proves a person without authored native login fields`, async () => {

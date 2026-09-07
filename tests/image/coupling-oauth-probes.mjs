@@ -24,6 +24,7 @@ export function testOAuthDeclarations(world) {
   return Object.fromEntries(OAUTH_PROVIDERS.map(provider => [provider, [{
     client_id: `wf-coupling-${provider}-${suffix}`, name: `${world.id} ${world.version} ${provider} OAuth test`,
     redirect_uris: [`http://localhost:3123/coupling/${provider}/${suffix}`, `http://localhost:3123/coupling/${provider}/${suffix}?variant=second`],
+    loopback_redirect_uris: ['localhost', '127.0.0.1', '[::1]'].map(host => `http://${host}/coupling/${provider}/${suffix}?variant=loopback`),
     scopes: POLICIES[provider][5].split(' '), primary: true,
     grant_types: POLICIES[provider][7] ? ['authorization_code', 'refresh_token'] : ['authorization_code'],
     ...(provider === 'slack' ? { user_scopes: ['users:read'], bot_name: `coupling-${suffix}` } : {}),
@@ -168,7 +169,14 @@ export async function probeDeclaredOAuthWorld({ artifact, bindings, credentials,
       if (clients.length) requireProof(person?.email, 'Source primary person has no email');
       for (const client of clients) {
         const clientStart = checks.length;
-        for (const [index, redirectUri] of array(client.redirect_uris).entries()) {
+        // These are callback destinations, not listeners. Exercise each source
+        // template at two ports without registering a runtime redirect.
+        const redirects = [...array(client.redirect_uris), ...array(client.loopback_redirect_uris).flatMap(template => [43123, 43124].map(port => {
+          const uri = new URL(template);
+          uri.port = String(port);
+          return uri.href;
+        }))];
+        for (const [index, redirectUri] of redirects.entries()) {
           const label = `oauth.${provider}.${client.client_id}.redirect-${index}`;
           try { await clientFlow(provider, client, redirectUri, label); }
           catch (error) { check(label, false, { detail: error.message, ...(error.failure_kind ? { failure_kind: error.failure_kind } : {}) }); }
@@ -178,7 +186,7 @@ export async function probeDeclaredOAuthWorld({ artifact, bindings, credentials,
     } catch (error) { check(`oauth.${provider}.reader`, false, { detail: error.message }); }
     const status = checks.slice(start).some(row => row.status === 'failed') ? 'failed' : 'passed';
     coverage.push({ collection, provider, path: tokenPath, status, detail: 'Every source client and exact callback exercised through native authorization, token and source identity APIs; unknown client rejected. Reset is reported separately.' });
-    for (const field of ['redirect_uris', 'scopes', 'user_scopes', 'grant_types', 'response_types']) if (array(clients).some(client => Array.isArray(client[field]))) {
+    for (const field of ['redirect_uris', 'loopback_redirect_uris', 'scopes', 'user_scopes', 'grant_types', 'response_types']) if (array(clients).some(client => Array.isArray(client[field]))) {
       coverage.push({ collection: `${collection}[].${field}`, provider, path: tokenPath, status, detail: 'Source OAuth policy applied to actual authorization/grant requests; no projection-only evidence.' });
     }
   }

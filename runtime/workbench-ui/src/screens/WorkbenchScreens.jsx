@@ -175,8 +175,43 @@ function SchemaErrors({ errors }) {
 export function Settings({ data, onReset }) {
   return <><PageHead title="Settings" subtitle="Identity, storage, and reset behavior for this instance." command="worldfixture status --verbose"/>
     <Panel title="This instance"><div className="detail-grid"><strong>World</strong><code>{data.world.id}:{data.world.version}</code><strong>Accepted starting state</strong><span>{data.acceptedProof}</span><strong>Service model</strong><span>Services use stable internal ports and actual host bindings.</span><strong>Runtime history</strong><span>The runtime owns its event history inside the instance.</span></div></Panel>
+    <div className="section"><OAuthCallbacks/></div>
     <div className="section"><Panel title="Reset"><div className="settings-action"><div><strong>Restore the starting world</strong><p>Reset removes changes from world services. It preserves data in your application databases.</p></div><Button kind="danger" onClick={onReset}>Reset world services</Button></div></Panel></div>
   </>;
+}
+
+function OAuthCallbacks() {
+  const [state, setState] = useState(null);
+  const [provider, setProvider] = useState("");
+  const [url, setUrl] = useState("");
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    let active = true;
+    request("/api/oauth/redirects").then(value => {
+      if (!active) return;
+      setState(value); setProvider(value.providers?.[0] ?? "");
+    }).catch(failure => active && setError(failure.message));
+    return () => { active = false; };
+  }, []);
+  async function submit(event) {
+    event.preventDefault(); setWorking(true); setError(null);
+    try {
+      const result = await post("/api/oauth/redirects", { provider, redirect_uri: url });
+      setState(current => ({ ...current, redirects: result.redirects })); setUrl("");
+    } catch (failure) { setError(failure.message); }
+    finally { setWorking(false); }
+  }
+  return <Panel title="OAuth callback URLs">
+    <div className="panel-pad muted">Common local callback paths work on any local port. Add an exact callback URL here only when your application uses another path or host. This applies now and returns after a reset.</div>
+    {state?.providers?.length ? <form className="action-form" onSubmit={submit}>
+      <label>PROVIDER<select value={provider} onChange={event => setProvider(event.target.value)}>{state.providers.map(value => <option value={value} key={value}>{value}</option>)}</select></label>
+      <label>CALLBACK URL<input type="url" required value={url} onChange={event => setUrl(event.target.value)} placeholder="http://localhost:5173/auth/callback"/></label>
+      <Button type="submit" disabled={working || !provider || !url.trim()}>{working ? "Adding…" : "Add callback"}</Button>
+    </form> : <div className="empty">This world has no active OAuth clients.</div>}
+    {error && <Notice kind="error">{error}</Notice>}
+    {(state?.redirects ?? []).map(entry => <div className="data-row" key={`${entry.provider}:${entry.redirect_uri}`}><code>{entry.provider}</code><code className="muted truncate">{entry.redirect_uri}</code></div>)}
+  </Panel>;
 }
 
 export function Services({ data, setScreen }) {

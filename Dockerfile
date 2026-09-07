@@ -80,7 +80,7 @@ ARG WORLDFIXTURE_SOURCE_COMMIT
 
 LABEL org.opencontainers.image.title="WorldFixture" \
       org.opencontainers.image.description="One-container runtime for reproducible software worlds" \
-      org.opencontainers.image.version="0.2.6" \
+      org.opencontainers.image.version="0.2.7" \
       org.opencontainers.image.revision="${WORLDFIXTURE_SOURCE_COMMIT}" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.worldfixture.architecture="${TARGETARCH}"

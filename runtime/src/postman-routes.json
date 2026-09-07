@@ -1,0 +1,3516 @@
+{
+  "apple": [
+    {
+      "method": "POST",
+      "path": "/__worldfixture/apple/account-events"
+    },
+    {
+      "method": "GET",
+      "path": "/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/authorize/callback"
+    },
+    {
+      "method": "GET",
+      "path": "/auth/keys"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/token"
+    }
+  ],
+  "aws": [
+    {
+      "method": "POST",
+      "path": "/iam/"
+    },
+    {
+      "method": "POST",
+      "path": "/sqs/"
+    },
+    {
+      "method": "POST",
+      "path": "/sts/"
+    }
+  ],
+  "clerk": [
+    {
+      "method": "GET",
+      "path": "/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/authorize/callback"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/token"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth/userinfo"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/email_addresses"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/email_addresses/:emailId"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/email_addresses/:emailId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/email_addresses/:emailId"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/jwks"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/organizations/:orgId"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/:orgId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/organizations/:orgId"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/:orgId/invitations"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations/:orgId/invitations"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/:orgId/invitations/:invitationId"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations/:orgId/invitations/:invitationId/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations/:orgId/invitations/bulk"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/organizations/:orgId/memberships"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/organizations/:orgId/memberships"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/organizations/:orgId/memberships/:userId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/organizations/:orgId/memberships/:userId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/organizations/:orgId/memberships/:userId/metadata"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/organizations/:orgId/metadata"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/:sessionId"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/:sessionId/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/:sessionId/tokens"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/:sessionId/tokens/:template"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/users/:userId"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/:userId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/users/:userId"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/:userId/ban"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/:userId/lock"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/users/:userId/metadata"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/:userId/unban"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/:userId/unlock"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/users/:userId/verify_password"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/count"
+    }
+  ],
+  "github": [
+    {
+      "method": "GET",
+      "path": "/:owner/:repo/raw/:ref/:path{.+}"
+    },
+    {
+      "method": "GET",
+      "path": "/app"
+    },
+    {
+      "method": "GET",
+      "path": "/app/installations"
+    },
+    {
+      "method": "GET",
+      "path": "/app/installations/:installation_id"
+    },
+    {
+      "method": "POST",
+      "path": "/app/installations/:installation_id/access_tokens"
+    },
+    {
+      "method": "GET",
+      "path": "/emojis"
+    },
+    {
+      "method": "POST",
+      "path": "/login/oauth/access_token"
+    },
+    {
+      "method": "GET",
+      "path": "/login/oauth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/login/oauth/callback"
+    },
+    {
+      "method": "GET",
+      "path": "/meta"
+    },
+    {
+      "method": "GET",
+      "path": "/octocat"
+    },
+    {
+      "method": "GET",
+      "path": "/organizations"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org"
+    },
+    {
+      "method": "PATCH",
+      "path": "/orgs/:org"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/actions/secrets"
+    },
+    {
+      "method": "DELETE",
+      "path": "/orgs/:org/actions/secrets/:secret_name"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/actions/secrets/:secret_name"
+    },
+    {
+      "method": "PUT",
+      "path": "/orgs/:org/actions/secrets/:secret_name"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/hooks"
+    },
+    {
+      "method": "POST",
+      "path": "/orgs/:org/hooks"
+    },
+    {
+      "method": "DELETE",
+      "path": "/orgs/:org/hooks/:hook_id"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/hooks/:hook_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/orgs/:org/hooks/:hook_id"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/hooks/:hook_id/deliveries"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/hooks/:hook_id/deliveries/:delivery_id"
+    },
+    {
+      "method": "POST",
+      "path": "/orgs/:org/hooks/:hook_id/deliveries/:delivery_id/attempts"
+    },
+    {
+      "method": "POST",
+      "path": "/orgs/:org/hooks/:hook_id/pings"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/installation"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/members"
+    },
+    {
+      "method": "DELETE",
+      "path": "/orgs/:org/members/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/members/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/memberships/:username"
+    },
+    {
+      "method": "PUT",
+      "path": "/orgs/:org/memberships/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/repos"
+    },
+    {
+      "method": "POST",
+      "path": "/orgs/:org/repos"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/teams"
+    },
+    {
+      "method": "POST",
+      "path": "/orgs/:org/teams"
+    },
+    {
+      "method": "DELETE",
+      "path": "/orgs/:org/teams/:team_slug"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/teams/:team_slug"
+    },
+    {
+      "method": "PATCH",
+      "path": "/orgs/:org/teams/:team_slug"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/teams/:team_slug/members"
+    },
+    {
+      "method": "DELETE",
+      "path": "/orgs/:org/teams/:team_slug/memberships/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/teams/:team_slug/memberships/:username"
+    },
+    {
+      "method": "PUT",
+      "path": "/orgs/:org/teams/:team_slug/memberships/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/orgs/:org/teams/:team_slug/repos"
+    },
+    {
+      "method": "DELETE",
+      "path": "/orgs/:org/teams/:team_slug/repos/:owner/:repo"
+    },
+    {
+      "method": "PUT",
+      "path": "/orgs/:org/teams/:team_slug/repos/:owner/:repo"
+    },
+    {
+      "method": "GET",
+      "path": "/rate_limit"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/artifacts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/actions/artifacts/:artifact_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/artifacts/:artifact_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/jobs/:job_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/jobs/:job_id/logs"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/runs"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id/artifacts"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id/cancel"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id/jobs"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id/logs"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/actions/runs/:run_id/rerun"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/secrets"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/actions/secrets/:secret_name"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/secrets/:secret_name"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/actions/secrets/:secret_name"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/workflows"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/workflows/:workflow_id"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/actions/workflows/:workflow_id/disable"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/actions/workflows/:workflow_id/dispatches"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/actions/workflows/:workflow_id/enable"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/actions/workflows/:workflow_id/runs"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/branches"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection/enforce_admins"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection/required_pull_request_reviews"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection/required_pull_request_reviews"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection/required_status_checks"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/branches/:branch{.+}/protection/required_status_checks"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/check-runs"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/check-runs/:check_run_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/check-runs/:check_run_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/check-runs/:check_run_id/annotations"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/check-runs/:check_run_id/rerequest"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/check-suites"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/check-suites/:check_suite_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/check-suites/:check_suite_id/check-runs"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/check-suites/:check_suite_id/rerequest"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/check-suites/preferences"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/collaborators"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/collaborators/:username"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/collaborators/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/collaborators/:username/permission"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/comments"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/comments/:comment_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/comments/:comment_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/comments/:comment_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/commits"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/commits/:commit_sha/comments"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/commits/:commit_sha/comments"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/commits/:ref{.+}"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/commits/:ref/check-runs"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/commits/:ref/check-suites"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/compare/:basehead{.+}"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/contents"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/contents/"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/contents/:path{.+}"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/contents/:path{.+}"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/contents/:path{.+}"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/contributors"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/forks"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/forks"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/git/blobs"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/git/blobs/:file_sha"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/git/commits"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/git/commits/:commit_sha"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/git/matching-refs/:ref{.+}"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/git/ref/:ref{.+}"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/git/refs"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/git/refs/:ref{.+}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/git/refs/:ref{.+}"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/git/tags"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/git/tags/:tag_sha"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/git/trees"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/git/trees/:tree_sha"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/hooks"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/hooks"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/hooks/:hook_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/hooks/:hook_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/hooks/:hook_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/hooks/:hook_id/deliveries"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/hooks/:hook_id/deliveries/:delivery_id"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/hooks/:hook_id/deliveries/:delivery_id/attempts"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/hooks/:hook_id/pings"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/hooks/:hook_id/tests"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/installation"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/issues"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/:issue_number"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/issues/:issue_number"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/issues/:issue_number/assignees"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/issues/:issue_number/assignees"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/:issue_number/comments"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/issues/:issue_number/comments"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/:issue_number/events"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/issues/:issue_number/labels"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/:issue_number/labels"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/issues/:issue_number/labels"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/issues/:issue_number/labels"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/issues/:issue_number/labels/:name"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/issues/:issue_number/lock"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/issues/:issue_number/lock"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/:issue_number/timeline"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/comments"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/issues/comments/:comment_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/issues/comments/:comment_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/issues/comments/:comment_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/labels"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/labels"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/labels/:name"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/labels/:name"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/labels/:name"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/languages"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/milestones"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/milestones"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/milestones/:milestone_number"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/milestones/:milestone_number"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/milestones/:milestone_number"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/milestones/:milestone_number/labels"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/pulls"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/pulls/:pull_number"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/comments"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/comments"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/commits"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/files"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/merge"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/requested_reviewers"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/requested_reviewers"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews/:review_id"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews/:review_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews/:review_id/comments"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews/:review_id/dismissals"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/reviews/:review_id/events"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/pulls/:pull_number/update-branch"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/comments"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/pulls/comments/:comment_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/pulls/comments/:comment_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/pulls/comments/:comment_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/readme"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/releases"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/releases"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/releases/:release_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/releases/:release_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/releases/:release_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/releases/:release_id/assets"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/releases/:release_id/assets"
+    },
+    {
+      "method": "DELETE",
+      "path": "/repos/:owner/:repo/releases/assets/:asset_id"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/releases/assets/:asset_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/repos/:owner/:repo/releases/assets/:asset_id"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/releases/generate-notes"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/releases/latest"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/releases/tags/:tag"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/tags"
+    },
+    {
+      "method": "GET",
+      "path": "/repos/:owner/:repo/topics"
+    },
+    {
+      "method": "PUT",
+      "path": "/repos/:owner/:repo/topics"
+    },
+    {
+      "method": "POST",
+      "path": "/repos/:owner/:repo/transfer"
+    },
+    {
+      "method": "GET",
+      "path": "/repositories/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/search/code"
+    },
+    {
+      "method": "GET",
+      "path": "/search/commits"
+    },
+    {
+      "method": "GET",
+      "path": "/search/issues"
+    },
+    {
+      "method": "GET",
+      "path": "/search/labels"
+    },
+    {
+      "method": "GET",
+      "path": "/search/repositories"
+    },
+    {
+      "method": "GET",
+      "path": "/search/topics"
+    },
+    {
+      "method": "GET",
+      "path": "/search/users"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/applications"
+    },
+    {
+      "method": "GET",
+      "path": "/settings/connections/applications/:client_id"
+    },
+    {
+      "method": "POST",
+      "path": "/settings/connections/applications/:client_id/revoke"
+    },
+    {
+      "method": "GET",
+      "path": "/teams/:team_id"
+    },
+    {
+      "method": "GET",
+      "path": "/teams/:team_id/members"
+    },
+    {
+      "method": "GET",
+      "path": "/user"
+    },
+    {
+      "method": "PATCH",
+      "path": "/user"
+    },
+    {
+      "method": "GET",
+      "path": "/user/emails"
+    },
+    {
+      "method": "GET",
+      "path": "/user/orgs"
+    },
+    {
+      "method": "GET",
+      "path": "/user/repos"
+    },
+    {
+      "method": "POST",
+      "path": "/user/repos"
+    },
+    {
+      "method": "GET",
+      "path": "/users"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username/followers"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username/following"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username/hovercard"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username/installation"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username/orgs"
+    },
+    {
+      "method": "GET",
+      "path": "/users/:username/repos"
+    },
+    {
+      "method": "GET",
+      "path": "/versions"
+    },
+    {
+      "method": "GET",
+      "path": "/zen"
+    }
+  ],
+  "google": [
+    {
+      "method": "GET",
+      "path": "/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/calendar/v3/calendars/:calendarId/events"
+    },
+    {
+      "method": "POST",
+      "path": "/calendar/v3/calendars/:calendarId/events"
+    },
+    {
+      "method": "DELETE",
+      "path": "/calendar/v3/calendars/:calendarId/events/:eventId"
+    },
+    {
+      "method": "POST",
+      "path": "/calendar/v3/calendars/:calendarId/events/watch"
+    },
+    {
+      "method": "POST",
+      "path": "/calendar/v3/channels/stop"
+    },
+    {
+      "method": "POST",
+      "path": "/calendar/v3/freeBusy"
+    },
+    {
+      "method": "GET",
+      "path": "/calendar/v3/users/:userId/calendarList"
+    },
+    {
+      "method": "POST",
+      "path": "/calendar/v3/users/:userId/calendarList/watch"
+    },
+    {
+      "method": "GET",
+      "path": "/drive/v3/changes"
+    },
+    {
+      "method": "GET",
+      "path": "/drive/v3/changes/startPageToken"
+    },
+    {
+      "method": "POST",
+      "path": "/drive/v3/changes/watch"
+    },
+    {
+      "method": "POST",
+      "path": "/drive/v3/channels/stop"
+    },
+    {
+      "method": "GET",
+      "path": "/drive/v3/files"
+    },
+    {
+      "method": "POST",
+      "path": "/drive/v3/files"
+    },
+    {
+      "method": "GET",
+      "path": "/drive/v3/files/:fileId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/drive/v3/files/:fileId"
+    },
+    {
+      "method": "PUT",
+      "path": "/drive/v3/files/:fileId"
+    },
+    {
+      "method": "POST",
+      "path": "/drive/v3/files/:fileId/watch"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/drafts"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/drafts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gmail/v1/users/:userId/drafts/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/drafts/:id"
+    },
+    {
+      "method": "PUT",
+      "path": "/gmail/v1/users/:userId/drafts/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/drafts/send"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/history"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/labels"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/labels"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gmail/v1/users/:userId/labels/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/labels/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/gmail/v1/users/:userId/labels/:id"
+    },
+    {
+      "method": "PUT",
+      "path": "/gmail/v1/users/:userId/labels/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/messages"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gmail/v1/users/:userId/messages/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/messages/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/:id/modify"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/:id/trash"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/:id/untrash"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/messages/:messageId/attachments/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/batchDelete"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/batchModify"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/import"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/messages/send"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/settings/filters"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/settings/filters"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gmail/v1/users/:userId/settings/filters/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/settings/forwardingAddresses"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/settings/sendAs"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/stop"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/threads"
+    },
+    {
+      "method": "DELETE",
+      "path": "/gmail/v1/users/:userId/threads/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/gmail/v1/users/:userId/threads/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/threads/:id/modify"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/threads/:id/trash"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/threads/:id/untrash"
+    },
+    {
+      "method": "POST",
+      "path": "/gmail/v1/users/:userId/watch"
+    },
+    {
+      "method": "GET",
+      "path": "/o/oauth2/v2/auth"
+    },
+    {
+      "method": "POST",
+      "path": "/o/oauth2/v2/auth/callback"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/token"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v2/userinfo"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v3/certs"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/drive/v3/files"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/gmail/v1/users/:userId/drafts"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/gmail/v1/users/:userId/drafts/send"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/gmail/v1/users/:userId/messages"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/gmail/v1/users/:userId/messages/import"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/gmail/v1/users/:userId/messages/send"
+    }
+  ],
+  "linear": [
+    {
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "method": "GET",
+      "path": "/graphql"
+    },
+    {
+      "method": "POST",
+      "path": "/graphql"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/authorize/callback"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/token"
+    }
+  ],
+  "microsoft": [
+    {
+      "method": "POST",
+      "path": "/:tenant/oauth2/token"
+    },
+    {
+      "method": "GET",
+      "path": "/:tenant/v2.0/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/discovery/v2.0/keys"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v2.0/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v2.0/authorize/callback"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v2.0/logout"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v2.0/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v2.0/token"
+    },
+    {
+      "method": "GET",
+      "path": "/oidc/userinfo"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1.0/directory/deletedItems/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1.0/me"
+    },
+    {
+      "method": "GET",
+      "path": "/v1.0/subscriptions"
+    },
+    {
+      "method": "POST",
+      "path": "/v1.0/subscriptions"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1.0/subscriptions/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1.0/subscriptions/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1.0/subscriptions/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1.0/users"
+    },
+    {
+      "method": "POST",
+      "path": "/v1.0/users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1.0/users/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1.0/users/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1.0/users/:id"
+    }
+  ],
+  "mongoatlas": [
+    {
+      "method": "POST",
+      "path": "/__worldfixture/mongoatlas/alerts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/atlas/v2/groups"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/atlas/v2/groups/:groupId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/alerts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/alerts/:alertId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/clusters"
+    },
+    {
+      "method": "POST",
+      "path": "/api/atlas/v2/groups/:groupId/clusters"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/atlas/v2/groups/:groupId/clusters/:clusterName"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/clusters/:clusterName"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/atlas/v2/groups/:groupId/clusters/:clusterName"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/clusters/:clusterName/databases"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/clusters/:clusterName/databases/:databaseName/collections"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/databaseUsers"
+    },
+    {
+      "method": "POST",
+      "path": "/api/atlas/v2/groups/:groupId/databaseUsers"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/atlas/v2/groups/:groupId/databaseUsers/admin/:username"
+    },
+    {
+      "method": "GET",
+      "path": "/api/atlas/v2/groups/:groupId/databaseUsers/admin/:username"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/aggregate"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/deleteMany"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/deleteOne"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/find"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/findOne"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/insertMany"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/insertOne"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/updateMany"
+    },
+    {
+      "method": "POST",
+      "path": "/app/data-api/v1/action/updateOne"
+    }
+  ],
+  "notion": [
+    {
+      "method": "GET",
+      "path": "/__worldfixture/mcp-observability"
+    },
+    {
+      "method": "GET",
+      "path": "/__worldfixture/notion-admin"
+    },
+    {
+      "method": "POST",
+      "path": "/__worldfixture/notion-admin/tokens/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/__worldfixture/notion-admin/webhooks"
+    },
+    {
+      "method": "DELETE",
+      "path": "/__worldfixture/notion-admin/webhooks/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/__worldfixture/notion-admin/webhooks/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/__worldfixture/notion-admin/webhooks/:id/resend-token"
+    },
+    {
+      "method": "POST",
+      "path": "/__worldfixture/notion-admin/webhooks/:id/verify"
+    },
+    {
+      "method": "GET",
+      "path": "/.well-known/mcp.json"
+    },
+    {
+      "method": "GET",
+      "path": "/.well-known/oauth-authorization-server"
+    },
+    {
+      "method": "GET",
+      "path": "/.well-known/oauth-protected-resource"
+    },
+    {
+      "method": "GET",
+      "path": "/.well-known/oauth-protected-resource/mcp"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/legal_holds"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/legal_holds"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/legal_holds/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/legal_holds/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/legal_holds/:id/export"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/legal_holds/:id/release"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/legal_holds/:id/spaces/:space_id/pages"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/legal_holds/:id/users"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/legal_holds/:id/users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/v1/legal_holds/:id/users/:user_id"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/legal_holds/:id/workspaces"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/managed_users/revoke_session"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/mcp_client_connections"
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/v1/mcp_client_connections/enterprise_managed_access"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/mcp_client_connections/revoke"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/agents"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/v1/spaces/:space_id/agents/:agent_id"
+    },
+    {
+      "method": "PUT",
+      "path": "/admin/v1/spaces/:space_id/agents/:agent_id/credit_limit"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/agents/:agent_id/credit_usage"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/agents/:agent_id/permissions"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/spaces/:space_id/agents/:agent_id/permissions"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/spaces/:space_id/agents/:agent_id/status"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/spaces/:space_id/agents/creation_policy"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/agents/credit_usage"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/spaces/:space_id/credit_limit"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/spaces/:space_id/exports"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/exports/:export_id"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/groups"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/spaces/:space_id/groups"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id/members"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id/members"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id/members/users/:user_id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/admin/v1/spaces/:space_id/groups/:group_id/members/users/:user_id"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/personal_access_tokens"
+    },
+    {
+      "method": "DELETE",
+      "path": "/admin/v1/spaces/:space_id/personal_access_tokens/:bot_id"
+    },
+    {
+      "method": "GET",
+      "path": "/admin/v1/spaces/:space_id/users"
+    },
+    {
+      "method": "GET",
+      "path": "/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/introspect"
+    },
+    {
+      "method": "DELETE",
+      "path": "/mcp"
+    },
+    {
+      "method": "GET",
+      "path": "/mcp"
+    },
+    {
+      "method": "POST",
+      "path": "/mcp"
+    },
+    {
+      "method": "GET",
+      "path": "/mcp/.well-known/oauth-protected-resource"
+    },
+    {
+      "method": "GET",
+      "path": "/notion/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/register"
+    },
+    {
+      "method": "POST",
+      "path": "/token"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/agents/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/agents/:id/credit_limit"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents/:id/insights"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/agents/:id/status"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents/batch"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents/query"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/async_tasks/:id"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/blocks/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/blocks/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/blocks/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/blocks/:id/children"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/blocks/:id/children"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/blocks/meeting_notes"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/blocks/meeting_notes/query"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/comments"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/comments"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/comments/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/comments/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/comments/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/custom_emojis"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/data_sources"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data_sources/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/data_sources/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/data_sources/:id/query"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/data_sources/:id/templates"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/databases"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/databases/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/databases/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/file_uploads"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/file_uploads"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/file_uploads/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/file_uploads/:id/complete"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/file_uploads/:id/send"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/oauth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/oauth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/oauth/introspect"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/oauth/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/oauth/token"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/pages"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pages/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/pages/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pages/:id/markdown"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/pages/:id/markdown"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/pages/:id/move"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/pages/:id/properties/:property_id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/search"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/:id/cancel"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/:id/events/query"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/query"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/users/me"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/views"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/views"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/views/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/views/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/views/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/views/:id/queries"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/views/:id/queries/:query_id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/views/:id/queries/:query_id"
+    }
+  ],
+  "okta": [
+    {
+      "method": "GET",
+      "path": "/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/apps"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/apps"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/apps/:appId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/apps/:appId"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/apps/:appId"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/apps/:appId/lifecycle/activate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/apps/:appId/lifecycle/deactivate"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/apps/:appId/users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/apps/:appId/users/:userId"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/apps/:appId/users/:userId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/authorizationServers"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/authorizationServers"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/authorizationServers/:authServerId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/authorizationServers/:authServerId"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/authorizationServers/:authServerId"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/authorizationServers/:authServerId/lifecycle/activate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/authorizationServers/:authServerId/lifecycle/deactivate"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/eventHooks"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/eventHooks"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/eventHooks/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/eventHooks/:id"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/eventHooks/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/eventHooks/:id/lifecycle/:action"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/groups"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/groups/:groupId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/groups/:groupId"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/groups/:groupId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/groups/:groupId/users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/groups/:groupId/users/:userId"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/groups/:groupId/users/:userId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/users/:userId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/:userId"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/:userId"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/users/:userId"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/:userId/groups"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/:userId/lifecycle/activate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/:userId/lifecycle/deactivate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/:userId/lifecycle/reactivate"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/:userId/lifecycle/suspend"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/:userId/lifecycle/unsuspend"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/users/me"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/:authServerId/.well-known/openid-configuration"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/:authServerId/v1/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/:authServerId/v1/authorize/callback"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/:authServerId/v1/introspect"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/:authServerId/v1/keys"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/:authServerId/v1/logout"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/:authServerId/v1/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/:authServerId/v1/token"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/:authServerId/v1/userinfo"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v1/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v1/authorize/callback"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v1/introspect"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v1/keys"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v1/logout"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v1/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth2/v1/token"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth2/v1/userinfo"
+    }
+  ],
+  "resend": [
+    {
+      "method": "GET",
+      "path": "/api-keys"
+    },
+    {
+      "method": "POST",
+      "path": "/api-keys"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api-keys/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/audiences"
+    },
+    {
+      "method": "POST",
+      "path": "/audiences"
+    },
+    {
+      "method": "GET",
+      "path": "/audiences/:audience_id/contacts"
+    },
+    {
+      "method": "POST",
+      "path": "/audiences/:audience_id/contacts"
+    },
+    {
+      "method": "DELETE",
+      "path": "/audiences/:audience_id/contacts/:id"
+    },
+    {
+      "method": "DELETE",
+      "path": "/audiences/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/domains"
+    },
+    {
+      "method": "POST",
+      "path": "/domains"
+    },
+    {
+      "method": "DELETE",
+      "path": "/domains/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/domains/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/domains/:id/verify"
+    },
+    {
+      "method": "GET",
+      "path": "/emails"
+    },
+    {
+      "method": "POST",
+      "path": "/emails"
+    },
+    {
+      "method": "GET",
+      "path": "/emails/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/emails/:id/cancel"
+    },
+    {
+      "method": "POST",
+      "path": "/emails/batch"
+    },
+    {
+      "method": "GET",
+      "path": "/inbox"
+    },
+    {
+      "method": "GET",
+      "path": "/inbox/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/webhooks"
+    },
+    {
+      "method": "POST",
+      "path": "/webhooks"
+    },
+    {
+      "method": "DELETE",
+      "path": "/webhooks/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/webhooks/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/webhooks/:id"
+    }
+  ],
+  "slack": [
+    {
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/auth.test"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bookmarks.add"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bookmarks.edit"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bookmarks.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bookmarks.remove"
+    },
+    {
+      "method": "POST",
+      "path": "/api/bots.info"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.deleteScheduledMessage"
+    },
+    {
+      "method": "GET",
+      "path": "/api/chat.getPermalink"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.getPermalink"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.meMessage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.postEphemeral"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.postMessage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.scheduledMessages.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.scheduleMessage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/chat.update"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.archive"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.close"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.create"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.history"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.info"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.invite"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.join"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.kick"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.leave"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.mark"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.members"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.open"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.rename"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.replies"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.setPurpose"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.setTopic"
+    },
+    {
+      "method": "POST",
+      "path": "/api/conversations.unarchive"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files.completeUploadExternal"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files.delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files.getUploadURLExternal"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files.info"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files.info"
+    },
+    {
+      "method": "GET",
+      "path": "/api/files.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/files.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/oauth.v2.access"
+    },
+    {
+      "method": "POST",
+      "path": "/api/pins.add"
+    },
+    {
+      "method": "GET",
+      "path": "/api/pins.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/pins.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/pins.remove"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reactions.add"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reactions.get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/reactions.remove"
+    },
+    {
+      "method": "POST",
+      "path": "/api/team.info"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users.getPresence"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.getPresence"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.info"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.list"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.lookupByEmail"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users.profile.get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.profile.get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.profile.set"
+    },
+    {
+      "method": "POST",
+      "path": "/api/users.setPresence"
+    },
+    {
+      "method": "POST",
+      "path": "/api/views.generateTriggerId"
+    },
+    {
+      "method": "POST",
+      "path": "/api/views.open"
+    },
+    {
+      "method": "POST",
+      "path": "/api/views.publish"
+    },
+    {
+      "method": "POST",
+      "path": "/api/views.push"
+    },
+    {
+      "method": "POST",
+      "path": "/api/views.update"
+    },
+    {
+      "method": "GET",
+      "path": "/files-pri/:fileId/:filename"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth/v2/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/v2/authorize/callback"
+    },
+    {
+      "method": "POST",
+      "path": "/services/:teamId/:botId/:token"
+    },
+    {
+      "method": "POST",
+      "path": "/upload/v1/:fileId"
+    }
+  ],
+  "stripe": [
+    {
+      "method": "GET",
+      "path": "/checkout/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/checkout/:id/complete"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/charges"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/charges/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/checkout/sessions"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/checkout/sessions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/checkout/sessions/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/checkout/sessions/:id/expire"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/customer_sessions"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/customers"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/customers"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/customers/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/customers/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/customers/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/events/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoice_payments"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoice_payments/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoiceitems"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invoiceitems"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/invoiceitems/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoiceitems/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoices"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invoices"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/invoices/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoices/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invoices/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invoices/:id/finalize"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/invoices/:id/lines"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invoices/:id/pay"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/invoices/:id/void"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/payment_intents"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payment_intents"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/payment_intents/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payment_intents/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payment_intents/:id/cancel"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/payment_intents/:id/confirm"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/payment_methods"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/prices"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/prices"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/prices/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/products"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/products"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/products/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/refunds"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/refunds"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/refunds/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/subscriptions"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/subscriptions"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/subscriptions/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/subscriptions/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/subscriptions/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/webhook_endpoints"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/webhook_endpoints"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/webhook_endpoints/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/webhook_endpoints/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/webhook_endpoints/:id"
+    }
+  ],
+  "twilio": [
+    {
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "method": "POST",
+      "path": "/_twilio/simulate/call-status"
+    },
+    {
+      "method": "POST",
+      "path": "/_twilio/simulate/inbound-call"
+    },
+    {
+      "method": "POST",
+      "path": "/_twilio/simulate/inbound-message"
+    },
+    {
+      "method": "POST",
+      "path": "/_twilio/simulate/message-status"
+    },
+    {
+      "method": "GET",
+      "path": "/_twilio/simulate/verification-code"
+    },
+    {
+      "method": "POST",
+      "path": "/_twilio/simulate/verification-status"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/Calls.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid/Calls.json"
+    },
+    {
+      "method": "DELETE",
+      "path": "/2010-04-01/Accounts/:accountSid/Calls/:callSid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/Calls/:callSid.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid/Calls/:callSid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/IncomingPhoneNumbers.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid/IncomingPhoneNumbers.json"
+    },
+    {
+      "method": "DELETE",
+      "path": "/2010-04-01/Accounts/:accountSid/IncomingPhoneNumbers/:sid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/IncomingPhoneNumbers/:sid.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid/IncomingPhoneNumbers/:sid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages.json"
+    },
+    {
+      "method": "DELETE",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages/:messageSid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages/:messageSid.json"
+    },
+    {
+      "method": "POST",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages/:messageSid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages/:messageSid/Media.json"
+    },
+    {
+      "method": "GET",
+      "path": "/2010-04-01/Accounts/:accountSid/Messages/:messageSid/Media/:mediaSid.json"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services"
+    },
+    {
+      "method": "POST",
+      "path": "/conversations/v1/Services"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services/:serviceSid"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services/:serviceSid/Configuration/Webhooks"
+    },
+    {
+      "method": "POST",
+      "path": "/conversations/v1/Services/:serviceSid/Configuration/Webhooks"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations"
+    },
+    {
+      "method": "POST",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations"
+    },
+    {
+      "method": "DELETE",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid"
+    },
+    {
+      "method": "POST",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid/Messages"
+    },
+    {
+      "method": "POST",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid/Messages"
+    },
+    {
+      "method": "GET",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid/Participants"
+    },
+    {
+      "method": "POST",
+      "path": "/conversations/v1/Services/:serviceSid/Conversations/:conversationSid/Participants"
+    },
+    {
+      "method": "GET",
+      "path": "/messaging/v1/Services"
+    },
+    {
+      "method": "POST",
+      "path": "/messaging/v1/Services"
+    },
+    {
+      "method": "DELETE",
+      "path": "/messaging/v1/Services/:serviceSid"
+    },
+    {
+      "method": "GET",
+      "path": "/messaging/v1/Services/:serviceSid"
+    },
+    {
+      "method": "POST",
+      "path": "/messaging/v1/Services/:serviceSid"
+    },
+    {
+      "method": "GET",
+      "path": "/messaging/v1/Services/:serviceSid/PhoneNumbers"
+    },
+    {
+      "method": "POST",
+      "path": "/messaging/v1/Services/:serviceSid/PhoneNumbers"
+    },
+    {
+      "method": "DELETE",
+      "path": "/messaging/v1/Services/:serviceSid/PhoneNumbers/:sid"
+    },
+    {
+      "method": "GET",
+      "path": "/verify/v2/Services"
+    },
+    {
+      "method": "POST",
+      "path": "/verify/v2/Services"
+    },
+    {
+      "method": "DELETE",
+      "path": "/verify/v2/Services/:serviceSid"
+    },
+    {
+      "method": "GET",
+      "path": "/verify/v2/Services/:serviceSid"
+    },
+    {
+      "method": "POST",
+      "path": "/verify/v2/Services/:serviceSid"
+    },
+    {
+      "method": "POST",
+      "path": "/verify/v2/Services/:serviceSid/VerificationCheck"
+    },
+    {
+      "method": "POST",
+      "path": "/verify/v2/Services/:serviceSid/Verifications"
+    },
+    {
+      "method": "GET",
+      "path": "/verify/v2/Services/:serviceSid/Verifications/:verificationSid"
+    },
+    {
+      "method": "POST",
+      "path": "/verify/v2/Services/:serviceSid/Verifications/:verificationSid"
+    }
+  ],
+  "vercel": [
+    {
+      "method": "GET",
+      "path": "/api/blob"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/blob"
+    },
+    {
+      "method": "GET",
+      "path": "/api/blob/"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/blob/"
+    },
+    {
+      "method": "POST",
+      "path": "/api/blob/delete"
+    },
+    {
+      "method": "POST",
+      "path": "/api/blob/mpu"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/blob/mpu"
+    },
+    {
+      "method": "GET",
+      "path": "/blob/:storeId/:pathname{.+}"
+    },
+    {
+      "method": "POST",
+      "path": "/login/oauth/token"
+    },
+    {
+      "method": "GET",
+      "path": "/login/oauth/userinfo"
+    },
+    {
+      "method": "GET",
+      "path": "/oauth/authorize"
+    },
+    {
+      "method": "POST",
+      "path": "/oauth/authorize/callback"
+    },
+    {
+      "method": "GET",
+      "path": "/registration"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/api-keys"
+    },
+    {
+      "method": "POST",
+      "path": "/v1/api-keys"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/api-keys/:keyId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v1/projects/:idOrName/protection-bypass"
+    },
+    {
+      "method": "GET",
+      "path": "/v1/projects/:projectId/promote/aliases"
+    },
+    {
+      "method": "GET",
+      "path": "/v10/projects"
+    },
+    {
+      "method": "POST",
+      "path": "/v10/projects/:idOrName/domains"
+    },
+    {
+      "method": "GET",
+      "path": "/v10/projects/:idOrName/env"
+    },
+    {
+      "method": "POST",
+      "path": "/v10/projects/:idOrName/env"
+    },
+    {
+      "method": "GET",
+      "path": "/v10/projects/:idOrName/env/:id"
+    },
+    {
+      "method": "POST",
+      "path": "/v11/projects"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v12/deployments/:id/cancel"
+    },
+    {
+      "method": "POST",
+      "path": "/v13/deployments"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v13/deployments/:id"
+    },
+    {
+      "method": "GET",
+      "path": "/v13/deployments/:idOrUrl"
+    },
+    {
+      "method": "GET",
+      "path": "/v2/deployments/:id/aliases"
+    },
+    {
+      "method": "POST",
+      "path": "/v2/files"
+    },
+    {
+      "method": "GET",
+      "path": "/v2/teams"
+    },
+    {
+      "method": "POST",
+      "path": "/v2/teams"
+    },
+    {
+      "method": "GET",
+      "path": "/v2/teams/:teamId"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v2/teams/:teamId"
+    },
+    {
+      "method": "GET",
+      "path": "/v2/teams/:teamId/members"
+    },
+    {
+      "method": "POST",
+      "path": "/v2/teams/:teamId/members"
+    },
+    {
+      "method": "GET",
+      "path": "/v2/user"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v2/user"
+    },
+    {
+      "method": "GET",
+      "path": "/v3/deployments/:idOrUrl/events"
+    },
+    {
+      "method": "GET",
+      "path": "/v6/deployments"
+    },
+    {
+      "method": "GET",
+      "path": "/v6/deployments/:id/files"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v9/projects/:idOrName"
+    },
+    {
+      "method": "GET",
+      "path": "/v9/projects/:idOrName"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v9/projects/:idOrName"
+    },
+    {
+      "method": "GET",
+      "path": "/v9/projects/:idOrName/domains"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v9/projects/:idOrName/domains/:domain"
+    },
+    {
+      "method": "GET",
+      "path": "/v9/projects/:idOrName/domains/:domain"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v9/projects/:idOrName/domains/:domain"
+    },
+    {
+      "method": "POST",
+      "path": "/v9/projects/:idOrName/domains/:domain/verify"
+    },
+    {
+      "method": "DELETE",
+      "path": "/v9/projects/:idOrName/env/:id"
+    },
+    {
+      "method": "PATCH",
+      "path": "/v9/projects/:idOrName/env/:id"
+    }
+  ]
+}

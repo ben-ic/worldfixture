@@ -79,8 +79,11 @@ export async function runTemporalWorld({ artifact, image, name, owner, signal, o
   const launchAt = Date.now();
   try {
     if (artifact.checks.some(check => check.status === "failed")) throw new Error("Artifact integrity failed before temporal service launch");
+    // This standalone container bypasses the supervisor's bind assignment.
+    // Docker needs its interface listener; the host publication stays loopback.
     await run(["run", "--detach", "--name", name, "--label", `worldfixture.coupling.owner=${owner}`, "--publish", "127.0.0.1::8080/tcp",
       "--mount", `type=bind,src=${artifact.path},dst=/world,readonly`, "--env", "WORLDFIXTURE_WORLD_PATH=/world",
+      "--env", "WORLDFIXTURE_HTTP_TARGETS_LISTEN=0.0.0.0:8080",
       "--entrypoint", "node", image, "/opt/worldfixture/emulators/http-targets/server.mjs"]);
     const [inspection] = JSON.parse((await run(["inspect", name])).stdout);
     const port = inspection.NetworkSettings.Ports["8080/tcp"]?.[0];

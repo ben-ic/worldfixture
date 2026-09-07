@@ -52,7 +52,7 @@ export function Overview({ data, setScreen, onRefresh, onAction, session }) {
     {ready < surfaces.length && <Notice kind="warning">Some services are not ready. Open Services to see their state.</Notice>}
     <WorldStream setScreen={setScreen} onChanged={onRefresh} session={session}/>
     <div className="overview-columns">
-      <div><div className="overview-section-head"><h2>Connect your app</h2><a href="/docs/getting-started/connect-an-app">Setup guide ↗</a></div>
+      <div><div className="overview-section-head"><h2>Connect your app</h2><span className="inline-actions"><a href="/api/postman" download>Download Postman collection</a><a href="/docs/getting-started/connect-an-app">Setup guide ↗</a></span></div>
         {surfaces.length ? <><label className="overview-service">Service<select value={surfaceId} onChange={event => setSelected(event.target.value)}>{surfaces.map(surface => <option key={surface.id} value={surface.id}>{surface.name}</option>)}</select></label><Bindings key={surfaceId} compact data={data} surfaceId={surfaceId} onAction={onAction}/></> : <Notice>No services are selected.</Notice>}
       </div>
       <div><div className="overview-section-head"><h2>Recent activity</h2><Button kind="small" onClick={() => setScreen("Activity")}>View all →</Button></div>

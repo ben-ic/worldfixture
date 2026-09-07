@@ -32,6 +32,7 @@ import {
 import { SCALE_PRESETS, ScaleError, parseLimits, parseScale } from "./scale.mjs";
 import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
 import { gatewayRoute, gatewayRoutes, proxyGateway } from "./gateway.mjs";
+import { postmanCollection } from "./postman.mjs";
 
 const UI_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../workbench-ui/dist");
 const DOCS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../docs-site");
@@ -572,6 +573,62 @@ function connectorFile(stateDir) {
   return join(stateDir, "application-connector.json");
 }
 
+const OAUTH_PROVIDERS = ["apple", "clerk", "github", "google", "linear", "microsoft", "okta", "slack", "vercel"];
+
+function oauthRedirectFile(stateDir) {
+  return join(stateDir, "oauth-redirects.json");
+}
+
+function savedOAuthRedirects(stateDir) {
+  try {
+    const value = JSON.parse(readFileSync(oauthRedirectFile(stateDir), "utf8"));
+    return Array.isArray(value) ? value.slice(0, 64) : [];
+  } catch { return []; }
+}
+
+function oauthRedirectScope(instance, generation) {
+  return {
+    artifact_sha256: instance.lock?.world?.artifact_sha256 ?? null,
+    generation: generation ?? instance.id ?? "unmanaged",
+  };
+}
+
+function activeOAuthRedirects(stateDir, bindings, scope) {
+  return savedOAuthRedirects(stateDir).filter(entry => entry && OAUTH_PROVIDERS.includes(entry.provider)
+    && entry.client_id === bindings[`${entry.provider.toUpperCase()}_CLIENT_ID`]
+    && entry.artifact_sha256 === scope.artifact_sha256 && entry.generation === scope.generation);
+}
+
+function oauthProviders(bindings) {
+  return OAUTH_PROVIDERS.filter(provider => bindings[`${provider.toUpperCase()}_BASE_URL`]
+    && bindings[`${provider.toUpperCase()}_CLIENT_ID`]);
+}
+
+export async function registerOAuthRedirect(bindings, runtimeToken, { provider, redirect_uri }, fetchImpl = fetch) {
+  if (!OAUTH_PROVIDERS.includes(provider)) throw Object.assign(new Error("Select an OAuth provider in this world."), { status: 400 });
+  let redirect;
+  try { redirect = new URL(String(redirect_uri)); } catch { throw Object.assign(new Error("Enter an HTTP or HTTPS callback URL."), { status: 400 }); }
+  if (!["http:", "https:"].includes(redirect.protocol) || redirect.hash || redirect.username || redirect.password
+    || String(redirect_uri).length > 2048 || /\s|\*/.test(String(redirect_uri))) {
+    throw Object.assign(new Error("Enter an exact HTTP or HTTPS callback URL without a fragment, credentials, spaces, or wildcards."), { status: 400 });
+  }
+  const prefix = provider.toUpperCase(), base = bindings[`${prefix}_BASE_URL`], clientId = bindings[`${prefix}_CLIENT_ID`];
+  if (!base || !clientId) throw Object.assign(new Error(`${provider} has no active local OAuth client in this world.`), { status: 409 });
+  const response = await fetchImpl(`${base}/__worldfixture/oauth/redirects`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${runtimeToken}`, "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ client_id: clientId, redirect_uri: String(redirect_uri) }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw Object.assign(new Error(result.error ?? `${provider} refused the callback URL.`), { status: response.status });
+  return { provider, client_id: clientId, redirect_uri: String(redirect_uri) };
+}
+
+async function restoreOAuthRedirects(stateDir, bindings, runtimeToken, scope) {
+  for (const entry of activeOAuthRedirects(stateDir, bindings, scope)) await registerOAuthRedirect(bindings, runtimeToken, entry);
+}
+
 function connectorTarget(stateDir, generation, world) {
   try {
     const target = JSON.parse(readFileSync(connectorFile(stateDir), "utf8"));
@@ -579,6 +636,20 @@ function connectorTarget(stateDir, generation, world) {
     return target.withoutApplication ? null : target;
   }
   catch { return null; }
+}
+
+export function validWorkbenchRequest(request) {
+  const authority = request.headers.host;
+  if (!authority) return false;
+  let hostname;
+  try { hostname = new URL(`http://${authority}`).hostname; } catch { return false; }
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(hostname)) return false;
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return true;
+  if (request.headers["sec-fetch-site"] === "cross-site") return false;
+  const origin = request.headers.origin;
+  if (!origin) return true;
+  try { return new URL(origin).origin === new URL(`http://${authority}`).origin; }
+  catch { return false; }
 }
 
 // In the product image, the Workbench server runs inside Docker while the
@@ -854,6 +925,9 @@ export async function startWorkbench(initialInstance, {
   const server = createServer(async (request, response) => {
     const manager = managerFor();
     try {
+      if (!validWorkbenchRequest(request)) return json(response, 403, {
+        error: "Workbench accepts requests only from its local origin.", code: "workbench_origin_rejected",
+      });
       const url = new URL(request.url, "http://worldfixture.local");
       const expected = request.headers["x-worldfixture-generation"];
       const gateway = gatewayRoute(currentInstance(), url.pathname);
@@ -891,6 +965,21 @@ export async function startWorkbench(initialInstance, {
       }
       if (request.method === "GET" && url.pathname === "/api/gateway") {
         return json(response, 200, { routes: gatewayRoutes(currentInstance()).map(({ address: _address, preserve: _preserve, ...route }) => route) });
+      }
+      if (request.method === "GET" && url.pathname === "/api/postman") {
+        const instance = currentInstance();
+        const { world, bindings } = snapshot(instance, manager?.generation);
+        const browserBindings = publicBindings(stateDir, bindings);
+        const origin = browserBindings.WORKBENCH_URL ?? `http://${request.headers.host ?? `${host}:${server.address().port}`}`;
+        const collection = postmanCollection({ world, bindings: browserBindings, workbenchUrl: origin, artifactPath: instance.artifactPath ?? artifactPath });
+        const filename = `${world.id}.${world.version}.postman_collection.json`.replace(/[^a-zA-Z0-9._-]/g, "-");
+        response.writeHead(200, {
+          "content-type": "application/json; charset=utf-8",
+          "content-disposition": `attachment; filename="${filename}"`,
+          "cache-control": "no-store",
+        });
+        response.end(`${JSON.stringify(collection, null, 2)}\n`);
+        return;
       }
       if (["/api/worlds", "/api/world/switch", "/api/world/connection"].includes(url.pathname)) {
         if (!manager) return json(response, 503, { error: "World switching is unavailable for this run", code: "session_unavailable" });
@@ -959,6 +1048,33 @@ export async function startWorkbench(initialInstance, {
       }
       if (request.method === "GET" && url.pathname === "/api/connector") {
         return reply(200, await connectorOverview(instance, connectorStateDir, artifactPath, generation));
+      }
+      if (request.method === "GET" && url.pathname === "/api/oauth/redirects") {
+        const scope = oauthRedirectScope(instance, generation);
+        return reply(200, { providers: oauthProviders(bindings), redirects: activeOAuthRedirects(connectorStateDir, bindings, scope) });
+      }
+      if (request.method === "POST" && url.pathname === "/api/oauth/redirects") {
+        const input = await body(request);
+        const target = connectorTarget(connectorStateDir, generation, instance.lock.world);
+        if (!target) return reply(409, { error: "Connect your application before you add an OAuth callback URL." });
+        let callbackOrigin, applicationOrigin;
+        try {
+          callbackOrigin = new URL(String(input.redirect_uri)).origin;
+          applicationOrigin = new URL(target.url).origin;
+        } catch { return reply(400, { error: "Enter an HTTP or HTTPS callback URL." }); }
+        if (callbackOrigin !== applicationOrigin) {
+          return reply(400, { error: `The callback URL must use the connected application origin: ${applicationOrigin}` });
+        }
+        const added = await registerOAuthRedirect(bindings, instance.runtimeToken, input);
+        const scope = oauthRedirectScope(instance, generation);
+        const redirects = activeOAuthRedirects(connectorStateDir, bindings, scope);
+        if (!redirects.some(entry => entry.provider === added.provider && entry.client_id === added.client_id && entry.redirect_uri === added.redirect_uri)) {
+          if (redirects.length >= 64) return reply(409, { error: "This run already has the maximum number of OAuth callback URLs." });
+          redirects.push({ ...added, ...scope });
+          writeSessionJson(oauthRedirectFile(connectorStateDir), redirects);
+        }
+        notify("provider-change");
+        return reply(200, { ok: true, added, redirects });
       }
       if (request.method === "POST" && url.pathname === "/api/connector/connect") {
         const input = await body(request);
@@ -1334,6 +1450,9 @@ export async function startWorkbench(initialInstance, {
         notify("reset-started");
         if (manager) await manager.clockCommand({ action: "reset" }, expected);
         else await instance.reset();
+        const active = currentInstance(), activeGeneration = manager?.generation;
+        await restoreOAuthRedirects(connectorStateDir, snapshot(active, activeGeneration).bindings,
+          active.runtimeToken, oauthRedirectScope(active, activeGeneration));
         notify("reset-completed");
         return reply(200, { ok: true, acceptedProof });
       }

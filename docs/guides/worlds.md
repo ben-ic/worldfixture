@@ -137,10 +137,21 @@ A single declared client is the default. With multiple clients, set
 Without a primary client, all declared clients can be used, but no default
 client bindings are added.
 
-Callback URLs must match exactly, including their port and path. Wildcards and
-fragments are rejected. Do not put `client_secret` in world source. The generated
-reference is `oauth-client-secret:<provider>:<client_id>`; it is not a usable
-secret. Changing the application callback requires a source change and rebuild.
+Exact callback URLs include their port and path. Wildcards and fragments are
+rejected. You can also declare `loopback_redirect_uris`. A loopback entry uses
+`http`, `localhost`, `127.0.0.1`, or `[::1]`, an exact path, and no port. An app
+can then use that path on any local port. The default world includes the common
+`/api/auth/callback/<provider>`, `/auth/<provider>/callback`, and
+`/oauth/<provider>/callback` paths for each OAuth provider.
+
+For a different path or a non-local application, first connect the application
+in Workbench. Then add its exact callback URL under **Settings**. This change
+applies to the current run without a world rebuild. Workbench accepts only the
+connected application's origin. It saves the callback with the active world,
+run, and client identity.
+
+Do not put `client_secret` in world source. The generated reference is
+`oauth-client-secret:<provider>:<client_id>`; it is not a usable secret.
 
 | Provider | Local grants | Additional client fields |
 | --- | --- | --- |

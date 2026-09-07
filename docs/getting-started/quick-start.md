@@ -41,14 +41,16 @@ npx worldfixture env --json
 ```
 
 Read `SLACK_BASE_URL` and `SLACK_TOKEN` from this output. The URL contains the
-dynamic port for this run. Use these values in your application instead of a
-production Slack URL and token.
+host port for this run. It is normally `4703`, but WorldFixture selects a free
+fallback if that port is busy. Use these values in your application instead of
+a production Slack URL and token.
 
 You now have a local Slack API and a Workbench that uses the same state.
 
 ## Next steps
 
 - [Connect an application](./connect-an-app.md).
+- [Test the local APIs with Postman](../guides/postman.md).
 - [Check the exact supported Slack operations](../providers/slack.md).
 
 When you finish, run `npx worldfixture down`. If a start fails, run
