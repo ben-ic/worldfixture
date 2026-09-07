@@ -2,9 +2,13 @@
 
 ## Unreleased
 
+- The Workbench address has dynamic HTTP gateway paths for the selected world,
+  including `/gmail`, `/email`, `/slack`, and the other selected HTTP provider
+  surfaces. Existing direct provider URLs stay valid.
 - Schema-1 run state upgrades to schema 2 without losing scheduled-event history.
 - A short-lived container saves its startup error for the host CLI when Docker
-  removes the container before its logs can be read.
+  removes the container before its logs can be read, including errors that
+  happen before any service starts.
 - `npm run worldfixture:local -- <command>` always runs the source checkout.
 - Interactive starts can open Account Desk and Workbench in the browser by
   pressing Enter. Non-interactive starts do not open browser windows.

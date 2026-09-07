@@ -97,7 +97,10 @@ Get the API endpoint and local credentials for your application:
 npx worldfixture env --json
 ```
 
-You now have a local Slack API and a Workbench that uses the same state.
+You now have a local Slack API and a Workbench that uses the same state. The
+Workbench address also has dynamic HTTP gateway paths for selected services.
+For this run, `<WORKBENCH_URL>/slack/api/auth.test` goes to Slack. Direct
+`*_BASE_URL` bindings continue to work and remain the SDK defaults.
 
 Read the [five-minute quick start](https://worldfixture.com/docs/getting-started/quick-start) for the
 complete path. If a start fails, run `npx worldfixture doctor`.

@@ -67,6 +67,7 @@ import { inbox } from "./imap.mjs";
 import { loadManifests } from "./manifests.mjs";
 import { OpenError, openUrl, openWorkbench, TESTED_PLATFORMS } from "./open.mjs";
 import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
+import { gatewayPathsForBindings } from "./gateway.mjs";
 import { connectorTarget, ensureProject, readProject, readProjectToken } from "./project.mjs";
 import { aggregate, probe } from "./readiness.mjs";
 import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
@@ -1157,6 +1158,8 @@ function printReadyBindings(world, bindings, stateDir) {
   });
   const bindingWidth = Math.max(12, ...visibleBindings.map(([name]) => label(name).length + 2));
   for (const [name, value] of visibleBindings) say(`${pad(label(name), bindingWidth)}${value}`);
+  const gatewayPaths = gatewayPathsForBindings(bindings);
+  if (gatewayPaths.length) say(`${pad("Paths", bindingWidth)}${gatewayPaths.join(" · ")}`);
 
   // The world's own primary person, not the literal "maya". `actingPerson`
   // stopped assuming that name for the same reason: it is the default world's
@@ -2562,6 +2565,22 @@ export async function main(argv) {
         return undefined;
     }
   } catch (error) {
+    // The host can read this file after an auto-removed container has gone.
+    // Record errors that happen before directUp reaches service startup too,
+    // such as an invalid --only selection. The narrower catches above remain
+    // useful because they record the cause before they clean up live services.
+    if (process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1" && command === "up") {
+      try {
+        const { stateDir } = paths(parse(rest).flags);
+        mkdirSync(stateDir, { recursive: true });
+        writeSessionJson(join(stateDir, "startup-error.json"), {
+          api_version: "worldfixture.startup-error/v1",
+          message: String(error?.message ?? error),
+        });
+      } catch {
+        // Keep the original startup failure when its state path cannot be read.
+      }
+    }
     if (["clock", "switch", "control"].includes(command) || error instanceof ClockError || error instanceof TimelineControlError || error instanceof SessionError) {
       say(`${command ?? "worldfixture"} failed: ${error.message}`);
       if (error.result?.clock) printClock(error.result);

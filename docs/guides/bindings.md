@@ -37,3 +37,24 @@ use another person's shared token. An alias for the same person's token is
 accepted. Organization and service credentials, such as the Stripe, Resend,
 and Twilio account credentials, keep their declared scope. A world switch creates new provider
 credentials; read the new values before you reconnect the application.
+
+## HTTP gateway paths
+
+The Workbench address is also an HTTP gateway. `worldfixture up` prints the
+paths that exist for the selected world. A reduced world gets fewer paths. You
+can also read the exact active list from `GET <WORKBENCH_URL>/api/gateway`.
+
+The gateway is additive. The existing `*_BASE_URL` bindings and direct provider
+ports do not change. They remain the default values for application SDKs.
+
+Most gateway paths remove their provider prefix before they send the request
+to the provider. For example, `<WORKBENCH_URL>/slack/api/auth.test` sends
+`/api/auth.test` to Slack, and `<WORKBENCH_URL>/email/emails` sends `/emails` to
+Resend. Gmail, Calendar, and Drive already have provider-specific root paths,
+so `/gmail`, `/calendar`, and `/drive` keep their path. Thus
+`<WORKBENCH_URL>/gmail/v1/users/me/messages` sends the same path to Google.
+
+The gateway forwards request and response streams. It does not replace TCP or
+signed protocols. SMTP, IMAP, databases, and S3 continue to use their direct
+bindings. A path for a known but unselected provider returns HTTP `404` with
+`gateway_route_unavailable`.

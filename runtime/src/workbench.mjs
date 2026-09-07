@@ -31,6 +31,7 @@ import {
 } from "./connector.mjs";
 import { SCALE_PRESETS, ScaleError, parseLimits, parseScale } from "./scale.mjs";
 import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
+import { gatewayRoute, gatewayRoutes, proxyGateway } from "./gateway.mjs";
 
 const UI_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../workbench-ui/dist");
 const DOCS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "../docs-site");
@@ -855,6 +856,20 @@ export async function startWorkbench(initialInstance, {
     try {
       const url = new URL(request.url, "http://worldfixture.local");
       const expected = request.headers["x-worldfixture-generation"];
+      const gateway = gatewayRoute(currentInstance(), url.pathname);
+      if (gateway?.state === "not-selected") return json(response, 404, {
+        error: `${gateway.path} is not available in the selected world`, code: "gateway_route_unavailable",
+      });
+      if (gateway?.state === "selected") {
+        try { await proxyGateway(request, response, gateway, url); }
+        catch (error) {
+          if (!response.headersSent) return json(response, 502, {
+            error: `the ${gateway.route.surface} service did not answer: ${error.message}`, code: "gateway_upstream_unavailable",
+          });
+          response.destroy(error);
+        }
+        return;
+      }
       if (request.method === "GET" && !url.pathname.startsWith("/api/") && url.pathname !== "/readyz") {
         if (serveDocs(url, response)) return;
         if (serveUi(url, response)) return;
@@ -873,6 +888,9 @@ export async function startWorkbench(initialInstance, {
         if (manager) response.setHeader("X-WorldFixture-Generation", manager.generation);
         return json(response, 200, manager ? { ...manager.status(), managed: true } : { managed: false, generation: null,
           phase: currentInstance().phase ?? "ready", reconnect_required: false });
+      }
+      if (request.method === "GET" && url.pathname === "/api/gateway") {
+        return json(response, 200, { routes: gatewayRoutes(currentInstance()).map(({ address: _address, preserve: _preserve, ...route }) => route) });
       }
       if (["/api/worlds", "/api/world/switch", "/api/world/connection"].includes(url.pathname)) {
         if (!manager) return json(response, 503, { error: "World switching is unavailable for this run", code: "session_unavailable" });
