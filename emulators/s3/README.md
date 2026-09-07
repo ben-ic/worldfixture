@@ -87,6 +87,10 @@ The host `--direct` runner executes the filer readiness request inside the S3
 container. In the combined image, the supervisor reaches the filer directly
 through the shared loopback interface. Both paths check the same seed document.
 
+The checkout S3 container runs with the host user's numeric UID and GID. This
+allows it to read the private staged world on Linux without changing the world's
+permissions. Its world mount remains read-only and its data stays in `/tmp`.
+
 Readiness is `GET /worldfixture/ready` on the filer port. It is a document the
 entry point writes **after** seeding finishes, naming the fixture and the counts
 it seeded:
@@ -115,6 +119,7 @@ PYTHONPATH=compiler python3 -m worldfixture_compiler build \
 cd emulators/s3
 docker build --platform=linux/amd64 -t worldfixture-s3:test .
 docker run -d --name worldfixture-s3-test \
+  --user "$(id -u):$(id -g)" \
   -v /tmp/wf-s3:/world:ro -e WORLDFIXTURE_WORLD_PATH=/world \
   -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
   -p 127.0.0.1:4990:61006 \

@@ -58,6 +58,10 @@
             "platform": {
               "type": "string"
             },
+            "user": {
+              "description": "Run a container as the host UID and GID when it must read private host-owned artifacts and needs no fixed service user.",
+              "enum": ["host"]
+            },
             "mounts": {
               "type": "array",
               "items": {

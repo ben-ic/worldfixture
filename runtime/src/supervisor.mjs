@@ -176,6 +176,12 @@ export function dockerInvocation(service, environment, { allocation, worldPath, 
   const args = ["run", "--rm", "--init", "--name", spec.name];
 
   if (spec.platform) args.push("--platform", spec.platform);
+  if (spec.user === "host") {
+    // Private staged artifacts belong to the CLI user. A fixed image UID cannot
+    // read their mode-0700 directories on Linux. Keep those permissions intact.
+    if (!process.getuid || !process.getgid) throw new Error(`${service.name}: host container user requires a POSIX host`);
+    args.push("--user", `${process.getuid()}:${process.getgid()}`);
+  }
 
   for (const port of service.ports) {
     const assigned = allocation.get(`${service.name}/${port.name}`);

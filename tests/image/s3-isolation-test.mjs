@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { chmodSync, copyFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
@@ -79,6 +79,11 @@ else {
     }
     const checkNetwork = async () => {
       const [inspection] = JSON.parse(await docker(['inspect', container]));
+      if (values.mode === 'direct') {
+        assert.equal(inspection.Config.User, `${process.getuid()}:${process.getgid()}`, 'S3 must read private artifacts as their host owner');
+        const worldMount = inspection.Mounts.find(mount => mount.Destination === '/world');
+        assert.equal(statSync(worldMount.Source).mode & 0o777, 0o700, 'the staged world must remain private');
+      }
       const exposed = Object.entries(inspection.NetworkSettings.Ports).filter(([, entries]) => entries?.length);
       assert.ok(exposed.every(([port, entries]) => ['4715/tcp', '61006/tcp'].includes(port) && entries.every(entry => entry.HostIp === '127.0.0.1')));
       const rows = (await docker(['exec', container, 'cat', '/proc/net/tcp', '/proc/net/tcp6'])).trim().split('\n')

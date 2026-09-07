@@ -144,6 +144,7 @@ async function startContainer() {
   assert.match(immutableImage, /^sha256:[0-9a-f]{64}$/);
   docker([
     "run", "-d", "--name", container, "--platform=linux/amd64",
+    "--user", `${process.getuid()}:${process.getgid()}`,
     "-v", `${artifact}:/world:ro`,
     "-e", "WORLDFIXTURE_WORLD_PATH=/world",
     "-e", "AWS_ACCESS_KEY_ID", "-e", "AWS_SECRET_ACCESS_KEY",

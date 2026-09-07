@@ -36,6 +36,11 @@ for (const topology of [
         }
         if (service.container && topology.runner !== "process") {
           const { args } = dockerInvocation(service, env, { allocation, worldPath: "/test-world" });
+          if (service.container.user === "host") {
+            assert.equal(args[args.indexOf("--user") + 1], `${process.getuid()}:${process.getgid()}`);
+          } else {
+            assert.ok(!args.includes("--user"), `${service.name} retains its image user`);
+          }
           const mappings = args.filter((_arg, index) => args[index - 1] === "-p");
           assert.equal(mappings.length, service.ports.filter(port => !port.container_loopback).length);
           assert.ok(mappings.every(value => /^127\.0\.0\.1:\d+:\d+$/.test(value)), service.name);
