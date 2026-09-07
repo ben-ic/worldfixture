@@ -18,7 +18,7 @@
 export const WEBSITE_ID = "feea065b-26a2-4f2f-8b75-01b610274171";
 const ORIGIN = "https://analytics.interactivecats.com";
 
-const SCRIPTS = ["script.js"];
+const SCRIPTS = ["script.js", "recorder.js"];
 
 export function analyticsEnabled(env = process.env) {
   return env.WORLDFIXTURE_ANALYTICS === "1";
