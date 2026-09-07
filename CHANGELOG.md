@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `worldfixture up` asks whether to launch the included Account Desk demo app
+  on each fresh interactive start. The CLI starts and connects the demo, prints
+  the Workbench URL last, and stops the demo with the world. `--sample-app` and
+  `--no-sample-app` make the choice explicit.
+- `worldfixture environment` can write the exact selected capabilities to a
+  CLI environment file for repeatable starts.
 - worldfixture.com and its documentation report page views to Umami. The tags
   are added by `npm run site:build` and by nothing else: `docs:dev`, a plain
   `docs:build`, and the homepage opened straight off disk all stay clean. The
