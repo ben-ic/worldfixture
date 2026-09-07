@@ -60,8 +60,9 @@ or run files are written.
 Selection follows this order:
 
 1. The explicit selector.
-2. The `world` string in `.worldfixture/project.json`.
-3. The declared default, `business.saas-company:v3`.
+2. `world.use` in the file supplied with `--environment`.
+3. The `world` string in `.worldfixture/project.json`.
+4. The declared default, `business.saas-company:v3`.
 
 A project setting can name an artifact or an artifact directory. Relative
 paths in that setting resolve from the project directory; explicit CLI paths
@@ -77,7 +78,7 @@ resolve from the current working directory. For example:
 ```
 
 Startup prints `Selected world: <id>:<version> (<source>)` and `Artifact: <path>`.
-The source is `selector`, `worldPath`, `projectWorld`, or `defaultWorld`.
+The source is `selector`, `worldPath`, `environment`, `projectWorld`, or `defaultWorld`.
 `--direct` and container launch use the same selected artifact. `--no-rebase`
 keeps its original dates in both modes.
 
@@ -98,6 +99,80 @@ project value is not printed as if an application was running.
 
 A running container can be reused only if the selected artifact's ID, version,
 and digest match. Use `switch` to change the active world.
+
+### Exact capability selection
+
+Use `up --environment <file.json>` to select capabilities and binding names
+with the existing `worldfixture.environment/v1` schema. This is available in
+builds that include this option; the published 0.2.5 image used in the Node-RED
+report predates it. Use a matching CLI and image build.
+
+Save this as `node-red.environment.json`:
+
+```json
+{
+  "api_version": "worldfixture.environment/v1",
+  "world": { "use": "business.saas-company:v3" },
+  "requires": [
+    "github.repositories.v1",
+    "github.issues.v1",
+    "slack.messaging.v1",
+    "notion.pages-read.v1",
+    "notion.blocks-read.v1"
+  ],
+  "bindings": {
+    "GITHUB_BASE_URL": "github.repositories.v1/base_url",
+    "GITHUB_TOKEN": "github.repositories.v1/token",
+    "SLACK_BASE_URL": "slack.messaging.v1/base_url",
+    "SLACK_TOKEN": "slack.messaging.v1/token",
+    "NOTION_BASE_URL": "notion.pages-read.v1/base_url",
+    "NOTION_TOKEN": "notion.pages-read.v1/token"
+  }
+}
+```
+
+```sh
+npx worldfixture up --environment ./node-red.environment.json --no-rebase --setup --no-sample-app
+npx worldfixture env --json
+npx worldfixture run -- node /path/to/application.mjs
+npx worldfixture down
+```
+
+The same file is included at `examples/environments/node-red.json` in the
+package and source checkout. Inside a combined application container, pass
+`--environment` to its foreground `up` command as described in the
+[runtime packaging guide](../guides/embedded-runtime.md).
+
+- The file path is relative to the current directory. The CLI reads and
+  validates it before startup and copies the accepted request into private run
+  state for container launch. Editing the original file does not change a run.
+- An explicit world name or `--world-path` must match the file's `world.use`.
+  Use `--world-path` when that world is a custom artifact outside the catalogue.
+- `requires` selects the requested capabilities and their declared dependencies.
+  This example starts only GitHub, Slack, and Notion listeners. It does not add
+  default providers, optional project databases, or OAuth capabilities. Add
+  each capability your app needs. This selection does not disable other API
+  routes on a selected listener or replace token permission checks.
+- `bindings` maps application environment names to `<capability>/<attribute>`.
+  Unknown capabilities and unavailable binding attributes fail resolution.
+  Use the standard binding names above for built-in CLI and timeline actions.
+  `env` and `run` also include the Workbench URL and connector token.
+- If `target` is absent, the CLI uses `kind: "none"` and the world's primary
+  person. Set `target.identity` to select another person. CLI environment files
+  do not start an application command or an experience; use `run` for the app.
+- If `execution` is absent, the CLI uses `mode: "selected-capabilities"`.
+  Only compatible timeline actions are selected. `--setup` keeps delivery
+  paused until you choose a starting position.
+- `--environment` cannot be repeated or combined with `--only`. A repeated
+  host `up --environment` can reuse a run only when the saved request matches.
+  Stop the run before changing its capability or binding selection.
+- `switch` retains the saved capabilities, bindings, rules, and explicit target
+  identity. It uses the new world's primary person if the file omitted an
+  identity. An incompatible selection fails before replacing the active world.
+
+Bindings are published after readiness. Stop a foreground run with Ctrl-C or
+SIGTERM; use `down` for a normal host run. The runtime stops its provider
+processes. No imports from internal source modules are needed by the app.
 
 ## `switch`
 

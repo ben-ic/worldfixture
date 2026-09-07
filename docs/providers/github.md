@@ -41,6 +41,11 @@ resources and writes require a known token.
 WorldFixture does not enforce all production `User-Agent`, `Accept`,
 `X-GitHub-Api-Version`, media type, permission, or rate-limit rules.
 
+For fixture discovery, use the selected person's organization with
+`GET /orgs/{organization}/repos?per_page=100`. Do not assume `/user/repos`
+contains the same repositories. See the
+[three-provider discovery example](../getting-started/connect-an-app.md#discover-github-slack-and-notion).
+
 ## Registered REST routes
 
 The table gives the registered method and path patterns. In a long row, `...`

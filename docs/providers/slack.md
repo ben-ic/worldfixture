@@ -39,6 +39,11 @@ absent or unknown token returns `ok: false` and `error: "not_authed"`.
 The standard world sets `strict_scopes: false`. WorldFixture does not reproduce
 production scope checks or rate limits.
 
+Use POST with JSON for `conversations.list` and `conversations.history` in
+this emulator. For a write and read-back check, choose a joined, active public
+channel. See the
+[three-provider discovery example](../getting-started/connect-an-app.md#discover-github-slack-and-notion).
+
 ## Registered methods
 
 Each row gives the exact registered HTTP method and Slack method path. Unless a

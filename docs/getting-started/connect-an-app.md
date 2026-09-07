@@ -78,3 +78,47 @@ domain model.
 To map world packs into your application database, use an
 [application connector](../connectors/overview.md). You do not need a connector
 to use a provider SDK or API.
+
+## Discover GitHub, Slack, and Notion
+
+Read the active bindings after startup. Each base URL below is the provider
+origin; append the complete path shown in the table. The default bindings use
+the selected world's primary person where the provider has personal tokens.
+Confirm the identity before you select a repository, channel, or page.
+
+| Provider | Bindings | Identity request | First discovery request | Request version and encoding |
+| --- | --- | --- | --- | --- |
+| GitHub | `GITHUB_BASE_URL`, `GITHUB_TOKEN` | `GET /user` | `GET /orgs/{organization}/repos?per_page=100` | Bearer token. The Node-RED report did not pin a GitHub API version header. |
+| Slack | `SLACK_BASE_URL`, `SLACK_TOKEN` | `POST /api/auth.test` | `POST /api/conversations.list` with `{"types":"public_channel","exclude_archived":true,"limit":100}` | Bearer token, JSON body, `Content-Type: application/json`. No API version header. |
+| Notion | `NOTION_BASE_URL`, `NOTION_TOKEN` | `GET /v1/users/me` | `POST /v1/search` with `{"filter":{"property":"object","value":"page"},"page_size":100}` | Bearer token, JSON body, `Content-Type: application/json`, `Notion-Version: 2026-03-11`. |
+
+The Node-RED 4.1.10 report tested WorldFixture image 0.2.5 with
+`business.saas-company:v3`. Its primary person was Maya Chen, and that person's
+`organization_id` was `northstar-relay`. Read this relationship from the selected
+world; do not use that organization for every world. The report found zero
+repositories through `/user/repos` and 14 through the organization route.
+This observation alone does not establish a GitHub permission defect.
+
+For a Slack write and read-back check, select a channel with `is_member: true`,
+`is_archived: false`, and `is_private: false`. Check `ok` in every Slack response.
+Use POST for the discovery and history methods in this emulator. This is a local
+support limit, not a claim that the production API rejects GET.
+
+List requests can need more than one response. Follow GitHub's `Link` header
+for the next page, Slack's `response_metadata.next_cursor`, and Notion's
+`has_more` with `next_cursor` passed as `start_cursor`. Do not infer completion
+from a short page alone. Notion block children have their own pagination.
+See the official [GitHub repository reference](https://docs.github.com/en/rest/repos/repos#list-organization-repositories),
+[Slack pagination guide](https://docs.slack.dev/apis/web-api/pagination/), and
+[Notion pagination reference](https://developers.notion.com/reference/pagination).
+
+For Notion, keep the page ID for API requests. `url` is a link to the page;
+`public_url` is the published web URL, or `null` when unpublished. WorldFixture
+serves local page links from its advertised Notion origin. This origin choice
+belongs to WorldFixture; Notion's API does not require the integrating app's
+origin. See the [Notion Page reference](https://developers.notion.com/reference/page).
+
+For complete setup and limits, read the [GitHub](../providers/github.md),
+[Slack](../providers/slack.md), and [Notion](../providers/notion.md) pages.
+For an app with an older Node.js version, use the
+[separate runtime example](../guides/embedded-runtime.md).

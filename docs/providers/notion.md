@@ -97,6 +97,9 @@ an empty Notion fixture and no fallback Notion credentials.
 
 ## Quick start
 
+For page search, token identity, and pagination, see the
+[three-provider discovery example](../getting-started/connect-an-app.md#discover-github-slack-and-notion).
+
 For a REST client, set its API base URL to `NOTION_BASE_URL`, use
 `Authorization: Bearer ${NOTION_TOKEN}`, and send
 `Notion-Version: 2026-03-11`. For example:

@@ -59,6 +59,7 @@ export default defineConfig({
           { text: "Native provider webhooks", link: "/guides/native-webhooks" },
           { text: "Reset and persistence", link: "/guides/reset-and-persistence" },
           { text: "HTTP targets and RSS", link: "/guides/http-targets" },
+          { text: "Run beside an app runtime", link: "/guides/embedded-runtime" },
         ],
       },
       {
