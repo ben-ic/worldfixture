@@ -1,4 +1,5 @@
 import { selectCompatibleCapabilities } from './capability-world.mjs';
+import { configuredEnvironment } from './environment-file.mjs';
 
 // The environment `worldfixture up` starts when nobody asked for anything.
 //
@@ -148,6 +149,7 @@ export function defaultEnvironment(
     includeProviders = false,
     includePostgres = false,
     includeMySQL = false,
+    environmentSpec,
     only,
     oauthClients = {},
     artifactPath,
@@ -164,6 +166,7 @@ export function defaultEnvironment(
     identity,
   } = {},
 ) {
+  if (environmentSpec) return configuredEnvironment(environmentSpec, world, identity);
   // `only` names the parts of the world this run wants. Absent, it wants all of
   // them, which is what the zero-configuration first run has always given.
   const wanted = only ? new Set(partsFor(only)) : null;

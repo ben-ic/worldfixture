@@ -11,6 +11,7 @@ import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import { readActiveGeneration, sessionPath, writeSessionJson } from './session-files.mjs';
+import { verifyEnvironmentRequest } from './environment-file.mjs';
 
 const run = promisify(execFile);
 
@@ -382,6 +383,7 @@ export async function launchHostInstance({
   projectConfig,
   generatedSecretsPath,
   requestedWorld,
+  requestedEnvironment,
   runner = run,
   selectPorts = selectHostPorts,
   // `onPull` is called with ONE ARGUMENT, THE IMAGE NAME, because that is what
@@ -415,6 +417,7 @@ export async function launchHostInstance({
   const running = await inspectHostInstance(stateDir, { runner });
   if (running) {
     if (requested) verifyRequestedWorld(running, requested);
+    if (requestedEnvironment) verifyEnvironmentRequest(stateDir, requestedEnvironment);
     const bindings = hostBindings(stateDir);
     if (bindings && !running.recovered) return { reused: true, instance: running, bindings };
     throw new HostLauncherError(

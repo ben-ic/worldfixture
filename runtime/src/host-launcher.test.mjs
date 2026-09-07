@@ -466,6 +466,23 @@ test("requestedWorld reuses its original selection despite a rebased lock digest
   assert.equal(fixture.calls.length, 1);
 });
 
+test('requestedEnvironment refuses a changed or absent request before reusing a host instance', async t => {
+  const fixture = recordedWorldFixture(t);
+  const requestedEnvironment = { api_version: 'worldfixture.environment/v1', world: { use: 'consumer.unusual:v7' }, requires: ['slack.messaging.v1'] };
+  const requestPath = join(fixture.options.stateDir, 'environment-request.json');
+  for (const saved of [undefined, { ...requestedEnvironment, requires: ['github.repositories.v1'] }]) {
+    if (saved) writeFileSync(requestPath, JSON.stringify(saved));
+    const before = fixture.snapshot();
+    await assert.rejects(launchHostInstance({ ...fixture.options, requestedWorld: originalWorld, requestedEnvironment }),
+      error => error.code === 'environment_selection_changed');
+    assert.deepEqual(fixture.snapshot(), before);
+  }
+  writeFileSync(requestPath, JSON.stringify(requestedEnvironment));
+  const before = fixture.snapshot();
+  assert.equal((await launchHostInstance({ ...fixture.options, requestedWorld: originalWorld, requestedEnvironment })).reused, true);
+  assert.deepEqual(fixture.snapshot(), before);
+});
+
 test("requestedWorld rejects changed id, version or digest without state mutations", async (t) => {
   for (const key of ["id", "version", "digest"]) {
     const fixture = recordedWorldFixture(t);

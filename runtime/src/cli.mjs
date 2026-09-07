@@ -15,6 +15,7 @@ import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync,
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defaultEnvironment } from "./environments.mjs";
+import { ENVIRONMENT_REQUEST_FILE, configuredEnvironment, readEnvironmentFile, verifyEnvironmentRequest } from './environment-file.mjs';
 import { shareHostArtifact } from './host-state-ownership.mjs';
 import { activeFile, activeStateDir, readActiveGeneration, sessionPath, writeSessionFile, writeSessionJson } from './session-files.mjs';
 import { assertSessionRecoverable, SessionError } from './session-manager.mjs';
@@ -154,6 +155,8 @@ Options
   --only <parts>       Start only these parts of the world (slack, github, site
                        for HTTP targets, mail for Local Mail, s3, providers).
                        The default starts all of them.
+  --environment <file> Select exact capabilities and bindings from environment JSON
+                       Cannot be combined with --only.
   --no-rebase          Start the world at its authored anchor instead of today
   --start-at <duration> Apply arrivals through this position before the run is ready
   --setup              Wait for a starting position in the Workbench before delivery
@@ -246,6 +249,9 @@ export function parse(argv) {
     const name = argument.slice(2);
     if (["world", "world-path"].includes(name) && Object.hasOwn(flags, name)) {
       throw new BuildError("invalid_world_selection", `--${name} was supplied more than once`);
+    }
+    if (name === 'environment' && Object.hasOwn(flags, name)) {
+      throw new BuildError('invalid_arguments', '--environment was supplied more than once');
     }
     if (["verbose", "choose", "direct", "json", "follow", "no-rebase", "setup", "repeat", "list", "print", "help", "without-application", "status", "sample-app", "no-sample-app"].includes(name)) flags[name] = true;
     else {
@@ -641,7 +647,7 @@ export function validateTimelineStart(flags) {
   }
 }
 
-async function directUp({ flags }, { applicationEnvironment, project, selection } = {}) {
+async function directUp({ flags }, { applicationEnvironment, project, selection, environmentSpec } = {}) {
   const { builtPath, stateDir, serviceRoot, generatedSecretsPath: defaultGeneratedSecretsPath } = paths(flags);
   assertSessionRecoverable(stateDir);
   const generatedSecretsPath = project?.generatedSecretsPath ?? defaultGeneratedSecretsPath;
@@ -671,6 +677,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
     includePostgres: project?.config.services.includes("postgres"),
     includeMySQL: project?.config.services.includes("mysql"),
     only,
+    environmentSpec,
     oauthClients: world.software?.oauth_clients,
     // Whose mail and Slack credentials this run binds. Read from the world that
     // is about to start, so a world other than the default one -- a shipped one
@@ -690,6 +697,8 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
     writeSessionJson(join(stateDir, "application-connector.json"), target);
   }
   writeSessionJson(`${stateDir}/environment.json`, spec);
+  if (environmentSpec) writeSessionJson(join(stateDir, ENVIRONMENT_REQUEST_FILE), environmentSpec);
+  else rmSync(join(stateDir, ENVIRONMENT_REQUEST_FILE), { force: true });
   writeSessionFile(`${stateDir}/environment.lock.json`, serializeLock(lock));
 
   // THE WORKBENCH OPENS WHILE THE WORLD IS STILL LOADING.
@@ -811,7 +820,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
       noRebase: flags['no-rebase'] === true,
       environmentOptions: {
         includeS3: inOneContainer || project?.config.services.includes('s3'), includeProviders: inOneContainer,
-        includePostgres: project?.config.services.includes('postgres'), includeMySQL: project?.config.services.includes('mysql'), only,
+        includePostgres: project?.config.services.includes('postgres'), includeMySQL: project?.config.services.includes('mysql'), only, environmentSpec,
       },
       startOptions: { serviceRoot, runner: inOneContainer ? 'process' : 'container',
         fixedPorts: inOneContainer ? SINGLE_CONTAINER_PORTS : undefined, runtimeToken: instance.runtimeToken },
@@ -860,11 +869,15 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
 
 async function up(parsed) {
   validateTimelineStart(parsed.flags);
-  const explicitApplication = parsed.flags["application-url"] !== undefined;
+  if (parsed.flags.environment !== undefined && parsed.flags.only !== undefined) {
+    throw new BuildError('invalid_arguments', 'Use --environment or --only, not both.');
+  }
+  const environmentSpec = parsed.flags.environment === undefined ? undefined : readEnvironmentFile(parsed.flags.environment);
+  const explicitApplication = parsed.flags["application-url"] !== undefined || environmentSpec?.target?.application_url !== undefined;
   if (parsed.flags["sample-app"] && parsed.flags["no-sample-app"]) {
     throw new BuildError("invalid_arguments", "Use --sample-app or --no-sample-app, not both.");
   }
-  if (parsed.flags["sample-app"] && parsed.flags["application-url"]) {
+  if (parsed.flags["sample-app"] && explicitApplication) {
     throw new BuildError("invalid_arguments", "Use --sample-app or --application-url, not both.");
   }
   const inOneContainer = process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1";
@@ -873,12 +886,29 @@ async function up(parsed) {
     ? JSON.parse(process.env.WORLDFIXTURE_PROJECT_CONFIG ?? '{"api_version":"worldfixture.project/v1","application_url":"http://localhost:3000","services":[]}')
     : null;
   const existingProject = inOneContainer ? null : readProject(projectDir);
-  let configuredApplication = parsed.flags["application-url"] ?? existingProject?.config.application_url;
+  let configuredApplication = parsed.flags["application-url"] ?? environmentSpec?.target?.application_url ?? existingProject?.config.application_url;
   if (!configuredApplication) {
     try { configuredApplication = JSON.parse(readFileSync(join(paths(parsed.flags).stateDir, "application-connector.json"), "utf8")).url; } catch {}
   }
   const projectWorld = containerProject?.world ?? existingProject?.config.world;
-  const selected = resolveUpSelection(parsed, { projectWorld, projectDir });
+  const fromEnvironment = environmentSpec && !parsed.positional.length && parsed.flags.world === undefined && parsed.flags['world-path'] === undefined;
+  const selected = resolveUpSelection(fromEnvironment ? { ...parsed, flags: { ...parsed.flags, world: environmentSpec.world.use } } : parsed, { projectWorld, projectDir });
+  if (fromEnvironment) selected.selectionSource = 'environment';
+  if (environmentSpec) {
+    if (environmentSpec.world.use !== `${selected.id}:${selected.version}`) {
+      throw new ResolutionError('world_mismatch', `The environment asks for ${environmentSpec.world.use}, but the selected artifact is ${selected.id}:${selected.version}.`);
+    }
+    // A checkout can preflight before writes. Installed host packages resolve
+    // against the service manifests in the selected product image at startup.
+    const { serviceRoot } = paths(parsed.flags);
+    const manifests = existsSync(serviceRoot) ? loadManifests(serviceRoot) : [];
+    if (manifests.length) {
+      const world = readWorld(selected.artifactPath);
+      const spec = configuredEnvironment(environmentSpec, `${selected.id}:${selected.version}`, world.people?.find(person => person.primary)?.id);
+      if (parsed.flags['application-url']) spec.target.application_url = connectorTarget({ application_url: parsed.flags['application-url'] }, { inContainer: inOneContainer }).transport_url;
+      resolveEnvironment(spec, { manifests, artifactPath: selected.artifactPath });
+    }
+  }
   const direct = parsed.flags.direct || inOneContainer;
   const requestedWorld = { id: selected.id, version: selected.version, digest: selected.digest };
   if (!direct) {
@@ -887,6 +917,7 @@ async function up(parsed) {
     const running = await inspectHostInstance(paths(parsed.flags).stateDir);
     if (running) {
       verifyRequestedWorld(running, requestedWorld);
+      if (environmentSpec) verifyEnvironmentRequest(paths(parsed.flags).stateDir, environmentSpec);
       if (parsed.flags["start-at"] !== undefined || parsed.flags.setup || parsed.flags.repeat) {
         throw new BuildError("instance_already_running", "The instance is already running. Launch options cannot change its clock. Use clock commands or stop it before a new launch.");
       }
@@ -915,7 +946,7 @@ async function up(parsed) {
       token: project.token,
     })
     : null;
-  if (direct) return await directUp(parsed, { applicationEnvironment, project, selection: selected });
+  if (direct) return await directUp(parsed, { applicationEnvironment, project, selection: selected, environmentSpec });
 
   const { builtPath, stateDir } = paths(parsed.flags);
 
@@ -939,8 +970,9 @@ async function up(parsed) {
       projectConfig: project.config,
       generatedSecretsPath: project.generatedSecretsPath,
       requestedWorld,
+      requestedEnvironment: environmentSpec,
       // The launcher checks reuse before this callback changes the input snapshot.
-      prepareContainerArgs: () => prepareContainerArgs(builtPath, stateDir, parsed.flags, selected),
+      prepareContainerArgs: () => prepareContainerArgs(builtPath, stateDir, parsed.flags, selected, environmentSpec),
       // A first run on a new machine has no image. Say what is happening: this is
       // a few hundred megabytes and a silent minute reads as a hang.
       onPull: (name) => progress.note(
@@ -2338,10 +2370,16 @@ function prepareSessionInput(builtPath, stateDir, expectedWorld) {
   return staged;
 }
 
-export function prepareContainerArgs(builtPath, stateDir, flags = {}, expectedWorld) {
+export function prepareContainerArgs(builtPath, stateDir, flags = {}, expectedWorld, environmentSpec) {
   validateTimelineStart(flags);
+  if (flags.environment !== undefined && flags.only !== undefined) throw new BuildError('invalid_arguments', 'Use --environment or --only, not both.');
+  const requested = environmentSpec ?? (flags.environment === undefined ? undefined : readEnvironmentFile(flags.environment));
   prepareSessionInput(builtPath, stateDir, expectedWorld);
   const args = ["--world-path", "/state/input-world"];
+  if (requested) {
+    writeSessionJson(join(stateDir, ENVIRONMENT_REQUEST_FILE), requested);
+    args.push('--environment', `/state/${ENVIRONMENT_REQUEST_FILE}`);
+  } else rmSync(join(stateDir, ENVIRONMENT_REQUEST_FILE), { force: true });
   if (flags.only) args.push("--only", String(flags.only));
   if (flags["application-url"]) args.push("--application-url", String(flags["application-url"]));
   if (flags["no-rebase"]) args.push("--no-rebase");

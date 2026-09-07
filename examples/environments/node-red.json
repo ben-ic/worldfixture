@@ -1,0 +1,19 @@
+{
+  "api_version": "worldfixture.environment/v1",
+  "world": { "use": "business.saas-company:v3" },
+  "requires": [
+    "github.repositories.v1",
+    "github.issues.v1",
+    "slack.messaging.v1",
+    "notion.pages-read.v1",
+    "notion.blocks-read.v1"
+  ],
+  "bindings": {
+    "GITHUB_BASE_URL": "github.repositories.v1/base_url",
+    "GITHUB_TOKEN": "github.repositories.v1/token",
+    "SLACK_BASE_URL": "slack.messaging.v1/base_url",
+    "SLACK_TOKEN": "slack.messaging.v1/token",
+    "NOTION_BASE_URL": "notion.pages-read.v1/base_url",
+    "NOTION_TOKEN": "notion.pages-read.v1/token"
+  }
+}

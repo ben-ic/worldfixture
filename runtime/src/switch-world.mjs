@@ -187,9 +187,9 @@ export function prepareSwitchWorld(input = {}, {
     if (!session.rebased) copyArtifact(original, artifactPath);
     const artifact = checked(artifactPath), world = json(join(artifactPath, 'world.json'));
     const manifests = loadManifests(serviceRoot);
-    const { includeS3, includeProviders, includePostgres, includeMySQL, only } = environmentOptions;
+    const { includeS3, includeProviders, includePostgres, includeMySQL, only, environmentSpec } = environmentOptions;
     const spec = defaultEnvironment(`${world.id}:${world.version}`, {
-      includeS3, includeProviders, includePostgres, includeMySQL, only,
+      includeS3, includeProviders, includePostgres, includeMySQL, only, environmentSpec,
       artifactPath, manifests, identity: world.people?.find(person => person.primary)?.id,
       oauthClients: world.software?.oauth_clients,
     });

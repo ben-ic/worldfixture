@@ -52,6 +52,7 @@
     "!docs/package.json",
     "!docs/package-lock.json",
     "examples/minimal-world/",
+    "examples/environments/",
     "examples/demo_app/package.json",
     "examples/demo_app/package-lock.json",
     "examples/demo_app/src/connector/",
