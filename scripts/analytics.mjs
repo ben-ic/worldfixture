@@ -10,16 +10,15 @@
 //   - The documentation built INTO THE CONTAINER IMAGE. This is the one that
 //     matters. `Dockerfile` builds `docs/` and the Workbench serves the result
 //     at /docs while a world is running, offline, on a developer's own machine.
-//     A tag baked in there would report every local page view -- and, with the
-//     recorder, record the session -- from a machine that only ever asked to
-//     read documentation about a local tool.
+//     A tag baked in there would report every local page view from a machine
+//     that only ever asked to read documentation about a local tool.
 //
 // So nothing is added by default. `site:build` opts in by setting
 // WORLDFIXTURE_ANALYTICS=1, and it is the only thing that does.
 export const WEBSITE_ID = "feea065b-26a2-4f2f-8b75-01b610274171";
 const ORIGIN = "https://analytics.interactivecats.com";
 
-const SCRIPTS = ["script.js", "recorder.js"];
+const SCRIPTS = ["script.js"];
 
 export function analyticsEnabled(env = process.env) {
   return env.WORLDFIXTURE_ANALYTICS === "1";
