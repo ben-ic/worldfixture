@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>WorldFixture — one fake world, real Slack, mail, GitHub and Stripe</title>
-<meta name="description" content="Local emulators of Slack, GitHub, Google, Notion, Stripe, mail and S3, seeded from one synthetic world with people and 30 days of history. Point your app at them with env vars. npx worldfixture up.">
+<title>WorldFixture — a fake company your software can interact with</title>
+<meta name="description" content="Run local Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events. Build, test, and demo without production accounts or empty sandboxes.">
 <meta name="keywords" content="slack emulator, github emulator, stripe test data, imap smtp emulator, s3 local, seed data, synthetic data, dev environment, demo data, integration testing, mcp, agent testing">
 <link rel="canonical" href="https://worldfixture.com/">
 <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -17,17 +17,17 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="WorldFixture">
 <meta property="og:url" content="https://worldfixture.com/">
-<meta property="og:title" content="Nothing worse than an empty demo">
-<meta property="og:description" content="One fake world. Slack, S3, Email, Gmail, GitHub, and more — local emulators already filled with people and 30 days of history. npx worldfixture up.">
+<meta property="og:title" content="A fake company your software can interact with">
+<meta property="og:description" content="Run local Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events. npx worldfixture up.">
 <meta property="og:image" content="https://worldfixture.com/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="WorldFixture homepage with local emulators and the npx worldfixture up command.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Nothing worse than an empty demo">
-<meta name="twitter:description" content="One fake world. Slack, S3, Email, Gmail, GitHub, and more — local emulators, seeded and consistent. npx worldfixture up.">
+<meta name="twitter:title" content="A fake company your software can interact with">
+<meta name="twitter:description" content="Run local Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events. npx worldfixture up.">
 <meta name="twitter:image" content="https://worldfixture.com/og.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"WorldFixture","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Linux, Windows","description":"Local emulators of Slack, GitHub, Google, Notion, Stripe, mail and S3, seeded from one synthetic world.","license":"https://www.apache.org/licenses/LICENSE-2.0","codeRepository":"https://github.com/ben-ic/worldfixture","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"WorldFixture","applicationCategory":"DeveloperApplication","operatingSystem":"macOS, Linux, Windows","description":"A local synthetic company with provider-compatible services, shared history, and scheduled events for development, tests, and demos.","license":"https://www.apache.org/licenses/LICENSE-2.0","codeRepository":"https://github.com/ben-ic/worldfixture","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>body{margin:0;background:#090b0f;color:#e6e9f0;font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#e6e9f0;text-decoration:none}@keyframes wfcaret{0%,45%{opacity:1}50%,95%{opacity:0}100%{opacity:1}}a:hover{color:#7c9cff}[id]{scroll-margin-top:24px}@media(max-width:640px){.site-nav{position:relative!important}}@media(min-width:641px){[id]{scroll-margin-top:140px}}</style>
@@ -43,7 +43,7 @@
 <div class="site-nav" style="border-bottom:1px solid rgba(255,255,255,.08);background:rgba(9,11,15,.85);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5">
 <div style="max-width:1160px;margin:0 auto;padding:10px 24px;min-height:60px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px">
   <div style="display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em"><span style="display:inline-block;width:14px;height:14px;background:#4f7cff;box-shadow:0 0 0 3px #090b0f,0 0 0 4px rgba(79,124,255,.5)"></span>WorldFixture</div>
-  <div style="display:flex;flex-wrap:wrap;gap:14px 28px;font-size:14px;color:#a3abbd"><a href="#how">How it works</a><a href="#world">The world</a></div>
+  <div style="display:flex;flex-wrap:wrap;gap:14px 24px;font-size:14px;color:#a3abbd"><a href="#example">Example</a><a href="#how">How it works</a><a href="#use">When to use it</a><a href="#worlds">Worlds</a><a href="#faq">FAQ</a></div>
   <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
     <a href="/docs/" style="font-size:13px;color:#a3abbd;padding:8px 12px">Docs</a><a href="https://github.com/ben-ic/worldfixture" style="font-size:13px;color:#a3abbd;padding:8px 12px">GitHub</a>
     <a href="#install" style="font:500 13px 'Geist Mono',monospace;background:#e6e9f0;color:#090b0f;padding:8px 14px;border-radius:4px">npx worldfixture up</a>
@@ -54,13 +54,13 @@
 <div style="max-width:1160px;margin:0 auto;padding:clamp(40px,7vw,80px) clamp(20px,4vw,32px) 40px;display:flex;flex-direction:column;gap:clamp(28px,4vw,48px)">
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:clamp(28px,4vw,48px);align-items:end">
     <div style="display:flex;flex-direction:column;gap:22px">
-      <div style="display:flex;gap:8px;align-items:center;font:500 12px 'Geist Mono',monospace;color:#8b93a7;letter-spacing:.02em"><span style="width:6px;height:6px;border-radius:50%;background:#4f7cff;display:inline-block"></span>OPEN SOURCE · LOCAL EMULATORS · NO MODEL CALLS</div>
-      <h1 style="margin:0;font-size:clamp(36px,6.2vw,64px);line-height:1.03;letter-spacing:-.035em;font-weight:600;color:#8b93a7;text-wrap:nowrap">Nothing worse<br />than an empty<br />{{ rotWord }}</h1>
-      <div style="font-size:clamp(18px,2.4vw,24px);line-height:1.3;letter-spacing:-.02em;font-weight:500;color:#c7cddb;text-wrap:balance">One fake world. Slack, S3, Email, Gmail, GitHub, and more.</div>
-      <div style="display:flex;align-items:center;gap:10px;font-size:clamp(15px,1.8vw,17px);line-height:1.4;color:#8b93a7;text-wrap:pretty"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.14);flex:none"></span>No seed scripts, no mocks, no waiting for staging.</div>
+      <div style="display:flex;gap:8px;align-items:center;font:500 12px 'Geist Mono',monospace;color:#8b93a7;letter-spacing:.02em"><span style="width:6px;height:6px;border-radius:50%;background:#4f7cff;display:inline-block"></span>OPEN SOURCE · RUNS LOCALLY · REPLAYABLE</div>
+      <h1 style="margin:0;font-size:clamp(38px,6.2vw,66px);line-height:1.02;letter-spacing:-.04em;font-weight:600;color:#e6e9f0;text-wrap:balance">A fake company your software can interact with.</h1>
+      <div style="font-size:clamp(18px,2.4vw,24px);line-height:1.3;letter-spacing:-.02em;font-weight:500;color:#c7cddb;text-wrap:balance">Run Slack, GitHub, Gmail, Stripe, S3, and more with shared people, history, and events.</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:clamp(15px,1.8vw,17px);line-height:1.4;color:#8b93a7;text-wrap:pretty"><span style="width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgba(74,222,128,.14);flex:none"></span>Build, test, and demo without production accounts or empty sandboxes.</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:20px;padding-bottom:6px">
-      <p style="margin:0;font-size:17px;line-height:1.5;color:#a3abbd;text-wrap:pretty">Local emulators, already filled with people and 30 days of history. Point your app at them with env vars. The person in #release is the person on the pull request.</p>
+      <p style="margin:0;font-size:17px;line-height:1.5;color:#a3abbd;text-wrap:pretty">Demos should never be empty. Tests should run against an environment with data. Seed scripts fill databases and mocks return responses, but neither makes Slack, email, GitHub, and Stripe tell the same story. WorldFixture gives your app a whole company to interact with.</p>
       <div id="install" style="display:flex;flex-direction:column;background:#0f1218;border:1px solid rgba(255,255,255,.14);border-radius:8px;overflow:hidden">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 6px 6px 18px;background:#090b0f">
           <span style="font:clamp(13px,1.6vw,16px) 'Geist Mono',monospace;color:#e6e9f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0"><span style="color:#4f7cff">$ </span>npx worldfixture up</span>
@@ -75,21 +75,21 @@
           </sc-for>
         </div>
       </div>
-      <div style="font-size:13px;line-height:1.5;color:#5c6578">Requires Docker. Starts the default <span style="font-family:'Geist Mono',monospace;color:#8b93a7">business.saas-company</span> world. No account, no API key, no model calls.</div>
+      <div style="font-size:13px;line-height:1.5;color:#5c6578">Requires Docker and Node.js 22+. Stream the world in real time, advance its clock, or create your own world. No account, production API key, or model call.</div>
     </div>
   </div>
 
   <!-- world window -->
   <div style="display:flex;flex-direction:column;background:#0f1218;border:1px solid rgba(255,255,255,.12);border-radius:10px;overflow:hidden;box-shadow:0 40px 100px rgba(0,0,0,.6)">
     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.08)">
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px"><span style="display:flex;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span></span><span style="font:12px 'Geist Mono',monospace;color:#8b93a7;overflow-wrap:anywhere">business.saas-company:v2 · ready in 14s · Aug 27 09:40</span></div>
-      <div style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">30 days of history, one artifact</div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px"><span style="display:flex;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span><span style="width:10px;height:10px;border-radius:50%;background:#2a3040"></span></span><span style="font:12px 'Geist Mono',monospace;color:#8b93a7;overflow-wrap:anywhere">business.saas-company:v3 · Northstar Relay · ready</span></div>
+      <div style="font:11px 'Geist Mono',monospace;color:#5c6578;white-space:nowrap">shared history · live clock</div>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));overflow:hidden">
       <!-- slack -->
       <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);min-height:0;min-width:0;height:440px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#c084fc"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Slack · #release</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">localhost:4003</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#c084fc"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Slack · #account-lumen</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">local API</span></div>
         <div ref="{{ slackRef }}" style="display:flex;flex-direction:column;gap:12px;padding:14px 16px;flex:1;min-height:0;overflow-y:auto">
           <sc-for list="{{ slack }}" as="m" hint-placeholder-count="4">
             <div style="display:grid;grid-template-columns:26px 1fr;gap:10px;align-items:start">
@@ -101,7 +101,7 @@
       </div>
       <!-- mail -->
       <div style="display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,.08);min-height:0;min-width:0;height:440px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#4ade80"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Mail · maya@northstar.test</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">imap :1143</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#4ade80"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">Mail · maya@northstar-relay.worldfixture.test</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">SMTP · IMAP</span></div>
         <div style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
           <sc-for list="{{ mail }}" as="e" hint-placeholder-count="5">
             <div style="display:flex;flex-direction:column;gap:3px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);background:{{ e.bg }}">
@@ -114,10 +114,10 @@
       </div>
       <!-- github -->
       <div style="display:flex;flex-direction:column;min-height:0;min-width:0;height:440px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#fb923c"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">GitHub · northstar/relay</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">localhost:4004</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08)"><span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0"><span style="width:8px;height:8px;border-radius:2px;background:#fb923c"></span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">GitHub · northstar-relay/relay-exports</span></span><span style="font:11px 'Geist Mono',monospace;color:#5c6578;flex:none">local API</span></div>
         <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;gap:8px;align-items:center"><span style="font:600 10px 'Geist Mono',monospace;background:rgba(74,222,128,.15);color:#4ade80;padding:2px 6px;border-radius:3px">OPEN</span><span style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fix export worker timeout above 50k rows</span></div>
-          <div style="font:11px 'Geist Mono',monospace;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">#212 · lmeyer wants to merge fix/export-timeout → main · +38 −11</div>
+          <div style="display:flex;gap:8px;align-items:center"><span style="font:600 10px 'Geist Mono',monospace;background:rgba(74,222,128,.15);color:#4ade80;padding:2px 6px;border-radius:3px">OPEN</span><span style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Scheduled exports exceed the worker lease</span></div>
+          <div style="font:11px 'Geist Mono',monospace;color:#8b93a7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">#902 · customer-lumen · release-3.2</div>
         </div>
         <div ref="{{ ghRef }}" style="display:flex;flex-direction:column;gap:10px;padding:12px 16px;flex:1;min-height:0;overflow-y:auto">
           <sc-for list="{{ github }}" as="g" hint-placeholder-count="3">
@@ -131,8 +131,25 @@
     </div>
 
     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.08);background:#090b0f">
-      <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#a3abbd;min-width:0"><span style="width:8px;height:8px;background:#4f7cff;border-radius:2px;flex:none"></span>Start Slack, GitHub, Google, Notion, Stripe, Local Mail, S3, and more with one shared synthetic dataset.</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:#a3abbd;min-width:0"><span style="width:8px;height:8px;background:#4f7cff;border-radius:2px;flex:none"></span>One customer risk, visible across Slack, mail, GitHub, Stripe, and more.</div>
       <div style="font:11px 'Geist Mono',monospace;color:#5c6578;overflow-wrap:anywhere">{{ status }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- end-to-end example -->
+<div id="example" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="max-width:760px;display:flex;flex-direction:column;gap:14px">
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">ONE COMPLETE USE CASE</div>
+      <h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">Find a customer at risk before the renewal call.</h2>
+      <p style="margin:0;color:#a3abbd;font-size:17px;line-height:1.6;text-wrap:pretty">Imagine that you are building a product that identifies customers at risk of churn. Start WorldFixture and your app sees Northstar Relay, a synthetic 99-person SaaS company with weeks of activity.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px">
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">01 · CONNECT</span><strong style="font-size:16px">Point your app at local services</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">WorldFixture prints the URLs and credentials for Slack, GitHub, Gmail, Stripe, S3, and the other active services.</span></div>
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">02 · FIND THE SIGNAL</span><strong style="font-size:16px">See one risk across systems</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">Slack discusses Lumen's export failures. GitHub has the engineering issues. Email has the renewal and billing discussion. Stripe has the account and invoice.</span></div>
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">03 · STREAM IT</span><strong style="font-size:16px">Let the world run in real time</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">Email arrives, Slack conversations continue, GitHub issues get comments, files appear in S3, and Stripe payments complete through provider events as the clock moves.</span></div>
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:18px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">04 · REPLAY</span><strong style="font-size:16px">Reset the whole company</strong><span style="font-size:14px;line-height:1.5;color:#8b93a7">Return every WorldFixture-owned service, event, and clock to the accepted starting state. Run the same E2E test or demo again.</span></div>
     </div>
   </div>
 </div>
@@ -142,53 +159,96 @@
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:clamp(28px,4vw,48px);align-items:start">
     <div style="display:flex;flex-direction:column;gap:14px">
       <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">HOW IT WORKS</div>
-      <h2 style="margin:0;font-size:clamp(25px,3.6vw,34px);line-height:1.12;letter-spacing:-.03em;font-weight:600">Your app talks to real interfaces. Nothing is mocked in your code.</h2>
-      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55">A Slack client calls Slack-shaped APIs. Mail uses SMTP and IMAP. Sign-in is a real OAuth redirect. Your own Postgres and MySQL are seeded from the same world artifact, so the names match everywhere.</p>
+      <h2 style="margin:0;font-size:clamp(25px,3.6vw,34px);line-height:1.12;letter-spacing:-.03em;font-weight:600">Use the interfaces your app already knows.</h2>
+      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55">There is no WorldFixture SDK that your application must know about. Mail uses SMTP and IMAP. Storage is S3-compatible. Slack, GitHub, Google, Notion, Stripe, and other services expose local APIs shaped like their providers. Use your normal client and change its base URL.</p>
     </div>
     <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden">
       <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);font:500 11px 'Geist Mono',monospace;color:#8b93a7">POINT YOUR APP AT IT</div>
-      <pre style="margin:0;padding:18px 20px;background:#090b0f;font:13px/1.75 'Geist Mono',monospace;color:#c7cddb;overflow:auto"><span style="color:#5c6578">$</span> worldfixture env --export
-<span style="color:#7c9cff">SLACK_BASE_URL</span>=http://localhost:4003
+      <pre style="margin:0;padding:18px 20px;background:#090b0f;font:13px/1.75 'Geist Mono',monospace;color:#c7cddb;overflow:auto"><span style="color:#5c6578">$</span> npx worldfixture env
+<span style="color:#7c9cff">SLACK_BASE_URL</span>=http://127.0.0.1:58831
 <span style="color:#7c9cff">SLACK_TOKEN</span>=xoxb-maya
-<span style="color:#7c9cff">IMAP_HOST</span>=localhost:1143
-<span style="color:#7c9cff">SMTP_HOST</span>=localhost:2525
-<span style="color:#7c9cff">GITHUB_API_URL</span>=http://localhost:4004
-<span style="color:#7c9cff">STRIPE_API_BASE</span>=http://localhost:4013
-<span style="color:#7c9cff">S3_ENDPOINT</span>=http://localhost:8333
-<span style="color:#7c9cff">DATABASE_URL</span>=postgres://localhost:5432/northstar
-<span style="color:#7c9cff">MYSQL_URL</span>=mysql://localhost:3306/northstar
+<span style="color:#7c9cff">GITHUB_BASE_URL</span>=http://127.0.0.1:58832
+<span style="color:#7c9cff">GOOGLE_BASE_URL</span>=http://127.0.0.1:58833
+<span style="color:#7c9cff">STRIPE_BASE_URL</span>=http://127.0.0.1:58829
+<span style="color:#7c9cff">SMTP_HOST_PORT</span>=127.0.0.1:58845
+<span style="color:#7c9cff">S3_ENDPOINT</span>=http://127.0.0.1:58847
 <span style="color:#5c6578">$</span> npm run dev</pre>
-      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#8b93a7;line-height:1.5">No SDK to install and no code to change. Your application database is seeded too: the customer row in Postgres is the customer in Stripe and the person in #release.</div>
+      <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:13px;color:#8b93a7;line-height:1.5">Ports are assigned for each run. Use <span style="font-family:'Geist Mono',monospace;color:#c7cddb">npx worldfixture env --json</span> when your setup needs machine-readable bindings.</div>
     </div>
   </div>
 </div>
 
 <!-- preseeded world -->
 <div id="world" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:clamp(28px,4vw,48px);align-items:start">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:clamp(28px,4vw,48px);align-items:stretch">
     <div style="display:flex;flex-direction:column;gap:16px">
       <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">THE DEFAULT WORLD</div>
       <h2 style="margin:0;font-size:clamp(25px,3.6vw,34px);line-height:1.12;letter-spacing:-.03em;font-weight:600">Northstar Relay, a 99-person SaaS company, late August</h2>
-      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55;text-wrap:pretty">Four threads are open when you start. They run across Slack, mail and GitHub at the same time, so whatever your app reads, it reads the same situation.</p>
-      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7;margin-top:4px">OPEN THREADS</div>
+      <p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.55;text-wrap:pretty">The company does not contain random filler. Its customer, product, finance, and engineering stories cross service boundaries, so your app can reach the same conclusion from different sources.</p>
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7;margin-top:4px">THE LUMEN LABS STORY</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:10px">
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">RENEWAL RISK</div><div style="font-size:14px;line-height:1.45">Lumen Labs exports over 50k rows hit the two-minute limit. Priya needs an answer before the renewal meeting. Fix is reproduced, not merged.</div></div>
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">RELEASE 2.8</div><div style="font-size:14px;line-height:1.45">Due next week. Lucas wants the focused fix merged; Jon wants another load test first. The thread is open.</div></div>
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">INVOICE 4471</div><div style="font-size:14px;line-height:1.45">412.00 USD, open until Aug 30. Not late, not the renewal problem, and not paid. A brief that says otherwise is wrong.</div></div>
-        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">ONBOARDING</div><div style="font-size:14px;line-height:1.45">Theo Martin starts Monday. Imani's page is ready; the staging access request is still open.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">RENEWAL RISK</div><div style="font-size:14px;line-height:1.45">Lumen's renewal call is Tuesday. Priya needs an honest answer about scheduled exports at their volume.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">ISSUE 902</div><div style="font-size:14px;line-height:1.45">The lease heartbeat passes at 268,000 rows on Northstar's fixture. Lumen will run its own saved export next.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">ISSUE 903</div><div style="font-size:14px;line-height:1.45">A cancelled export can still leave a partial object in the destination bucket. The fix is not closed.</div></div>
+        <div style="border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:14px;background:#0f1218"><div style="font:500 11px 'Geist Mono',monospace;color:#ffcf4a;margin-bottom:6px">BILLING</div><div style="font-size:14px;line-height:1.45">Lumen's August invoice is above true usage. The billing run is on hold and a credit note will follow.</div></div>
       </div>
     </div>
-    <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden">
+    <div style="border:1px solid rgba(255,255,255,.12);background:#0f1218;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;height:100%">
       <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1.9fr) minmax(0,.9fr);gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.08);font:500 11px 'Geist Mono',monospace;color:#5c6578"><span>PERSON</span><span>SLACK</span><span>EMAIL</span><span>GITHUB</span></div>
       <sc-for list="{{ people }}" as="p" hint-placeholder-count="10">
-        <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1.9fr) minmax(0,.9fr);gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;align-items:center">
+        <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1.9fr) minmax(0,.9fr);gap:10px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;align-items:center;flex:1">
           <span style="display:flex;flex-direction:column"><span style="font-weight:500">{{ p.name }}</span><span style="font-size:11px;color:#8b93a7">{{ p.role }}</span></span>
           <span style="font:11.5px/1.4 'Geist Mono',monospace;color:#a3abbd;min-width:0;overflow-wrap:anywhere">{{ p.slack }}</span>
           <span style="font:11.5px/1.4 'Geist Mono',monospace;color:#a3abbd;min-width:0;overflow-wrap:anywhere">{{ p.email }}</span>
           <span style="font:11.5px/1.4 'Geist Mono',monospace;color:#a3abbd;min-width:0;overflow-wrap:anywhere">{{ p.github }}</span>
         </div>
       </sc-for>
-      <div style="padding:12px 16px;font:12px 'Geist Mono',monospace;color:#5c6578;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between"><span>99 employees, plus customers and vendors · 30 days of history</span><span>worldfixture people</span></div>
+      <div style="padding:12px 16px;font:12px 'Geist Mono',monospace;color:#5c6578;display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-top:auto"><span>99 employees, plus customers and vendors · 30 days of history</span><span>worldfixture people</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- when to use it -->
+<div id="use" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="max-width:760px;display:flex;flex-direction:column;gap:14px">
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">WHEN TO USE IT</div>
+      <h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">Use WorldFixture when your test crosses systems.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:14px">
+      <div style="border:1px solid rgba(124,156,255,.35);border-radius:8px;padding:22px;background:rgba(79,124,255,.07);display:flex;flex-direction:column;gap:14px"><div style="font:500 12px 'Geist Mono',monospace;color:#7c9cff">USE WORLDFIXTURE</div><div style="font-size:17px;font-weight:600">When behavior crosses systems or changes over time.</div><ul style="margin:0;padding-left:20px;color:#a3abbd;font-size:14px;line-height:1.7"><li>Local integration development</li><li>E2E tests with shared state and history</li><li>Repeatable product and sales demos</li><li>Webhook and scheduled-event flows</li><li>CI without production accounts</li></ul></div>
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:22px;background:#0f1218;display:flex;flex-direction:column;gap:14px"><div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">USE A NORMAL MOCK</div><div style="font-size:17px;font-weight:600">When one function makes one API call.</div><p style="margin:0;color:#a3abbd;font-size:14px;line-height:1.7">A small mock is easier and faster for isolated unit tests. WorldFixture also does not replace final checks against official provider sandboxes. It implements selected provider operations, not every operation.</p><a href="/docs/providers/" style="font-size:14px;color:#7c9cff">Check exact provider support →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- worlds -->
+<div id="worlds" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
+  <div style="display:flex;flex-direction:column;gap:24px">
+    <div style="max-width:780px;display:flex;flex-direction:column;gap:14px">
+      <div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">MORE THAN ONE COMPANY</div>
+      <h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">Choose a world that fits the software.</h2>
+      <p style="margin:0;color:#a3abbd;font-size:16px;line-height:1.6">A world defines the organization, people, accounts, history, and scheduled events. Start with an included world, stream it in real time, control its clock, or create a world for your own scenario.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px">
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:20px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#7c9cff">INCLUDED · DEFAULT</span><strong style="font-size:17px">Northstar Relay</strong><span style="font-size:14px;line-height:1.55;color:#8b93a7">A 99-person B2B SaaS company with customers, renewals, product work, incidents, invoices, and a live operating timeline.</span><code style="font:12px 'Geist Mono',monospace;color:#c7cddb">business.saas-company:v3</code></div>
+      <div style="border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:20px;background:#0f1218;display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#4ade80">INCLUDED</span><strong style="font-size:17px">Marlow &amp; Pine</strong><span style="font-size:14px;line-height:1.55;color:#8b93a7">A consumer retail brand with shoppers, orders, subscription renewals, support cases, inventory, and finance activity.</span><code style="font:12px 'Geist Mono',monospace;color:#c7cddb">consumer.retail-brand:v1</code></div>
+      <div style="border:1px dashed rgba(255,255,255,.2);border-radius:7px;padding:20px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;gap:9px"><span style="font:500 11px 'Geist Mono',monospace;color:#8b93a7">YOUR OWN</span><strong style="font-size:17px">Build another world</strong><span style="font-size:14px;line-height:1.55;color:#8b93a7">Describe the people, organizations, records, provider projections, history, and scheduled activity that your product needs.</span><a href="/docs/guides/worlds" style="font-size:14px;color:#7c9cff">How worlds work →</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- faq -->
+<div id="faq" style="max-width:1160px;margin:0 auto;padding:clamp(44px,7vw,72px) clamp(20px,4vw,32px)">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:clamp(28px,5vw,72px);align-items:start">
+    <div style="display:flex;flex-direction:column;gap:14px"><div style="font:500 12px 'Geist Mono',monospace;color:#8b93a7">FAQ</div><h2 style="margin:0;font-size:clamp(28px,4vw,40px);line-height:1.08;letter-spacing:-.035em;font-weight:600">The obvious questions, answered.</h2><p style="margin:0;color:#a3abbd;font-size:15px;line-height:1.6">WorldFixture is early. These are the boundaries that matter before you try it.</p></div>
+    <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.12)">
+      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Who is WorldFixture for?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">Developers of software that integrates with business services. It is most useful when an application reads several services or reacts to events.</p></details>
+      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Does it contact real accounts?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">No. Included companies, people, customers, credentials, and domains are synthetic. Included domains end in <code>.worldfixture.test</code>.</p></details>
+      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Is it a collection of response mocks?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">No. The local services keep state. Your app and the Workbench use that same state, and the services start from one shared world and clock.</p></details>
+      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Can I use my normal provider SDK?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">Yes, for supported operations. Configure the SDK with the local base URL and credentials that WorldFixture prints.</p></details>
+      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Can it send events to my app?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">Yes. Run the clock in real time or advance it directly. Supported services deliver native provider webhooks, and worlds can send generic HTTP webhooks.</p></details>
+      <details style="border-bottom:1px solid rgba(255,255,255,.12);padding:16px 0"><summary style="cursor:pointer;font-weight:600">Does it implement every provider API?</summary><p style="margin:10px 0 0;color:#a3abbd;line-height:1.6">No. Support is intentionally explicit and incomplete. Check the provider support index before you depend on an operation.</p></details>
     </div>
   </div>
 </div>
@@ -204,7 +264,7 @@
     </div>
   </div>
   <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:13px;color:#5c6578;border-top:1px solid rgba(255,255,255,.08);padding-top:20px">
-    <span>Open source under Apache 2.0. Built on emulate, Cyrus IMAP, SeaweedFS and SQLite.</span>
+    <span>Open source under Apache 2.0. Built on <a href="https://emulate.dev/" style="color:#8b93a7;text-decoration:underline;text-underline-offset:3px">emulate.dev</a>, Cyrus IMAP, SeaweedFS and SQLite.</span>
     <span>Local only.</span>
   </div>
 </div></div>
@@ -213,42 +273,23 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{}">
 class Component extends DCLogic {
-  state = { copied: false, copyFailed: false, wi: 0, chars: 0, mode: 'type', held: 0 };
-  words = ['demo', 'dev environment', 'test fixture', 'staging database', 'sandbox'];
-  componentDidMount() {
-    this.tick = setInterval(() => {
-      this.setState(s => {
-        const w = this.words[s.wi];
-        if (s.mode === 'type') {
-          if (s.chars < w.length) return { chars: s.chars + 1 };
-          return { mode: 'hold', held: 0 };
-        }
-        if (s.mode === 'hold') {
-          const held = s.held + 1;
-          return held > 16 ? { mode: 'erase', held: 0 } : { held };
-        }
-        if (s.chars > 0) return { chars: s.chars - 1 };
-        return { mode: 'type', wi: (s.wi + 1) % this.words.length };
-      });
-    }, 85);
-  }
-  componentWillUnmount() { clearInterval(this.tick); }
+  state = { copied: false, copyFailed: false };
   slackRef = React.createRef(); ghRef = React.createRef();
-  avatars = { 'Maya Chen': '#7c5cff', 'Jon Bell': '#2a9d8f', 'Lucas Meyer': '#e76f51', 'Hana Ito': '#d4a017', 'Elena Petrov': '#3a86ff', 'Imani Brooks': '#c2185b', 'Priya Raman': '#5c6578' };
+  avatars = { 'Maya Chen': '#7c5cff', 'David Banerjee': '#2a9d8f', 'Callan Reed': '#e76f51', 'Priya Raman': '#5c6578' };
   seedSlack = [
-    { name: 'Maya Chen', t: 'Yest. 17:02', text: 'Reproduced the Lumen timeout. Scheduled exports above ~50k rows die at the 2-minute worker limit. Fix is up as #212.' },
-    { name: 'Jon Bell', t: 'Yest. 17:40', text: "Release 2.8 is due next week. I don't want to pull that in without a load test." },
-    { name: 'Lucas Meyer', t: 'Yest. 18:11', text: "It's 40 lines and Priya needs an answer before the renewal meeting." },
+    { name: 'David Banerjee', t: '09:14', text: "Lumen renewal call is Tuesday. Priya's question has not changed: can we promise scheduled exports at their volume?" },
+    { name: 'Callan Reed', t: '09:18', text: 'At 268k rows with the lease heartbeat, yes. Without it, no. That is the honest answer.' },
+    { name: 'Maya Chen', t: '09:22', text: 'We also say issue 903 is not closed and what that means if they cancel a run.' },
   ];
   seedMail = [
-    { from: 'Priya Raman · Lumen Labs', t: 'Yesterday', subject: 'Re: Scheduled export timeouts', preview: 'Thanks for the update. We have the renewal meeting Thursday and I need to…', unread: true },
-    { from: 'Samira Okafor', t: 'Yesterday', subject: 'Invoice 4471 — Lumen Labs, due Aug 30', preview: '412.00 USD, still open. Not late. Flagging so nobody says it is paid in the…', unread: false },
-    { from: 'Imani Brooks', t: 'Mon', subject: "Theo's first day — Monday", preview: 'Onboarding page is ready. Staging access request is still open with…', unread: false },
-    { from: 'GitHub', t: 'Mon', subject: '[northstar/relay] Review requested: #212', preview: 'jonbell requested changes on Fix export worker timeout above 50k rows', unread: false },
+    { from: 'Priya Raman · Lumen Labs', t: 'Yesterday', subject: 'Renewal and export reliability', preview: 'Before Tuesday I need two things in writing. First, whether scheduled exports…', unread: true },
+    { from: 'Rowan Whitfield', t: 'Yesterday', subject: 'Invoice amount is above your actual usage', preview: 'Exports that resume were counted twice. Your August invoice is above…', unread: true },
+    { from: 'Maya Chen', t: 'Yesterday', subject: 'Re: Renewal and export reliability', preview: 'With the lease heartbeat in 3.2 we have three clean runs at 268,000 rows…', unread: false },
+    { from: 'GitHub', t: 'Mon', subject: '[relay-exports] Issue #903 updated', preview: 'Cancelled exports leave a partial object in the destination bucket', unread: false },
   ];
   seedGh = [
-    { who: 'jonbell', kind: 'requested changes', kindColor: '#fb923c', t: 'Yesterday', text: 'Works, but the worker retry path is untested above 100k rows. Run the load case before this goes into 2.8.' },
-    { who: 'lmeyer', kind: 'commented', kindColor: '#8b93a7', t: 'Yesterday', text: 'Fair. Kicking off the 100k run on staging tonight.' },
+    { who: 'callanreid', kind: 'commented', kindColor: '#8b93a7', t: 'Yesterday', text: 'Lease heartbeat is passing at 268k rows on the fixture. Three consecutive clean runs, no lease loss.' },
+    { who: 'mayachen', kind: 'commented', kindColor: '#fb923c', t: 'Yesterday', text: 'Issue 903 is still open. A cancelled run can leave a partial object in the destination bucket.' },
   ];
   renderVals() {
     const { copied } = this.state;
@@ -263,10 +304,7 @@ class Component extends DCLogic {
         { mark: '✓', label: 'object storage, s3 compatible', port: ':8333' },
         { mark: '✓', label: 'postgres and mysql, seeded to match', port: ':5432 · :3306' },
       ],
-      rotWord: React.createElement('span', { style: { color: '#e6e9f0', fontWeight: 600, fontSize: 'clamp(26px,4.3vw,52px)', whiteSpace: 'nowrap', display: 'inline-block' } },
-        this.words[this.state.wi].slice(0, this.state.chars),
-        React.createElement('span', { style: { display: 'inline-block', width: '3px', height: '0.9em', background: '#4f7cff', marginLeft: '4px', verticalAlign: '-0.08em', animation: 'wfcaret 1s steps(1,end) infinite' } })),
-      status: 'seeded history · 0 model calls · 0 agent processes',
+      status: 'shared state · scheduled events · one clock',
       copyLabel: copied ? 'Copied' : this.state.copyFailed ? 'Copy failed' : 'Copy',
       copy: async () => {
         try {
@@ -278,16 +316,11 @@ class Component extends DCLogic {
         setTimeout(() => this.setState({ copied: false, copyFailed: false }), 1500);
       },
       people: [
-        { name: 'Maya Chen', role: 'Engineering lead', slack: 'U_MAYA', email: 'maya@northstar.test', github: 'mayachen' },
-        { name: 'Jon Bell', role: 'Backend', slack: 'U_JON', email: 'jon@northstar.test', github: 'jonbell' },
-        { name: 'Lucas Meyer', role: 'Backend', slack: 'U_LUCAS', email: 'lucas@northstar.test', github: 'lmeyer' },
-        { name: 'Noor Alvarez', role: 'Frontend', slack: 'U_NOOR', email: 'noor@northstar.test', github: 'nooralv' },
-        { name: 'Hana Ito', role: 'Design', slack: 'U_HANA', email: 'hana@northstar.test', github: 'hanaito' },
-        { name: 'Samira Okafor', role: 'Finance & ops', slack: 'U_SAMIRA', email: 'samira@northstar.test', github: '—' },
-        { name: 'Elena Petrov', role: 'Customer success', slack: 'U_ELENA', email: 'elena@northstar.test', github: '—' },
-        { name: 'David Banerjee', role: 'Support', slack: 'U_DAVID', email: 'david@northstar.test', github: 'dbanerjee' },
-        { name: 'Imani Brooks', role: 'People', slack: 'U_IMANI', email: 'imani@northstar.test', github: '—' },
-        { name: 'Theo Martin', role: 'Starts Monday', slack: 'U_THEO', email: 'theo@northstar.test', github: 'theomartin' },
+        { name: 'Maya Chen', role: 'Engineering lead', slack: 'U000000001', email: 'maya@northstar-relay.worldfixture.test', github: 'maya-chen' },
+        { name: 'David Banerjee', role: 'Customer success', slack: 'U000000004', email: 'david@northstar-relay.worldfixture.test', github: 'david-banerjee' },
+        { name: 'Callan Reed', role: 'Lumen Labs', slack: 'U000000101', email: 'callan@lumen-labs.worldfixture.test', github: '—' },
+        { name: 'Rowan Whitfield', role: 'Finance', slack: 'U000000007', email: 'rowan@northstar-relay.worldfixture.test', github: 'rowan-whitfield' },
+        { name: 'Priya Raman', role: 'Lumen Labs', slack: 'U000000100', email: 'priya@lumen-labs.worldfixture.test', github: '—' },
       ],
     };
   }
