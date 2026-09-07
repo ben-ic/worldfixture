@@ -66,12 +66,26 @@ service's temporary state. Reset retains the same run credentials.
 | Container port | Name | Product access |
 | --- | --- | --- |
 | 61006 | S3 API | Dynamic host port in `S3_BASE_URL` |
-| 61004 | filer UI and readiness | Internal container URL only |
+| 61004 | filer UI and readiness | Container loopback only |
 
 All eight listeners — master, volume, filer and S3, HTTP and gRPC — take their
 ports from the session. The image's `ENV` values exist so the image can be
 inspected and so a direct local run fails on a collision instead of quietly
 picking an upstream default.
+
+The checkout runner uses `worldfixture-s3:local-4.41.2`. This versioned tag
+prevents it from reusing an older local image with wider internal bindings.
+
+All SeaweedFS listeners bind `127.0.0.1`, including S3 gRPC. In a container,
+`socat` forwards only S3 HTTP on port 61006 from the container's IPv4 address
+to SeaweedFS on loopback. This separate relay is needed because SeaweedFS 4.41
+uses one bind setting for both S3 HTTP and gRPC. Docker publishes only S3 HTTP,
+on host loopback. The master, volume, filer, and all gRPC ports have no host
+publication and cannot accept connections from another container.
+
+The host `--direct` runner executes the filer readiness request inside the S3
+container. In the combined image, the supervisor reaches the filer directly
+through the shared loopback interface. Both paths check the same seed document.
 
 Readiness is `GET /worldfixture/ready` on the filer port. It is a document the
 entry point writes **after** seeding finishes, naming the fixture and the counts
@@ -103,14 +117,19 @@ docker build --platform=linux/amd64 -t worldfixture-s3:test .
 docker run -d --name worldfixture-s3-test \
   -v /tmp/wf-s3:/world:ro -e WORLDFIXTURE_WORLD_PATH=/world \
   -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
-  -p 127.0.0.1:4990:61006 -p 127.0.0.1:4991:61004 \
+  -p 127.0.0.1:4990:61006 \
   worldfixture-s3:test
 ```
 
-The S3 API is then on `http://127.0.0.1:4990/` and readiness on
-`http://127.0.0.1:4991/worldfixture/ready`. These URLs use standalone protocol-test
-ports. A normal WorldFixture run assigns a dynamic S3 host port. Read it from
-`S3_BASE_URL`. Filer readiness stays internal.
+The S3 API is then on `http://127.0.0.1:4990/`. Check readiness inside the
+container:
+
+```sh
+docker exec worldfixture-s3-test curl -fsS http://127.0.0.1:61004/worldfixture/ready
+```
+
+A normal WorldFixture run assigns a dynamic S3 host port. Read it from
+`S3_BASE_URL`.
 
 ## The protocol test
 

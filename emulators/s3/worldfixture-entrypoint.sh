@@ -75,7 +75,9 @@ while [ "$index" -lt "$object_count" ]; do
   index=$((index + 1))
 done
 
+proxy_pids=""
 terminate() {
+  for pid in $proxy_pids; do kill -TERM "$pid" 2>/dev/null || true; done
   kill -TERM "$server_pid" 2>/dev/null || true
 }
 
@@ -111,12 +113,8 @@ trap shutdown INT TERM
 # tmpfs is the difference between a fixture that stops accepting uploads and a µVM
 # under memory pressure. 16 MiB of the ~128-256 MB scratch.
 #
-# THE BRIDGE, because this listener's surface is published. An app signs a URL
-# against this endpoint and hands it to the visitor's browser, so the endpoint has to
-# be somewhere a browser can reach. Bound to loopback it produced exactly the failure
-# the profile's own test warns about: a hostname that resolves, routes, and answers
-# nothing.
-#
+# All SeaweedFS HTTP and gRPC APIs stay on loopback. S3 HTTP alone is
+# forwarded below: SeaweedFS 4.41 shares its S3 bind flag with S3 gRPC.
 /usr/bin/weed -logtostderr=true server \
   -dir="$data_dir" \
   -volume.fileSizeLimitMB=64 \
@@ -126,7 +124,7 @@ trap shutdown INT TERM
   -master.volumePreallocate=false \
   -master.telemetry=false \
   -ip=127.0.0.1 \
-  -ip.bind=0.0.0.0 \
+  -ip.bind=127.0.0.1 \
   -master.port="$WORLDFIXTURE_MASTER_PORT" \
   -master.port.grpc="$WORLDFIXTURE_MASTER_GRPC_PORT" \
   -volume.port="$WORLDFIXTURE_VOLUME_PORT" \
@@ -141,7 +139,7 @@ trap shutdown INT TERM
   -iam=false \
   -s3.iam=false \
   -s3.config="$seed_dir/identity.json" \
-  -s3.ip.bind=0.0.0.0 \
+  -s3.ip.bind=127.0.0.1 \
   -s3.port="$WORLDFIXTURE_S3_PORT" \
   -s3.port.grpc="$WORLDFIXTURE_S3_GRPC_PORT" \
   -s3.port.iceberg=0 \
@@ -242,4 +240,33 @@ else
   echo "worldfixture-s3: restored accepted storage snapshot"
 fi
 
+# The same S3 port can listen on loopback and a specific container address.
+# A wildcard relay would collide with SeaweedFS's own loopback listener.
+# Forward raw TCP so signed paths, headers, bodies, and streaming stay intact.
+# Host process runs need no relay; the supervisor sets the S3 bind explicitly.
+bind=${WORLDFIXTURE_S3_BIND:-127.0.0.1}
+case "$bind" in
+  127.0.0.1) addresses="" ;;
+  0.0.0.0) addresses=$(hostname -i) ;;
+  *) echo "unsupported S3 bind: $bind" >&2; terminate; exit 64 ;;
+esac
+for address in $addresses; do
+  case "$address" in
+    127.*|*:*|localhost) continue ;;
+  esac
+  socat "TCP4-LISTEN:$WORLDFIXTURE_S3_PORT,bind=$address,reuseaddr,fork" \
+    "TCP4:127.0.0.1:$WORLDFIXTURE_S3_PORT" &
+  proxy_pids="$proxy_pids $!"
+done
+if [ "$bind" = "0.0.0.0" ] && [ -z "$proxy_pids" ]; then
+  fail "S3 forwarding requires a container IPv4 address"
+fi
+# A failed relay is a failed service, including after startup.
+while kill -0 "$server_pid" 2>/dev/null; do
+  for pid in $proxy_pids; do
+    kill -0 "$pid" 2>/dev/null || fail "S3 HTTP forwarding stopped"
+  done
+  sleep 1
+done
+terminate
 wait "$server_pid"

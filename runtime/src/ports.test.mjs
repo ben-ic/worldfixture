@@ -23,7 +23,7 @@ for (const topology of [
       for (const [key, port] of allocation) {
         assert.equal(port.host, "127.0.0.1", key);
         assert.equal(port.publishOn, "127.0.0.1", key);
-        const containerTransport = port.contained || (topology.inContainer && port.published);
+        const containerTransport = !port.containerLoopback && (port.contained || (topology.inContainer && port.published));
         assert.equal(port.bind, containerTransport ? "0.0.0.0" : "127.0.0.1", key);
       }
       // Exercise the actual environment adapter, not only allocation metadata.
@@ -37,7 +37,7 @@ for (const topology of [
         if (service.container && topology.runner !== "process") {
           const { args } = dockerInvocation(service, env, { allocation, worldPath: "/test-world" });
           const mappings = args.filter((_arg, index) => args[index - 1] === "-p");
-          assert.equal(mappings.length, service.ports.length);
+          assert.equal(mappings.length, service.ports.filter(port => !port.container_loopback).length);
           assert.ok(mappings.every(value => /^127\.0\.0\.1:\d+:\d+$/.test(value)), service.name);
         }
       }
@@ -82,4 +82,10 @@ test("Docker argument generation rejects non-loopback host publications, includi
     const allocation = new Map(service.ports.map(port => [`mail/${port.name}`, { publishOn, number: 40000, serverPort: port.container_port }]));
     assert.throws(() => dockerInvocation(service, {}, { allocation, worldPath: "/test-world" }), /must use loopback/);
   }
+});
+
+
+test("private container ports cannot also be declared as published", async () => {
+  const service = { name: "invalid", ports: [{ name: "private", published: true, container_loopback: true }] };
+  await assert.rejects(allocate({ services: [service] }), /cannot be published/);
 });

@@ -554,9 +554,9 @@ test("S3 starts as a container and answers its own protocol", async () => {
     const gate = readiness.checks.find((check) => check.kind === "seed_gate");
     assert.equal(gate.ok, true);
     const filer = instance.addressOf("s3", "filer");
-    const seedGate = await fetch(`http://${filer.host}:${filer.port}/worldfixture/ready`);
-    assert.equal(seedGate.status, 200);
-    assert.deepEqual(await seedGate.json(), {
+    assert.ok(filer.container, "private filer readiness stays inside its container");
+    const seedGate = await run("docker", ["exec", filer.container, "curl", "-fsS", `http://${filer.host}:${filer.port}/worldfixture/ready`]);
+    assert.deepEqual(JSON.parse(seedGate.stdout), {
       source: "worldfixture-s3",
       ready: true,
       buckets: JSON.parse(readFileSync(join(ARTIFACT, "projections/aws.json"), "utf8")).s3.buckets.length,

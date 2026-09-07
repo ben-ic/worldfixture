@@ -1,7 +1,7 @@
 {
   "api_version": "worldfixture.service/v1",
   "name": "s3",
-  "version": "4.41.1",
+  "version": "4.41.2",
   "runtime": {
     "command": [
       "/usr/local/bin/worldfixture-s3"
@@ -29,7 +29,8 @@
         "container_port": 61000,
         "env": "WORLDFIXTURE_MASTER_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       },
       {
         "name": "master-grpc",
@@ -37,7 +38,8 @@
         "container_port": 61001,
         "env": "WORLDFIXTURE_MASTER_GRPC_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       },
       {
         "name": "volume",
@@ -45,7 +47,8 @@
         "container_port": 61002,
         "env": "WORLDFIXTURE_VOLUME_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       },
       {
         "name": "volume-grpc",
@@ -53,7 +56,8 @@
         "container_port": 61003,
         "env": "WORLDFIXTURE_VOLUME_GRPC_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       },
       {
         "name": "filer",
@@ -61,7 +65,8 @@
         "container_port": 61004,
         "env": "WORLDFIXTURE_FILER_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       },
       {
         "name": "filer-grpc",
@@ -69,7 +74,8 @@
         "container_port": 61005,
         "env": "WORLDFIXTURE_FILER_GRPC_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       },
       {
         "name": "s3",
@@ -77,7 +83,8 @@
         "container_port": 61006,
         "env": "WORLDFIXTURE_S3_PORT",
         "env_format": "port",
-        "published": true
+        "published": true,
+        "bind_env": "WORLDFIXTURE_S3_BIND"
       },
       {
         "name": "s3-grpc",
@@ -85,7 +92,8 @@
         "container_port": 61007,
         "env": "WORLDFIXTURE_S3_GRPC_PORT",
         "env_format": "port",
-        "published": false
+        "published": false,
+        "container_loopback": true
       }
     ],
     "environment": [
@@ -108,7 +116,7 @@
       }
     ],
     "container": {
-      "tag": "worldfixture-s3:local",
+      "tag": "worldfixture-s3:local-4.41.2",
       "build": ".",
       "platform": "linux/amd64",
       "mounts": [

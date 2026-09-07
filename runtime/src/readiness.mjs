@@ -17,14 +17,32 @@
 // reports them separately.
 
 import { connect } from "node:net";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const execute = promisify(execFile);
 
 const DEFAULT_TIMEOUT_MS = 2_000;
 
 // An HTTP `expect` is either a status code or a substring of the body. A status
 // alone would have accepted the composer's 404 on a path it does not serve; a
 // body match is what proves the route is the one intended.
-async function probeHttp(check, address, timeoutMs) {
+async function probeHttp(check, address, timeoutMs, containerExec = execute) {
   const url = `http://${address.host}:${address.port}${check.path ?? "/"}`;
+
+  // A private container port is never mapped onto the host. Probe the same
+  // HTTP seed gate from its own namespace, including subsequent status checks.
+  if (address.container) {
+    if (address.host !== "127.0.0.1" || (check.method && check.method !== "GET") || check.expect !== "200") {
+      return { ok: false, detail: "Container HTTP readiness requires a loopback GET with expected status 200" };
+    }
+    try {
+      const { stdout } = await containerExec("docker", ["exec", address.container, "curl", "--silent", "--show-error", "--max-time", String(timeoutMs / 1000), "--output", "/dev/null", "--write-out", "%{http_code}", url], { timeout: timeoutMs + 1000, maxBuffer: 65536 });
+      return { ok: stdout === "200", detail: `${address.container}: ${url} -> ${stdout}` };
+    } catch {
+      return { ok: false, detail: `${address.container}: ${url} did not pass its HTTP seed gate` };
+    }
+  }
 
   let response;
   try {
@@ -167,11 +185,11 @@ function probeMySQL(_check, address, timeoutMs) {
   });
 }
 
-export async function probe(check, address, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export async function probe(check, address, { timeoutMs = DEFAULT_TIMEOUT_MS, containerExec } = {}) {
   switch (check.protocol) {
     case "http":
     case "s3":
-      return probeHttp(check, address, timeoutMs);
+      return probeHttp(check, address, timeoutMs, containerExec);
     case "smtp":
     case "imap":
     case "lmtp":

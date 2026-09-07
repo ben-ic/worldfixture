@@ -1923,7 +1923,7 @@ function addressReader(lock, bindings, stateDir) {
       ? JSON.parse(readFileSync(activeFile(stateDir, 'addressesPath', 'addresses.json'), "utf8"))
       : hostAddresses(stateDir) ?? JSON.parse(readFileSync(activeFile(stateDir, 'addressesPath', 'addresses.json'), "utf8"));
     for (const [key, address] of Object.entries(recorded)) {
-      byPort.set(key, { host: address.host, port: address.port });
+      byPort.set(key, { host: address.host, port: address.port, ...(address.container ? { container: address.container } : {}) });
     }
   } catch {
     /* an instance that published only its bindings; recovered below */

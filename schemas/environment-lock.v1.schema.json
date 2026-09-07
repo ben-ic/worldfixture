@@ -146,6 +146,10 @@
                 "env_format": {
                   "type": "string"
                 },
+                "container_loopback": {
+                  "description": "Keep this private port on container loopback. Do not publish it; readiness runs inside the container.",
+                  "type": "boolean"
+                },
                 "bind_env": {
                   "type": "string"
                 },

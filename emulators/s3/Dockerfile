@@ -25,7 +25,7 @@ LABEL org.opencontainers.image.version="4.41" \
 # that its buckets and objects come from a world projection read at runtime. The
 # version is exact so an Alpine repository update fails the build instead of
 # changing its bytes.
-RUN apk add --no-cache jq=1.8.2-r0
+RUN apk add --no-cache jq=1.8.2-r0 socat=1.8.1.3-r0
 
 COPY --chmod=0555 worldfixture-entrypoint.sh /usr/local/bin/worldfixture-s3
 COPY --chmod=0444 filer.toml /etc/seaweedfs/filer.toml
@@ -39,7 +39,8 @@ COPY --chmod=0444 THIRD_PARTY_NOTICES.md /usr/share/worldfixture-s3/THIRD_PARTY_
 #
 # `WORLDFIXTURE_WORLD_PATH` has no useful default: without a mounted world there
 # is nothing to serve, and the entry point says so and exits 64.
-ENV WORLDFIXTURE_MASTER_PORT=61000 \
+ENV WORLDFIXTURE_S3_BIND=0.0.0.0 \
+    WORLDFIXTURE_MASTER_PORT=61000 \
     WORLDFIXTURE_MASTER_GRPC_PORT=61001 \
     WORLDFIXTURE_VOLUME_PORT=61002 \
     WORLDFIXTURE_VOLUME_GRPC_PORT=61003 \
@@ -54,7 +55,7 @@ ENV WORLDFIXTURE_MASTER_PORT=61000 \
 WORKDIR /
 USER seaweed
 
-EXPOSE 61004 61006
+EXPOSE 61006
 
 # The probe is the SEED, not the listener.
 #

@@ -58,11 +58,12 @@ export async function allocate(lock, {
 
       for (const port of service.ports) {
         const key = `${service.name}/${port.name}`;
-        const bind = listenHost({ inContainer: contained || inContainer, published: contained || port.published });
+        if (port.container_loopback && port.published) throw new Error(`Container loopback port cannot be published: ${key}`);
+        const bind = port.container_loopback ? loopback : listenHost({ inContainer: contained || inContainer, published: contained || port.published });
         const retained = preservedAllocation.get(key);
         if (retained) {
           if (retained.protocol !== port.protocol || retained.published !== port.published || retained.contained !== contained) throw new Error(`Preserved application port changed: ${key}`);
-          if (retained.bind !== bind || retained.publishOn !== loopback || retained.host !== loopback) throw new Error(`Preserved application port has incompatible network access: ${key}`);
+          if (Boolean(retained.containerLoopback) !== Boolean(port.container_loopback) || retained.bind !== bind || retained.publishOn !== loopback || retained.host !== loopback) throw new Error(`Preserved application port has incompatible network access: ${key}`);
           if (fixedPorts?.[key] !== undefined && fixedPorts[key] !== retained.number) throw new Error(`Preserved application port cannot move: ${key}`);
           allocation.set(key, retained); continue;
         }
@@ -93,6 +94,7 @@ export async function allocate(lock, {
           // Both launch paths publish host ports on loopback only.
           publishOn: loopback,
           contained,
+          containerLoopback: Boolean(port.container_loopback),
           host: loopback,
         });
       }

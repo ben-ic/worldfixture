@@ -17,18 +17,15 @@ const root = join(here, "..", "..", "..");
 // The port range this repository is allowed to use. A port outside it is a bug in
 // the caller, not something to quietly accept.
 const s3Port = Number(process.env.TEST_S3_PORT ?? 4990);
-const filerPort = Number(process.env.TEST_FILER_PORT ?? 4991);
-for (const [name, port] of [["TEST_S3_PORT", s3Port], ["TEST_FILER_PORT", filerPort]]) {
+for (const [name, port] of [["TEST_S3_PORT", s3Port]]) {
   assert.ok(Number.isInteger(port) && port >= 4990 && port <= 4999,
     `${name} must be in 4990-4999, got ${port}`);
 }
-assert.notEqual(s3Port, filerPort, "the S3 and filer ports must differ");
 
 const manifest = JSON.parse(readFileSync(join(here, '../service.json'), 'utf8'));
 const image = process.env.WORLDFIXTURE_S3_IMAGE ?? manifest.runtime.container.tag;
 const container = process.env.TEST_CONTAINER_NAME ?? `worldfixture-s3-protocol-${process.pid}`;
 const s3 = `http://127.0.0.1:${s3Port}`;
-const filer = `http://127.0.0.1:${filerPort}`;
 
 const region = "eu-west-2";
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID ?? "worldfixture-test-key";
@@ -139,7 +136,7 @@ async function startContainer() {
   // A STALE LISTENER ON THE PORT LOOKS EXACTLY LIKE A HEALTHY SERVICE. Two wrong
   // conclusions in this extraction came from one, so this refuses to start at all
   // if the ports are not free, and refuses to trust readiness it did not cause.
-  for (const url of [`${s3}/`, `${filer}/healthz`]) {
+  for (const url of [`${s3}/`]) {
     assert.ok(await nothingIsListening(url), `something is already listening on ${url}`);
   }
   assert.notEqual(docker(["inspect", container], {check: false}).status, 0, "refusing to reuse an existing container name");
@@ -151,7 +148,6 @@ async function startContainer() {
     "-e", "WORLDFIXTURE_WORLD_PATH=/world",
     "-e", "AWS_ACCESS_KEY_ID", "-e", "AWS_SECRET_ACCESS_KEY",
     "-p", `127.0.0.1:${s3Port}:61006`,
-    "-p", `127.0.0.1:${filerPort}:61004`,
     immutableImage,
   ]);
   console.log(`S3 image: ${image} -> ${immutableImage}`);
@@ -166,14 +162,14 @@ async function startContainer() {
       throw new Error(`container exited before it was ready\n${docker(["logs", containerId], {check: false}).stderr}`);
     }
     try {
-      const probe = await fetch(`${filer}/worldfixture/ready`, {signal: AbortSignal.timeout(2000)});
-      if (probe.ok) {
+      const probe = docker(["exec", containerId, "curl", "-fsS", "http://127.0.0.1:61004/worldfixture/ready"], {check: false});
+      if (probe.status === 0) {
         // Read the body, not just the status. This document exists only after the
         // seed finished, and it names the fixture and its counts, so a different
         // service answering 200 here fails loudly instead of being tested.
-        const body = await probe.json();
+        const body = JSON.parse(probe.stdout);
         assert.equal(body.source, "worldfixture-s3",
-          `something other than this fixture is listening on ${filerPort}: ${JSON.stringify(body)}`);
+          `unexpected readiness document: ${JSON.stringify(body)}`);
         assert.equal(body.ready, true);
         assert.equal(body.buckets, buckets.length, "readiness disagrees with the projection's bucket count");
         assert.equal(body.objects, objects.length, "readiness disagrees with the projection's object count");

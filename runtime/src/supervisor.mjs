@@ -179,6 +179,7 @@ export function dockerInvocation(service, environment, { allocation, worldPath, 
 
   for (const port of service.ports) {
     const assigned = allocation.get(`${service.name}/${port.name}`);
+    if (assigned.containerLoopback) continue;
     if (assigned.publishOn !== "127.0.0.1") throw new Error(`Host publication must use loopback: ${service.name}/${port.name}`);
     args.push("-p", `${assigned.publishOn}:${assigned.number}:${assigned.serverPort}`);
   }
@@ -228,6 +229,11 @@ export class Instance {
   addressOf(service, port) {
     const assigned = this.allocation.get(`${service}/${port}`);
     if (!assigned) throw new Error(`no allocation for ${service}/${port}`);
+    if (assigned.contained && assigned.containerLoopback) {
+      const container = this.children.find(record => record.service === service)?.container;
+      if (!container) throw new Error(`No container for private port ${service}/${port}`);
+      return { host: "127.0.0.1", port: assigned.serverPort, container };
+    }
     return { host: assigned.host, port: assigned.number };
   }
 
@@ -238,8 +244,7 @@ export class Instance {
     const addresses = {};
     for (const [key, assigned] of this.allocation) {
       addresses[key] = {
-        host: assigned.host,
-        port: assigned.number,
+        ...this.addressOf(assigned.service, assigned.port),
         protocol: assigned.protocol,
         published: assigned.published,
       };

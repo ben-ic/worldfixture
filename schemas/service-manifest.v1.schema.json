@@ -130,6 +130,10 @@
                   "host_port"
                 ]
               },
+              "container_loopback": {
+                "description": "Keep this private port on container loopback. Do not publish it; readiness runs inside the container.",
+                "type": "boolean"
+              },
               "bind_env": {
                 "type": "string",
                 "pattern": "^[A-Z][A-Z0-9_]*$"

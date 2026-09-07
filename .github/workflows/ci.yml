@@ -98,6 +98,12 @@ jobs:
       - name: Check image network bindings and world switching
         run: node tests/image/network-bindings-test.mjs --run --image worldfixture:coupling-ci
 
+      - name: Check S3 isolation through Account Desk and Workbench
+        run: |
+          npm --prefix examples/demo_app ci
+          node tests/image/s3-isolation-test.mjs --run --mode direct --image worldfixture:coupling-ci
+          node tests/image/s3-isolation-test.mjs --run --mode image --image worldfixture:coupling-ci
+
       - name: Check world selection through direct and host launch
         run: npm run test:world-selection -- --image worldfixture:coupling-ci --report .worldfixture/coupling/p1-selection --run
 

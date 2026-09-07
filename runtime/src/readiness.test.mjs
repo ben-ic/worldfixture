@@ -65,3 +65,22 @@ test("the MySQL probe reports a listener that closes before its handshake", asyn
   assert.equal(result.ok, false);
   assert.match(result.detail, /closed before MySQL handshake/);
 });
+
+
+test("private container readiness requires an exact HTTP 200 and keeps curl bounded", async () => {
+  const check = { protocol: "http", path: "/worldfixture/ready", expect: "200" };
+  const address = { host: "127.0.0.1", port: 61004, container: "test-s3" };
+  for (const status of ["200", "301", "404", "500"]) {
+    const result = await probe(check, address, { timeoutMs: 1200, containerExec: async (command, args, options) => {
+      assert.equal(command, "docker");
+      assert.deepEqual(args.slice(0, 3), ["exec", "test-s3", "curl"]);
+      assert.equal(args.at(-1), "http://127.0.0.1:61004/worldfixture/ready");
+      assert.equal(args[args.indexOf("--max-time") + 1], "1.2");
+      assert.ok(options.timeout > 0);
+      return { stdout: status };
+    } });
+    assert.equal(result.ok, status === "200");
+  }
+  assert.equal((await probe(check, address, { containerExec: async () => { throw new Error("container stopped"); } })).ok, false);
+  assert.equal((await probe(check, { ...address, host: "0.0.0.0" }, { containerExec: () => assert.fail("must not execute") })).ok, false);
+});

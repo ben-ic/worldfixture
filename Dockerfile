@@ -106,6 +106,7 @@ RUN apt-get update \
       python3-jsonschema=4.10.3-1 \
       postgresql-15=15.19-0+deb12u1 \
       sasl2-bin=2.1.28+dfsg-10 \
+      socat=1.7.4.4-2 \
       tini=0.19.0-1+b3 \
       wget=1.21.3-1+deb12u1 \
  && rm -rf /var/lib/apt/lists/* \
