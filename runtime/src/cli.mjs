@@ -65,13 +65,13 @@ import {
 } from "./host-launcher.mjs";
 import { inbox } from "./imap.mjs";
 import { loadManifests } from "./manifests.mjs";
-import { OpenError, openWorkbench, TESTED_PLATFORMS } from "./open.mjs";
+import { OpenError, openUrl, openWorkbench, TESTED_PLATFORMS } from "./open.mjs";
 import { SINGLE_CONTAINER_PORTS } from "./ports.mjs";
 import { connectorTarget, ensureProject, readProject, readProjectToken } from "./project.mjs";
 import { aggregate, probe } from "./readiness.mjs";
 import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
 import { ResolutionError, resolveEnvironment, serializeLock } from "./resolve.mjs";
-import { askForSampleApp, sampleAppAvailable, startSampleApp, stopSampleApp } from "./sample-app.mjs";
+import { askForSampleApp, askToOpenBrowser, sampleAppAvailable, startSampleApp, stopSampleApp } from "./sample-app.mjs";
 import { describeScale, parseLimits, parseScale, SCALE_PRESETS, ScaleError } from "./scale.mjs";
 import { timelineState } from "./scheduler.mjs";
 import { history, slackTokenHolders, tokenFor } from "./slack.mjs";
@@ -652,6 +652,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
   assertSessionRecoverable(stateDir);
   const generatedSecretsPath = project?.generatedSecretsPath ?? defaultGeneratedSecretsPath;
   mkdirSync(stateDir, { recursive: true });
+  rmSync(join(stateDir, "startup-error.json"), { force: true });
   // Both launch modes retain the exact input, even when no source can rebase it.
   const inputPath = prepareSessionInput(builtPath, stateDir, selection);
   const session = flags["no-rebase"]
@@ -758,6 +759,12 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
     });
   } catch (error) {
     progress.done();
+    if (inOneContainer) {
+      writeSessionJson(join(stateDir, "startup-error.json"), {
+        api_version: "worldfixture.startup-error/v1",
+        message: String(error?.message ?? error),
+      });
+    }
     await workbench?.close();
     rmSync(`${stateDir}/workbench.json`, { force: true });
     throw error;
@@ -835,6 +842,12 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
     if (positioningShutdown) { await positioningShutdown; await control.close(); return; }
   } catch (error) {
     if (positioningShutdown) { await positioningShutdown; return; }
+    if (inOneContainer) {
+      writeSessionJson(join(stateDir, "startup-error.json"), {
+        api_version: "worldfixture.startup-error/v1",
+        message: String(error?.message ?? error),
+      });
+    }
     await scheduler?.stop();
     await workbench.close();
     await instance.stop();
@@ -850,6 +863,7 @@ async function directUp({ flags }, { applicationEnvironment, project, selection,
   // The host treats these bindings as the accepted-ready marker. Initial
   // positioning must finish through provider APIs before that marker is visible.
   writeSessionJson(bindingsPath, instance.applicationBindings);
+  rmSync(join(stateDir, "startup-error.json"), { force: true });
   writeSessionJson(`${stateDir}/addresses.json`, instance.addresses());
   const finished = runUntilInterrupted(instance, bindingsPath, control, workbench, scheduler);
 
@@ -1032,9 +1046,10 @@ async function up(parsed) {
     && project.config.application_url === "http://localhost:3000";
   const wantsSample = parsed.flags["sample-app"] || (canOfferSample && await askForSampleApp());
   if (wantsSample) {
+    let sample;
     try {
       say("Account Desk is getting ready...");
-      const sample = await startSampleApp({
+      sample = await startSampleApp({
         packageRoot: PACKAGE_ROOT, stateDir, bindings: result.bindings, world, workbenchUrl,
         onInstall: () => say("Installing its packages (first start only)..."),
       });
@@ -1042,6 +1057,22 @@ async function up(parsed) {
     } catch (error) {
       say(`Sample app did not start: ${error.message}`);
       say("The WorldFixture instance is still running.");
+    }
+    if (sample && await askToOpenBrowser("Account Desk")) {
+      try {
+        await openUrl(sample.url, { subject: "Account Desk" });
+      } catch (error) {
+        say(`Account Desk did not open: ${error.message}`);
+        say(`Open it yourself: ${sample.url}`);
+      }
+    }
+  }
+  if (workbenchUrl && await askToOpenBrowser("Workbench")) {
+    try {
+      await openWorkbench({ stateDir });
+    } catch (error) {
+      say(`Workbench did not open: ${error.message}`);
+      say(`Open it yourself: ${workbenchUrl}`);
     }
   }
   say(`Stop it with \`${invocation()} down\`.`);

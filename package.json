@@ -28,6 +28,7 @@
     "worldfixture": "runtime/bin/worldfixture.mjs"
   },
   "scripts": {
+    "worldfixture:local": "node runtime/bin/worldfixture.mjs",
     "test:coupling": "node tests/image/coupling-test.mjs",
     "test:coupling:unit": "node --test tests/image/coupling-*.test.mjs",
     "test:world-selection": "node tests/image/world-selection-test.mjs",

@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
 
-import { OPENERS, OpenError, TESTED_PLATFORMS, openWorkbench } from "./open.mjs";
+import { OPENERS, OpenError, TESTED_PLATFORMS, openUrl, openWorkbench } from "./open.mjs";
 
 const scratch = [];
 after(() => scratch.forEach((path) => rmSync(path, { recursive: true, force: true })));
@@ -35,6 +35,13 @@ function recorder() {
   launch.opened = opened;
   return launch;
 }
+
+test("a ready sample-app URL opens without Workbench state", async () => {
+  const launch = recorder();
+  const result = await openUrl("http://127.0.0.1:5175", { platform: "darwin", launch, subject: "Account Desk" });
+  assert.deepEqual(launch.opened, ["http://127.0.0.1:5175"]);
+  assert.equal(result.tested, true);
+});
 
 test("it opens the URL this instance recorded, not a fixed port", async () => {
   // A fallback host port, which is the whole reason this command exists. 4715 is

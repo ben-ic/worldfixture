@@ -125,6 +125,47 @@ CREATE TABLE IF NOT EXISTS clock (
 ) STRICT;
 `;
 
+function migrateSchema1To2(db) {
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.exec(`
+    ALTER TABLE scheduled_events RENAME TO scheduled_events_v1;
+    DROP INDEX IF EXISTS scheduled_events_due;
+    CREATE TABLE scheduled_events (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT NOT NULL UNIQUE,
+      due_at INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      caused_by TEXT,
+      delivered_at INTEGER,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','in_flight','delivered','failed','skipped','uncertain')),
+      attempted_at INTEGER,
+      completed_at INTEGER,
+      command_id TEXT,
+      event_id TEXT,
+      error TEXT
+    ) STRICT;
+    INSERT INTO scheduled_events (
+      id, due_at, type, payload, caused_by, delivered_at, status, completed_at
+    )
+    SELECT
+      id, due_at, type, payload, caused_by, delivered_at,
+      CASE WHEN delivered_at IS NULL THEN 'pending' ELSE 'delivered' END,
+      delivered_at
+    FROM scheduled_events_v1
+    ORDER BY due_at, id;
+    DROP TABLE scheduled_events_v1;
+    CREATE INDEX scheduled_events_due ON scheduled_events(due_at) WHERE delivered_at IS NULL;
+    UPDATE schema_version SET version = 2;
+    `);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+
 export function openState(path) {
   if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
 
@@ -136,9 +177,10 @@ export function openState(path) {
   const [row] = db.prepare("SELECT version FROM schema_version").all();
   if (!row) {
     db.prepare("INSERT INTO schema_version(version) VALUES (?)").run(SCHEMA_VERSION);
+  } else if (row.version === 1 && SCHEMA_VERSION === 2) {
+    migrateSchema1To2(db);
   } else if (row.version !== SCHEMA_VERSION) {
-    // An instance database is per-run state, not a user's data. Refusing is
-    // right, and so is saying that deleting it is the repair.
+    // Refuse schemas for which there is no reviewed, lossless migration.
     throw new Error(
       `state at ${path} is schema version ${row.version}, this runtime writes ${SCHEMA_VERSION}; ` +
         "remove the instance directory and start a new instance",

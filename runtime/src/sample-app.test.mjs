@@ -1,11 +1,28 @@
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { PassThrough } from "node:stream";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { connectSampleApp, sampleAppAvailable, sampleAppPath } from "./sample-app.mjs";
+import { askForSampleApp, askToOpenBrowser, connectSampleApp, sampleAppAvailable, sampleAppPath } from "./sample-app.mjs";
+
+function terminal(answer) {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  input.isTTY = true;
+  output.isTTY = true;
+  setImmediate(() => input.end(`${answer}\n`));
+  return { input, output };
+}
+
+test("Enter accepts browser offers and n skips them", async () => {
+  assert.equal(await askForSampleApp(terminal("")), true);
+  assert.equal(await askForSampleApp(terminal("n")), false);
+  assert.equal(await askToOpenBrowser("Workbench", terminal("")), true);
+  assert.equal(await askToOpenBrowser("Workbench", terminal("no")), false);
+});
 
 test("the sample app is offered only when every packaged runtime file exists", () => {
   const root = mkdtempSync(join(tmpdir(), "worldfixture-sample-app-"));

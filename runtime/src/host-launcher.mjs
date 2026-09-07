@@ -368,7 +368,14 @@ async function waitForStart(stateDir, containerId, timeoutMs, runner = run, onPr
     const state = JSON.parse(stdout);
     if (!state.Running) {
       const logs = await runner("docker", ["logs", containerId]).then((result) => result.stdout + result.stderr, () => "");
-      throw new Error(`the WorldFixture container stopped during startup\n${logs.trim()}`);
+      const recorded = readJson(join(stateDir, "startup-error.json"));
+      const exit = [
+        `exit code ${state.ExitCode ?? "unknown"}`,
+        state.OOMKilled ? "out of memory" : null,
+        state.Error ? `Docker error: ${state.Error}` : null,
+      ].filter(Boolean).join("; ");
+      const detail = logs.trim() || recorded?.message || "The container did not report a cause.";
+      throw new Error(`the WorldFixture container stopped during startup (${exit})\n${detail}`);
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
@@ -434,7 +441,7 @@ export async function launchHostInstance({
   // These files are live-instance pointers. The lock and SQLite state remain
   // for diagnosis and for the next accepted start.
   // `progress.json` is cleared with the rest: a stale one describes the last run.
-  for (const file of ["bindings.json", "addresses.json", "workbench.json", "control.sock", "progress.json"]) {
+  for (const file of ["bindings.json", "addresses.json", "workbench.json", "control.sock", "progress.json", "startup-error.json"]) {
     rmSync(join(stateDir, file), { force: true });
   }
 

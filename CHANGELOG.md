@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Schema-1 run state upgrades to schema 2 without losing scheduled-event history.
+- A short-lived container saves its startup error for the host CLI when Docker
+  removes the container before its logs can be read.
+- `npm run worldfixture:local -- <command>` always runs the source checkout.
+- Interactive starts can open Account Desk and Workbench in the browser by
+  pressing Enter. Non-interactive starts do not open browser windows.
 - `worldfixture up` asks whether to launch the included Account Desk demo app
   on each fresh interactive start. The CLI starts and connects the demo, prints
   the Workbench URL last, and stops the demo with the world. `--sample-app` and

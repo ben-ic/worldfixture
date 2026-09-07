@@ -42,7 +42,7 @@ export class OpenError extends Error {
   }
 }
 
-async function defaultLaunch(url, platform = process.platform) {
+async function defaultLaunch(url, subject, platform = process.platform) {
   const opener = OPENERS[platform];
   if (!opener) {
     throw new OpenError(
@@ -58,10 +58,19 @@ async function defaultLaunch(url, platform = process.platform) {
   } catch (error) {
     throw new OpenError(
       "opener_failed",
-      `${command} could not open the Workbench: ${String(error.message).trim().split("\n")[0]}`,
+      `${command} could not open ${subject}: ${String(error.message).trim().split("\n")[0]}`,
       `Open it yourself: ${url}`,
     );
   }
+}
+
+export async function openUrl(url, {
+  subject = "the page",
+  platform = process.platform,
+  launch = (value) => defaultLaunch(value, subject, platform),
+} = {}) {
+  await launch(url);
+  return { url, platform, tested: TESTED_PLATFORMS.includes(platform) };
 }
 
 // Find the instance, read its real Workbench URL, prove the Workbench answers,
@@ -69,7 +78,7 @@ async function defaultLaunch(url, platform = process.platform) {
 export async function openWorkbench({
   stateDir,
   platform = process.platform,
-  launch = (url) => defaultLaunch(url, platform),
+  launch = (url) => defaultLaunch(url, "the Workbench", platform),
   fetchImpl = fetch,
   inspect = inspectHostInstance,
   bindings = hostBindings,

@@ -165,7 +165,15 @@ It uses these labels:
 npm run build:worlds
 npm run build:workbench
 docker buildx build --load -t worldfixture:local .
-node runtime/bin/worldfixture.mjs up --image worldfixture:local
+npm run worldfixture:local -- up --image worldfixture:local
+```
+
+`npm run worldfixture:local -- <command>` always uses the files in this checkout.
+To test an exact NPM release, including from inside this checkout, select the
+package and version explicitly:
+
+```sh
+npx --yes --package=worldfixture@0.2.6 -- worldfixture up
 ```
 
 Create and build a world:

@@ -456,7 +456,35 @@ test("starting an instance writes one instance row and the runtime tables", asyn
   db.close();
 });
 
-test("a state database from a different schema version is refused, not migrated", () => {
+test("a schema-1 state database is migrated without losing scheduled events", () => {
+  const directory = stateDir();
+  const path = join(directory, "state.sqlite");
+  const db = openState(path);
+  db.prepare(
+    `INSERT INTO scheduled_events(id, due_at, type, payload, caused_by, delivered_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run("pending", 20, "test.pending", "{}", null, null);
+  db.prepare(
+    `INSERT INTO scheduled_events(id, due_at, type, payload, caused_by, delivered_at)
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run("delivered", 10, "test.delivered", "{}", "cause", 30);
+  db.exec("UPDATE schema_version SET version = 1");
+  db.close();
+
+  const migrated = openState(path);
+  assert.equal(migrated.prepare("SELECT version FROM schema_version").get().version, 2);
+  assert.deepEqual(
+    migrated.prepare("SELECT id, status, completed_at FROM scheduled_events ORDER BY seq").all()
+      .map(row => ({ ...row })),
+    [
+      { id: "delivered", status: "delivered", completed_at: 30 },
+      { id: "pending", status: "pending", completed_at: null },
+    ],
+  );
+  migrated.close();
+});
+
+test("a state database from an unsupported schema version is refused", () => {
   const directory = stateDir();
   const path = join(directory, "state.sqlite");
   const db = openState(path);

@@ -22,8 +22,19 @@ export async function askForSampleApp({ input = process.stdin, output = process.
   if (!input.isTTY || !output.isTTY) return false;
   const prompt = createInterface({ input, output });
   try {
-    const answer = (await prompt.question("Do you want to launch the Account Desk demo app? [y/N] ")).trim().toLowerCase();
-    return answer === "y" || answer === "yes";
+    const answer = (await prompt.question("Launch the Account Desk demo app? Press Enter, or type n to skip: ")).trim().toLowerCase();
+    return answer !== "n" && answer !== "no";
+  } finally {
+    prompt.close();
+  }
+}
+
+export async function askToOpenBrowser(subject, { input = process.stdin, output = process.stdout } = {}) {
+  if (!input.isTTY || !output.isTTY) return false;
+  const prompt = createInterface({ input, output });
+  try {
+    const answer = (await prompt.question(`Open ${subject} in your browser? Press Enter, or type n to skip: `)).trim().toLowerCase();
+    return answer !== "n" && answer !== "no";
   } finally {
     prompt.close();
   }
