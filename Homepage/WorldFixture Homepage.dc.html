@@ -61,6 +61,16 @@ h2 { margin: 0; font-size: clamp(28px, 3.6vw, 40px); font-weight: 500; letter-sp
 .example { padding-bottom: 96px; }
 .example > h2 { text-align: center; margin-bottom: 14px; font-size: clamp(24px, 3vw, 30px); }
 .example-intro { max-width: 650px; margin: 0 auto 30px; color: var(--muted); font-size: 17px; line-height: 1.6; text-align: center; text-wrap: balance; }
+.explanation { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 56px; align-items: center; scroll-margin-top: 36px; }
+.explanation-copy p { margin: 0; color: var(--muted); font-size: 19px; line-height: 1.65; }
+.explanation-copy p + p { margin-top: 24px; }
+.explanation-copy p:last-child { color: var(--text); }
+.explanation .story { grid-template-columns: 1fr; }
+.explanation .story article { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px 16px; padding: 20px 24px; }
+.explanation .story article + article { border-left: 0; border-top: 1px solid var(--line); }
+.explanation .service, .explanation .person { margin-bottom: 0; }
+.explanation .story h3, .explanation .story p, .explanation .issue { grid-column: 1 / -1; margin: 0; }
+.explanation .story h3 { font-size: 15px; }
 .activity-image { display: block; width: 100%; height: auto; }
 .activity-figure { margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
 .activity-figure a { display: block; }
@@ -105,7 +115,12 @@ details a { color: #9ab3ff; text-decoration: underline; text-underline-offset: 3
 .site-footer { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-block: 26px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
 .site-footer p { margin: 0; }
 .site-footer a { text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 900px) {
+  .explanation { grid-template-columns: 1fr; gap: 32px; }
+  .explanation-copy { max-width: 640px; }
+}
 @media (max-width: 760px) {
+  .explanation-copy p { font-size: 17px; }
   .hero { padding: 48px 0 40px; }
   .hero p { font-size: 18px; }
   .story { grid-template-columns: 1fr; }
@@ -152,9 +167,12 @@ details a { color: #9ab3ff; text-decoration: underline; text-underline-offset: 3
     <span class="copy-status" role="status" aria-live="polite"></span>
   </section>
 
-  <section class="example container" aria-labelledby="example-heading">
-    <h2 id="example-heading">Test complete workflows without real customer accounts.</h2>
-    <p class="example-intro">Test search across tools, run automations, and check AI agent actions. The emails, messages, and issues below share one customer story.</p>
+  <section class="example explanation container" id="example-heading" aria-label="How WorldFixture helps you test your app">
+    <div class="explanation-copy">
+      <p>You build an app that connects to Slack, Gmail, or Stripe. To test it, you need accounts, data in those accounts, and activity for your app to respond to.</p>
+      <p>WorldFixture gives you local, fake versions of those services, already populated with connected data. New events arrive while your app runs.</p>
+      <p>Point your app at them, check that it works, then reset and test again.</p>
+    </div>
     <figure class="world">
       <figcaption><strong>Northstar Relay</strong> · Example company</figcaption>
       <div class="story">
