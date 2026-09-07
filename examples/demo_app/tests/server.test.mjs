@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createApplication } from '../src/server/app.mjs';
 import { createStore } from '../src/db/store.mjs';
+import { createApplication } from '../src/server/app.mjs';
+import { localUrl } from '../src/server/security.mjs';
+
+test('local app URLs accept the Docker host transport alias', () => {
+  assert.equal(localUrl('http://host.docker.internal:5175').origin, 'http://host.docker.internal:5175');
+  assert.throws(() => localUrl('http://example.com:5175'), /Only local WorldFixture HTTP addresses/);
+});
 
 test('Slack scenario HTTP routes require approval and support stop and saved status', async () => {
   const store = await createStore({ ACCOUNT_DESK_SQLITE_PATH: ':memory:' });

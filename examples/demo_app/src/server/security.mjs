@@ -1,6 +1,6 @@
 export function localUrl(value) {
   const url = new URL(value);
-  if (!['http:', 'https:'].includes(url.protocol) || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || url.username || url.password) {
+  if (!['http:', 'https:'].includes(url.protocol) || !['localhost', '127.0.0.1', '[::1]', 'host.docker.internal'].includes(url.hostname) || url.username || url.password) {
     throw new Error('Only local WorldFixture HTTP addresses are allowed.');
   }
   return url;

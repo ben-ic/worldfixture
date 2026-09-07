@@ -18,8 +18,10 @@
 // not, and will 404 on every internal documentation link -- that is the host
 // being wrong for this build, not the build being broken.
 
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+
+import { analyticsEnabled, analyticsHtml } from "./analytics.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const out = join(root, "site");
@@ -37,7 +39,15 @@ for (const [what, path] of [["the homepage", homepage], ["the built documentatio
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
-cpSync(join(homepage, "WorldFixture Homepage.dc.html"), join(out, "index.html"));
+// Injected here rather than written into the source file, so that opening the
+// homepage straight off disk while it is being designed reports nothing.
+const indexHtml = readFileSync(join(homepage, "WorldFixture Homepage.dc.html"), "utf8");
+const analytics = analyticsHtml();
+if (analytics && !indexHtml.includes("</head>")) {
+  console.error("the homepage has no </head> to put the analytics tags in");
+  process.exit(1);
+}
+writeFileSync(join(out, "index.html"), analytics ? indexHtml.replace("</head>", `${analytics}\n</head>`) : indexHtml);
 cpSync(join(homepage, "support.js"), join(out, "support.js"));
 cpSync(join(homepage, "uploads"), join(out, "uploads"), { recursive: true });
 cpSync(join(homepage, "og.png"), join(out, "og.png"));
@@ -51,5 +61,8 @@ for (const file of ["favicon.svg", "favicon.ico", "favicon-192.png", "icon-512.p
 cpSync(docs, join(out, "docs"), { recursive: true });
 
 console.log(`site/ assembled: homepage at /, documentation at /docs/`);
+console.log(analyticsEnabled()
+  ? "analytics:  on, for this public build only"
+  : "analytics:  off (set WORLDFIXTURE_ANALYTICS=1, which `npm run site:build` does)");
 console.log("preview:  npx wrangler pages dev site");
 console.log("deploy:   npx wrangler pages deploy site");

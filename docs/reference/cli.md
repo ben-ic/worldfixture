@@ -48,6 +48,7 @@ digest is a manifest claim; check `valid` before using the artifact.
 npx worldfixture up consumer.retail-brand:v1
 npx worldfixture up ./dist/demo.minimal.v1
 npx worldfixture up --world-path ./dist/demo.minimal.v1 --no-rebase
+npx worldfixture up --sample-app
 ```
 
 Supply exactly one explicit selector: a positional world name or artifact
@@ -79,6 +80,21 @@ Startup prints `Selected world: <id>:<version> (<source>)` and `Artifact: <path>
 The source is `selector`, `worldPath`, `projectWorld`, or `defaultWorld`.
 `--direct` and container launch use the same selected artifact. `--no-rebase`
 keeps its original dates in both modes.
+
+Each fresh interactive `up` for a project with the default application URL asks
+whether to launch the included Account Desk demo app. This also applies when
+`--only` selects part of the world. A command that reuses a running instance
+does not ask again. The app starts on a free local port and connects to the
+active world through Connector v1. Its first start for an installed
+WorldFixture version installs its production packages. Use `--sample-app` to
+start it without the prompt, or `--no-sample-app` to disable the offer. An
+explicit `--application-url` selects the user's app and cannot be used with
+`--sample-app`. Non-interactive runs do not prompt. `worldfixture down` stops a
+sample app that it started.
+
+The ready report prints the sample app URL when it starts. The Workbench URL is
+the final line so it is easy to find. The default `http://localhost:3000`
+project value is not printed as if an application was running.
 
 A running container can be reused only if the selected artifact's ID, version,
 and digest match. Use `switch` to change the active world.

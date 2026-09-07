@@ -1,0 +1,10 @@
+node_modules/
+.account-desk/
+.worldfixture/
+.env*
+test-results/
+scripts/
+tests/
+*.md
+*.dc.html
+src/**/*.test.mjs

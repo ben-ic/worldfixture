@@ -16,7 +16,10 @@ The first run downloads the WorldFixture image. The command ticks off each part
 of the world as it becomes usable, with the port it answers on, and keeps a
 running clock for the parts still loading. When the world is ready it prints the
 full set of addresses, including the Workbench URL and the local Slack API
-endpoint. Nothing is offered before it works, so wait for the ready report.
+endpoint. The Workbench URL is the final line. Nothing is offered before the
+world works, so wait for the ready report. A fresh interactive start asks
+whether to launch the Account Desk demo app. Use `--no-sample-app` when you want
+only the selected provider.
 
 ## 2. Open
 

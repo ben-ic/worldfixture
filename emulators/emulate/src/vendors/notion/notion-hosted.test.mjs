@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createServer } from "@emulators/core";
 import { plugin, seedFromConfig } from "./index.mjs";
+import { NOTION_VERSION } from "./rest.mjs";
 
 const PAGE_ID = "dff277c5-1633-49f0-8648-17c5e4afcfda";
 
@@ -28,6 +29,31 @@ test("a Notion page URL opens a readable local page without API headers", async 
   assert.match(html, /Launch checklist/);
   assert.match(html, /Confirm the release/);
   assert.match(html, /Run tests/);
+});
+
+test("REST search returns valid page URLs that match retrieval and open the page", async () => {
+  const { app, baseUrl } = fixture();
+  const headers = { Authorization: "Bearer notion_token", "Notion-Version": NOTION_VERSION, "Content-Type": "application/json" };
+  const response = await app.request("/v1/search", {
+    method: "POST", headers,
+    body: JSON.stringify({ filter: { property: "object", value: "page" }, page_size: 100 }),
+  });
+  assert.equal(response.status, 200);
+  const { results } = await response.json();
+  assert.equal(results.length, 1);
+  for (const page of results) {
+    assert.equal(typeof page.url, "string");
+    const url = new URL(page.url);
+    assert.equal(url.origin, new URL(baseUrl).origin);
+    assert.equal(page.public_url, null);
+    const retrieved = await app.request(`/v1/pages/${page.id}`, { headers });
+    assert.equal(retrieved.status, 200);
+    assert.equal(page.url, (await retrieved.json()).url);
+    const hosted = await app.request(url.pathname);
+    assert.equal(hosted.status, 200);
+    assert.match(hosted.headers.get("content-type"), /^text\/html/);
+    assert.match(await hosted.text(), /Launch checklist/);
+  }
 });
 
 test("an unknown Notion page URL returns a visible 404 page", async () => {

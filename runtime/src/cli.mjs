@@ -14,13 +14,12 @@ import { randomUUID } from 'node:crypto';
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-
-import { shareHostArtifact } from './host-state-ownership.mjs';
 import { defaultEnvironment } from "./environments.mjs";
-import { rebaseForSession } from "./session-world.mjs";
-import { attachManagedSession, configureApplicationBindings } from './session-runtime.mjs';
+import { shareHostArtifact } from './host-state-ownership.mjs';
+import { activeFile, activeStateDir, readActiveGeneration, sessionPath, writeSessionFile, writeSessionJson } from './session-files.mjs';
 import { assertSessionRecoverable, SessionError } from './session-manager.mjs';
-import { activeFile, activeStateDir, readActiveGeneration, sessionPath, writeSessionJson, writeSessionFile } from './session-files.mjs';
+import { attachManagedSession, configureApplicationBindings } from './session-runtime.mjs';
+import { rebaseForSession } from "./session-world.mjs";
 import { importSwitchArtifact, listSwitchWorlds } from './switch-world.mjs';
 import { inspectWorldArtifact, resolveWorldSelection } from "./world-catalogue.mjs";
 export { rebaseForSession };
@@ -71,12 +70,13 @@ import { connectorTarget, ensureProject, readProject, readProjectToken } from ".
 import { aggregate, probe } from "./readiness.mjs";
 import { connectorEventFromWorldEvent, observedKinds, selectWorldEvent } from "./replay.mjs";
 import { ResolutionError, resolveEnvironment, serializeLock } from "./resolve.mjs";
+import { askForSampleApp, sampleAppAvailable, startSampleApp, stopSampleApp } from "./sample-app.mjs";
 import { describeScale, parseLimits, parseScale, SCALE_PRESETS, ScaleError } from "./scale.mjs";
 import { timelineState } from "./scheduler.mjs";
-import { TimelineControlError, attachTimelineControl } from "./timeline-control.mjs";
 import { history, slackTokenHolders, tokenFor } from "./slack.mjs";
 import { openState } from "./state.mjs";
 import { StartupError, start } from "./supervisor.mjs";
+import { attachTimelineControl, TimelineControlError } from "./timeline-control.mjs";
 import { startWorkbench } from "./workbench.mjs";
 import { contents, findChannel, findPeople, findPerson, insiders, personHandle, primaryOrganization, readWorld } from "./world.mjs";
 
@@ -147,6 +147,8 @@ Options
   --app-env <name>     Local env file inside --app-dir (default .env.local)
   --project-dir <dir>  Project directory (default current directory)
   --application-url <url>  Explicit application connector origin for required app events
+  --sample-app         Start the included Account Desk sample app
+  --no-sample-app      Do not offer to start the sample app
   --direct             Run checkout services in the foreground (development)
   --follow             Keep printing events as they are observed (events only)
   --only <parts>       Start only these parts of the world (slack, github, site
@@ -245,7 +247,7 @@ export function parse(argv) {
     if (["world", "world-path"].includes(name) && Object.hasOwn(flags, name)) {
       throw new BuildError("invalid_world_selection", `--${name} was supplied more than once`);
     }
-    if (["verbose", "choose", "direct", "json", "follow", "no-rebase", "setup", "repeat", "list", "print", "help", "without-application", "status"].includes(name)) flags[name] = true;
+    if (["verbose", "choose", "direct", "json", "follow", "no-rebase", "setup", "repeat", "list", "print", "help", "without-application", "status", "sample-app", "no-sample-app"].includes(name)) flags[name] = true;
     else {
       if (index + 1 >= argv.length || argv[index + 1].startsWith("--")) {
         throw new BuildError("invalid_arguments", `--${name} needs a value`);
@@ -851,11 +853,20 @@ async function directUp({ flags }, { applicationEnvironment, project, selection 
   }
   say();
   say("Stop with Ctrl-C");
+  const directWorkbench = (instance.applicationBindings ?? instance.bindings()).WORKBENCH_URL;
+  if (directWorkbench) say(`Workbench   ${directWorkbench}`);
   await finished;
 }
 
 async function up(parsed) {
   validateTimelineStart(parsed.flags);
+  const explicitApplication = parsed.flags["application-url"] !== undefined;
+  if (parsed.flags["sample-app"] && parsed.flags["no-sample-app"]) {
+    throw new BuildError("invalid_arguments", "Use --sample-app or --no-sample-app, not both.");
+  }
+  if (parsed.flags["sample-app"] && parsed.flags["application-url"]) {
+    throw new BuildError("invalid_arguments", "Use --sample-app or --application-url, not both.");
+  }
   const inOneContainer = process.env.WORLDFIXTURE_SINGLE_CONTAINER === "1";
   const projectDir = resolve(parsed.flags["project-dir"] ?? parsed.flags["app-dir"] ?? process.cwd());
   const containerProject = inOneContainer
@@ -979,10 +990,30 @@ async function up(parsed) {
   say();
   say(result.reused ? "Reused the running instance." : "The instance is running in the background.");
   say(`Project: ${project.projectDir}`);
-  say(`Application: ${project.config.application_url}`);
   if (project.created) say(`Project config: ${project.configPath}`);
   if (applicationEnvironment) say(`Application environment: ${applicationEnvironment.envPath}`);
+  const workbenchUrl = result.bindings.WORKBENCH_URL;
+  const canOfferSample = sampleAppAvailable(PACKAGE_ROOT)
+    && !parsed.flags["no-sample-app"]
+    && !explicitApplication
+    && !result.reused
+    && project.config.application_url === "http://localhost:3000";
+  const wantsSample = parsed.flags["sample-app"] || (canOfferSample && await askForSampleApp());
+  if (wantsSample) {
+    try {
+      say("Account Desk is getting ready...");
+      const sample = await startSampleApp({
+        packageRoot: PACKAGE_ROOT, stateDir, bindings: result.bindings, world, workbenchUrl,
+        onInstall: () => say("Installing its packages (first start only)..."),
+      });
+      say(`Sample app  ${sample.url}`);
+    } catch (error) {
+      say(`Sample app did not start: ${error.message}`);
+      say("The WorldFixture instance is still running.");
+    }
+  }
   say(`Stop it with \`${invocation()} down\`.`);
+  if (workbenchUrl) say(`Workbench   ${workbenchUrl}`);
 }
 
 // Start the world's own timeline, and keep it running for the life of the
@@ -1059,7 +1090,7 @@ function printReadyBindings(world, bindings, stateDir) {
   say();
 
   const visibleBindings = Object.entries(bindings).filter(([name, value]) => {
-    return bindingCanBePrinted(name, value);
+    return name !== "WORKBENCH_URL" && bindingCanBePrinted(name, value);
   });
   const bindingWidth = Math.max(12, ...visibleBindings.map(([name]) => label(name).length + 2));
   for (const [name, value] of visibleBindings) say(`${pad(label(name), bindingWidth)}${value}`);
@@ -1540,11 +1571,14 @@ async function clockCommand({ flags, positional }) {
 
 async function down({ flags }) {
   const { stateDir } = paths(flags);
+  const sampleStopped = stopSampleApp(stateDir);
   if (!(await stopHostInstance(stateDir))) {
-    say("No instance is running.");
+    say(sampleStopped ? "Stopped the sample app. No WorldFixture instance was running." : "No instance is running.");
     return;
   }
-  say("Stopped. The container and all child processes are gone.");
+  say(sampleStopped
+    ? "Stopped. The sample app, container, and all child processes are gone."
+    : "Stopped. The container and all child processes are gone.");
 }
 
 // ---- the read-only commands ----------------------------------------------

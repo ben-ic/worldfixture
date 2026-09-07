@@ -934,7 +934,7 @@ export function createNotionDomain(store, baseUrl, { objectStore, onChange } = {
     const objectType = options.filter?.value;
     const pageResults = pages.all()
       .filter((item) => canRead(item, actor) && Boolean(item.in_trash) === includeTrash && (!needle || titleText(item.properties).toLowerCase().includes(needle)))
-      .map(publicPage);
+      .map(renderPage);
     const sourceResults = dataSources.all()
       .filter((item) => canRead(item, actor) && Boolean(item.in_trash) === includeTrash && (!needle || String(item.name ?? "").toLowerCase().includes(needle)))
       .map(renderDataSource);

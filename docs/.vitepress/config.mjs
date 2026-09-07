@@ -1,5 +1,7 @@
 import { defineConfig } from "vitepress";
 
+import { analyticsHead } from "../../scripts/analytics.mjs";
+
 // The runtime serves this site at /docs/. A different deployment can set
 // DOCS_BASE without a source change, so every asset path is built from it
 // rather than written with a leading slash that would break under any other
@@ -22,6 +24,10 @@ export default defineConfig({
     ["link", { rel: "icon", href: asset("favicon.svg"), type: "image/svg+xml" }],
     ["link", { rel: "apple-touch-icon", href: asset("apple-touch-icon.png") }],
     ["meta", { name: "theme-color", content: "#061127" }],
+    // Empty unless this is the public site build. The same pages are built into
+    // the container image and served by the Workbench offline; those must not
+    // report a local read, so the tags are opt-in rather than opt-out.
+    ...analyticsHead(),
   ],
   themeConfig: {
     // Root relative, NOT through `asset`: VitePress resolves `themeConfig.logo`

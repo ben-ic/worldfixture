@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- worldfixture.com and its documentation report page views to Umami. The tags
+  are added by `npm run site:build` and by nothing else: `docs:dev`, a plain
+  `docs:build`, and the homepage opened straight off disk all stay clean. The
+  distinction that matters is the container image, which builds the same
+  documentation and serves it from the Workbench offline, on a developer's own
+  machine; a tag baked in there would report a local read of local docs, and
+  record the session with it.
+
 ## 0.2.5
 
 - Streaming now loops without restoring provider state. The existing `--repeat`

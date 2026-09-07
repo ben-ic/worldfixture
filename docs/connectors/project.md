@@ -40,9 +40,11 @@ You can set the origin when you start WorldFixture:
 npx worldfixture up --application-url http://localhost:5175
 ```
 
-The user starts the app with its normal development command in another
+The user starts their app with its normal development command in another
 terminal. WorldFixture does not install dependencies, run migrations, or start
-the app.
+that app. The included Account Desk sample is the only exception. On an
+interactive first run, WorldFixture can offer to install and start this sample.
+Use `up --sample-app` or `up --no-sample-app` to make that choice explicit.
 
 ## Token loading
 

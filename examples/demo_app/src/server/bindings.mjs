@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
 export async function loadEnvironment(input = process.env) {
+  if (input.WORLDFIXTURE_WORLD_ID && input.WORLDFIXTURE_TOKEN) return { ...input };
   // Use only the installed CLI. Never read the WorldFixture run directory.
   try {
     const { stdout } = await exec('npx', ['--no-install', 'worldfixture', 'env', '--json'], { env: input, timeout: 20_000, maxBuffer: 2 * 1024 * 1024 });
