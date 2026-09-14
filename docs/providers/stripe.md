@@ -1,5 +1,19 @@
 # Stripe
 
+## Capabilities
+
+WorldFixture provides three Stripe capabilities:
+
+- **`stripe.customers.v1`** — Customers API (GET/POST /v1/customers)
+- **`stripe.catalog.v1`** — Products and Prices API (GET/POST /v1/products, /v1/prices)
+- **`stripe.billing.v1`** — Invoice, Subscription, and Checkout billing APIs
+
+All three capabilities share the same `STRIPE_BASE_URL` and `STRIPE_TOKEN` bindings
+and connect to the same Stripe emulator instance. Use `stripe.billing.v1` when your
+application needs invoice operations, subscriptions, or Checkout Sessions. Use
+`stripe.customers.v1` and `stripe.catalog.v1` when you only need customer or product
+catalog operations.
+
 ## What works
 
 WorldFixture supports selected Customers, PaymentIntents, payment methods,
@@ -22,9 +36,10 @@ not work. These operations are **Not supported**. Production behavior is
 
 ## Connect
 
-Use `STRIPE_BASE_URL` and `STRIPE_TOKEN` from `worldfixture env`. Send the
-token as bearer authentication. Send normal Stripe form-encoded bodies. Set the
-Node SDK host to `STRIPE_BASE_URL`.
+Use `STRIPE_BASE_URL` and `STRIPE_TOKEN` from `worldfixture env`. All three Stripe
+capabilities (`stripe.customers.v1`, `stripe.catalog.v1`, and `stripe.billing.v1`)
+provide the same base URL and token bindings. Send the token as bearer authentication.
+Send normal Stripe form-encoded bodies. Set the Node SDK host to `STRIPE_BASE_URL`.
 
 The token is an account credential. The product rejects anonymous requests and
 unknown tokens.

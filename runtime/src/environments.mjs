@@ -63,6 +63,7 @@ const PROVIDER_CAPABILITIES = [
   "slack.oauth.v1",
   "stripe.customers.v1",
   "stripe.catalog.v1",
+  "stripe.billing.v1",
   "twilio.messaging.v1",
   "twilio.verify.v1",
   "vercel.projects.v1",

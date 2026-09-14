@@ -230,6 +230,7 @@ test("the product image default includes AWS control-plane providers beside Seaw
     "resend.domains.v1",
     "slack.oauth.v1",
     "stripe.catalog.v1",
+    "stripe.billing.v1",
     "vercel.teams.v1",
   ]) {
     assert.equal(lock.capabilities[profile].service, "emulate", profile);

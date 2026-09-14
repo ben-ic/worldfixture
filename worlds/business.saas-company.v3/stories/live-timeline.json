@@ -1907,12 +1907,11 @@
         "id": "arrival-webhook-000",
         "kind": "webhook",
         "payload": {
-          "amount_cents": 37900,
-          "currency": "USD",
-          "customer_id": "ironvale",
+          "amount_cents": 412000,
+          "customer_id": "lumen",
           "event": "finance.invoice.paid",
           "invoice_id": "inv-5124",
-          "payment_id": "pay-inv-5124"
+          "payment_id": "pay-5124"
         }
       },
       {

@@ -1850,6 +1850,40 @@
       }
     },
     {
+      "profile": "stripe.billing.v1",
+      "port": "stripe",
+      "binds": [
+        {
+          "name": "base_url",
+          "from": "port.url"
+        },
+        {
+          "name": "token",
+          "from": "projection",
+          "pointer": "/tokens"
+        }
+      ],
+      "world": {
+        "requires": [],
+        "projections": [
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/stripe",
+            "verified": true
+          },
+          {
+            "file": "projections/emulator-overlay.json",
+            "subtree": "/tokens/stripe_token",
+            "verified": true
+          },
+          {
+            "file": "manifest.json",
+            "verified": true
+          }
+        ]
+      }
+    },
+    {
       "profile": "mongoatlas.projects.v1",
       "port": "mongoatlas",
       "binds": [

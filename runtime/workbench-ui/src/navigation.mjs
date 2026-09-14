@@ -97,7 +97,7 @@ const READ_CAPABILITIES = {
   slack: ['slack.messaging.v1'], google: ['google.gmail.v1'], mail: ['mail.imap.v1'],
   github: ['github.repositories.v1', 'github.issues.v1'], s3: ['aws.s3.objects.v1', 'aws.s3.buckets.v1'],
   notion: ['notion.pages-read.v1', 'notion.blocks-read.v1', 'notion.databases.v1', 'notion.users.v1'],
-  stripe: ['stripe.customers.v1', 'stripe.catalog.v1'], linear: ['linear.issues.v1', 'linear.teams.v1'],
+  stripe: ['stripe.customers.v1', 'stripe.catalog.v1', 'stripe.billing.v1'], linear: ['linear.issues.v1', 'linear.teams.v1'],
   okta: ['okta.users.v1', 'okta.groups.v1'], clerk: ['clerk.users.v1', 'clerk.organizations.v1'],
   twilio: ['twilio.messaging.v1', 'twilio.verify.v1'], resend: ['resend.email.v1', 'resend.contacts.v1', 'resend.domains.v1'],
   vercel: ['vercel.projects.v1', 'vercel.teams.v1'], mongoatlas: ['mongoatlas.projects.v1', 'mongoatlas.clusters.v1'],
